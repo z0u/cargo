@@ -49,11 +49,11 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="144.97907"
-     inkscape:cy="275.53111"
+     inkscape:cx="175.03224"
+     inkscape:cy="201.92257"
      inkscape:document-units="px"
-     inkscape:current-layer="svg2"
-     showgrid="false"
+     inkscape:current-layer="g3674"
+     showgrid="true"
      inkscape:window-width="1679"
      inkscape:window-height="996"
      inkscape:window-x="0"
@@ -130,6 +130,14 @@
        orientation="0,1"
        position="103,125.5"
        id="guide4266" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="493.56053,39.951533"
+       id="guide2664" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="483.66104,25.102291"
+       id="guide2666" />
   </sodipodi:namedview>
   <metadata
      id="metadata7">
@@ -146,7 +154,7 @@
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="Stencil"
-     style="display:inline"
+     style="display:none"
      sodipodi:insensitive="true">
     <rect
        style="opacity:0.5;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
@@ -1703,6 +1711,10 @@
          style="fill-opacity:1;fill-rule:nonzero;"
          id="path4680"
          d="M 54.961929,392.51599 C 58.206207,392.34592 61.459825,392.41287 64.703223,392.56317 C 67.333576,392.5445 69.738167,393.43841 72.222526,394.15606 C 72.331219,394.18746 72.356091,394.2774 72.24899,394.31386 L 72.24899,394.31386 C 69.952828,395.09555 67.677986,395.74832 65.24434,395.95372 C 62.038932,396.11459 58.827245,396.24187 55.617866,396.25087 C 52.936497,396.25839 52.284226,392.65635 54.961929,392.51599 z" />
+      <path
+         style="opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+         d="M 452.9375 460.09375 L 452.9375 486.96875 L 475.125 486.96875 L 475.125 460.09375 L 452.9375 460.09375 z M 455.15625 462.09375 L 473 462.09375 L 473 485.0625 L 455.15625 485.0625 L 455.15625 462.09375 z "
+         id="rect2670" />
     </g>
   </g>
 </svg>

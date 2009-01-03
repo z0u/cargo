@@ -1,0 +1,1700 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="512"
+   height="512"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.46"
+   version="1.0"
+   sodipodi:docname="Font.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape"
+   inkscape:export-filename="/home/alex/Projects/Cargo/Textures/Font.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <defs
+     id="defs4">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective10" />
+    <filter
+       inkscape:collect="always"
+       id="filter3830">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.38495"
+         id="feGaussianBlur3832" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="10"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="137.13627"
+     inkscape:cy="311.10253"
+     inkscape:document-units="px"
+     inkscape:current-layer="g3674"
+     showgrid="false"
+     inkscape:window-width="1679"
+     inkscape:window-height="996"
+     inkscape:window-x="0"
+     inkscape:window-y="25">
+    <inkscape:grid
+       type="xygrid"
+       id="grid2383"
+       visible="true"
+       enabled="true" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Stencil"
+     style="display:inline"
+     sodipodi:insensitive="true">
+    <rect
+       style="opacity:0.5;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       id="rect3432"
+       width="35"
+       height="45"
+       x="10"
+       y="7" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3434"
+       transform="translate(40,0)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(80,0)"
+       id="use3436"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3438"
+       transform="translate(120,0)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(160,0)"
+       id="use3440"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3442"
+       transform="translate(200,0)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(240,0)"
+       id="use3444"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3446"
+       transform="translate(280,0)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(320,0)"
+       id="use3448"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3450"
+       transform="translate(360,0)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(400,0)"
+       id="use3452"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3454"
+       transform="translate(440,0)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(40,50)"
+       id="use3458"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3460"
+       transform="translate(80,50)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(120,50)"
+       id="use3462"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3464"
+       transform="translate(160,50)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(200,50)"
+       id="use3466"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3468"
+       transform="translate(240,50)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(280,50)"
+       id="use3470"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3472"
+       transform="translate(320,50)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(360,50)"
+       id="use3474"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3476"
+       transform="translate(400,50)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(440,50)"
+       id="use3478"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3480"
+       transform="translate(0,50)"
+       width="512"
+       height="512" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3482"
+       transform="translate(40,100)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(80,100)"
+       id="use3484"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3486"
+       transform="translate(120,100)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(160,100)"
+       id="use3488"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3490"
+       transform="translate(200,100)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(240,100)"
+       id="use3492"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3494"
+       transform="translate(280,100)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(320,100)"
+       id="use3496"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3498"
+       transform="translate(360,100)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(400,100)"
+       id="use3500"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3502"
+       transform="translate(440,100)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(0,100)"
+       id="use3504"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(40,150)"
+       id="use3506"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3508"
+       transform="translate(80,150)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(120,150)"
+       id="use3510"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3512"
+       transform="translate(160,150)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(200,150)"
+       id="use3514"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3516"
+       transform="translate(240,150)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(280,150)"
+       id="use3518"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3520"
+       transform="translate(320,150)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(360,150)"
+       id="use3522"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3524"
+       transform="translate(400,150)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(440,150)"
+       id="use3526"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3528"
+       transform="translate(0,150)"
+       width="512"
+       height="512" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3530"
+       transform="translate(40,200)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(80,200)"
+       id="use3532"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3534"
+       transform="translate(120,200)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(160,200)"
+       id="use3536"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3538"
+       transform="translate(200,200)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(240,200)"
+       id="use3540"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3542"
+       transform="translate(280,200)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(320,200)"
+       id="use3544"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3546"
+       transform="translate(360,200)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(400,200)"
+       id="use3548"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3550"
+       transform="translate(440,200)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(0,200)"
+       id="use3552"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(40,250)"
+       id="use3554"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3556"
+       transform="translate(80,250)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(120,250)"
+       id="use3558"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3560"
+       transform="translate(160,250)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(200,250)"
+       id="use3562"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3564"
+       transform="translate(240,250)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(280,250)"
+       id="use3566"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3568"
+       transform="translate(320,250)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(360,250)"
+       id="use3570"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3572"
+       transform="translate(400,250)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(440,250)"
+       id="use3574"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3576"
+       transform="translate(0,250)"
+       width="512"
+       height="512" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3578"
+       transform="translate(40,300)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(80,300)"
+       id="use3580"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3582"
+       transform="translate(120,300)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(160,300)"
+       id="use3584"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3586"
+       transform="translate(200,300)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(240,300)"
+       id="use3588"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3590"
+       transform="translate(280,300)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(320,300)"
+       id="use3592"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3594"
+       transform="translate(360,300)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(400,300)"
+       id="use3596"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3598"
+       transform="translate(440,300)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(0,300)"
+       id="use3600"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(40,350)"
+       id="use3602"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3604"
+       transform="translate(80,350)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(120,350)"
+       id="use3606"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3608"
+       transform="translate(160,350)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(200,350)"
+       id="use3610"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3612"
+       transform="translate(240,350)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(280,350)"
+       id="use3614"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3616"
+       transform="translate(320,350)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(360,350)"
+       id="use3618"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3620"
+       transform="translate(400,350)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(440,350)"
+       id="use3622"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3624"
+       transform="translate(0,350)"
+       width="512"
+       height="512" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3626"
+       transform="translate(40,400)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(80,400)"
+       id="use3628"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3630"
+       transform="translate(120,400)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(160,400)"
+       id="use3632"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3634"
+       transform="translate(200,400)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(240,400)"
+       id="use3636"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3638"
+       transform="translate(280,400)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(320,400)"
+       id="use3640"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3642"
+       transform="translate(360,400)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(400,400)"
+       id="use3644"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3646"
+       transform="translate(440,400)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(0,400)"
+       id="use3648"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(40,450)"
+       id="use3650"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3652"
+       transform="translate(80,450)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(120,450)"
+       id="use3654"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3656"
+       transform="translate(160,450)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(200,450)"
+       id="use3658"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3660"
+       transform="translate(240,450)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(280,450)"
+       id="use3662"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3664"
+       transform="translate(320,450)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(360,450)"
+       id="use3666"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3668"
+       transform="translate(400,450)"
+       width="512"
+       height="512" />
+    <use
+       height="512"
+       width="512"
+       transform="translate(440,450)"
+       id="use3670"
+       xlink:href="#rect3432"
+       y="0"
+       x="0" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect3432"
+       id="use3672"
+       transform="translate(0,450)"
+       width="512"
+       height="512" />
+  </g>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <use
+       x="0"
+       y="0"
+       xlink:href="#g3674"
+       id="use3804"
+       style="fill:#ffffff;fill-opacity:1;filter:url(#filter3830)"
+       width="512"
+       height="512" />
+    <g
+       id="g3674">
+      <text
+         id="text2385"
+         y="42"
+         x="10"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="10"
+           id="tspan2387"
+           sodipodi:role="line">a</tspan></text>
+      <text
+         id="text2389"
+         y="42"
+         x="50"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="50"
+           id="tspan2391"
+           sodipodi:role="line">b</tspan></text>
+      <text
+         id="text2393"
+         y="42"
+         x="90"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="90"
+           id="tspan2395"
+           sodipodi:role="line">c</tspan></text>
+      <text
+         id="text2397"
+         y="42"
+         x="130"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="130"
+           id="tspan2399"
+           sodipodi:role="line">d</tspan></text>
+      <text
+         id="text2401"
+         y="42"
+         x="170"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="170"
+           id="tspan2403"
+           sodipodi:role="line">e</tspan></text>
+      <text
+         id="text2405"
+         y="42"
+         x="210"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="210"
+           id="tspan2407"
+           sodipodi:role="line">f</tspan></text>
+      <text
+         id="text2409"
+         y="42"
+         x="250"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="250"
+           id="tspan2411"
+           sodipodi:role="line">g</tspan></text>
+      <text
+         id="text2413"
+         y="42"
+         x="290"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="290"
+           id="tspan2415"
+           sodipodi:role="line">h</tspan></text>
+      <text
+         id="text2417"
+         y="42"
+         x="330"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="330"
+           id="tspan2419"
+           sodipodi:role="line">i</tspan></text>
+      <text
+         id="text2421"
+         y="42"
+         x="370"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="370"
+           id="tspan2423"
+           sodipodi:role="line">j</tspan></text>
+      <text
+         id="text2425"
+         y="42"
+         x="410"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="410"
+           id="tspan2427"
+           sodipodi:role="line">k</tspan></text>
+      <text
+         id="text2429"
+         y="42"
+         x="450"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="42"
+           x="450"
+           id="tspan2431"
+           sodipodi:role="line">l</tspan></text>
+      <text
+         id="text2433"
+         y="92"
+         x="10"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="10"
+           id="tspan2435"
+           sodipodi:role="line">m</tspan></text>
+      <text
+         id="text2437"
+         y="92"
+         x="50"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="50"
+           id="tspan2439"
+           sodipodi:role="line">n</tspan></text>
+      <text
+         id="text2441"
+         y="92"
+         x="90"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="90"
+           id="tspan2443"
+           sodipodi:role="line">o</tspan></text>
+      <text
+         id="text2445"
+         y="92"
+         x="130"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="130"
+           id="tspan2447"
+           sodipodi:role="line">p</tspan></text>
+      <text
+         id="text2449"
+         y="92"
+         x="170"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="170"
+           id="tspan2451"
+           sodipodi:role="line">q</tspan></text>
+      <text
+         id="text2453"
+         y="92"
+         x="210"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="210"
+           id="tspan2455"
+           sodipodi:role="line">r</tspan></text>
+      <text
+         id="text2457"
+         y="92"
+         x="250"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="250"
+           id="tspan2459"
+           sodipodi:role="line">s</tspan></text>
+      <text
+         id="text2461"
+         y="92"
+         x="290"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="290"
+           id="tspan2463"
+           sodipodi:role="line">t</tspan></text>
+      <text
+         id="text2465"
+         y="92"
+         x="330"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="330"
+           id="tspan2467"
+           sodipodi:role="line">u</tspan></text>
+      <text
+         id="text2469"
+         y="92"
+         x="370"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="370"
+           id="tspan2471"
+           sodipodi:role="line">v</tspan></text>
+      <text
+         id="text2473"
+         y="92"
+         x="410"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="410"
+           id="tspan2475"
+           sodipodi:role="line">w</tspan></text>
+      <text
+         id="text2477"
+         y="92"
+         x="450"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="92"
+           x="450"
+           id="tspan2479"
+           sodipodi:role="line">x</tspan></text>
+      <text
+         id="text2481"
+         y="142"
+         x="10"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="142"
+           x="10"
+           id="tspan2483"
+           sodipodi:role="line">y</tspan></text>
+      <text
+         id="text2485"
+         y="142"
+         x="50"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="142"
+           x="50"
+           id="tspan2487"
+           sodipodi:role="line">z</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="90"
+         y="142"
+         id="text2489"><tspan
+           sodipodi:role="line"
+           id="tspan2491"
+           x="90"
+           y="142">A</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="130"
+         y="142"
+         id="text2493"><tspan
+           sodipodi:role="line"
+           id="tspan2495"
+           x="130"
+           y="142">B</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="170"
+         y="142"
+         id="text2497"><tspan
+           sodipodi:role="line"
+           id="tspan2499"
+           x="170"
+           y="142">C</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="210"
+         y="142"
+         id="text2501"><tspan
+           sodipodi:role="line"
+           id="tspan2503"
+           x="210"
+           y="142">D</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="250"
+         y="142"
+         id="text2505"><tspan
+           sodipodi:role="line"
+           id="tspan2507"
+           x="250"
+           y="142">E</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="290"
+         y="142"
+         id="text2509"><tspan
+           sodipodi:role="line"
+           id="tspan2511"
+           x="290"
+           y="142">F</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="330"
+         y="142"
+         id="text2513"><tspan
+           sodipodi:role="line"
+           id="tspan2515"
+           x="330"
+           y="142">G</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="370"
+         y="142"
+         id="text2517"><tspan
+           sodipodi:role="line"
+           id="tspan2519"
+           x="370"
+           y="142">H</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="410"
+         y="142"
+         id="text2521"><tspan
+           sodipodi:role="line"
+           id="tspan2523"
+           x="410"
+           y="142">I</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="450"
+         y="142"
+         id="text2525"><tspan
+           sodipodi:role="line"
+           id="tspan2527"
+           x="450"
+           y="142">J</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="10"
+         y="192"
+         id="text2529"><tspan
+           sodipodi:role="line"
+           id="tspan2531"
+           x="10"
+           y="192">K</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="50"
+         y="192"
+         id="text2533"><tspan
+           sodipodi:role="line"
+           id="tspan2535"
+           x="50"
+           y="192">L</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="90"
+         y="192"
+         id="text2537"><tspan
+           sodipodi:role="line"
+           id="tspan2539"
+           x="90"
+           y="192">M</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="130"
+         y="192"
+         id="text2541"><tspan
+           sodipodi:role="line"
+           id="tspan2543"
+           x="130"
+           y="192">N</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="170"
+         y="192"
+         id="text2545"><tspan
+           sodipodi:role="line"
+           id="tspan2547"
+           x="170"
+           y="192">O</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="210"
+         y="192"
+         id="text2549"><tspan
+           sodipodi:role="line"
+           id="tspan2551"
+           x="210"
+           y="192">P</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="250"
+         y="192"
+         id="text2553"><tspan
+           sodipodi:role="line"
+           id="tspan2555"
+           x="250"
+           y="192">Q</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="290"
+         y="192"
+         id="text2557"><tspan
+           sodipodi:role="line"
+           id="tspan2559"
+           x="290"
+           y="192">R</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="330"
+         y="192"
+         id="text2561"><tspan
+           sodipodi:role="line"
+           id="tspan2563"
+           x="330"
+           y="192">S</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="370"
+         y="192"
+         id="text2565"><tspan
+           sodipodi:role="line"
+           id="tspan2567"
+           x="370"
+           y="192">T</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="410"
+         y="192"
+         id="text2569"><tspan
+           sodipodi:role="line"
+           id="tspan2571"
+           x="410"
+           y="192">U</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="450"
+         y="192"
+         id="text2573"><tspan
+           sodipodi:role="line"
+           id="tspan2575"
+           x="450"
+           y="192">V</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="10"
+         y="242"
+         id="text2577"><tspan
+           sodipodi:role="line"
+           id="tspan2579"
+           x="10"
+           y="242">W</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="50"
+         y="242"
+         id="text2581"><tspan
+           sodipodi:role="line"
+           id="tspan2583"
+           x="50"
+           y="242">X</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="90"
+         y="242"
+         id="text2585"><tspan
+           sodipodi:role="line"
+           id="tspan2587"
+           x="90"
+           y="242">Y</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         x="130"
+         y="242"
+         id="text2589"><tspan
+           sodipodi:role="line"
+           id="tspan2591"
+           x="130"
+           y="242">Z</tspan></text>
+      <text
+         id="text2593"
+         y="242"
+         x="170"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="242"
+           x="170"
+           id="tspan2595"
+           sodipodi:role="line">0</tspan></text>
+      <text
+         id="text2597"
+         y="242"
+         x="210"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="242"
+           x="210"
+           id="tspan2599"
+           sodipodi:role="line">1</tspan></text>
+      <text
+         id="text2601"
+         y="242"
+         x="250"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="242"
+           x="250"
+           id="tspan2603"
+           sodipodi:role="line">2</tspan></text>
+      <text
+         id="text2605"
+         y="242"
+         x="290"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="242"
+           x="290"
+           id="tspan2607"
+           sodipodi:role="line">3</tspan></text>
+      <text
+         id="text2609"
+         y="242"
+         x="330"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="242"
+           x="330"
+           id="tspan2611"
+           sodipodi:role="line">4</tspan></text>
+      <text
+         id="text2613"
+         y="242"
+         x="370"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="242"
+           x="370"
+           id="tspan2615"
+           sodipodi:role="line">5</tspan></text>
+      <text
+         id="text2617"
+         y="242"
+         x="410"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="242"
+           x="410"
+           id="tspan2619"
+           sodipodi:role="line">6</tspan></text>
+      <text
+         id="text2621"
+         y="242"
+         x="450"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="242"
+           x="450"
+           id="tspan2623"
+           sodipodi:role="line">7</tspan></text>
+      <text
+         id="text2625"
+         y="292"
+         x="10"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="292"
+           x="10"
+           id="tspan2627"
+           sodipodi:role="line">8</tspan></text>
+      <text
+         id="text2629"
+         y="292"
+         x="50"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="292"
+           x="50"
+           id="tspan2631"
+           sodipodi:role="line">9</tspan></text>
+      <text
+         id="text2633"
+         y="292"
+         x="90"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="292"
+           x="90"
+           id="tspan2635"
+           sodipodi:role="line">-</tspan></text>
+      <text
+         id="text2637"
+         y="292"
+         x="130"
+         style="font-size:40px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:LMMathItalic10;-inkscape-font-specification:LMMathItalic10 Bold Italic"
+         xml:space="preserve"><tspan
+           y="292"
+           x="130"
+           id="tspan2639"
+           sodipodi:role="line">+</tspan></text>
+    </g>
+  </g>
+</svg>

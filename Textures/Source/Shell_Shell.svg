@@ -17,7 +17,7 @@
    inkscape:version="0.46"
    sodipodi:docname="Shell_Shell.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
-   inkscape:export-filename="/home/alex/Projects/Cargo/Shell_Shell.png"
+   inkscape:export-filename="/home/alex/Projects/Cargo/Textures/Shell_Shell_spec.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <metadata
@@ -404,8 +404,8 @@
     </filter>
   </defs>
   <sodipodi:namedview
-     inkscape:window-height="918"
-     inkscape:window-width="1488"
+     inkscape:window-height="996"
+     inkscape:window-width="1679"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
      guidetolerance="10.0"
@@ -417,11 +417,11 @@
      id="base"
      showgrid="false"
      inkscape:zoom="2.4119821"
-     inkscape:cx="168.92821"
-     inkscape:cy="94.24806"
+     inkscape:cx="210.89991"
+     inkscape:cy="77.914906"
      inkscape:window-x="0"
      inkscape:window-y="25"
-     inkscape:current-layer="layer2" />
+     inkscape:current-layer="layer4" />
   <desc
      id="desc4">UV-Map from Object: Shell. Exported from Blender3D with UV Exportscript</desc>
   <path
@@ -1653,7 +1653,7 @@
      style="display:none">
     <g
        id="g5684"
-       style="opacity:0.5;filter:url(#filter5705)">
+       style="opacity:0.87068954;filter:url(#filter5705)">
       <rect
          y="419.12836"
          x="-0.33019924"

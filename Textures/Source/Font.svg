@@ -149,8 +149,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="170.40057"
-     inkscape:cy="256.07814"
+     inkscape:cx="302.45769"
+     inkscape:cy="177.41357"
      inkscape:document-units="px"
      inkscape:current-layer="layer3"
      showgrid="false"
@@ -254,7 +254,7 @@
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="Stencil"
-     style="display:inline"
+     style="display:none"
      sodipodi:insensitive="true">
     <rect
        style="opacity:0.5;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
@@ -1222,14 +1222,6 @@
      inkscape:label="Effects"
      style="display:inline"
      sodipodi:insensitive="true">
-    <use
-       x="0"
-       y="0"
-       xlink:href="#g3674"
-       id="use3804"
-       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;marker:none;marker-start:none;marker-mid:none;marker-end:none;visibility:visible;overflow:visible;filter:url(#filter3830);enable-background:accumulate;font-family:TSCu_Comic;-inkscape-font-specification:TSCu_Comic"
-       width="512"
-       height="512" />
     <use
        height="512"
        width="512"

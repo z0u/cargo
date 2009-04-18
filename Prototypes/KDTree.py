@@ -48,7 +48,7 @@ class KDTree:
 	def compare(self, axis):
 		'''Returns a function that compares two elements based on the specified
 		axis. Override this if the elements are more than just points.'''
-		return lambda e1, e2: e1[axis] - e2[axis]
+		return lambda e1, e2: cmp(e1[axis], e2[axis])
 	
 	def getValue(self, e, axis):
 		'''Get the value of an element for a given axis. Override this if the
@@ -187,15 +187,16 @@ if __name__ == "__main__":
 		is used to sort the resultant lists so they may be compared.'''
 		diff = 0
 		for i in range(0, len(e1)):
-			diff = e1[i] - e2[i]
+			diff = cmp(e1[i], e2[i])
 			if diff != 0:
 				return diff
 		return diff
 	
 	def createRandomPoint(dimensions, lowerBound, upperBound):
 		p = []
+		bredth = upperBound - lowerBound
 		for i in range(0, dimensions):
-			p.append(random.randint(lowerBound, upperBound))
+			p.append((random.random() * bredth) - lowerBound)
 		return p
 	
 	def createRandomElements(dimensions, nElements, lowerBound, upperBound):

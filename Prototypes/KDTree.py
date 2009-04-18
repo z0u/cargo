@@ -121,81 +121,32 @@ class KDTree:
 		given bounds. This is an ITERATIVE depth-first search. If root is None,
 		an empty list is returned. Don't call this directly; use getRangeIter
 		instead.'''
-		n = root
-		tempN = None
-		lastN = None
 		elemInRange = []
-		#nLeafNodesTested = 0
-		#nNodesVisited = 0
+		queue = [root]
 		
-		while n != None:
-			#nNodesVisited = nNodesVisited + 1
+		while queue != []:
+			n = queue.pop()
+			
 			if n.Element:
 				#
 				# Found a leaf node. Still need to test it properly.
 				#
-				#nLeafNodesTested = nLeafNodesTested + 1
 				if self.isInRange(n.Element, bounds):
-					#print "appending", n.Element
 					elemInRange.append(n.Element)
-				
-				#
-				# Back up to parent.
-				#
-				#print "ascending"
-				lastN = n
-				n = n.Parent
-			elif lastN == n.Parent:
-				#
-				# Coming down.
-				#
+			else:
 				if n.Value > bounds.LowerBound[n.Axis]:
 					#
 					# Within lower bound on this axis. Check the left tree. We
 					# know this isn't a leaf, so we can assume n.A exists.
 					#
-					#print "Descending left"
-					lastN = n
-					n = n.A
-				elif n.Value < bounds.UpperBound[n.Axis]:
+					queue.append(n.A)
+				if n.Value < bounds.UpperBound[n.Axis]:
 					#
 					# Within upper bound on this axis. Check the right tree. We
 					# know this isn't a leaf, so we can assume n.B exists.
 					#
-					#print "Descending right"
-					lastN = n
-					n = n.B
-				else:
-					#
-					# Failed bounds test. Back up to parent.
-					#
-					#print "Failed bounds test. Ascending"
-					lastN = n
-					n = n.Parent
-			else:
-				#
-				# Going up.
-				#
-				if lastN == n.A and n.Value < bounds.UpperBound[n.Axis]:
-					#
-					# We've already visited the left subtree, but not the right.
-					# Within upper bound on this axis. Check the right tree. We
-					# know this isn't a leaf, so we can assume n.B exists.
-					#
-					#print "Descending right"
-					lastN = n
-					n = n.B
-				else:
-					#
-					# Right sub-tree complete; implies left complete also.
-					# Go up.
-					#
-					#print "Right-side complete. Ascending"
-					lastN = n
-					n = n.Parent
+					queue.append(n.B)
 		
-		#print "Tested %d/%d elements." % (nLeafNodesTested, len(elements))
-		#print "Visited %d/%d nodes." % (nNodesVisited, self.nNodes)
 		return elemInRange
 		
 	def getRange(self, centre, radius):

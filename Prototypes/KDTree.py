@@ -1,5 +1,6 @@
 #
 # Copyright 2009 Alex Fraser <alex@phatcore.com>
+# Copyright 2009 Mark Triggs <mst@dishevelled.net>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,10 +28,8 @@ class Cube:
 
 class KDNode:
 	def __init__(self):
-		self.Depth = None
 		self.Axis = None
 		self.Value = None
-		self.Parent = None
 		self.A = None
 		self.B = None
 		self.Element = None
@@ -38,13 +37,10 @@ class KDNode:
 class KDTree:
 	dimensions = None
 	root = None
-	maxDepth = None
-	nNodes = None
 	
 	def __init__(self, elements, dimensions):
+		'''Create a new KDTree.'''
 		self.dimensions = dimensions
-		self.maxDepth = -1
-		self.nNodes = 0
 		
 		if len(elements) > 0:
 			self.root = self.construct(elements, 0, None)
@@ -60,12 +56,9 @@ class KDTree:
 		return e[axis]
 		
 	def construct(self, elements, depth, parent):
-		'''Recursively create a KDTree from a list of elements.'''
-		if depth > self.maxDepth:
-			self.maxDepth = depth
-		
+		'''Recursively create a KDTree from a list of elements. This isn't
+		elegant, and is intended to be done only once.'''
 		n = KDNode()
-		self.nNodes = self.nNodes + 1
 		n.Depth = depth
 		n.Axis = depth % self.dimensions
 		n.Parent = parent
@@ -81,32 +74,6 @@ class KDTree:
 		n.B = self.construct(elements[medianIndex:], depth + 1, n)
 		return n
 	
-	def _getRange(self, bounds, n):
-		'''Get a list of all the elements in the tree (n) that are within the
-		given bounds. This is a RECURSIVE depth-first search. n must not be
-		None. Don't call this directly; use getRange instead.'''
-		if n.Element:
-			# Leaf node: the other axes still need to be checked.
-			for axis in range(0, self.dimensions):
-				val = self.getValue(n.Element, axis)
-				if (val <= bounds.LowerBound[axis] or
-				    val >= bounds.UpperBound[axis]):
-					#print "ascending"
-					return []
-			#print "appending", n.Element
-			#print "ascending"
-			return [n.Element]
-		
-		elements = []
-		if n.Value > bounds.LowerBound[n.Axis]:
-			#print "Descending left"
-			elements = elements + self._getRange(bounds, n.A)
-		if n.Value < bounds.UpperBound[n.Axis]:
-			#print "Descending right"
-			elements = elements + self._getRange(bounds, n.B)
-		#print "Right-side complete. Ascending"
-		return elements
-	
 	def isInRange(self, element, bounds):
 		'''Tests whether an element is within bounds. This is the last step of
 		the search.'''
@@ -116,13 +83,12 @@ class KDTree:
 				return False
 		return True
 	
-	def _getRangeIter(self, bounds, root):
-		'''Get a list of all the elements in the tree (root) that are within the
-		given bounds. This is an ITERATIVE depth-first search. If root is None,
-		an empty list is returned. Don't call this directly; use getRangeIter
-		instead.'''
+	def getRange(self, centre, radius):
+		'''Get a list of all the elements in the tree that are within the given
+		bounds. This is an iterative depth-first search.'''
+		bounds = Cube(centre, radius)
 		elemInRange = []
-		queue = [root]
+		queue = [self.root]
 		
 		while queue != []:
 			n = queue.pop()
@@ -148,19 +114,6 @@ class KDTree:
 					queue.append(n.B)
 		
 		return elemInRange
-		
-	def getRange(self, centre, radius):
-		'''Get a list of all the elements in the tree that are within the given
-		bounds. This is a RECURSIVE depth-first search.'''
-		if self.root == None:
-			return []
-		else:
-			return self._getRange(Cube(centre, radius), self.root)
-		
-	def getRangeIter(self, centre, radius):
-		'''Get a list of all the elements in the tree that are within the given
-		bounds. This is an ITERATIVE depth-first search.'''
-		return self._getRangeIter(Cube(centre, radius), self.root)
 	
 	def getElementStr(self, e):
 		'''Get the string form of an element. Used for printing.'''
@@ -176,13 +129,11 @@ class KDTree:
 			print "%s%s" % (indent, self.getElementStr(n.Element))
 		else:
 			print "%s%s" % (indent, "A"),
-			print "Depth:", n.A.Depth,
 			print "Axis:", n.A.Axis,
 			print "Value:", n.A.Value
 			self.prettyPrint(n.A, indent + "  ")
 			
 			print "%s%s" % (indent, "B"),
-			print "Depth:", n.B.Depth,
 			print "Axis:", n.B.Axis,
 			print "Value:", n.B.Value
 			self.prettyPrint(n.B, indent + "  ")
@@ -222,7 +173,8 @@ if __name__ == "__main__":
 		for e in elements:
 			withinRange = True
 			for axis in range(0, numAxes):
-				if e[axis] <= bounds.LowerBound[axis] or e[axis] >= bounds.UpperBound[axis]:
+				if (e[axis] <= bounds.LowerBound[axis] or
+				    e[axis] >= bounds.UpperBound[axis]):
 					withinRange = False
 					break
 			if withinRange:
@@ -265,7 +217,6 @@ if __name__ == "__main__":
 		tree = KDTree(elements, len(elements[0]))
 		t2 = time.time()
 		print "%.4fms." % ((t2 - t1) * 1000)
-		print "Depth:", tree.maxDepth
 		print
 		
 		print "Testing %d times." % REPETITIONS
@@ -277,20 +228,12 @@ if __name__ == "__main__":
 			point = createRandomPoint(len(elements[0]), lowerBound, upperBound)
 			
 			#
-			# Recursive version
+			# KDTree version
 			#
 			t1 = time.time()
 			elemInRange = tree.getRange(point, RADIUS)
 			t2 = time.time()
 			treeTimes.append(t2 - t1)
-			
-			#
-			# Iterative version
-			#
-			t1 = time.time()
-			elemInRangeIter = tree.getRangeIter(point, RADIUS)
-			t2 = time.time()
-			treeTimesIter.append(t2 - t1)
 			
 			#
 			# Brute-force version
@@ -303,35 +246,24 @@ if __name__ == "__main__":
 			nElements = nElements + len(elemInRangeBF)
 			
 			elemInRange.sort(compareKD)
-			elemInRangeIter.sort(compareKD)
 			elemInRangeBF.sort(compareKD)
 			if elemInRange != elemInRangeBF:
-				print "ERROR: kd-tree recursive results don't match brute-force method."
+				print "ERROR: kd-tree results don't match brute-force method."
 				print "Centre: %s; Radius: %d" % (str(point), RADIUS)
 				print "kd-tree:    ", elemInRange
-				print "brute-force:", elemInRangeBF
-			if elemInRangeIter != elemInRangeBF:
-				print "ERROR: kd-tree iterative results don't match brute-force method."
-				print "Centre: %s; Radius: %d" % (str(point), RADIUS)
-				print "kd-tree:    ", elemInRangeIter
 				print "brute-force:", elemInRangeBF
 		nElements = nElements / REPETITIONS
 		
 		avTreeTimes = 0.0
-		avTreeTimesIter = 0.0
 		avBFTimes = 0.0
 		for i in range(0, REPETITIONS):
 			avTreeTimes = avTreeTimes + treeTimes[i]
-			avTreeTimesIter = avTreeTimesIter + treeTimesIter[i]
 			avBFTimes = avBFTimes + bfTimes[i]
 		avTreeTimes = avTreeTimes / REPETITIONS
-		avTreeTimesIter = avTreeTimesIter / REPETITIONS
 		avBFTimes = avBFTimes / REPETITIONS
 		print "Average KDTree.getRange time:     %.4fms" % (avTreeTimes * 1000)
-		print "Average KDTree.getRangeIter time: %.4fms" % (avTreeTimesIter * 1000)
 		print "Average bruteForceGetRange time:  %.4fms" % (avBFTimes * 1000)
 		print "Ratio:      %.4f" % (avTreeTimes / avBFTimes)
-		print "Iter Ratio: %.4f" % (avTreeTimesIter / avBFTimes)
 		print "On average, %.4f elements (%.4f%%) were within range." % (nElements, nElements / len(elements))
 		print "---------"
 	

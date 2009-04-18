@@ -1,0 +1,11 @@
+= Contributors =
+Story:            Alex Fraser, Lara Mikocki
+Character design: Alex Fraser, Lara Mikocki
+Storyboards:      Alex Fraser
+3D modelling:     Alex Fraser
+Rigging:          Alex Fraser
+Animation:        Alex Fraser
+Textures:         Alex Fraser
+Code:             Alex Fraser, Mark Triggs
+Engine:           The Blender Foundation
+

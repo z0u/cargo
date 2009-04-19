@@ -32,7 +32,7 @@ class KDNode:
 		self.Value = None
 		self.A = None
 		self.B = None
-		self.Element = None
+		self.Elements = None
 
 class KDTree:
 	def __init__(self, elements, leafSize = 32):
@@ -81,8 +81,7 @@ class KDTree:
 		n.Axis = depth % self.dimensions
 		n.Parent = parent
 		if len(elements) <= self.leafSize:
-			n.Element = elements
-#			n.Element = elements[0]
+			n.Elements = elements
 			return n
 		
 		elements.sort(self.compare(n.Axis))
@@ -111,13 +110,11 @@ class KDTree:
 		while queue != []:
 			n = queue.pop()
 			
-			if n.Element:
+			if n.Elements:
 				#
 				# Found a leaf node. Still need to test it properly.
 				#
-#				if self.isInRange(n.Element, bounds):
-#					elemInRange.append(n.Element)
-				for e in n.Element:
+				for e in n.Elements:
 					if self.isInRange(e, bounds):
 						elemInRange.append(e)
 			else:
@@ -146,8 +143,9 @@ class KDTree:
 			n = self.root
 		if n == None:
 			return
-		if n.Element:
-			print "%s%s" % (indent, self.getElementStr(n.Element))
+		if n.Elements:
+			for e in n.Elements:
+				print "%s%s" % (indent, self.getElementStr(e))
 		else:
 			print "%s%s" % (indent, "A"),
 			print "Axis:", n.A.Axis,
@@ -235,12 +233,12 @@ if __name__ == "__main__":
 			elements.append(e)
 		return elements
 	
-	def benchmark(elements, lowerBound, upperBound):
+	def benchmark(elements, leafSize, lowerBound, upperBound):
 		'''Time the execution of all the search algorithms.'''
-		REPETITIONS = 10
+		REPETITIONS = 20
 		RADIUS = 10
 		t1 = time.time()
-		tree = KDTree(elements)
+		tree = KDTree(elements, leafSize)
 		t2 = time.time()
 		print ("%3d, %9d, %5d, %8d, %8.2f," %
 		       (tree.dimensions,
@@ -291,24 +289,16 @@ if __name__ == "__main__":
 		avTreeTimes = avTreeTimes / REPETITIONS
 		avBFTimes = avBFTimes / REPETITIONS
 		print ("%6.1f, %7.2f, %6.2f" %
-		       (nElements,          # average number found
-		        avBFTimes * 1000,   # average brute-force search time
+		       (nElements,           # average number found
+		        avBFTimes * 1000,    # average brute-force search time
 		        avTreeTimes * 1000)) # average kd-tree search time
 	
 	print "dim, nElements, depth, leafSize,    cTime, nFound,  bfTime, kdTime"
-	elements = createRandomElements(2, 100, 0, 100)
-	benchmark(elements, 0, 100)
-	elements = createRandomElements(2, 1000, 0, 100)
-	benchmark(elements, 0, 100)
-	elements = createRandomElements(2, 10000, 0, 100)
-	benchmark(elements, 0, 100)
-	elements = createRandomElements(2, 100000, 0, 100)
-	benchmark(elements, 0, 100)
-	elements = createRandomElements(3, 100, 0, 100)
-	benchmark(elements, 0, 100)
-	elements = createRandomElements(3, 1000, 0, 100)
-	benchmark(elements, 0, 100)
-	elements = createRandomElements(3, 10000, 0, 100)
-	benchmark(elements, 0, 100)
-	elements = createRandomElements(3, 100000, 0, 100)
-	benchmark(elements, 0, 100)
+	lowerBound = -50
+	upperBound = 50
+	for dimensions in [1, 2, 3, 4, 5]:
+		for nElements in [100, 1000, 10000, 100000]:
+			elements = createRandomElements(dimensions, nElements, lowerBound, upperBound)
+			for leafSize in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
+				benchmark(elements, leafSize, lowerBound, upperBound)
+	

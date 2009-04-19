@@ -60,7 +60,7 @@ class KDTree:
 		element. Overrid this if the elements are more than just points.'''
 		self.dimensions = len(element)
 	
-	def compare(self, axis):
+	def elemCmp(self, axis):
 		'''Returns a function that compares two elements based on the specified
 		axis. Override this if the elements are more than just points.'''
 		return lambda e1, e2: cmp(e1[axis], e2[axis])
@@ -77,14 +77,12 @@ class KDTree:
 			self.maxDepth = depth
 		
 		n = KDNode()
-		n.Depth = depth
 		n.Axis = depth % self.dimensions
-		n.Parent = parent
 		if len(elements) <= self.leafSize:
 			n.Elements = elements
 			return n
 		
-		elements.sort(self.compare(n.Axis))
+		elements.sort(self.elemCmp(n.Axis))
 		medianIndex = len(elements) / 2
 		n.Value = self.getValue(elements[medianIndex], n.Axis)
 		n.A = self.construct(elements[0:medianIndex], depth + 1, n)
@@ -168,7 +166,7 @@ class GameObjectXYTree(KDTree):
 		be roughly on a plane.'''
 		self.dimensions = 2
 	
-	def compare(self, e1, e2, axis):
+	def elemCmp(self, e1, e2, axis):
 		'''Returns a function that compares two game objects based on the
 		specified axis. axis will be 0 (x) or 1 (y), so it needs no
 		modification.'''

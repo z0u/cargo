@@ -35,7 +35,7 @@ class KDNode:
 		self.Elements = None
 
 class KDTree:
-	def __init__(self, elements, leafSize = 32):
+	def __init__(self, elements, leafSize = 8):
 		'''Create a new KDTree from a list of elements. leafSize determines the
 		largest size a leaf can be. If a node would store more elements than
 		this, it will be split in two. Setting this to be greater than 1 will

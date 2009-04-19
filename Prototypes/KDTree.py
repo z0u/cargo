@@ -35,15 +35,30 @@ class KDNode:
 		self.Element = None
 
 class KDTree:
-	dimensions = None
-	root = None
-	
-	def __init__(self, elements, dimensions):
-		'''Create a new KDTree.'''
-		self.dimensions = dimensions
+	def __init__(self, elements, leafSize = 32):
+		'''Create a new KDTree from a list of elements. leafSize determines the
+		largest size a leaf can be. If a node would store more elements than
+		this, it will be split in two. Setting this to be greater than 1 will
+		reduce the depth of the tree, which can speed up traversal. Large values
+		will result in a mostly flat list, which would also be slow.'''
+		self.leafSize = leafSize
+		
+		#
+		# maxDepth for diagnostics only.
+		#
+		self.maxDepth = 0
 		
 		if len(elements) > 0:
+			self.setDimensions(elements[0])
 			self.root = self.construct(elements, 0, None)
+		else:
+			self.dimensions = None
+			self.root = None
+	
+	def setDimensions(self, element):
+		'''Configures the KD tree to have the same number of dimensions as
+		element. Overrid this if the elements are more than just points.'''
+		self.dimensions = len(element)
 	
 	def compare(self, axis):
 		'''Returns a function that compares two elements based on the specified
@@ -58,13 +73,16 @@ class KDTree:
 	def construct(self, elements, depth, parent):
 		'''Recursively create a KDTree from a list of elements. This isn't
 		elegant, and is intended to be done only once.'''
+		if depth > self.maxDepth:
+			self.maxDepth = depth
+		
 		n = KDNode()
 		n.Depth = depth
 		n.Axis = depth % self.dimensions
 		n.Parent = parent
-		if len(elements) == 1:
-			n.Element = elements[0]
-			n.Value = self.getValue(elements[0], n.Axis)
+		if len(elements) <= self.leafSize:
+			n.Element = elements
+#			n.Element = elements[0]
 			return n
 		
 		elements.sort(self.compare(n.Axis))
@@ -97,8 +115,11 @@ class KDTree:
 				#
 				# Found a leaf node. Still need to test it properly.
 				#
-				if self.isInRange(n.Element, bounds):
-					elemInRange.append(n.Element)
+#				if self.isInRange(n.Element, bounds):
+#					elemInRange.append(n.Element)
+				for e in n.Element:
+					if self.isInRange(e, bounds):
+						elemInRange.append(e)
 			else:
 				if n.Value > bounds.LowerBound[n.Axis]:
 					#
@@ -139,9 +160,15 @@ class KDTree:
 			self.prettyPrint(n.B, indent + "  ")
 
 class GameObjectXYTree(KDTree):
-	'''A KDTree for Blender Game Engine objects.'''
-	def __init__(self, elements):
-		KDTree.__init__(self, elements, 2)
+	'''A KDTree for Blender Game Engine objects that are roughly situated on an
+	XY plane.'''
+	def __init__(self, elements, leafSize = 32):
+		KDTree.__init__(self, elements, leafSize)
+	
+	def setDimensions(self, element):
+		'''Set the number of dimensions to two, as all objects are expected to
+		be roughly on a plane.'''
+		self.dimensions = 2
 	
 	def compare(self, e1, e2, axis):
 		'''Returns a function that compares two game objects based on the
@@ -212,15 +239,16 @@ if __name__ == "__main__":
 		'''Time the execution of all the search algorithms.'''
 		REPETITIONS = 10
 		RADIUS = 10
-		print "Processing %d %dD elements." % (len(elements), len(elements[0]))
-		print "Tree constructed in ...",
 		t1 = time.time()
-		tree = KDTree(elements, len(elements[0]))
+		tree = KDTree(elements)
 		t2 = time.time()
-		print "%.4fms." % ((t2 - t1) * 1000)
-		print
+		print ("%3d, %9d, %5d, %8d, %8.2f," %
+		       (tree.dimensions,
+		        len(elements),
+		        tree.maxDepth,
+		        tree.leafSize,
+		        (t2 - t1) * 1000)),
 		
-		print "Testing %d times." % REPETITIONS
 		nElements = 0.0
 		treeTimes = []
 		treeTimesIter = []
@@ -262,28 +290,25 @@ if __name__ == "__main__":
 			avBFTimes = avBFTimes + bfTimes[i]
 		avTreeTimes = avTreeTimes / REPETITIONS
 		avBFTimes = avBFTimes / REPETITIONS
-		print "Average KDTree.getRange time:     %.4fms" % (avTreeTimes * 1000)
-		print "Average bruteForceGetRange time:  %.4fms" % (avBFTimes * 1000)
-		print "Ratio:      %.4f" % (avTreeTimes / avBFTimes)
-		print "On average, %.4f elements (%.4f%%) were within range." % (nElements, nElements / len(elements))
-		print "---------"
+		print ("%6.1f, %7.2f, %6.2f" %
+		       (nElements,          # average number found
+		        avBFTimes * 1000,   # average brute-force search time
+		        avTreeTimes * 1000)) # average kd-tree search time
 	
-	print "==================="
-	print "== Running tests =="
-	print "==================="
+	print "dim, nElements, depth, leafSize,    cTime, nFound,  bfTime, kdTime"
 	elements = createRandomElements(2, 100, 0, 100)
-	benchmark(elements, 0, 100)
-	elements = createRandomElements(3, 100, 0, 100)
 	benchmark(elements, 0, 100)
 	elements = createRandomElements(2, 1000, 0, 100)
 	benchmark(elements, 0, 100)
-	elements = createRandomElements(3, 1000, 0, 100)
-	benchmark(elements, 0, 100)
 	elements = createRandomElements(2, 10000, 0, 100)
 	benchmark(elements, 0, 100)
-	elements = createRandomElements(3, 10000, 0, 100)
-	benchmark(elements, 0, 100)
 	elements = createRandomElements(2, 100000, 0, 100)
+	benchmark(elements, 0, 100)
+	elements = createRandomElements(3, 100, 0, 100)
+	benchmark(elements, 0, 100)
+	elements = createRandomElements(3, 1000, 0, 100)
+	benchmark(elements, 0, 100)
+	elements = createRandomElements(3, 10000, 0, 100)
 	benchmark(elements, 0, 100)
 	elements = createRandomElements(3, 100000, 0, 100)
 	benchmark(elements, 0, 100)

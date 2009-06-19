@@ -3,6 +3,23 @@ from Blender import Mathutils
 def _lerp(A, B, fac):
 	return A + ((B - A) * fac)
 
+def _smerp(CurrentDelta, CurrentValue, Target, SpeedFactor, Responsiveness):
+	'''Smooth exponential average interpolation
+	For each time step, try to move toward the target by some fraction of
+	the distance (as is the case for normal exponential averages). If this
+	would result in a positive acceleration, take a second exponential
+	average of the acceleration. The resulting resulting motion has smooth
+	acceleration and smooth deceleration.'''
+	
+	targetDelta = (Target - CurrentValue) * SpeedFactor
+	if (targetDelta * targetDelta > CurrentDelta * CurrentDelta):
+	    CurrentDelta = CurrentDelta * (1.0 - Responsiveness) + targetDelta * Responsiveness
+	else:
+		CurrentDelta = targetDelta
+	
+	CurrentValue = CurrentValue + CurrentDelta
+	return CurrentDelta, CurrentValue
+
 def SlowCopyRot(c):
 	'''
 	Slow parenting (Rotation only). The owner will copy the rotation of the

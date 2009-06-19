@@ -10,44 +10,49 @@ def BendLeaf(c):
 	'''
 	o = c.owner
 	sensors = c.sensors
-	
-	o['Hit'] = False
-	hitObs = {}
 
 	#
-	# Find out the bending force of all objects touching the leaf. The further
-	# an object is from the leaf's origin, the greater its effect. This is done
-	# in two passes: the first stores the objects in a set to ensure they aren't
-	# counted twice.
+	# Pass one: Find out which objects are touching the leaf.
 	#
-	origin = Mathutils.Vector(o.worldPosition)
-	distRange = o['MaxDist'] - o['MinDist']
+	hitObs = set()
 	for s in sensors:
 		if not s.positive:
 			continue
-		o['Hit'] = True
 		for ob in s.hitObjectList:
-			pos = Mathutils.Vector(ob.worldPosition)
-			distance = (pos - origin).magnitude
-			influence = (distance - o['MinDist']) / distRange
-			hitObs[ob] = (influence, ob['DynamicMass'])
+			hitObs.add(ob)
+	
+	o['Hit'] = len(hitObs) > 0
 	
 	#
 	# Pass two: add up the effect of all touching objects.
 	#
+	origin = Mathutils.Vector(o.worldPosition)
+	distRange = o['MaxDist'] - o['MinDist']
 	if len(hitObs) > 0:
 		totalInfluence = 0.0
-		for influence, dynMass in hitObs.values():
-			totalInfluence = totalInfluence + influence * dynMass
+		for ob in hitObs:
+			pos = Mathutils.Vector(ob.worldPosition)
+			distance = (pos - origin).magnitude
+			influence = (distance - o['MinDist']) / distRange
+			influence = influence * ob['DynamicMass']
+			totalInfluence = totalInfluence + influence
 		totalInfluence = totalInfluence * o['InfluenceMultiplier']
 		
 		bendAngle = o['RestAngle'] + totalInfluence * o['MaxAngle']
-		if bendAngle > o['MaxAngle']: bendAngle = o['MaxAngle']
-		elif bendAngle < o['MinAngle']: bendAngle = o['MinAngle']
+		if bendAngle > o['MaxAngle']:
+			bendAngle = o['MaxAngle']
+		elif bendAngle < o['MinAngle']:
+			bendAngle = o['MinAngle']
 	else:
 		bendAngle = o['RestAngle']
-
+	
+	#
+	# Interpolate to target angle.
+	#
 	o['CurrentDelta'], o['BendAngle'] = Utilities._smerp(o['CurrentDelta'], o['BendAngle'], bendAngle, o['SpeedFactor'], o['Responsiveness'])
-
+	
+	#
+	# Apply deformation.
+	#
 	actuator = c.actuators['aBend']
 	c.activate(actuator)

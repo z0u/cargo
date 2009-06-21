@@ -1,5 +1,29 @@
 from Blender import Mathutils
 
+class SemanticGameObject:
+	'''Abstract class that decorates game engine objects. Children will be
+	parsed and decorated according to their type.'''
+	Owner = None
+	
+	def __init__(self, owner):
+		self.Owner = owner
+		self.parseChildren()
+
+	def parseChild(self, child, type):
+		return False
+	
+	def parseChildren(self):
+		for child in self.Owner.children:
+			try:
+				if (not self.parseChild(child, child['Type'])):
+					print "Warning: child %s of %s has unexpected type (%s)" % (
+						child.name,
+						self.Owner.name,
+						child['Type'])
+			
+			except AttributeError:
+				continue
+
 def _lerp(A, B, fac):
 	return A + ((B - A) * fac)
 

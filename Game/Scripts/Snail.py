@@ -1,12 +1,29 @@
 #
-# Create the structure required to control a snail. Python objects
-# will be created to match the types of Blender objects in the
-# hierarchy, with the owner as the root.
+# Copyright 2009 Alex Fraser <alex@phatcore.com>
 #
-# Call this script once. The rest of the processing should be done
-# by fetching the resulting object from the GameLogic.Snails
-# dictionary.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+'''
+Create the structure required to control a snail. Python objects
+will be created to match the types of Blender objects in the
+hierarchy, with the owner as the root.
+
+Call this script once. The rest of the processing should be done
+by fetching the resulting object from the GameLogic.Snails
+dictionary.
+'''
 
 from Blender import Mathutils
 import Utilities

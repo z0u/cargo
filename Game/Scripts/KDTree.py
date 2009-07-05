@@ -35,25 +35,42 @@ class KDNode:
 		self.Elements = None
 
 class KDTree:
-	def __init__(self, elements, leafSize = 8):
-		'''Create a new KDTree from a list of elements. leafSize determines the
-		largest size a leaf can be. If a node would store more elements than
-		this, it will be split in two. Setting this to be greater than 1 will
-		reduce the depth of the tree, which can speed up traversal. Large values
-		will result in a mostly flat list, which would also be slow.'''
-		self.leafSize = leafSize
-		
+	def __init__(self):
 		#
 		# maxDepth for diagnostics only.
 		#
 		self.maxDepth = 0
-		
+		self.dimensions = None
+		self.root = None
+	
+	def ConstructFromList(self, elements, leafSize = 8):
+		'''Populate a KDTree from a list of elements. leafSize determines the
+		largest size a leaf can be. If a node would store more elements than
+		this, it will be split in two. Setting this to be greater than 1 will
+		reduce the depth of the tree, which can speed up traversal. Large values
+		will result in a mostly flat list, which would also be slow.'''
 		if len(elements) > 0:
 			self.setDimensions(elements[0])
-			self.root = self.construct(elements, 0, None)
-		else:
-			self.dimensions = None
-			self.root = None
+			self.root = self._constructFromList(elements, leafSize, 0, None)
+	
+	def _constructFromList(self, elements, depth, parent):
+		'''Recursively create a KDTree from a list of elements. This isn't
+		elegant, and is intended to be done only once.'''
+		if depth > self.maxDepth:
+			self.maxDepth = depth
+		
+		n = KDNode()
+		n.Axis = depth % self.dimensions
+		if len(elements) <= self.leafSize:
+			n.Elements = elements
+			return n
+		
+		elements.sort(self.elemCmp(n.Axis))
+		medianIndex = len(elements) / 2
+		n.Value = self.getValue(elements[medianIndex], n.Axis)
+		n.A = self._constructFromList(elements[0:medianIndex], depth + 1, n)
+		n.B = self._constructFromList(elements[medianIndex:], depth + 1, n)
+		return n
 	
 	def setDimensions(self, element):
 		'''Configures the KD tree to have the same number of dimensions as
@@ -70,25 +87,6 @@ class KDTree:
 		'''Get the value of an element for a given axis. Override this if the
 		elements are more than just points.'''
 		return e[axis]
-		
-	def construct(self, elements, depth, parent):
-		'''Recursively create a KDTree from a list of elements. This isn't
-		elegant, and is intended to be done only once.'''
-		if depth > self.maxDepth:
-			self.maxDepth = depth
-		
-		n = KDNode()
-		n.Axis = depth % self.dimensions
-		if len(elements) <= self.leafSize:
-			n.Elements = elements
-			return n
-		
-		elements.sort(self.elemCmp(n.Axis))
-		medianIndex = len(elements) / 2
-		n.Value = self.getValue(elements[medianIndex], n.Axis)
-		n.A = self.construct(elements[0:medianIndex], depth + 1, n)
-		n.B = self.construct(elements[medianIndex:], depth + 1, n)
-		return n
 	
 	def isInRange(self, element, bounds):
 		'''Tests whether an element is within bounds. This is the last step of
@@ -160,31 +158,8 @@ class BlenderObjectXYTree(KDTree):
 	'''A KDTree for Blender objects that are roughly situated on an XY plane.
 	The structure can be baked into clusters for hierarchical LOD in the game
 	engine.'''
-
-	def __init__(self, elements, leafSize = 32):
-		KDTree.__init__(self, elements, leafSize)
 	
-	def setDimensions(self, _):
-		'''Set the number of dimensions to two, as all objects are expected to
-		be roughly on a plane.'''
-		self.dimensions = 2
-	
-	def elemCmp(self, e1, e2, axis):
-		'''Returns a function that compares two Blender objects based on the
-		specified axis. axis will be 0 (x) or 1 (y), so it needs no
-		modification.'''
-		return lambda e1, e2: e1.getLocation('worldspace')[axis] - e2.getLocation('worldspace')[axis]
-	
-	def getValue(self, e, axis):
-		'''Get the position of an element on a given axis.'''
-		return e.getLocation('worldspace')[axis]
-	
-	def getElementStr(self, e):
-		'''Get the name of a game object. Used when printing the tree
-		(debugging).'''
-		return e.getName()
-	
-	def bakeClusters(self, n = None):
+	def Serialise(self, n = None):
 		'''
 		Bake each level into real Blender objects, preserving the tree hierarchy
 		using parent/child relationships. Tree metadata, like the median value
@@ -207,11 +182,39 @@ class BlenderObjectXYTree(KDTree):
 			print "Axis:", n.B.Axis,
 			print "Value:", n.B.Value
 			self.prettyPrint(n.B, indent + "  ")
+	
+	def setDimensions(self, _):
+		'''Set the number of dimensions to two, as all objects are expected to
+		be roughly on a plane.'''
+		self.dimensions = 2
+	
+	def elemCmp(self, e1, e2, axis):
+		'''Returns a function that compares two Blender objects based on the
+		specified axis. axis will be 0 (x) or 1 (y), so it needs no
+		modification.'''
+		return lambda e1, e2: e1.getLocation('worldspace')[axis] - e2.getLocation('worldspace')[axis]
+	
+	def getValue(self, e, axis):
+		'''Get the position of an element on a given axis.'''
+		return e.getLocation('worldspace')[axis]
+	
+	def getElementStr(self, e):
+		'''Get the name of a game object. Used when printing the tree
+		(debugging).'''
+		return e.getName()
 
 class GameObjectXYTree(KDTree):
+	def Deserialise(self, root):
+		'''Populate this tree with a hierarchy. The hierarchy should have been
+		created previously using the BlenderObjectXYTree.Serialise method.'''
+		self.root = self._deserialise(root, 0)
 	
-	def __init__(self, elements, leafSize = 32):
-		KDTree.__init__(self, elements, leafSize)
+	def _deserialise(self, element, depth):
+		n = KDNode()
+		n.Axis = depth % self.dimensions
+		
+		if element.getProperty('KDLeaf'):
+			n.Elements = element.children
 	
 	def setDimensions(self, _):
 		'''Set the number of dimensions to two, as all objects are expected to
@@ -288,7 +291,8 @@ if __name__ == "__main__":
 		REPETITIONS = 20
 		RADIUS = 10
 		t1 = time.time()
-		tree = KDTree(elements, leafSize)
+		tree = KDTree()
+		tree.ConstructFromList(elements, leafSize)
 		t2 = time.time()
 		print ("%3d, %9d, %5d, %8d, %8.2f," %
 		       (tree.dimensions,

@@ -43,59 +43,23 @@ class Cube:
 				return false
 		return true
 
-class GOKDTree():
+class LODTree:
 	'''A KD-tree of game objects for hierarchical LOD management.'''
-	
-	def __init__(self, owner):
-		'''Populate this tree with a hierarchy. The hierarchy should have been
-		created previously using the BlenderObjectXYTree.Serialise method.'''
+	def __init__(self, root):
+		'''Create a new LODTree from an existing hierarchy of game objects.
+		Each object in the tree should have the following parameters:
+		enum  KDType        { KDLeftBranch, KDRightBranch, KDLeaf }
+		float KDAxis
+		float KDMedianValue'''
 		
-		#
-		# The number of dimensions are not needed to be known, because each node
-		# explicitely stores its axis.
-		#
-		
-		self.Owner = owner
-		self.MedianValue = owner['KDMedianValue']
-		self.Axis = owner['KDAxis']
-		self.Left = None
-		self.Right = None
-		
-		if owner['KDType'] == 'Leaf':
-			return
-		
-		for child in owner.children:
-			if not child.has_key('KDType'):
-				continue
-			if child['KDType'] == 'LeftBranch':
-				if self.Left:
-					raise StructureError, "%s has two left branches." % owner.name
-				self.Left = GOXYTree(child)
-			elif child['KDType'] == 'RightBranch':
-				if self.Right:
-					raise StructureError, "%s has two right branches." % owner.name
-				self.Right = GOXYTree(child)
-			else:
-				raise StructureError, "%s has unknown KDType: %s" % (child.name, child['KDType'])
-		if not self.Left or not self.Right:
-			raise StructureError, "Node is not a leaf, but is missing a branch."
-	
-	def show(self):
-		#
-		# Activate self, and recursively hide any children that are visible. But
-		# the children might need to time out first. Maybe we should keep a set:
-		# currentlyVisible = {nodes}. Increment the frame counter for each node.
-		# If a node is in range, it frame counter is reset to 0. If the counter
-		# reaches (say) 100, it is deactivated...
-		#
-		pass
+		self.Root = LODNode(root)
 	
 	def getRange(self, centre, radius):
 		'''Get a list of all the leaves in the tree that have objects that are
 		within the given bounds. This is an iterative depth-first search.'''
 		bounds = Cube(centre, radius)
 		leavesInRange = []
-		queue = [self]
+		queue = [self.Root]
 		
 		while queue != []:
 			n = queue.pop()
@@ -123,4 +87,179 @@ class GOKDTree():
 						break
 		
 		return leavesInRange
+
+class LODNode:
+	def __init__(self, owner):
+		'''Populate this tree with a hierarchy. The hierarchy should have been
+		created previously using the BlenderObjectXYTree.Serialise method.'''
+		self.Owner = owner
+		
+		#
+		# In a path from the root to any leaf, only one node can be active.
+		# Visible:        This node is visible. None of its descendants or
+		#                 anscestors are.
+		# SubtreeVisible: Some part of the sub-tree is visible (this node or
+		#                 some of its descendants).
+		# Implicit:       This node has no descendants in range, but it is
+		#                 visible because its sibling has been activated.
+		#
+		self.Visible = false
+		self.SubtreeVisible = false
+		self.Implicit = false
 	
+	def ActivateRange(self, bounds):
+		'''
+		Traverse the tree to make the leaves that are in range 'active' - i.e.
+		make their constituent parts visible, hiding the low-LOD clusters that
+		would be shown otherwise.
+		
+		Parameters:
+		bounds: The bounding cube to search for elements in.
+		'''
+		pass
+	
+	def Pulse(self, maxAge):
+		'''
+		Traverse the tree to cause active subtrees to age.
+		
+		Parameters:
+		maxAge: Any subtree that has been visible for longer than this number of
+		        frames will be deactivated.
+		'''
+		pass
+	
+	def Show(self):
+		if self.Visible:
+			return
+		
+		assert(not self.SubtreeVisible)
+		
+		self.Owner.visible = true
+		self.Visible = true
+		self.SubtreeVisible = true
+	
+	def Hide(self):
+		if not self.Visible:
+			return
+		self.Owner.visible = false
+		self.Visible = false
+		self.SubtreeVisible = false
+		self.Implicit = false
+	
+	def Implicate(self):
+		'''Make this node visible even though no descendant leaves are within
+		range.'''
+		self.Show()
+		self.Implicit = true
+
+class LODBranch(LODNode):
+	def __init__(self, owner):
+		LODNode.__init__(self, owner)
+		
+		#
+		# The number of dimensions are not needed to be known, because each node
+		# explicitely stores its axis.
+		#
+		
+		self.MedianValue = owner['KDMedianValue']
+		self.Axis = owner['KDAxis']
+		self.Left = None
+		self.Right = None
+		
+		for child in owner.children:
+			if not child.has_key('KDType'):
+				continue
+			
+			childNode = None
+			if child['KDType'] == 'Branch':
+				childNode = LODBranch(child)
+			elif child['KDType'] == 'Leaf':
+				childNode = LODLeaf(child)
+				
+			if child['KDSide'] == 'Left':
+				if self.Left:
+					raise StructureError, "%s has two left branches." % owner.name
+				self.Left = childNode
+			elif child['KDSide'] == 'Right':
+				if self.Right:
+					raise StructureError, "%s has two right branches." % owner.name
+				self.Right = childNode
+			else:
+				raise StructureError, "%s has unknown KDType: %s" % (child.name, child['KDType'])
+			
+		if not self.Left or not self.Right:
+			raise StructureError, "Node is not a leaf, but is missing a branch."
+	
+	def ActivateRange(self, bounds):
+		#
+		# Activate the branches if they are not out of bounds on the current
+		# axis. If they are out of bounds but were previously active, descend in
+		# to them to increment their age.
+		#
+		left = self.Left
+		right = self.Right
+		
+		if self.MedianValue > bounds.LowerBound[n.Axis]:
+			left.ActivateRange(bounds)
+		elif left.SubtreeVisible:
+			left.Pulse()
+			if (not left.SubtreeVisible) and right.Implicit:
+				right.Hide()
+		
+		if self.MedianValue < bounds.UpperBound[n.Axis]:
+			right.ActivateRange(bounds)
+		elif right.SubtreeVisible:
+			right.Pulse()
+			if (not right.SubtreeVisible) and left.Implicit:
+				left.Hide()
+		
+		#
+		# If either branch contains visible nodes, make sure the other branch is
+		# shown too.
+		#
+		if left.SubtreeVisible and not right.SubtreeVisible:
+			right.Implicate()
+		if right.SubtreeVisible and not left.SubtreeVisible:
+			left.Implicate()
+		
+		self.SubtreeVisible = self.Visible or left.SubtreeVisible or right.SubtreeVisible
+	
+	def Pulse(self, maxAge):
+		left = self.Left
+		right = self.Right
+		
+		if left.SubtreeVisible:
+			left.Pulse()
+			if (not left.SubtreeVisible) and right.Implicit:
+				right.Hide()
+		
+		if right.SubtreeVisible:
+			right.Pulse()
+			if (not right.SubtreeVisible) and left.Implicit:
+				left.Hide()
+		
+		self.SubtreeVisible = self.Visible or left.SubtreeVisible or right.SubtreeVisible
+
+class LODLeaf(LODNode):
+	def __init__(self, owner):
+		LODNode.__init__(self, owner)
+		self.NumFramesActive = -1
+	
+	def ActivateRange(self, bounds, implicitNodes):
+		for o in self.Owner.children:
+			if bounds.isInRange(o.getWorldPosition()):
+				self.Show()
+				return
+	
+	def Pulse(self, maxAge):
+		self.NumFramesActive = self.NumFramesActive + 1
+		if self.NumFramesActive > maxAge:
+			self.Hide()
+	
+	def Show(self):
+		LODNode.Show(self)
+		self.NumFramesActive = 0
+	
+	def Hide(self):
+		LODNode.Hide(self)
+		self.NumFramesActive = -1

@@ -128,8 +128,7 @@ class LODNode:
 	
 	def Update(self):
 		'''Apply any changes that have been made to this node.'''
-		if self.Owner.visible != self.Visible:
-			self.Owner.visible = self.Visible
+		pass
 
 class LODBranch(LODNode):
 	'''A branch in an LODTree. This type of node has two children: Left and

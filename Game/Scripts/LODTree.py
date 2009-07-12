@@ -16,12 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-class StructureError(Exception):
-	def __init__(self, value):
-		self.value = value
-	
-	def __str__(self):
-		return repr(self.value)
+import GameLogic
 
 class Cube:
 	'''A bounding cube with arbitrary dimensions, defined by its centre
@@ -48,23 +43,31 @@ class LODTree:
 	'''A KD-tree of game objects for hierarchical LOD management.'''
 	
 	def __init__(self, root):
-		'''Create a new LODTree from an existing hierarchy of game objects.
-		Each object in the tree should have the following parameters:
-		enum  KDType        { KDLeftBranch, KDRightBranch, KDLeaf }
-		float KDAxis
-		float KDMedianValue'''
+		'''Create a new LODTree.
+		Parameters:
+		root: The root LODNode of the tree.'''
 		
-		self.Root = LODNode(root)
+		self.Root = root
+	
+	def ActivateRange(self, bounds):
+		'''
+		Traverse the tree to make the leaves that are in range 'active' - i.e.
+		make their constituent parts visible, hiding the low-LOD clusters that
+		would be shown otherwise.
+		
+		Parameters:
+		bounds: The bounding cube to search for elements in.
+		'''
+		self.Root.ActivateRange(bounds)
+		if not self.Root.SubtreeVisible:
+			self.Root.Implicate()
+			self.Root.Update()
 
 class LODNode:
 	'''A node in an LODTree. This is an abstract class; see LODBranch and
 	LODLeaf.'''
 	
-	def __init__(self, owner):
-		'''Populate this tree with a hierarchy. The hierarchy should have been
-		created previously using the BlenderObjectXYTree.Serialise method.'''
-		self.Owner = owner
-		
+	def __init__(self):
 		#
 		# In a path from the root to any leaf, only one node can be active.
 		# Visible:        This node is visible. None of its descendants or
@@ -79,14 +82,6 @@ class LODNode:
 		self.Implicit = False
 	
 	def ActivateRange(self, bounds):
-		'''
-		Traverse the tree to make the leaves that are in range 'active' - i.e.
-		make their constituent parts visible, hiding the low-LOD clusters that
-		would be shown otherwise.
-		
-		Parameters:
-		bounds: The bounding cube to search for elements in.
-		'''
 		pass
 	
 	def Pulse(self, maxAge):
@@ -136,42 +131,34 @@ class LODBranch(LODNode):
 	less than the MedianValue. The right subtree contains all the other
 	elements.'''
 	
-	def __init__(self, owner):
-		LODNode.__init__(self, owner)
+	def __init__(self, obName, left, right, axis, medianValue):
+		'''
+		Create a new LODBranch node.
+		
+		Parameters:
+		obName:      The name of the object that represents this node. It should
+		             be the sum of all the descendants. It must be on a hidden
+		             layer.
+		left:        The left LODNode.
+		right:       The right LODNode.
+		axis:        The axis to search on.
+		medianValue: The location of the median element (of all the leaves) on
+		             the given axis.
+		'''
+		
+		LODNode.__init__(self)
+		
+		self.Object = GameLogic.getCurrentScene().objects[obName]
+		self.ObjectInstance = None
 		
 		#
-		# The number of dimensions are not needed to be known, because each node
+		# The number of dimensions do not need to be known, because each node
 		# explicitely stores its axis.
 		#
-		
-		self.MedianValue = owner['KDMedianValue']
-		self.Axis = owner['KDAxis']
-		self.Left = None
-		self.Right = None
-		
-		for child in owner.children:
-			if not child.has_key('KDType'):
-				continue
-			
-			childNode = None
-			if child['KDType'] == 'Branch':
-				childNode = LODBranch(child)
-			elif child['KDType'] == 'Leaf':
-				childNode = LODLeaf(child)
-				
-			if child['KDSide'] == 'Left':
-				if self.Left:
-					raise StructureError, "%s has two left branches." % owner.name
-				self.Left = childNode
-			elif child['KDSide'] == 'Right':
-				if self.Right:
-					raise StructureError, "%s has two right branches." % owner.name
-				self.Right = childNode
-			else:
-				raise StructureError, "%s has unknown KDType: %s" % (child.name, child['KDType'])
-			
-		if not self.Left or not self.Right:
-			raise StructureError, "Node is not a leaf, but is missing a branch."
+		self.MedianValue = medianValue
+		self.Axis = axis
+		self.Left = left
+		self.Right = right
 	
 	def ActivateRange(self, bounds):
 		left = self.Left
@@ -254,15 +241,35 @@ class LODBranch(LODNode):
 	
 	def Update(self):
 		'''Apply any changes that have been made to this node.'''
-		if self.Owner.visible != self.Visible:
-			self.Owner.visible = self.Visible
+		if self.Visible:
+			if not self.ObjectInstance:
+				self.ObjectInstance = GameLogic.getCurrentScene().addObject(self.Object, self.Object)
+		else:
+			if self.ObjectInstance:
+				self.ObjectInstance.endObject()
+				self.ObjectInstance = None
 
 class LODLeaf(LODNode):
 	'''A leaf node in an LODTree. A leaf is the bottom of the tree, but it can
 	still have multiple children.'''
 	
-	def __init__(self, owner):
+	def __init__(self, obNames):
+		'''
+		Create a new LODLeaf node.
+		
+		Parameters:
+		obNames: A list of objects that this node represents. These must be on
+		         a hidden layer.
+		'''
 		LODNode.__init__(self, owner)
+		
+		self.Objects = []
+		sceneObs = GameLogic.getCurrentScene().objects
+		for name in obNames:
+			o = sceneObs[name]
+			self.Objects.append(o)
+		self.ObjectInstances = []
+		
 		self.NumFramesActive = -1
 	
 	def ActivateRange(self, bounds, implicitNodes):
@@ -290,6 +297,12 @@ class LODLeaf(LODNode):
 	
 	def Update(self):
 		'''Apply any changes that have been made to this node.'''
-		if self.Owner.children[0].visible != self.Visible:
-			for o in self.Owner.children:
-				o.visible = self.Visible
+		if self.Visible:
+			if len(self.ObjectInstances) == 0:
+				scene = GameLogic.getCurrentScene()
+				for o in self.Objects:
+					self.ObjectInstances.append(scene.addObject(o, o)
+		else:
+			for o in self.ObjectInstances:
+				o.endObject()
+			self.ObjectInstances = []

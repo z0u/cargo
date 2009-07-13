@@ -18,6 +18,18 @@
 
 import GameLogic
 
+class LODManager:
+	def __init__(self):
+		self.Trees = []
+	
+	def AddTree(self, tree):
+		self.Trees.append(tree)
+	
+	def ActivateRange(self, centre, radius):
+		bounds = Cube(centre, radius)
+		for t in self.Trees:
+			t.ActivateRange(bounds)
+
 class Cube:
 	'''A bounding cube with arbitrary dimensions, defined by its centre
 	and radius.'''
@@ -62,6 +74,9 @@ class LODTree:
 		if not self.Root.SubtreeVisible:
 			self.Root.Implicate()
 			self.Root.Update()
+	
+	def PrettyPrint(self):
+		self.Root.PrettyPrint('')
 
 class LODNode:
 	'''A node in an LODTree. This is an abstract class; see LODBranch and
@@ -123,6 +138,9 @@ class LODNode:
 	
 	def Update(self):
 		'''Apply any changes that have been made to this node.'''
+		pass
+	
+	def PrettyPrint(self, indent):
 		pass
 
 class LODBranch(LODNode):
@@ -248,6 +266,11 @@ class LODBranch(LODNode):
 			if self.ObjectInstance:
 				self.ObjectInstance.endObject()
 				self.ObjectInstance = None
+	
+	def PrettyPrint(self, indent):
+		print indent + 'LODBranch: axis=%d, median=%f' % self.Axis, self.MedianValue)
+		self.Left.PrettyPrint(indent + ' L ')
+		self.Right.PrettyPrint(indent + ' R ')
 
 class LODLeaf(LODNode):
 	'''A leaf node in an LODTree. A leaf is the bottom of the tree, but it can
@@ -306,3 +329,9 @@ class LODLeaf(LODNode):
 			for o in self.ObjectInstances:
 				o.endObject()
 			self.ObjectInstances = []
+	
+	def PrettyPrint(self, indent):
+		print indent + 'LODLeaf:',
+		for o in self.Objects:
+			print o.name,
+		print

@@ -18,6 +18,8 @@
 
 import GameLogic
 
+ACTIVATION_TIMEOUT = 1
+
 class LODManager:
 	def __init__(self):
 		self.Trees = []
@@ -29,6 +31,12 @@ class LODManager:
 		bounds = Cube(centre, radius)
 		for t in self.Trees:
 			t.ActivateRange(bounds)
+
+_lodManager = LODManager()
+
+def ActivateRange(cont):
+	ob = cont.owner
+	_lodManager.ActivateRange(ob.worldPosition, ob['LODRadius'])
 
 class Cube:
 	'''A bounding cube with arbitrary dimensions, defined by its centre
@@ -42,8 +50,8 @@ class Cube:
 			self.UpperBound.append(component + radius)
 	
 	def isInRange(self, point):
-	'''Tests whether a point is inside the cube.
-	Returns: False if the point is outside; True otherwise.'''
+		'''Tests whether a point is inside the cube.
+		Returns: False if the point is outside; True otherwise.'''
 		for i in xrange(len(point)):
 			if point[i] < self.LowerBound[i]:
 				return False
@@ -60,6 +68,7 @@ class LODTree:
 		root: The root LODNode of the tree.'''
 		
 		self.Root = root
+		_lodManager.AddTree(self)
 	
 	def ActivateRange(self, bounds):
 		'''
@@ -123,12 +132,13 @@ class LODNode:
 	def Hide(self):
 		'''Make this node invisible. Rendering is deferred: call Update to apply
 		the changes.'''
+		self.Implicit = False
+		
 		if not self.Visible:
 			return
 		
 		self.Visible = False
 		self.SubtreeVisible = False
-		self.Implicit = False
 	
 	def Implicate(self):
 		'''Make this node visible even though no descendant leaves are within
@@ -141,7 +151,8 @@ class LODNode:
 		pass
 	
 	def PrettyPrint(self, indent):
-		pass
+		print indent + ('          vis=%s, subVis=%s, imp=%s' %
+		                (self.Visible, self.SubtreeVisible, self.Implicit))
 
 class LODBranch(LODNode):
 	'''A branch in an LODTree. This type of node has two children: Left and
@@ -166,7 +177,7 @@ class LODBranch(LODNode):
 		
 		LODNode.__init__(self)
 		
-		self.Object = GameLogic.getCurrentScene().objects[obName]
+		self.Object = GameLogic.getCurrentScene().objectsInactive['OB' + obName]
 		self.ObjectInstance = None
 		
 		#
@@ -187,33 +198,35 @@ class LODBranch(LODNode):
 		# axis. If they are out of bounds but were previously active, descend in
 		# to them to increment their age.
 		#
-		if self.MedianValue > bounds.LowerBound[n.Axis]:
+		# Explicitely-shown nodes are only ever hidden in Pulse. Implicit nodes
+		# need to be hidden after Pulse is called if their sibling has since
+		# become hidden.
+		#
+		if self.MedianValue > bounds.LowerBound[self.Axis]:
 			left.ActivateRange(bounds)
-		elif left.SubtreeVisible:
-			left.Pulse()
+		elif left.SubtreeVisible and not left.Implicit:
+			left.Pulse(ACTIVATION_TIMEOUT)
+			if (not left.SubtreeVisible) and right.Implicit:
+				right.Hide()
 		
-		if self.MedianValue < bounds.UpperBound[n.Axis]:
+		if self.MedianValue < bounds.UpperBound[self.Axis]:
 			right.ActivateRange(bounds)
-		elif right.SubtreeVisible:
-			right.Pulse()
+		elif right.SubtreeVisible and not right.Implicit:
+			right.Pulse(ACTIVATION_TIMEOUT)
+			if (not right.SubtreeVisible) and left.Implicit:
+				left.Hide()
 		
 		#
 		# If either branch contains visible nodes, make sure the other branch is
 		# shown too.
 		#
-		if left.SubtreeVisible:
-			if not right.SubtreeVisible:
-				right.Implicate()
-		elif right.Implicit:
-			right.Hide()
+		if left.SubtreeVisible and not right.SubtreeVisible:
+			right.Implicate()
+		if right.SubtreeVisible and not left.SubtreeVisible:
+			left.Implicate()
 		
-		if right.SubtreeVisible:
-			if not left.SubtreeVisible:
-				left.Implicate()
-		elif left.Implicit:
-			left.Hide()
-		
-		asser(right.Implicit != left.Implicit)
+		if right.Implicit and left.Implicit:
+			print 'Error: %s: Both children are implicit.' % self.Object.name
 		
 		#
 		# No more operations will occur on child nodes for this frame, so render
@@ -239,12 +252,12 @@ class LODBranch(LODNode):
 		right = self.Right
 		
 		if left.SubtreeVisible:
-			left.Pulse()
+			left.Pulse(maxAge)
 			if (not left.SubtreeVisible) and right.Implicit:
 				right.Hide()
 		
 		if right.SubtreeVisible:
-			right.Pulse()
+			right.Pulse(maxAge)
 			if (not right.SubtreeVisible) and left.Implicit:
 				left.Hide()
 		
@@ -259,6 +272,7 @@ class LODBranch(LODNode):
 	
 	def Update(self):
 		'''Apply any changes that have been made to this node.'''
+		return
 		if self.Visible:
 			if not self.ObjectInstance:
 				self.ObjectInstance = GameLogic.getCurrentScene().addObject(self.Object, self.Object)
@@ -268,7 +282,8 @@ class LODBranch(LODNode):
 				self.ObjectInstance = None
 	
 	def PrettyPrint(self, indent):
-		print indent + 'LODBranch: axis=%d, median=%f' % self.Axis, self.MedianValue)
+		print indent + ('LODBranch: %s, axis=%d, median=%f' % (self.Object.name, self.Axis, self.MedianValue))
+		LODNode.PrettyPrint(self, indent)
 		self.Left.PrettyPrint(indent + ' L ')
 		self.Right.PrettyPrint(indent + ' R ')
 
@@ -284,22 +299,22 @@ class LODLeaf(LODNode):
 		obNames: A list of objects that this node represents. These must be on
 		         a hidden layer.
 		'''
-		LODNode.__init__(self, owner)
+		LODNode.__init__(self)
 		
 		self.Objects = []
-		sceneObs = GameLogic.getCurrentScene().objects
+		sceneObs = GameLogic.getCurrentScene().objectsInactive
 		for name in obNames:
-			o = sceneObs[name]
+			o = sceneObs['OB' + name]
 			self.Objects.append(o)
 		self.ObjectInstances = []
 		
 		self.NumFramesActive = -1
 	
-	def ActivateRange(self, bounds, implicitNodes):
+	def ActivateRange(self, bounds):
 		'''Search the objects owned by this node. If any of them are within
 		range, this node will be shown.'''
-		for o in self.Owner.children:
-			if bounds.isInRange(o.getWorldPosition()):
+		for o in self.Objects:
+			if bounds.isInRange(o.worldPosition):
 				self.Show()
 				return
 	
@@ -324,7 +339,7 @@ class LODLeaf(LODNode):
 			if len(self.ObjectInstances) == 0:
 				scene = GameLogic.getCurrentScene()
 				for o in self.Objects:
-					self.ObjectInstances.append(scene.addObject(o, o)
+					self.ObjectInstances.append(scene.addObject(o, o))
 		else:
 			for o in self.ObjectInstances:
 				o.endObject()
@@ -335,3 +350,4 @@ class LODLeaf(LODNode):
 		for o in self.Objects:
 			print o.name,
 		print
+		LODNode.PrettyPrint(self, indent)

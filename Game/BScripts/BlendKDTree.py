@@ -107,7 +107,7 @@ class KDTree:
 		tBuf.write('# Queues avoid nested instantiations.\n')
 		tBuf.write('LQ = []\n')
 		tBuf.write('RQ = []\n')
-		self.Root.SerialiseToLODTree(tBuf, '', 'tree=LODTree(%s)')
+		self.Root.SerialiseToLODTree(tBuf, '', 'tree=Scripts.LODTree.LODTree(%s)')
 		tBuf.write('assert(len(LQ) == 0)\n')
 		tBuf.write('assert(len(RQ) == 0)\n')
 
@@ -147,16 +147,17 @@ class KDBranch:
 		else:
 			self.Right = KDLeaf(rightObjects, nextDepth, tree)
 	
-	def CreateClusterHierarchy(self):
-		children = self.Left.CreateClusterHierarchy()
-		children = children + self.Right.CreateClusterHierarchy()
+	def CreateClusterHierarchy(self, side = ''):
+		children = self.Left.CreateClusterHierarchy('L')
+		children = children + self.Right.CreateClusterHierarchy('R')
 		
 		#
 		# Create a new, empty object.
 		#
+		name = 'LOD_%d%s' % (self.Depth, side)
 		sce = Blender.Scene.GetCurrent()
-		mesh = bpy.data.meshes.new('myMesh')
-		ob = sce.objects.new(mesh, 'LOD_%d' % self.Depth)
+		mesh = bpy.data.meshes.new(name)
+		ob = sce.objects.new(mesh, name)
 		
 		#
 		# Set the location. For setLocation, localspace == worldspace: the new
@@ -223,7 +224,7 @@ class KDLeaf:
 		self.Objects = objects
 		self.Tree.UpdateMaxDepth(depth)
 	
-	def CreateClusterHierarchy(self):
+	def CreateClusterHierarchy(self, side = ''):
 		return self.Objects
 	
 	def SerialiseToLODTree(self, tBuf, indent, format):

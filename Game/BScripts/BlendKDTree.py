@@ -186,8 +186,10 @@ class KDBranch:
 		
 		#
 		# Parent children to new cluster.
+		# Actually don't; this makes the objects behave strangely when
+		# instantiated.
 		#
-		ob.makeParent(children)
+		#ob.makeParent(children)
 		
 		self.Object = ob
 		return [ob]

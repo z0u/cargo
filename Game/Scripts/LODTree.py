@@ -115,13 +115,6 @@ class LODTree:
 		if not self.Root.Visibility:
 			self.Root.Visibility = NS_IMPLICIT
 		self.Root.Update()
-		
-		#try:
-			#self.Root.Verify(False)
-		#except AssertionError, e:
-			#self.ErrorState = True
-			#self.PrettyPrint()
-			#raise
 	
 	def PrettyPrint(self):
 		self.Root.PrettyPrint('', False)
@@ -199,6 +192,10 @@ class LODBranch(LODNode):
 		LODNode.__init__(self)
 		
 		self.Object = GameLogic.getCurrentScene().objectsInactive['OB' + obName]
+		#
+		# Parents just cause problems with visibility.
+		#
+		self.Object.removeParent()
 		self.ObjectInstance = None
 		self.Name = obName
 		
@@ -352,6 +349,10 @@ class LODLeaf(LODNode):
 		sceneObs = GameLogic.getCurrentScene().objectsInactive
 		for name in obNames:
 			o = sceneObs['OB' + name]
+			#
+			# Parents just cause problems with visibility.
+			#
+			o.removeParent()
 			self.Objects.append(o)
 		self.ObjectInstances = []
 		

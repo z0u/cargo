@@ -235,10 +235,8 @@ class KDBranch(KDNode):
 		
 		#
 		# Parent children to new cluster.
-		# Actually don't; this makes the objects behave strangely when
-		# instantiated.
 		#
-		#ob.makeParent(children)
+		ob.makeParent(children)
 		
 		self.Object = ob
 		self.Tree.OnClusterCreated(self)

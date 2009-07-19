@@ -38,6 +38,9 @@ NS_VISIBLE            = 2
 NS_IMPLICIT           = 3
 
 class LODManager:
+	'''A registrar of LODTrees. Each tree adds itself to this manager
+	(singleton; instance created below). Other scripts then have a central place
+	to access LODTrees, such as the module function ActivateRange, below.'''
 	def __init__(self):
 		self.Trees = []
 	
@@ -52,6 +55,14 @@ class LODManager:
 _lodManager = LODManager()
 
 def ActivateRange(cont):
+	'''
+	Activate all leaves in all trees that are close to the current controller's
+	owner. The object should have a property called 'LODRadius': Any leaf closer
+	than 'LODRadius' will be activated, along with its siblings.
+	
+	This should only be called once per frame; therefore, only one object can be
+	the centre of activity at a time.
+	'''
 	ob = cont.owner
 	_lodManager.ActivateRange(ob.worldPosition, ob['LODRadius'])
 

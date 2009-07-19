@@ -26,6 +26,31 @@ import Blender
 #INDENT_STEP = '    '
 INDENT_STEP = ''
 
+class Progress:
+	def __init__(self, message, upperBound, updateStep = 0.01):
+		self.Upper = upperBound
+		self.Message = message
+		self.CurrentValue = 0
+		self.CurrentFraction = 0.0
+		self.LastFraction = 0.0
+		self.UpdateStep = updateStep
+		self.SetValue(0.0)
+	
+	def Increment(self, value):
+		self.SetValue(self.CurrentValue + value)
+	
+	def SetValue(self, value):
+		self.CurrentValue = value
+		self.CurrentFraction = float(value) / float(self.Upper)
+		if (self.CurrentFraction > (self.LastFraction + self.UpdateStep) or
+		    self.CurrentFraction <= 0.0 or
+		    self.CurrentFraction >= 1.0):
+			self.Update()
+	
+	def Update(self):
+		Blender.Window.DrawProgressBar(self.CurrentFraction, self.Message)
+		self.LastFraction = self.CurrentFraction
+
 class KDTree:
 	def __init__(self, objects, dimensions, leafSize = 4):
 		self.LeafSize = leafSize
@@ -33,6 +58,9 @@ class KDTree:
 		self.MaxDepth = 0
 		self._debug = False
 		self._depthIPOs = []
+		self.NNodes = 0
+		
+		self.Progress = Progress('1/3: Constructing KDTree', len(objects))
 		
 		if len(objects) > leafSize:
 			self.Root = KDBranch(objects, 0, self)
@@ -49,6 +77,13 @@ class KDTree:
 		will be white. The leaves themselves will be their original colours.
 		'''
 	)
+	
+	def OnNodeCreated(self, node):
+		self.NNodes = self.NNodes + 1
+	
+	def OnLeafCreated(self, leaf):
+		self.UpdateMaxDepth(leaf.Depth)
+		self.Progress.Increment(len(leaf.Objects))
 	
 	def GetIPO(self, level):
 		try:
@@ -76,8 +111,15 @@ class KDTree:
 		if depth > self.MaxDepth:
 			self.MaxDepth = depth
 	
+	def OnClusterCreated(self, node):
+		self.Progress.Increment(1)
+	
 	def CreateClusterHierarchy(self):
+		self.Progress = Progress('2/3: Creating clusters', self.NNodes)
 		self.Root.CreateClusterHierarchy()
+	
+	def OnNodeSerialised(self, node):
+		self.Progress.Increment(1)
 	
 	def SerialiseToLODTree(self, tBuf):
 		'''
@@ -100,6 +142,8 @@ class KDTree:
 		Parameters:
 		tBuf: The text buffer to write into (Blender.Text.Text).
 		'''
+		self.Progress = Progress('3/3: Serialising KDTree', self.NNodes)
+		
 		tBuf.write('#\n# A serialised LODTree, created by BlendKDTree in the Source/Scripts directory.\n#\n')
 		tBuf.write('import Scripts.LODTree\n')
 		tBuf.write('br = Scripts.LODTree.LODBranch\n')
@@ -111,10 +155,15 @@ class KDTree:
 		tBuf.write('assert(len(LQ) == 0)\n')
 		tBuf.write('assert(len(RQ) == 0)\n')
 
-class KDBranch:
-	def __init__(self, objects, depth, tree):
+class KDNode:
+	def __init__(self, depth, tree):
 		self.Tree = tree
 		self.Depth = depth
+		tree.OnNodeCreated(self)
+
+class KDBranch(KDNode):
+	def __init__(self, objects, depth, tree):
+		KDNode.__init__(self, depth, tree)
 		self.Axis = depth % self.Tree.Dimensions
 		self.Object = None
 		
@@ -192,6 +241,7 @@ class KDBranch:
 		#ob.makeParent(children)
 		
 		self.Object = ob
+		self.Tree.OnClusterCreated(self)
 		return [ob]
 	
 	def SerialiseToLODTree(self, tBuf, indent, format):
@@ -218,15 +268,16 @@ class KDBranch:
 		obName = self.Object.getName()
 		expr = 'br(\'%s\',LQ.pop(),RQ.pop(),%d,%f)' % (obName, self.Axis, self.MedianValue)
 		tBuf.write(indent + (format % expr) + (' # %d' % self.Depth)  + '\n')
+		self.Tree.OnNodeSerialised(self)
 
-class KDLeaf:
+class KDLeaf(KDNode):
 	def __init__(self, objects, depth, tree):
-		self.Tree = tree
-		self.Depth = depth
+		KDNode.__init__(self, depth, tree)
 		self.Objects = objects
-		self.Tree.UpdateMaxDepth(depth)
+		tree.OnLeafCreated(self)
 	
 	def CreateClusterHierarchy(self, side = ''):
+		self.Tree.OnClusterCreated(self)
 		return self.Objects
 	
 	def SerialiseToLODTree(self, tBuf, indent, format):
@@ -251,6 +302,7 @@ class KDLeaf:
 			elements.append(o.getName())
 		expr = 'lf(%s)' % repr(elements)
 		tBuf.write(indent + (format % expr) + (' # %d' % self.Depth)  + '\n')
+		self.Tree.OnNodeSerialised(self)
 
 if __name__ == '__main__':
 	'''Create clusters and a serialised LOD tree from the selected objects.'''

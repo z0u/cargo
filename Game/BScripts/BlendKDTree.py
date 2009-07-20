@@ -234,9 +234,17 @@ class KDBranch(KDNode):
 			ob.setIpo(self.Tree.GetIPO(self.Depth))
 		
 		#
-		# Parent children to new cluster.
+		# Parent children to new cluster. This relationship will be broken by
+		# LODTree on deserialisation (when the game starts). In the mean time,
+		# the relationships make the objects easier to manage.
 		#
 		ob.makeParent(children)
+		
+		#
+		# Disable fancy collisions. Only the leaves retain their original
+		# interactivity.
+		#
+		ob.rbFlags = Blender.Object.RBFlags['PROP']
 		
 		self.Object = ob
 		self.Tree.OnClusterCreated(self)

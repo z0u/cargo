@@ -37,7 +37,6 @@ ORIGIN = Mathutils.Vector([0.0, 0.0, 0.0])
 
 class SemanticGameObject:
 	Owner = None
-	Mathutils = Mathutils
 	pow = pow
 	
 	def __init__(self, owner):
@@ -119,7 +118,7 @@ class SnailSegment(SemanticGameObject):
 		
 	def getOrientation(self):
 		ornMat = self.Owner.worldOrientation
-		ornMat = self.Mathutils.Matrix(ornMat[0], ornMat[1], ornMat[2])
+		ornMat = Mathutils.Matrix(ornMat[0], ornMat[1], ornMat[2])
 		ornMat.transpose()
 		return ornMat
 
@@ -130,11 +129,11 @@ class SnailSegment(SemanticGameObject):
 		
 		hit, p1 = self.Parent.Rays['Right'].getHitPosition()
 		hit, p2 = self.Parent.Rays['Left'].getHitPosition()
-		p3 = self.Mathutils.Vector(self.Parent.Fulcrum.worldPosition)
-		normal = self.Mathutils.TriangleNormal(p1, p2, p3)
+		p3 = Mathutils.Vector(self.Parent.Fulcrum.worldPosition)
+		normal = Mathutils.TriangleNormal(p1, p2, p3)
 		
 		parNorm = self.ZAXIS * parentOrnMat
-		dot = self.Mathutils.DotVecs(normal, parNorm)
+		dot = Mathutils.DotVecs(normal, parNorm)
 		if (dot > 0.0):
 			#
 			# Normal is within 90 degrees of parent's normal -> segment not
@@ -144,7 +143,7 @@ class SnailSegment(SemanticGameObject):
 			# Don't use a factor of 0.5: potential for normal to average out
 			# to be (0,0,0)
 			#
-			orientation = self.Mathutils.Vector(self.Owner.getAxisVect(self.ZAXIS))
+			orientation = Mathutils.Vector(self.Owner.getAxisVect(self.ZAXIS))
 			orientation = Utilities._lerp(normal, orientation, 0.4)
 			self.Owner.alignAxisToVect(orientation, 2)
 		
@@ -239,8 +238,8 @@ class Snail(SnailSegment):
 		#
 		# Derive normal from hit points and update orientation.
 		#
-		normal = self.Mathutils.QuadNormal(p0, p1, p2, p3)
-		oldNormal = self.Mathutils.Vector(self.Owner.getAxisVect([0,0,1]))
+		normal = Mathutils.QuadNormal(p0, p1, p2, p3)
+		oldNormal = Mathutils.Vector(self.Owner.getAxisVect([0,0,1]))
 		
 		#
 		# Don't use a factor of 0.5: potential for normal to average out to be (0,0,0)
@@ -261,16 +260,16 @@ class Snail(SnailSegment):
 		'''
 		
 		oOrn = ob.worldOrientation
-		oOrn = self.Mathutils.Matrix(oOrn[0], oOrn[1], oOrn[2])
+		oOrn = Mathutils.Matrix(oOrn[0], oOrn[1], oOrn[2])
 		
 		rOrn = ref.worldOrientation
-		rOrn = self.Mathutils.Matrix(rOrn[0], rOrn[1], rOrn[2])
+		rOrn = Mathutils.Matrix(rOrn[0], rOrn[1], rOrn[2])
 		rOrn.invert()
 		
 		localOrn = rOrn * oOrn
 		
 		orn = target.worldOrientation
-		orn = self.Mathutils.Matrix(orn[0], orn[1], orn[2])
+		orn = Mathutils.Matrix(orn[0], orn[1], orn[2])
 		orn = orn * localOrn
 		
 		ob.localOrientation = orn
@@ -282,9 +281,9 @@ class Snail(SnailSegment):
 		will be offset from 'target's by the difference between
 		'ob' and 'ref's positions.
 		'''
-		oPos = self.Mathutils.Vector(ob.worldPosition)
-		rPos = self.Mathutils.Vector(ref.worldPosition)
-		tPos = self.Mathutils.Vector(target.worldPosition)
+		oPos = Mathutils.Vector(ob.worldPosition)
+		rPos = Mathutils.Vector(ref.worldPosition)
+		tPos = Mathutils.Vector(target.worldPosition)
 		offset = rPos - oPos
 		posFinal = tPos - offset
 		
@@ -325,7 +324,7 @@ class Snail(SnailSegment):
 		'''Unhooks the current shell by un-setting its parent.'''
 		self.Shell.Owner.removeParent()
 		velocity = self.Owner.getAxisVect(self.ZAXIS)
-		velocity = self.Mathutils.Vector(velocity)
+		velocity = Mathutils.Vector(velocity)
 		velocity = velocity * self.Owner['ShellPopForce']
 		self.Shell.Owner.applyImpulse(self.Shell.Owner.worldPosition, velocity)
 		self.Owner['HasShell'] = 0
@@ -397,7 +396,7 @@ class SnailRayCluster(ISnailRay, SemanticGameObject):
 		if (len(self.Rays) <= 0):
 			raise Exception("Ray cluster %s has no ray children." % self.Owner.name)
 		self.Rays.sort(lambda a, b: a.Owner.Priority - b.Owner.Priority)
-		self.LastHitPoint = self.Mathutils.Vector([0,0,0])
+		self.LastHitPoint = Mathutils.Vector([0,0,0])
 	
 	def parseChild(self, child, type):
 		if (type == "SnailRay"):
@@ -413,21 +412,6 @@ class SnailRayCluster(ISnailRay, SemanticGameObject):
 		else:
 			return False
 
-	def toLocal(self, point):
-		refP = self.Mathutils.Vector(self.Owner.worldPosition)
-		refOMat = self.Owner.worldOrientation
-		refOMat = self.Mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
-		refOMat.transpose()
-		refOMat.invert()
-		return (point - refP) * refOMat
-	
-	def toWorld(self, point):
-		refP = self.Mathutils.Vector(self.Owner.worldPosition)
-		refOMat = self.Owner.worldOrientation
-		refOMat = self.Mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
-		refOMat.transpose()
-		return (point * refOMat) + refP
-
 	def getHitPosition(self):
 		"""Return the hit point of the first child ray that hits.
 		If none hit, the default value of the first ray is returned."""
@@ -437,13 +421,13 @@ class SnailRayCluster(ISnailRay, SemanticGameObject):
 		for ray in self.Rays:
 			hit, p = ray.getHitPosition()
 			if (hit == 1):
-				self.LastHitPoint = self.toLocal(p)
+				self.LastHitPoint = Utilities._toLocal(self.Owner, p)
 				break
 		
 		if (self.Marker):
-			self.Marker.setWorldPosition(self.toWorld(self.LastHitPoint))
+			self.Marker.setWorldPosition(Utilities._toWorld(self.Owner, self.LastHitPoint))
 			
-		return hit, self.toWorld(self.LastHitPoint)
+		return hit, Utilities._toWorld(self.Owner, self.LastHitPoint)
 
 class SnailRay(ISnailRay, SemanticGameObject):
 	ZAXIS = ZAXIS
@@ -452,7 +436,7 @@ class SnailRay(ISnailRay, SemanticGameObject):
 	def __init__(self, owner):
 		self.Marker = None
 		SemanticGameObject.__init__(self, owner)
-		self.LastPoint = self.Mathutils.Vector(self.Owner.worldPosition)
+		self.LastPoint = Mathutils.Vector(self.Owner.worldPosition)
 	
 	def parseChild(self, child, type):
 		if (type == "Marker"):
@@ -464,16 +448,16 @@ class SnailRay(ISnailRay, SemanticGameObject):
 		return (A * fac) + (B * (1.0 - fac))
 
 	def getHitPosition(self):
-		origin = self.Mathutils.Vector(self.Owner.worldPosition)
-		dir = self.Mathutils.Vector(self.Owner.getAxisVect(self.ZAXIS))
+		origin = Mathutils.Vector(self.Owner.worldPosition)
+		dir = Mathutils.Vector(self.Owner.getAxisVect(self.ZAXIS))
 		through = origin + dir
 		object, hitPoint, normal = self.Owner.rayCast(
-			through,			# to
-			origin,				# from
-			self.Owner.Length,	# dist
-			'Ground',			# prop
-			1,					# face
-			1					# xray
+			through,            # to
+			origin,             # from
+			self.Owner.Length,  # dist
+			'Ground',           # prop
+			1,                  # face
+			1                   # xray
 		)
 		
 		hit = 0
@@ -481,10 +465,10 @@ class SnailRay(ISnailRay, SemanticGameObject):
 			#
 			# Ensure the hit was not from inside an object.
 			#
-			normal = self.Mathutils.Vector(normal)
-			if (self.Mathutils.DotVecs(normal, dir) < 0.0):
+			normal = Mathutils.Vector(normal)
+			if (Mathutils.DotVecs(normal, dir) < 0.0):
 				hit = 1
-				self.LastPoint = self.Mathutils.Vector(hitPoint)
+				self.LastPoint = Mathutils.Vector(hitPoint)
 
 		if (self.Marker):
 			self.Marker.setWorldPosition(self.LastPoint)
@@ -500,7 +484,7 @@ class SnailTrail(SemanticGameObject):
 	len = len
 
 	def __init__(self, owner, snail):
-		self.LastTrailPos = self.Mathutils.Vector(owner.worldPosition)
+		self.LastTrailPos = Mathutils.Vector(owner.worldPosition)
 		self.TrailSpots = []
 		self.SpotIndex = 0
 		self.Snail = snail
@@ -518,11 +502,11 @@ class SnailTrail(SemanticGameObject):
 		spotI = addActuator.objectLastCreated
 		spotI.setParent(touchedObject)
 		spotI.state = 1<<1
-		self.LastTrailPos = self.Mathutils.Vector(self.Owner.worldPosition)
+		self.LastTrailPos = Mathutils.Vector(self.Owner.worldPosition)
 		self.SpotIndex = (self.SpotIndex + 1) % self.len(self.TrailSpots)
 	
 	def DistanceReached(self):
-		pos = self.Mathutils.Vector(self.Owner.worldPosition)
+		pos = Mathutils.Vector(self.Owner.worldPosition)
 		dist = (pos - self.LastTrailPos).magnitude
 		return dist > self.Snail.Owner.TrailSpacing
 

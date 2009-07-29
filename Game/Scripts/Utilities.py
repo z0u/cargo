@@ -41,6 +41,38 @@ class SemanticGameObject:
 			except AttributeError:
 				continue
 
+class Box2D:
+	'''A 2D bounding box.'''
+	def __init__(self, xLow, yLow, xHigh, yHigh):
+		self.xLow = xLow
+		self.yLow = yLow
+		self.xHigh = xHigh
+		self.yHigh = yHigh
+	
+	def Intersect(self, other):
+		if other.xHigh < self.xHigh:
+			self.xHigh = other.xHigh
+		if other.yHigh < self.yHigh:
+			self.yHigh = other.yHigh
+		
+		if other.xLow > self.xLow:
+			self.xLow = other.xLow
+		if other.yLow > self.yLow:
+			self.yLow = other.yLow
+		
+		#
+		# Ensure box is not inside-out.
+		#
+		if self.xLow > self.xHigh:
+			self.xLow = self.xHigh
+		if self.yLow > self.yHigh:
+			self.yLow = self.yHigh
+	
+	def GetArea(self):
+		w = self.xHigh - self.xLow
+		h = self.yHigh - self.yLow
+		return w * h
+
 def _lerp(A, B, fac):
 	return A + ((B - A) * fac)
 
@@ -60,6 +92,40 @@ def _smerp(CurrentDelta, CurrentValue, Target, SpeedFactor, Responsiveness):
 	
 	CurrentValue = CurrentValue + CurrentDelta
 	return CurrentDelta, CurrentValue
+
+
+def _toLocal(referential, point):
+	'''
+	Transform 'point' (specified in world space) into the coordinate space of
+	the object 'referential'.
+	
+	Parameters:
+	referential: The object that defines the coordinate space to transform to.
+	             (KX_GameObject)
+	point:       The point, in world space, to transform. (Mathutils.Vector)
+	'''
+	refP = Mathutils.Vector(referential.worldPosition)
+	refOMat = referential.worldOrientation
+	refOMat = Mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
+	refOMat.transpose()
+	refOMat.invert()
+	return (point - refP) * refOMat
+
+def _toWorld(referential, point):
+	'''
+	Transform 'point' into world space. 'point' must be specified in the
+	coordinate space of 'referential'.
+	
+	Parameters:
+	referential: The object that defines the coordinate space to transform from.
+	             (KX_GameObject)
+	point:       The point, in local space, to transform. (Mathutils.Vector)
+	'''
+	refP = Mathutils.Vector(referential.worldPosition)
+	refOMat = referential.worldOrientation
+	refOMat = Mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
+	refOMat.transpose()
+	return (point * refOMat) + refP
 
 def SlowCopyRot(c):
 	'''

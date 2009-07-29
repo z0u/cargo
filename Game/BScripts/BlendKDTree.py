@@ -26,6 +26,9 @@ import Blender
 #INDENT_STEP = '    '
 INDENT_STEP = ''
 
+class StateError(Exception):
+	pass
+
 class Progress:
 	def __init__(self, message, upperBound, updateStep = 0.01):
 		self.Upper = upperBound
@@ -116,7 +119,7 @@ class KDTree:
 	
 	def CreateClusterHierarchy(self):
 		self.Progress = Progress('2/3: Creating clusters', self.NNodes)
-		self.Root.CreateClusterHierarchy()
+		self.Root.CreateClusterHierarchy([], [])
 	
 	def OnNodeSerialised(self, node):
 		self.Progress.Increment(1)
@@ -143,6 +146,11 @@ class KDTree:
 		tBuf: The text buffer to write into (Blender.Text.Text).
 		'''
 		self.Progress = Progress('3/3: Serialising KDTree', self.NNodes)
+		
+		#
+		# Deselect the objects: they will be selected again on serialisation.
+		#
+		Blender.Scene.GetCurrent().objects.selected = []
 		
 		tBuf.write('#\n# A serialised LODTree, created by BlendKDTree in the Source/Scripts directory.\n#\n')
 		tBuf.write('import Scripts.LODTree\n')
@@ -196,9 +204,25 @@ class KDBranch(KDNode):
 		else:
 			self.Right = KDLeaf(rightObjects, nextDepth, tree)
 	
-	def CreateClusterHierarchy(self, side = ''):
-		children = self.Left.CreateClusterHierarchy('L')
-		children = children + self.Right.CreateClusterHierarchy('R')
+	def CreateClusterHierarchy(self, meshObs, posObs, side = ''):
+		'''
+		Create a mesh for this node. The mesh is the sum of all the descendants'
+		meshes.
+		
+		Parameters:
+		meshObs: Objects that represent the mesh of this node will be appended
+		         to this list.
+		posObs:  Objects that should be stored in the hierarchy will be appended
+		         to this list. In the case of KDBranch, the same objects will be
+		         added to both lists.
+		'''
+		if self.Object:
+			raise StateError, 'Tried to create cluster twice.'
+		
+		childMeshObs = []
+		childPosObs = []
+		self.Left.CreateClusterHierarchy(childMeshObs, childPosObs, 'L')
+		self.Right.CreateClusterHierarchy(childMeshObs, childPosObs, 'R')
 		
 		#
 		# Create a new, empty object.
@@ -213,24 +237,21 @@ class KDBranch(KDNode):
 		# object has no parent yet.
 		#
 		meanLoc = Blender.Mathutils.Vector()
-		for c in children:
+		for c in childPosObs:
 			loc = Blender.Mathutils.Vector(c.getLocation('worldspace'))
 			meanLoc = meanLoc + loc
-		meanLoc = meanLoc / len(children)
+		meanLoc = meanLoc / len(childPosObs)
 		ob.setLocation(meanLoc)
 		
 		#
 		# Create a new cluster from children.
 		#
-		ob.join(children)
+		ob.join(childMeshObs)
 		
 		if self.Tree.Debug:
 			#
 			# Colour the objects for debugging.
 			#
-			#relDepth = float(self.Depth) / float(self.Tree.MaxDepth)
-			#print relDepth
-			#ob.color = (relDepth, relDepth, relDepth, 1.0)
 			ob.setIpo(self.Tree.GetIPO(self.Depth))
 		
 		#
@@ -238,7 +259,7 @@ class KDBranch(KDNode):
 		# LODTree on deserialisation (when the game starts). In the mean time,
 		# the relationships make the objects easier to manage.
 		#
-		ob.makeParent(children)
+		ob.makeParent(childPosObs)
 		
 		#
 		# Disable fancy collisions. Only the leaves retain their original
@@ -248,7 +269,8 @@ class KDBranch(KDNode):
 		
 		self.Object = ob
 		self.Tree.OnClusterCreated(self)
-		return [ob]
+		meshObs.append(ob)
+		posObs.append(ob)
 	
 	def SerialiseToLODTree(self, tBuf, indent, format):
 		'''
@@ -268,23 +290,66 @@ class KDBranch(KDNode):
 		format: Extra string formatting for the serialised object. This is used
 		        to assign the new object to a variable. (string)
 		'''
+		if not self.Object:
+			raise StateError, 'Serialisation requires clusters to have been created.'
+		
 		self.Left.SerialiseToLODTree(tBuf, indent + INDENT_STEP, 'LQ.append(%s)')
 		self.Right.SerialiseToLODTree(tBuf, indent + INDENT_STEP, 'RQ.append(%s)')
 		
 		obName = self.Object.getName()
 		expr = 'br(\'%s\',LQ.pop(),RQ.pop(),%d,%f)' % (obName, self.Axis, self.MedianValue)
 		tBuf.write(indent + (format % expr) + (' # %d' % self.Depth)  + '\n')
+		self.Object.select(True)
 		self.Tree.OnNodeSerialised(self)
 
 class KDLeaf(KDNode):
 	def __init__(self, objects, depth, tree):
 		KDNode.__init__(self, depth, tree)
 		self.Objects = objects
+		self.SerialisableObjects = []
 		tree.OnLeafCreated(self)
 	
-	def CreateClusterHierarchy(self, side = ''):
+	def CreateClusterHierarchy(self, meshObs, posObs, side = ''):
+		'''
+		Create the meshes for this node.
+		
+		Parameters:
+		meshObs: Objects that represent the mesh of this node will be appended
+		         to this list.
+		posObs:  Objects that should be stored in the hierarchy will be appended
+		         to this list. In the case of KDLeaf, the objects will be
+		         empties. Each empty will have a property that 
+		'''
+		if len(self.SerialisableObjects) > 0:
+			raise StateError, 'Tried to create cluster twice.'
+		
+		for o in self.Objects:
+			ps = o.getAllProperties()
+			prop = None
+			for p in ps:
+				if p.name == 'LODObject':
+					prop = p
+					break
+			if prop:
+				#
+				# If the object has an 'LODObject' property, create a new Empty
+				# to stand in its place.
+				#
+				e = Blender.Scene.GetCurrent().objects.new('Empty', 'E' + prop.data)
+				#e = Blender.Object.New('Empty', 'E' + o.getName())
+				e.setLocation(o.getLocation('worldspace'))
+				e.setEuler(o.getEuler('worldspace'))
+				e.addProperty(prop.name, prop.data, prop.type)
+				meshObs.append(o)
+				posObs.append(e)
+				self.SerialisableObjects.append(e)
+			
+			else:
+				meshObs.append(o)
+				posObs.append(o)
+				self.SerialisableObjects.append(o)
+		
 		self.Tree.OnClusterCreated(self)
-		return self.Objects
 	
 	def SerialiseToLODTree(self, tBuf, indent, format):
 		'''
@@ -303,9 +368,13 @@ class KDLeaf(KDNode):
 		format: Extra string formatting for the serialised object. This is used
 		        to assign the new object to a variable. (string)
 		'''
+		if len(self.SerialisableObjects) < len(self.Objects):
+			raise StateError, 'Serialisation requires clusters to have been created.'
+		
 		elements = []
-		for o in self.Objects:
-			elements.append(o.getName())
+		for e in self.SerialisableObjects:
+			elements.append(e.getName())
+			e.select(True)
 		expr = 'lf(%s)' % repr(elements)
 		tBuf.write(indent + (format % expr) + (' # %d' % self.Depth)  + '\n')
 		self.Tree.OnNodeSerialised(self)

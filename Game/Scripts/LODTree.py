@@ -344,16 +344,27 @@ class LODLeaf(LODNode):
 		'''
 		LODNode.__init__(self)
 		
-		self.Objects = []
+		#
+		# ObjectPairs is a list of tuples: (positionObject, meshObject). When
+		# this node is activated, meshObject will be instantiated in the same
+		# position as positionObject. This allows the same meshObject (e.g. a
+		# group) to be re-used for several elements in the tree.
+		#
+		self.ObjectPairs = []
 		self.Name = str(obNames)
 		sceneObs = GameLogic.getCurrentScene().objectsInactive
 		for name in obNames:
-			o = sceneObs['OB' + name]
+			oPos = sceneObs['OB' + name]
+			oMesh = oPos
+			if oPos.has_key('LODObject'):
+				oMesh = sceneObs['OB' + oPos['LODObject']]
+			
 			#
 			# Parents just cause problems with visibility.
 			#
-			o.removeParent()
-			self.Objects.append(o)
+			oPos.removeParent()
+			self.ObjectPairs.append((oPos, oMesh))
+		
 		self.ObjectInstances = []
 		
 		self.NumFramesActive = -1
@@ -361,8 +372,8 @@ class LODLeaf(LODNode):
 	def ActivateRange(self, bounds):
 		'''Search the objects owned by this node. If any of them are within
 		range, this node will be shown.'''
-		for o in self.Objects:
-			if bounds.isInRange(o.worldPosition):
+		for (oPos, _) in self.ObjectPairs:
+			if bounds.isInRange(oPos.worldPosition):
 				self.Visibility = NS_VISIBLE
 				self.NumFramesActive = 0
 				return
@@ -390,12 +401,12 @@ class LODLeaf(LODNode):
 		if self.Visibility:
 			if len(self.ObjectInstances) == 0:
 				scene = GameLogic.getCurrentScene()
-				for o in self.Objects:
-					self.ObjectInstances.append(scene.addObject(o, o))
+				for (oPos, oMesh) in self.ObjectPairs:
+					self.ObjectInstances.append(scene.addObject(oMesh, oPos))
 		else:
 			if len(self.ObjectInstances) > 0:
-				for o in self.ObjectInstances:
-					o.endObject()
+				for oInst in self.ObjectInstances:
+					oInst.endObject()
 				self.ObjectInstances = []
 	
 	def Verify(self, anscestorVisible = None):

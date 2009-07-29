@@ -22,5 +22,7 @@ import Actor
 import Shells
 import BendyLeaf
 import UI
+import LODTree
+import GrassBlade
 print dir()
 print "Done."

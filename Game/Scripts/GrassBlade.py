@@ -74,17 +74,19 @@ class GrassBlade:
 		
 		self.LastBaseFrame = baseFrame
 	
-	def Collide(self, collider):
-		baseFrame = self.GetCollisionForce(collider)
-		self.Owner['BladeZ1'] = baseFrame.x
-		self.Owner['BladeY1'] = baseFrame.y
-		self.WobbleTip(baseFrame)
+	def Collide(self, colliders):
+		vec = Mathutils.Vector(0.0, 0.0)
+		for col in colliders:
+			vec = vec + self.GetCollisionForce(col)
+		self.Owner['BladeZ1'] = vec.x
+		self.Owner['BladeY1'] = vec.y
+		self.WobbleTip(vec)
 
 def CreateGrassBlade(c):
 	GrassBlade(c.owner)
 
 def Collide(c):
-	collider = c.sensors['collider'].owner
-	c.owner['GrassBlade'].Collide(collider)
+	s = c.sensors['Near']
+	c.owner['GrassBlade'].Collide(s.hitObjectList)
 	for act in c.actuators:
 		c.activate(act)

@@ -346,11 +346,11 @@ class Snail(SnailSegment):
 		#
 		# Swap mass with shell so the shell can influence bendy leaves properly
 		#
-		dm = self.Shell.Owner.DynamicMass
-		self.Shell.Owner.DynamicMass = self.Owner.DynamicMass
-		self.Owner.DynamicMass = dm
+		dm = self.Shell.Owner['DynamicMass']
+		self.Shell.Owner['DynamicMass'] = self.Owner['DynamicMass']
+		self.Owner['DynamicMass'] = dm
 		
-		self.Owner.InShell = 1
+		self.Owner['InShell'] = 1
 		self.Shell.OnEntered()
 		self.Owner.setVisible(0, 1)
 	
@@ -367,11 +367,11 @@ class Snail(SnailSegment):
 		#
 		# Swap mass with shell so the body can influence bendy leaves properly
 		#
-		dm = self.Shell.Owner.DynamicMass
-		self.Shell.Owner.DynamicMass = self.Owner.DynamicMass
-		self.Owner.DynamicMass = dm
+		dm = self.Shell.Owner['DynamicMass']
+		self.Shell.Owner['DynamicMass'] = self.Owner['DynamicMass']
+		self.Owner['DynamicMass'] = dm
 		
-		self.Owner.InShell = 0
+		self.Owner['InShell'] = 0
 		self.Shell.OnExited()
 		self.Owner.setVisible(1, 1)
 	

@@ -30,7 +30,7 @@ class StateError(Exception):
 	pass
 
 class Progress:
-	def __init__(self, message, upperBound, updateStep = 0.01):
+	def __init__(self, message, upperBound, updateStep = 0.001):
 		self.Upper = upperBound
 		self.Message = message
 		self.CurrentValue = 0

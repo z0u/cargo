@@ -2,17 +2,44 @@
 from Blender import Mathutils
 from Scripts import Utilities
 
+class SBParticle:
+	'''
+	A 2D softbody particle. Always tries to return to (0, 0). Set the Frame
+	property directly to displace the particle; then call UpdateDynamics to
+	accelerate the particle back towards (0, 0).
+	'''
+	def __init__(self, spring, damp, index):
+		self.Velocity = Mathutils.Vector(0.0, 0.0)
+		self.Frame = Mathutils.Vector(0.0, 0.0)
+		
+		self.Spring = spring
+		self.Damping = damp
+		
+		self.XProp = "BladeX%d" % index
+		self.YProp = "BladeY%d" % index
+	
+	def UpdateDynamics(self):
+		'''
+		Accelerate the particle towards (0, 0)
+		'''
+		self.Velocity = self.Velocity - (self.Frame * self.Spring)
+		self.Velocity = self.Velocity * (1.0 - self.Damping)
+		self.Frame = self.Frame + self.Velocity
+
 class GrassBlade:
 	def __init__(self, owner):
 		self.Owner = owner
 		self.Owner['GrassBlade'] = self
 		
-		ry = owner['LODRadY']
-		rz = owner['LODRadZ']
+		ry = self.Owner['GrassRadY']
+		rz = self.Owner['GrassRadZ']
 		self.BBox = Utilities.Box2D(0.0 - ry, 0.0 - rz, ry, rz)
 		
-		self.TipVelocity = Mathutils.Vector(0.0, 0.0)
-		self.TipFrame = Mathutils.Vector(0.0, 0.0)
+		self.Segments = []
+		for i in range(0, self.Owner['nSegments']):
+			p = SBParticle(self.Owner['Spring'], self.Owner['Damping'], i)
+			self.Segments.append(p)
+		
 		self.LastBaseFrame = Mathutils.Vector(0.0, 0.0)
 
 	def GetCollisionForce(self, collider):
@@ -54,33 +81,28 @@ class GrassBlade:
 		
 		return cPos
 	
-	def WobbleTip(self, baseFrame):
-		#
-		# Move the tip in the opposite direction to the base, so it appears to
-		# have not moved.
-		#
-		delta = baseFrame - self.LastBaseFrame
-		tipFrame = self.TipFrame - delta
-		
-		#
-		# Now accelerate the tip towards the rest position (0.0, 0.0).
-		#
-		self.TipVelocity = self.TipVelocity - (tipFrame * self.Owner['Spring'])
-		self.TipVelocity = self.TipVelocity * (1.0 - self.Owner['Damping'])
-		
-		self.TipFrame = tipFrame + self.TipVelocity
-		self.Owner['BladeZ2'] = self.TipFrame.x
-		self.Owner['BladeY2'] = self.TipFrame.y
-		
-		self.LastBaseFrame = baseFrame
-	
 	def Collide(self, colliders):
+		#
+		# Find the offset of the base.
+		#
 		vec = Mathutils.Vector(0.0, 0.0)
 		for col in colliders:
 			vec = vec + self.GetCollisionForce(col)
-		self.Owner['BladeZ1'] = vec.x
-		self.Owner['BladeY1'] = vec.y
-		self.WobbleTip(vec)
+		self.Owner['BladeXBase'] = vec.x
+		self.Owner['BladeYBase'] = vec.x
+		
+		linkDisplacement = vec - self.LastBaseFrame
+		self.LastBaseFrame = vec
+		
+		#
+		# Move each link in the opposite direction to the preceding link.
+		#
+		for s in self.Segments:
+			s.Frame = s.Frame - linkDisplacement
+			s.UpdateDynamics()
+			self.Owner[s.XProp] = s.Frame.x
+			self.Owner[s.YProp] = s.Frame.y
+			linkDisplacement = s.Velocity
 
 def CreateGrassBlade(c):
 	GrassBlade(c.owner)

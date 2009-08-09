@@ -1,0 +1,6 @@
+ - Start talking about using a KD-tree to speed up searches, and avoid doing
+   distance tests for all objects.
+ - The Blender Game Engine can comfortably have 2000 objects in the scene, but
+   if they are all within the view frustum, the frame rate drops.
+ - By combining the objects into clusters on each level of the tree, the scene
+   is rendered at a much faster rate.

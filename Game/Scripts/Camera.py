@@ -17,6 +17,10 @@
 
 import Utilities
 
+class CameraObserver:
+	def OnCameraMoved(self, autoCamera):
+		pass
+
 class _AutoCamera:
 	'''A Singleton; use the AutoCamera variable (below).'''
 	
@@ -62,6 +66,9 @@ class _AutoCamera:
 		
 		Utilities._SlowCopyLoc(self.Camera, self.Goal, self.CurrentTarget.Factor)
 		Utilities._SlowCopyRot(self.Camera, self.Goal, self.CurrentTarget.Factor)
+		
+		for o in self.Observers:
+			o.OnCameraMoved(self)
 	
 	def PushTarget(self, target, fac = None, instantCut = False):
 		'''Give the camera a new goal, and remember the last one.
@@ -100,6 +107,12 @@ class _AutoCamera:
 				break
 		self.TargetStack = []
 		self.StackModified = True
+	
+	def AddObserver(self, camObserver):
+		self.Observers.append(camObserver)
+	
+	def RemoveObserver(self, camObserver):
+		self.Observers.remove(camObserver)
  
 AutoCamera = _AutoCamera()
 

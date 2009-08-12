@@ -179,15 +179,13 @@ class SegmentChildPivot(SnailSegment):
 class Snail(SnailSegment):
 	Appendages = None # list of SnailSegments
 	CargoHold = None
-	Camera = None
 	Shell = None
 	Shockwave = None
 	Trail = None
 	
-	def __init__(self, owner, cargoHold, camera):
+	def __init__(self, owner, cargoHold):
 		self.Appendages = []
 		self.CargoHold = cargoHold
-		self.Camera = camera
 		self.Shell = None
 		self.Shockwave = None
 		self.Trail = None
@@ -509,72 +507,13 @@ class SnailTrail(SemanticGameObject):
 		pos = Mathutils.Vector(self.Owner.worldPosition)
 		dist = (pos - self.LastTrailPos).magnitude
 		return dist > self.Snail.Owner.TrailSpacing
-
-class AutoCamera:
-	len = len
-	
-	def __init__(self, camera, goal, defaultGoalParent):
-		self.Camera = camera
-		self.DefaultFac = camera['SlowFac']
-		self.Goal = goal
-		self.GoalParentStack = [(defaultGoalParent, self.DefaultFac)]
-		self.ResetGoalParent()
-	
-	def PushGoalParent(self, newParent, fac = None, instantCut = 0):
-		'''Give the camera a new goal, and remember the last one.
-		Call PopGoalParent to restore the previous relationship.
-		Properties:
-		newParent:	The new goal parent.
-		fac:		The speed factor to use for the slow parent relationship.
-		instantCut:	Whether to make the camera jump immediately to the new position.
-		'''
-		self.GoalParentStack.append((newParent, fac))
-		self.SetGoalParent(newParent, fac, instantCut)
-	
-	def PopGoalParent(self, instantCut = 0):
-		'''Restore the camera goal's previous parent relationship.'''
-		if self.len(self.GoalParentStack) <= 1:
-			print "Warning: Attempted to remove last camera goal parent."
-			return
-		self.GoalParentStack.pop()
-		(parent, fac) = self.GoalParentStack[-1]
-		self.SetGoalParent(parent, fac, instantCut)
-		
-	def SetGoalParent(self, newParent, fac = None, instantCut = 0):
-		'''Give the camera a new goal. You should probably use
-		PushGoalParent instead.'''
-		self.Goal.removeParent()
-		self.Goal.worldPosition = newParent.worldPosition
-		self.Goal.worldOrientation = newParent.worldOrientation
-		
-		if fac == None:
-			fac = self.DefaultFac
-		self.Camera['SlowFac'] = fac
-		
-		if instantCut:
-			self.Camera.setWorldPosition(self.Goal.worldPosition)
-			self.Camera.worldOrientation = self.Goal.worldOrientation
-		self.Goal.setParent(newParent)
-	
-	def ResetGoalParent(self, instantCut = 0):
-		'''Reset the camera to follow its original goal. This
-		clears the relationship stack.'''
-		self.GoalParentStack = self.GoalParentStack[:1]
-		(parent, fac) = self.GoalParentStack[0]
-		self.SetGoalParent(parent, fac, instantCut)
-
 #
 # Snail wrapper functions.
 #
 
 def Init(cont):
 	cargoHold = cont.sensors['sCargoHoldHook'].owner
-	cameraGoal = cont.sensors['sCameraGoalHook'].owner
-	cameraGoalParent = cont.sensors['sCameraGoalParentHook'].owner
-	camera = cont.sensors['sCameraHook'].owner
-	
-	autoCamera = AutoCamera(camera, cameraGoal, cameraGoalParent)
-	snail = Snail(cont.owner, cargoHold, autoCamera)
+	snail = Snail(cont.owner, cargoHold)
 	cont.owner['Snail'] = snail
 	
 	print "Snail %s created." % cont.owner

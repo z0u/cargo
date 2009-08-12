@@ -24,5 +24,6 @@ import BendyLeaf
 import UI
 import LODTree
 import GrassBlade
+import Camera
 print dir()
 print "Done."

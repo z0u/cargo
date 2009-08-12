@@ -127,15 +127,12 @@ def _toWorld(referential, point):
 	refOMat.transpose()
 	return (point * refOMat) + refP
 
-def SlowCopyRot(c):
+def _SlowCopyRot(o, goal, factor):
 	'''
-	Slow parenting (Rotation only). The owner will copy the rotation of the
-	'sGoal' sensor's owner. The owner must have a SlowFac property:
-	0 <= SlowFac <= 1. Low values will result in slower and smoother movement.
+	Slow parenting (Rotation only). 'o' will copy the rotation of the 'goal'.
+	'o' must have a SlowFac property: 0 <= SlowFac <= 1. Low values will result
+	in slower and smoother movement.
 	'''
-	o = c.owner
-	goal = c.sensors['sGoal'].owner
-
 	goalOrn = goal.worldOrientation
 	goalOrn = Mathutils.Matrix(
 		goalOrn[0],
@@ -152,11 +149,32 @@ def SlowCopyRot(c):
 	)
 	orn.transpose()
 	orn = orn.toQuat()
-	orn = Mathutils.Slerp(orn, goalOrn, o['SlowFac'])
+	orn = Mathutils.Slerp(orn, goalOrn, factor)
 	orn = orn.toMatrix()
 	orn.transpose()
-
+	
 	o.localOrientation = orn
+
+def SlowCopyRot(c):
+	'''
+	Slow parenting (Rotation only). The owner will copy the rotation of the
+	'sGoal' sensor's owner. The owner must have a SlowFac property:
+	0 <= SlowFac <= 1. Low values will result in slower and smoother movement.
+	'''
+	o = c.owner
+	goal = c.sensors['sGoal'].owner
+	_SlowCopyRot(o, goal, o['SlowFac'])
+
+def _SlowCopyLoc(o, goal, factor):
+	'''
+	Slow parenting (Rotation only). 'o' will copy the position of the 'goal'.
+	'o' must have a SlowFac property: 0 <= SlowFac <= 1. Low values will result
+	in slower and smoother movement.
+	'''
+	goalPos = Mathutils.Vector(goal.worldPosition)
+	pos = Mathutils.Vector(o.worldPosition)
+	
+	o.worldPosition = _lerp(pos, goalPos, factor)
 
 def SlowCopyLoc(c):
 	'''
@@ -166,11 +184,7 @@ def SlowCopyLoc(c):
 	'''
 	o = c.owner
 	goal = c.sensors['sGoal'].owner
-
-	goalPos = Mathutils.Vector(goal.worldPosition)
-	pos = Mathutils.Vector(o.worldPosition)
-
-	o.worldPosition = _lerp(pos, goalPos, o['SlowFac'])
+	_SlowCopyLoc(o, goal, o['SlowFac'])
 
 def StorePos(c):
 	'''Store the position and orientation of the owner.'''

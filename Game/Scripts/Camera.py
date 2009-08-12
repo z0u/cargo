@@ -18,94 +18,113 @@
 import Utilities
 
 class CameraObserver:
+	'''
+	An observer of AutoCameras. One use for this is cameras in other scenes.
+	For example, the background camera sets its worldOrientation to be the same
+	as the camera in the game play scene, which is bound to the AutoCamera.
+	'''
 	def OnCameraMoved(self, autoCamera):
 		pass
 
 class _AutoCamera:
-	'''A Singleton; use the AutoCamera variable (below).'''
+	'''
+	Manages the transform of the camera, and provides transitions between camera
+	locations. To transition to a new location, call PushGoal. The reverse
+	transition can be performed by calling PopGoal.
+	
+	A Singleton; use the AutoCamera instance (below).
+	'''
 	
 	def __init__(self):
+		'''
+		Create an uninitialised AutoCamera. Call SetCamera to bind it to a
+		camera.
+		'''
 		self.Camera = None
-		self.Goal = None
-		self.DefaultTarget = None
-		self.CurrentTarget = None
-		self.TargetStack = []
+		self.DefaultGoal = None
+		self.CurrentGoal = None
+		self.GoalStack = []
 		self.StackModified = False
 		self.InstantCut = False
 		
 		self.Observers = []
 	
-	def SetCamera(self, camera, goal, defaultTarget, defaultFactor):
+	def SetCamera(self, camera, defaultGoal, defaultFactor):
+		'''
+		Bind to a camera, and set the default goal. If there is already a goal
+		on the GoalStack, it will be used intead of defaultGoal.
+		'''
 		self.Camera = camera
-		self.Goal = goal
 		
-		self.DefaultTarget = CameraTarget(defaultTarget, defaultFactor, False)
+		self.DefaultGoal = CameraGoal(defaultGoal, defaultFactor, False)
 		self.StackModified = True
 		self.InstantCut = False
 	
 	def OnRender(self):
 		'''
-		Update the location of the camera.
+		Update the location of the camera. Observers will be notified. The
+		camera should have a controller set up to call this once per frame.
 		'''
 		if not self.Camera:
 			return
 		
 		if self.StackModified:
-			self.CurrentTarget = self.DefaultTarget
-			if len(self.TargetStack) > 0:
-				self.CurrentTarget = self.TargetStack[-1]
-			
-			self.Goal.removeParent()
-			self.Goal.worldPosition = self.CurrentTarget.Target.worldPosition
-			self.Goal.worldOrientation = self.CurrentTarget.Target.worldOrientation
+			self.CurrentGoal = self.DefaultGoal
+			if len(self.GoalStack) > 0:
+				self.CurrentGoal = self.GoalStack[-1]
 			
 			if self.InstantCut:
-				self.Camera.setWorldPosition(self.Goal.worldPosition)
-				self.Camera.worldOrientation = self.Goal.worldOrientation
-			self.Goal.setParent(self.CurrentTarget.Target)
+				self.Camera.worldPosition = self.CurrentGoal.Goal.worldPosition
+				self.Camera.worldOrientation = self.CurrentGoal.Goal.worldOrientation
 		
-		Utilities._SlowCopyLoc(self.Camera, self.Goal, self.CurrentTarget.Factor)
-		Utilities._SlowCopyRot(self.Camera, self.Goal, self.CurrentTarget.Factor)
+		Utilities._SlowCopyLoc(self.Camera, self.CurrentGoal.Goal, self.CurrentGoal.Factor)
+		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.Goal, self.CurrentGoal.Factor)
 		
 		for o in self.Observers:
 			o.OnCameraMoved(self)
 	
-	def PushTarget(self, target, fac = None, instantCut = False):
-		'''Give the camera a new goal, and remember the last one.
-		Call PopGoalParent to restore the previous relationship.
+	def PushGoal(self, goal, fac = None, instantCut = False):
+		'''
+		Give the camera a new goal, and remember the last one. Call PopGoal to
+		restore the previous relationship. The camera position isn't changed
+		until OnRender is called.
 		
 		Paremeters:
-		newParent:  The new goal parent.
+		goal:       The new goal (KX_GameObject).
 		fac:        The speed factor to use for the slow parent relationship.
+		            0.0 <= fac <= 1.0.
 		instantCut: Whether to make the camera jump immediately to the new
 		            position.
 		'''
-		self.TargetStack.append(CameraTarget(target, fac, instantCut))
+		self.GoalStack.append(CameraGoal(goal, fac, instantCut))
 		self.StackModified = True
 		if instantCut:
 			self.InstantCut = True
 	
-	def PopTarget(self):
-		'''Restore the camera goal's previous parent relationship.'''
+	def PopGoal(self):
+		'''
+		Restore the camera's previous goal relationship. The transform isn't
+		changed until OnRender is called.
+		'''
 		try:
-			oldTarget = self.TargetStack.pop()
+			oldGoal = self.GoalStack.pop()
 		except IndexError:
-			print "Warning: Camera target stack already empty."
+			print "Warning: Camera goal stack already empty."
 			return
 		self.StackModified = True
-		if oldTarget.InstantCut:
+		if oldGoal.InstantCut:
 			self.InstantCut = True
 	
-	def ResetTarget(self):
-		'''Reset the camera to follow its original goal. This
-		clears the relationship stack.'''
-		if len(self.TargetStack) == 0:
+	def ResetGoal(self):
+		'''Reset the camera to follow its original goal. This clears the
+		relationship stack.'''
+		if len(self.GoalStack) == 0:
 			return
-		for t in self.TargetStack:
-			if t.InstantCut:
+		for g in self.GoalStack:
+			if g.InstantCut:
 				self.InstantCut = True
 				break
-		self.TargetStack = []
+		self.GoalStack = []
 		self.StackModified = True
 	
 	def AddObserver(self, camObserver):
@@ -119,11 +138,10 @@ AutoCamera = _AutoCamera()
 def SetCamera(c):
 	camera = c.owner
 	goal = c.sensors['sGoalHook'].owner
-	target = c.sensors['sGoalParentHook'].owner
-	AutoCamera.SetCamera(camera, goal, target, camera['SlowFac'])
+	AutoCamera.SetCamera(camera, goal, camera['SlowFac'])
 
-class CameraTarget:
-	def __init__(self, target, factor = None, instantCut = False):
-		self.Target = target
+class CameraGoal:
+	def __init__(self, goal, factor = None, instantCut = False):
+		self.Goal = goal
 		self.Factor = factor
 		self.InstantCut = instantCut

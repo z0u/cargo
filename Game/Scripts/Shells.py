@@ -58,7 +58,7 @@ class Shell(Actor.Actor):
 		activeCam = Camera.AutoCamera.Camera
 		self.CameraGoal.worldPosition = activeCam.worldPosition
 		self.CameraGoal.worldOrientation = activeCam.worldOrientation
-		Camera.AutoCamera.PushTarget(self.CameraGoal, fac = self.CameraGoal['SlowFac'])
+		Camera.AutoCamera.PushGoal(self.CameraGoal, fac = self.CameraGoal['SlowFac'])
 		self.CameraGoal.state = 1<<1 # state 2
 	
 	def OnEntered(self):
@@ -74,7 +74,7 @@ class Shell(Actor.Actor):
 	def OnPostExit(self):
 		'''Called when the snail has finished its exit shell
 		animation.'''
-		Camera.AutoCamera.PopTarget()
+		Camera.AutoCamera.PopGoal()
 		self.CameraGoal.state = 1<<0 # state 1
 
 def CreateShell(c):

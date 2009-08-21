@@ -25,3 +25,7 @@ Puddle4.wav:
 
 Bell.wav:
  - 24629 anamorphosis
+
+Slither.wav:
+ - 50457 MeltyMcFace
+ - 16810 harri

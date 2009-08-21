@@ -25,6 +25,7 @@ import LODTree
 import GrassBlade
 import Camera
 import Water
+import Sound
 
 #
 # Configure the environment.

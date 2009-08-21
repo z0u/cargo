@@ -479,7 +479,6 @@ class SnailTrail(SemanticGameObject):
 	TrailSpots = None
 	SpotIndex = None
 	Snail = None
-	len = len
 
 	def __init__(self, owner, snail):
 		self.LastTrailPos = Mathutils.Vector(owner.worldPosition)
@@ -501,7 +500,7 @@ class SnailTrail(SemanticGameObject):
 		spotI.setParent(touchedObject)
 		spotI.state = 1<<1
 		self.LastTrailPos = Mathutils.Vector(self.Owner.worldPosition)
-		self.SpotIndex = (self.SpotIndex + 1) % self.len(self.TrailSpots)
+		self.SpotIndex = (self.SpotIndex + 1) % len(self.TrailSpots)
 	
 	def DistanceReached(self):
 		pos = Mathutils.Vector(self.Owner.worldPosition)

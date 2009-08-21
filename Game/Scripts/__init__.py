@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-print "Initialising scripts...",
 import Snail
 import Utilities
 import Actor
@@ -25,5 +24,10 @@ import UI
 import LODTree
 import GrassBlade
 import Camera
-print dir()
-print "Done."
+import Water
+
+#
+# Configure the environment.
+#
+import GameLogic
+GameLogic.setGravity([0.0, 0.0, -75.0])

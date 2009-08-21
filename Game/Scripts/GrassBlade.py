@@ -95,6 +95,11 @@ class GrassBlade:
 		self.LastBaseFrame = vec
 		
 		#
+		# Provide input to other logic paths (a sensor might watch this).
+		#
+		self.Owner['Acceleration'] = linkDisplacement.magnitude
+		
+		#
 		# Move each link in the opposite direction to the preceding link.
 		#
 		for s in self.Segments:

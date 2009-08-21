@@ -39,14 +39,23 @@ class Water:
 		scene = GameLogic.getCurrentScene()
 		instance = scene.addObject(template, template)
 	
-	def OnSink(self, ob):
-		self.SpawnSurfaceDecal(self.BubbleTemplate, ob.worldPosition)
+	def OnSink(self, actor):
+		'''
+		Called when an actor dies by drowning. This should be called by the
+		actor. No references are retained; it's OK for the actor to destroy
+		itself.
+		
+		Parameters:
+		actor: The actor that is drowning.
+		'''
+		self.SpawnSurfaceDecal(self.BubbleTemplate, actor.Owner.worldPosition)
 	
 	def OnCollision(self, ob):
 		'''
 		Called when an object collides with the water. Creates an instance of a
 		ripple (as defined by the TemplateOb property) at the location on the
-		surface that is nearest to the colliding object.
+		surface that is nearest to the colliding object. This is usually called
+		by a sensor attached to the water. Actors shouldn't need to call it.
 		'''
 		pos = Mathutils.Vector(ob.worldPosition)
 		

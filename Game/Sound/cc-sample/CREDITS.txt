@@ -1,4 +1,4 @@
-Samples used from Freesound
+== Freesound samples downloaded ==
 
     August 14, 2009
         By arnaud coutancier (http://www.freesound.org/usersViewSingle.php?id=520316)
@@ -8,3 +8,17 @@ Samples used from Freesound
         By acclivity (http://www.freesound.org/usersViewSingle.php?id=37876)
             Puddle1.wav (http://www.freesound.org/samplesViewSingle.php?id=24206)
             Puddle2.wav (http://www.freesound.org/samplesViewSingle.php?id=24207)
+
+== Sample catalogue ==
+Sinking.wav:
+ - 16740 kijjaz
+ - 54037 arnaud
+
+Puddle_1.wav:
+ - 24206 acclivity
+Puddle2.wav:
+ - 24206 acclivity
+Puddle3.wav:
+ - 24206 acclivity
+Puddle4.wav:
+ - 24206 acclivity

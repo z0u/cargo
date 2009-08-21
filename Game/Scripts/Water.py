@@ -1,7 +1,7 @@
 import GameLogic
 from Blender import Mathutils
 
-ANGLE_INCREMENT = 80.0
+ANGLE_INCREMENT = 81.0
 
 class Water:
 	def __init__(self, owner):
@@ -15,8 +15,32 @@ class Water:
 		owner['_Water'] = self
 		
 		self.InstanceAngle = 0.0
-		self.Template = scene.objectsInactive['OB' + owner['TemplateOb']]
+		self.BubbleTemplate = scene.objectsInactive['OB' + owner['BubbleTemplate']]
+		self.RippleTemplate = scene.objectsInactive['OB' + owner['RippleTemplate']]
 		self.MinDist = self.Owner['MinDist']
+	
+	def SpawnSurfaceDecal(self, template, position):
+		pos = position
+		pos[2] = self.Owner.worldPosition[2]
+		
+		#
+		# Transform template.
+		#
+		elr = Mathutils.Euler(0.0, 0.0, self.InstanceAngle)
+		self.InstanceAngle = self.InstanceAngle + ANGLE_INCREMENT
+		oMat = elr.toMatrix()
+		oMat.transpose()
+		template.worldOrientation = oMat
+		template.worldPosition = pos
+		
+		#
+		# Create object.
+		#
+		scene = GameLogic.getCurrentScene()
+		instance = scene.addObject(template, template)
+	
+	def OnSink(self, ob):
+		self.SpawnSurfaceDecal(self.BubbleTemplate, ob.worldPosition)
 	
 	def OnCollision(self, ob):
 		'''
@@ -39,24 +63,8 @@ class Water:
 			#
 			pass
 		
-		pos[2] = self.Owner.worldPosition[2]
 		ob['Water_LastPos'] = pos
-		
-		#
-		# Transform template.
-		#
-		elr = Mathutils.Euler(0.0, 0.0, self.InstanceAngle)
-		self.InstanceAngle = self.InstanceAngle + ANGLE_INCREMENT
-		oMat = elr.toMatrix()
-		oMat.transpose()
-		self.Template.worldOrientation = oMat
-		self.Template.worldPosition = pos
-		
-		#
-		# Create object.
-		#
-		scene = GameLogic.getCurrentScene()
-		instance = scene.addObject(self.Template, self.Template)
+		self.SpawnSurfaceDecal(self.RippleTemplate, ob.worldPosition)
 
 def CreateWater(c):
 	Water(c.owner)

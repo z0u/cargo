@@ -50,8 +50,6 @@ class SnailSegment(Utilities.SemanticGameObject):
 		self.Fulcrum = None   # KX_GameObject
 		self.Rays    = {}     # Dictionary of SnailRays
 		Utilities.SemanticGameObject.__init__(self, owner)
-		
-		print "Created snail segment %s" % self.Owner.name
 
 	def parseChild(self, child, type):
 		if (type == "SnailRay"):
@@ -466,8 +464,6 @@ def Init(cont):
 	cargoHold = cont.sensors['sCargoHoldHook'].owner
 	snail = Snail(cont.owner, cargoHold)
 	cont.owner['Snail'] = snail
-	
-	print "Snail %s created." % cont.owner
 
 def Orient(c):
 	c.owner['Snail'].orient()

@@ -27,6 +27,7 @@ dictionary.
 
 from Blender import Mathutils
 import Utilities
+import Actor
 
 ZAXIS  = Mathutils.Vector([0.0, 0.0, 1.0])
 ORIGIN = Mathutils.Vector([0.0, 0.0, 0.0])
@@ -34,60 +35,21 @@ ORIGIN = Mathutils.Vector([0.0, 0.0, 0.0])
 #
 # Abstract classes
 #
-
-class SemanticGameObject:
-	Owner = None
-	pow = pow
-	
-	def __init__(self, owner):
-		self.Owner = owner
-		self.parseChildren()
-
-	def parseChild(self, child, type):
-		pass
-	
-	def parseChildren(self):
-		for child in self.Owner.children:
-			try:
-				if (not self.parseChild(child, child['Type'])):
-					print "Warning: child %s of %s has unexpected type (%s)" % (
-						child.name,
-						self.Owner.name,
-						child['Type'])
-			
-			except KeyError:
-				continue
-	
-class ISnailSegment:
-	def getLastMeanHitPosition(self):
-		return ORIGIN
-	
 class ISnailRay:
-	def getHitPoint(self):
+	def getHitPosition(self):
 		return ORIGIN
 
 #
 # Concrete classes
 #
 	
-class SnailSegment(SemanticGameObject):
-	Parent		= None # SnailSegment or None
-	Child		= None # SnailSegment or None
-	Fulcrum		= None # KX_GameObject
-	Rays		= None # Dictionary of SnailRays
-	LastMeanHitPosition = None # Vector
-	
-	#
-	# Static members
-	#
-	ZAXIS = ZAXIS
-	
+class SnailSegment(Utilities.SemanticGameObject):
 	def __init__(self, owner, parent):
-		self.Parent = parent
-		self.Child = None
-		self.Fulcrum = None
-		self.Rays = {}
-		SemanticGameObject.__init__(self, owner)
+		self.Parent  = parent # SnailSegment or None
+		self.Child   = None   # SnailSegment or None
+		self.Fulcrum = None   # KX_GameObject
+		self.Rays    = {}     # Dictionary of SnailRays
+		Utilities.SemanticGameObject.__init__(self, owner)
 		
 		print "Created snail segment %s" % self.Owner.name
 
@@ -132,7 +94,7 @@ class SnailSegment(SemanticGameObject):
 		p3 = Mathutils.Vector(self.Parent.Fulcrum.worldPosition)
 		normal = Mathutils.TriangleNormal(p1, p2, p3)
 		
-		parNorm = self.ZAXIS * parentOrnMat
+		parNorm = ZAXIS * parentOrnMat
 		dot = Mathutils.DotVecs(normal, parNorm)
 		if (dot > 0.0):
 			#
@@ -143,7 +105,7 @@ class SnailSegment(SemanticGameObject):
 			# Don't use a factor of 0.5: potential for normal to average out
 			# to be (0,0,0)
 			#
-			orientation = Mathutils.Vector(self.Owner.getAxisVect(self.ZAXIS))
+			orientation = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
 			orientation = Utilities._lerp(normal, orientation, 0.4)
 			self.Owner.alignAxisToVect(orientation, 2)
 		
@@ -176,14 +138,10 @@ class SegmentChildPivot(SnailSegment):
 	def orient(self, parentOrnMat):
 		self.Child.orient(parentOrnMat)
 
-class Snail(SnailSegment):
-	Appendages = None # list of SnailSegments
-	CargoHold = None
-	Shell = None
-	Shockwave = None
-	Trail = None
-	
+class Snail(SnailSegment, Actor.StatefulActor):
 	def __init__(self, owner, cargoHold):
+		Actor.StatefulActor.__init__(self, owner)
+		
 		self.Appendages = []
 		self.CargoHold = cargoHold
 		self.Shell = None
@@ -209,7 +167,7 @@ class Snail(SnailSegment):
 			return True
 		else:
 			return SnailSegment.parseChild(self, child, type)
-		
+	
 	def orient(self):
 		hitPs = []
 		hitNs = []
@@ -248,7 +206,7 @@ class Snail(SnailSegment):
 		
 		for appendage in self.Appendages:
 			appendage.orient()
-			
+	
 	def setOrientation(self, ob, target, ref):
 		'''
 		Sets the orientation of 'ob' to match that of 'target'
@@ -286,7 +244,7 @@ class Snail(SnailSegment):
 		posFinal = tPos - offset
 		
 		ob.worldPosition = posFinal
-		
+	
 	def _stowShell(self, shell):
 		referential = shell
 		for child in shell.children:
@@ -296,7 +254,7 @@ class Snail(SnailSegment):
 		self.setOrientation(shell, self.CargoHold, referential)
 		self.setPosition(shell, self.CargoHold, referential)
 		shell.setParent(self.CargoHold)
-		
+	
 	def setShell(self, shell):
 		'''
 		Add the shell as a descendant of the snail. It will be
@@ -317,11 +275,11 @@ class Snail(SnailSegment):
 		self.Owner['DynamicMass'] = self.Owner['DynamicMass'] + self.Shell.Owner['DynamicMass']
 		self.Shell.OnPickedUp(self)
 		self.Shockwave.state = 1<<1 # state 2
-		
+	
 	def removeShell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
 		self.Shell.Owner.removeParent()
-		velocity = self.Owner.getAxisVect(self.ZAXIS)
+		velocity = self.Owner.getAxisVect(ZAXIS)
 		velocity = Mathutils.Vector(velocity)
 		velocity = velocity * self.Owner['ShellPopForce']
 		self.Shell.Owner.applyImpulse(self.Shell.Owner.worldPosition, velocity)
@@ -334,13 +292,13 @@ class Snail(SnailSegment):
 		'''Called when the snail starts getting into the shell
 		(several frames before control is transferred).'''
 		self.Shell.OnPreEnter()
-		
+	
 	def enterShell(self):
 		'''Transfers control of the character to the shell.
 		The snail must have a shell.'''
 		self.Shell.Owner.removeParent()
 		self.Owner.setParent(self.Shell.Owner)
-
+	
 		#
 		# Swap mass with shell so the shell can influence bendy leaves properly
 		#
@@ -361,7 +319,7 @@ class Snail(SnailSegment):
 		self._stowShell(self.Shell.Owner)
 		self.Owner.setLinearVelocity(linV)
 		self.Owner.setAngularVelocity(angV)
-
+	
 		#
 		# Swap mass with shell so the body can influence bendy leaves properly
 		#
@@ -379,7 +337,7 @@ class Snail(SnailSegment):
 		transferred).'''
 		self.Shell.OnPostExit()
 
-class SnailRayCluster(ISnailRay, SemanticGameObject):
+class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 	'''A collection of SnailRays. These will cast a ray once per frame in the
 	order defined by their Priority property (ascending order). The first one
 	that hits is used.'''
@@ -390,7 +348,7 @@ class SnailRayCluster(ISnailRay, SemanticGameObject):
 	def __init__(self, owner):
 		self.Rays = []
 		self.Marker = None
-		SemanticGameObject.__init__(self, owner)
+		Utilities.SemanticGameObject.__init__(self, owner)
 		if (len(self.Rays) <= 0):
 			raise Exception("Ray cluster %s has no ray children." % self.Owner.name)
 		self.Rays.sort(lambda a, b: a.Owner.Priority - b.Owner.Priority)
@@ -427,13 +385,12 @@ class SnailRayCluster(ISnailRay, SemanticGameObject):
 			
 		return hit, Utilities._toWorld(self.Owner, self.LastHitPoint)
 
-class SnailRay(ISnailRay, SemanticGameObject):
-	ZAXIS = ZAXIS
+class SnailRay(ISnailRay, Utilities.SemanticGameObject):
 	LastPoint = None
 
 	def __init__(self, owner):
 		self.Marker = None
-		SemanticGameObject.__init__(self, owner)
+		Utilities.SemanticGameObject.__init__(self, owner)
 		self.LastPoint = Mathutils.Vector(self.Owner.worldPosition)
 	
 	def parseChild(self, child, type):
@@ -447,7 +404,7 @@ class SnailRay(ISnailRay, SemanticGameObject):
 
 	def getHitPosition(self):
 		origin = Mathutils.Vector(self.Owner.worldPosition)
-		dir = Mathutils.Vector(self.Owner.getAxisVect(self.ZAXIS))
+		dir = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
 		through = origin + dir
 		object, hitPoint, normal = self.Owner.rayCast(
 			through,            # to
@@ -467,25 +424,19 @@ class SnailRay(ISnailRay, SemanticGameObject):
 			if (Mathutils.DotVecs(normal, dir) < 0.0):
 				hit = 1
 				self.LastPoint = Mathutils.Vector(hitPoint)
-
+		
 		if (self.Marker):
 			self.Marker.setWorldPosition(self.LastPoint)
 		
 		return hit, self.LastPoint
 
-class SnailTrail(SemanticGameObject):
-	ZAXIS = ZAXIS
-	LastTrailPos = None
-	TrailSpots = None
-	SpotIndex = None
-	Snail = None
-
+class SnailTrail(Utilities.SemanticGameObject):
 	def __init__(self, owner, snail):
 		self.LastTrailPos = Mathutils.Vector(owner.worldPosition)
 		self.TrailSpots = []
 		self.SpotIndex = 0
 		self.Snail = snail
-		SemanticGameObject.__init__(self, owner)
+		Utilities.SemanticGameObject.__init__(self, owner)
 	
 	def parseChild(self, child, type):
 		if (type == "TrailSpot"):
@@ -506,8 +457,9 @@ class SnailTrail(SemanticGameObject):
 		pos = Mathutils.Vector(self.Owner.worldPosition)
 		dist = (pos - self.LastTrailPos).magnitude
 		return dist > self.Snail.Owner.TrailSpacing
+
 #
-# Snail wrapper functions.
+# Module interface functions.
 #
 
 def Init(cont):

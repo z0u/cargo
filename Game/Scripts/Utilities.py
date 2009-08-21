@@ -38,7 +38,7 @@ class SemanticGameObject:
 						self.Owner.name,
 						child['Type'])
 			
-			except AttributeError:
+			except KeyError:
 				continue
 
 class Box2D:

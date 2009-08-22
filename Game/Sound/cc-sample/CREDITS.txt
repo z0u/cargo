@@ -26,6 +26,19 @@ Puddle4.wav:
 Bell.wav:
  - 24629 anamorphosis
 
-Slither.wav:
+Slither1.wav:
+ - 15562 tigersound
+ - 69208 FreqMan
+Slither2.wav:
+ - 15562 tigersound
+ - 69208 FreqMan
+Slither3.wav:
+ - 15562 tigersound
+ - 69208 FreqMan
+Slither4.wav:
+ - 15562 tigersound
+ - 69208 FreqMan
+
+ShellPop.wav
+ - 33369 HerbertBoland
  - 50457 MeltyMcFace
- - 16810 harri

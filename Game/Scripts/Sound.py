@@ -27,7 +27,6 @@ def PlayWithRandomPitch(c):
 	# Set the pitch and activate!
 	#
 	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], Utilities.Random.next())
-	print "Playing with pitch %f" % a.pitch
 	c.activate(a)
 
 def Fade(c):

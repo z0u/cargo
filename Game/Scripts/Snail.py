@@ -471,12 +471,15 @@ def Orient(c):
 def OnShellTouched(c):
 	o = c.owner
 	
-	pickUp = False
+	activate = True
 	for s in c.sensors:
-		if s.positive:
-			pickUp = True
+		if not s.positive:
+			activate = False
 	
-	if (pickUp and not o['HasShell']):
+	if not activate:
+		return
+	
+	if not o['HasShell']:
 		ob = c.sensors['sShellPickup'].hitObject
 		shell = ob['Actor']
 		if (not shell.Owner['Carried']):

@@ -570,17 +570,20 @@ def Turn(c):
 		targetBendAngleFore = targetBendAngleFore + o['MaxBendAngle']
 		targetRot = targetRot - o['MaxRot']
 	
+	moving = False
 	if sfwd.positive and not sbkwd.positive:
 		#
 		# Moving forward.
 		#
 		targetBendAngleAft = targetBendAngleFore
+		moving = True
 	elif sbkwd.positive and not sfwd.positive:
 		#
 		# Reversing: invert rotation direction.
 		#
 		targetBendAngleAft = targetBendAngleFore
 		targetRot = 0.0 - targetRot
+		moving = True
 	else:
 		#
 		# Stationary. Only bend the head.
@@ -591,9 +594,10 @@ def Turn(c):
 	o['BendAngleFore'] = Utilities._lerp(o['BendAngleFore'],
 	                                     targetBendAngleFore,
 	                                     o['BendFactor'])
-	o['BendAngleAft'] = Utilities._lerp(o['BendAngleAft'],
-	                                    targetBendAngleAft,
-	                                    o['BendFactor'])
+	if moving:
+		o['BendAngleAft'] = Utilities._lerp(o['BendAngleAft'],
+		                                    targetBendAngleAft,
+		                                    o['BendFactor'])
 	
 	o['Rot'] = Utilities._lerp(o['Rot'], targetRot, o['RotFactor'])
 	o.setAngularVelocity([0.0, 0.0, o['Rot']], 1)

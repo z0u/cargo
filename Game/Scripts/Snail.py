@@ -470,11 +470,15 @@ def Orient(c):
 
 def OnShellTouched(c):
 	o = c.owner
-	s = c.sensors['sShellPickup']
-	sD = c.sensors['sDelay']
 	
-	if (s.positive and sD.positive and not o['HasShell']):
-		shell = s.hitObject['Actor']
+	pickUp = False
+	for s in c.sensors:
+		if s.positive:
+			pickUp = True
+	
+	if (pickUp and not o['HasShell']):
+		ob = c.sensors['sShellPickup'].hitObject
+		shell = ob['Actor']
 		if (not shell.Owner['Carried']):
 			o['Snail'].setShell(shell)
 

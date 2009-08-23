@@ -37,34 +37,36 @@ NS_VISIBLE_DESCENDANT = 1
 NS_VISIBLE            = 2
 NS_IMPLICIT           = 3
 
-class LODManager:
+class _LODManager:
 	'''A registrar of LODTrees. Each tree adds itself to this manager
 	(singleton; instance created below). Other scripts then have a central place
 	to access LODTrees, such as the module function ActivateRange, below.'''
 	def __init__(self):
 		self.Trees = []
+		self.Colliders = set()
 	
 	def AddTree(self, tree):
 		self.Trees.append(tree)
 	
-	def ActivateRange(self, centre, radius):
-		bounds = Cube(centre, radius)
-		for t in self.Trees:
-			t.ActivateRange(bounds)
-
-_lodManager = LODManager()
-
-def ActivateRange(cont):
-	'''
-	Activate all leaves in all trees that are close to the current controller's
-	owner. The object should have a property called 'LODRadius': Any leaf closer
-	than 'LODRadius' will be activated, along with its siblings.
+	def AddCollider(self, actor):
+		self.Colliders.add(actor)
+		print "Registered collider", actor.Owner.name
 	
-	This should only be called once per frame; therefore, only one object can be
-	the centre of activity at a time.
-	'''
-	ob = cont.owner
-	_lodManager.ActivateRange(ob.worldPosition, ob['LODRadius'])
+	def RemoveCollider(self, actor):
+		self.Colliders.remove(actor)
+	
+	def Activate(self):
+		boundsList = []
+		for c in self.Colliders:
+			boundsList.append(Cube(c.Owner.worldPosition, c.Owner['LODRadius']))
+		for t in self.Trees:
+			t.ActivateRange(boundsList)
+
+LODManager = _LODManager()
+
+def Activate(cont):
+	'''Update which blades of grass are active. Call this once per frame.'''
+	LODManager.Activate()
 
 class Cube:
 	'''A bounding cube with arbitrary dimensions, defined by its centre
@@ -96,10 +98,9 @@ class LODTree:
 		root: The root LODNode of the tree.'''
 		
 		self.Root = root
-		_lodManager.AddTree(self)
-		self.ErrorState = False
+		LODManager.AddTree(self)
 	
-	def ActivateRange(self, bounds):
+	def ActivateRange(self, boundsList):
 		'''
 		Traverse the tree to make the leaves that are in range 'active' - i.e.
 		make their constituent parts visible, hiding the low-LOD clusters that
@@ -108,10 +109,7 @@ class LODTree:
 		Parameters:
 		bounds: The bounding cube to search for elements in.
 		'''
-		if self.ErrorState:
-			return
-		
-		self.Root.ActivateRange(bounds)
+		self.Root.ActivateRange(boundsList)
 		if not self.Root.Visibility:
 			self.Root.Visibility = NS_IMPLICIT
 		self.Root.Update()
@@ -127,7 +125,7 @@ class LODNode:
 		self.Visibility = NS_HIDDEN
 		self.Name = None
 	
-	def ActivateRange(self, bounds):
+	def ActivateRange(self, boundsList):
 		pass
 	
 	def Pulse(self, maxAge):
@@ -208,7 +206,7 @@ class LODBranch(LODNode):
 		self.Left = left
 		self.Right = right
 	
-	def ActivateRange(self, bounds):
+	def ActivateRange(self, boundsList):
 		left = self.Left
 		right = self.Right
 		
@@ -221,13 +219,16 @@ class LODBranch(LODNode):
 		# need to be hidden after Pulse is called if their sibling has since
 		# become hidden.
 		#
-		if self.MedianValue > bounds.LowerBound[self.Axis]:
-			left.ActivateRange(bounds)
+		leftInRange = filter(lambda b: self.MedianValue > b.LowerBound[self.Axis], boundsList)
+		rightInRange = filter(lambda b: self.MedianValue < b.UpperBound[self.Axis], boundsList)
+		
+		if len(leftInRange) > 0:
+			left.ActivateRange(leftInRange)
 		elif left.Visibility:
 			left.Pulse(ACTIVATION_TIMEOUT)
 		
-		if self.MedianValue < bounds.UpperBound[self.Axis]:
-			right.ActivateRange(bounds)
+		if len(rightInRange) > 0:
+			right.ActivateRange(rightInRange)
 		elif right.Visibility:
 			right.Pulse(ACTIVATION_TIMEOUT)
 		
@@ -369,14 +370,15 @@ class LODLeaf(LODNode):
 		
 		self.NumFramesActive = -1
 	
-	def ActivateRange(self, bounds):
+	def ActivateRange(self, boundsList):
 		'''Search the objects owned by this node. If any of them are within
 		range, this node will be shown.'''
 		for (oPos, _) in self.ObjectPairs:
-			if bounds.isInRange(oPos.worldPosition):
-				self.Visibility = NS_VISIBLE
-				self.NumFramesActive = 0
-				return
+			for bounds in boundsList:
+				if bounds.isInRange(oPos.worldPosition):
+					self.Visibility = NS_VISIBLE
+					self.NumFramesActive = 0
+					return
 	
 	def Pulse(self, maxAge):
 		'''Make this node age by one frame. If it has been visible for too long

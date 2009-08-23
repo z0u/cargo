@@ -40,31 +40,19 @@ Sinking.wav:
  - 16740 kijjaz
  - 54037 arnaud
 
-Puddle_1.wav:
- - 13552 acclivity
-Puddle2.wav:
- - 13552 acclivity
-Puddle3.wav:
- - 13552 acclivity
-Puddle4.wav:
+Puddle*.wav:
  - 13552 acclivity
 
 Bell.wav:
  - 24629 anamorphosis
 
-Slither1.wav:
- - 15562 tigersound
- - 69208 FreqMan
-Slither2.wav:
- - 15562 tigersound
- - 69208 FreqMan
-Slither3.wav:
- - 15562 tigersound
- - 69208 FreqMan
-Slither4.wav:
+Slither*.wav:
  - 15562 tigersound
  - 69208 FreqMan
 
 ShellPop.wav
  - 33369 HerbertBoland
  - 50457 MeltyMcFace
+
+Rolling.wav
+ - 15562 tigersound

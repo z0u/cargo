@@ -22,6 +22,8 @@ the main action of the level: minor animations should still play.
 To kill an actor, call Actor.Destroy; don't call KX_GameObject.endObject
 directly.'''
 
+import LODTree
+
 class Actor:
 	'''A basic actor. Physics may be suspended, but nothing else.'''
 	
@@ -30,11 +32,15 @@ class Actor:
 		owner['Actor'] = self
 		self.Suspended = 0
 		Director.AddActor(self)
+		if owner.has_key('LODRadius'):
+			LODTree.LODManager.AddCollider(self)
 	
 	def Destroy(self):
 		'''Remove this actor from the scene. This destroys the actor's
 		underlying KX_GameObject too.'''
 		Director.RemoveActor(self)
+		if owner.has_key('LODRadius'):
+			LODTree.LODManager.RemoveCollider(self)
 		self.Owner.endObject()
 	
 	def CanSuspend(self):

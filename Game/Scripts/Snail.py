@@ -253,7 +253,7 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.setPosition(shell, self.CargoHold, referential)
 		shell.setParent(self.CargoHold)
 	
-	def setShell(self, shell):
+	def setShell(self, shell, animate):
 		'''
 		Add the shell as a descendant of the snail. It will be
 		made a child of the CargoHold. If the shell has a child
@@ -271,8 +271,9 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Shell = shell
 		self.Owner['HasShell'] = 1
 		self.Owner['DynamicMass'] = self.Owner['DynamicMass'] + self.Shell.Owner['DynamicMass']
-		self.Shell.OnPickedUp(self)
-		self.Shockwave.state = 1<<1 # state 2
+		self.Shell.OnPickedUp(self, animate)
+		if animate:
+			self.Shockwave.state = 1<<1 # state 2
 	
 	def removeShell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
@@ -468,7 +469,7 @@ def Init(cont):
 def Orient(c):
 	c.owner['Snail'].orient()
 
-def OnShellTouched(c):
+def _OnShellTouched(c, animate):
 	o = c.owner
 	
 	activate = True
@@ -482,8 +483,14 @@ def OnShellTouched(c):
 	if not o['HasShell']:
 		ob = c.sensors['sShellPickup'].hitObject
 		shell = ob['Actor']
-		if (not shell.Owner['Carried']):
-			o['Snail'].setShell(shell)
+		if (not shell.IsCarried()):
+			o['Snail'].setShell(shell, animate)
+
+def OnShellTouchedNoAnim(c):
+	_OnShellTouched(c, False)
+
+def OnShellTouched(c):
+	_OnShellTouched(c, True)
 
 def DropShell(c):
 	c.owner['Snail'].removeShell()

@@ -36,11 +36,12 @@ class Shell(Actor.Actor):
 		else:
 			return True
 	
-	def OnPickedUp(self, snail):
+	def OnPickedUp(self, snail, animate):
 		'''Called when a snail picks up this shell.'''
 		self.Snail = snail
 		self.Owner['Carried'] = True
 		self.Owner.state = 1<<2 # state 3
+		self.Owner['NoPickupAnim'] = not animate
 	
 	def OnDropped(self):
 		'''Called when a snail drops this shell.'''
@@ -76,6 +77,9 @@ class Shell(Actor.Actor):
 		animation.'''
 		Camera.AutoCamera.PopGoal()
 		self.CameraGoal.state = 1<<0 # state 1
+	
+	def IsCarried(self):
+		return self.Owner['Carried']
 
 def CreateShell(c):
 	cameraGoal = c.sensors['sCameraGoal'].owner

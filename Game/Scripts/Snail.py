@@ -159,6 +159,13 @@ class Snail(SnailSegment, Actor.StatefulActor):
 			return True
 		elif type == "Shockwave":
 			self.Shockwave = child
+			#
+			# Remove this from the hierarchy: the shockwave only needs to be
+			# positioned when it fires; other than that, it doesn't matter where
+			# it is. Removing it from the hierarchy prevents it from being
+			# implicitely and incorrectly made visible.
+			#
+			child.removeParent()
 			return True
 		elif type == "SnailTrail":
 			self.Trail = SnailTrail(child, self)
@@ -273,6 +280,8 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Owner['DynamicMass'] = self.Owner['DynamicMass'] + self.Shell.Owner['DynamicMass']
 		self.Shell.OnPickedUp(self, animate)
 		if animate:
+			self.Shockwave.worldPosition = self.Shell.Owner.worldPosition
+			self.Shockwave.worldOrientation = self.Shell.Owner.worldOrientation
 			self.Shockwave.state = 1<<1 # state 2
 	
 	def removeShell(self):
@@ -335,6 +344,14 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		animation (several frames after control has been
 		transferred).'''
 		self.Shell.OnPostExit()
+	
+	def onStartCrawling(self):
+		'''Called when the snail enters its crawling state.'''
+		#
+		# Don't set it quite to zero: zero vectors are ignored!
+		#
+		self.Owner.setAngularVelocity([0.0, 0.0, 0.0001], 0)
+		self.Owner.setLinearVelocity([0.0, 0.0, 0.0001], 0)
 
 class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 	'''A collection of SnailRays. These will cast a ray once per frame in the
@@ -440,6 +457,7 @@ class SnailTrail(Utilities.SemanticGameObject):
 	def parseChild(self, child, type):
 		if (type == "TrailSpot"):
 			self.TrailSpots.append(child)
+			child.removeParent()
 			return True
 	
 	def AddSpot(self, touchedObject, addActuator):
@@ -531,6 +549,9 @@ def OnShellPreEnter(c):
 		if not s.positive:
 			return
 	c.owner['Snail'].preEnterShell()
+
+def OnStartCrawling(c):
+	c.owner['Snail'].onStartCrawling()
 
 #
 # Independent functions.

@@ -25,6 +25,9 @@ by fetching the resulting object from the GameLogic.Snails
 dictionary.
 '''
 
+MAX_SPEED = 3.0
+MIN_SPEED = -3.0
+
 from Blender import Mathutils
 import Utilities
 import Actor
@@ -352,6 +355,38 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		#
 		self.Owner.setAngularVelocity([0.0, 0.0, 0.0001], 0)
 		self.Owner.setLinearVelocity([0.0, 0.0, 0.0001], 0)
+	
+	def setSpeedMultiplier(self, mult):
+		self.Owner['SpeedMultiplier'] = max(min(mult, MAX_SPEED), MIN_SPEED)
+
+	def decaySpeed(self):
+		'''Bring the speed of the snail one step closer to normal speed.'''
+		o = self.Owner
+		dr = o['SpeedDecayRate']
+		mult = o['SpeedMultiplier']
+		
+		if mult == 1.0:
+			return
+		elif mult > 1.0:
+			o['SpeedMultiplier'] = max(mult - dr, 1.0)
+		else:
+			o['SpeedMultiplier'] = min(mult + dr, 1.0)
+
+	def moveForward(self):
+		'''Make the snail take a step forward (should be called every frame when
+		going forward). Implicitely calls decaySpeed.'''
+		o = self.Owner
+		speed = o['NormalSpeed'] * o['SpeedMultiplier']
+		o.applyMovement((0.0, speed, 0.0), True)
+		self.decaySpeed()
+
+	def moveBackward(self):
+		'''Make the snail take a step backward(should be called every frame when
+		going backward). Implicitely calls decaySpeed.'''
+		o = self.Owner
+		speed = o['NormalSpeed'] * o['SpeedMultiplier']
+		o.applyMovement((0.0, 0.0 - speed, 0.0), True)
+		self.decaySpeed()
 
 class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 	'''A collection of SnailRays. These will cast a ray once per frame in the
@@ -553,6 +588,20 @@ def OnShellPreEnter(c):
 def OnStartCrawling(c):
 	c.owner['Snail'].onStartCrawling()
 
+def MoveForward(c):
+	c.owner['Snail'].moveForward()
+
+def MoveBackward(c):
+	c.owner['Snail'].moveBackward()
+
+def OnTouchSpeedModifier(c):
+	mult = 0.0
+	hitObs = c.sensors[0].hitObjectList
+	for hitOb in hitObs:
+		mult = mult + hitOb['SetSpeedMultiplier']
+	mult = mult / float(len(hitObs))
+	c.owner['Snail'].setSpeedMultiplier(mult)
+
 #
 # Independent functions.
 #
@@ -618,7 +667,12 @@ def Turn(c):
 		#
 		targetBendAngleAft = 0.0
 		targetRot = 0.0
-		
+	
+	#
+	# Match the bend angle with the current speed.
+	#
+	targetBendAngleAft = targetBendAngleAft / o['SpeedMultiplier']
+	
 	o['BendAngleFore'] = Utilities._lerp(o['BendAngleFore'],
 	                                     targetBendAngleFore,
 	                                     o['BendFactor'])

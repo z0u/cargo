@@ -50,7 +50,6 @@ class _LODManager:
 	
 	def AddCollider(self, actor):
 		self.Colliders.add(actor)
-		print "Registered collider", actor.Owner.name
 	
 	def RemoveCollider(self, actor):
 		self.Colliders.remove(actor)

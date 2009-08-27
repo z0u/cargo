@@ -597,8 +597,15 @@ def MoveBackward(c):
 def OnTouchSpeedModifier(c):
 	mult = 0.0
 	hitObs = c.sensors[0].hitObjectList
+	
+	if len(hitObs) == 0:
+		return
+	
 	for hitOb in hitObs:
 		mult = mult + hitOb['SetSpeedMultiplier']
+		if hitOb.has_key('SingleUse'):
+			hitOb.endObject()
+	
 	mult = mult / float(len(hitObs))
 	c.owner['Snail'].setSpeedMultiplier(mult)
 

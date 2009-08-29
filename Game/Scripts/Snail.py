@@ -25,12 +25,29 @@ by fetching the resulting object from the GameLogic.Snails
 dictionary.
 '''
 
-MAX_SPEED = 3.0
-MIN_SPEED = -3.0
-
 from Blender import Mathutils
 import Utilities
 import Actor
+import GameLogic
+
+MAX_SPEED = 3.0
+MIN_SPEED = -3.0
+
+#
+# States for main snail object. The commented-out ones aren't currently used
+# in the code, and are only set by logic bricks.
+#
+#S_INIT     = 1<<0  # state 1
+S_CRAWLING = 1<<1  # state 2
+#S_FALLING  = 1<<2  # state 3
+#S_ACTIVE   = 1<<3  # state 4
+#S_NOSHELL  = 1<<15 # state 16
+#S_HASSHELL = 1<<16 # state 17
+#S_POPPING  = 1<<17 # state 18
+#S_INSHELL  = 1<<18 # state 19
+#S_REINCARNATE = 1<<28 # state 29
+#S_DROWNING    = 1<<29 # state 30
+
 
 ZAXIS  = Mathutils.Vector([0.0, 0.0, 1.0])
 ORIGIN = Mathutils.Vector([0.0, 0.0, 0.0])
@@ -124,6 +141,10 @@ class SnailSegment(Utilities.SemanticGameObject):
 		
 		if (self.Child):
 			self.Child.orient(ornMat)
+	
+	def setBendAngle(self, angle):
+		if self.Child:
+			self.Child.setBendAngle(angle)
 
 class AppendageRoot(SnailSegment):
 	def __init__(self, owner):
@@ -138,27 +159,42 @@ class SegmentChildPivot(SnailSegment):
 		
 	def orient(self, parentOrnMat):
 		self.Child.orient(parentOrnMat)
+	
+	def setBendAngle(self, angle):
+		self.Owner['BendAngle'] = angle
+		self.Child.setBendAngle(angle)
 
 class Snail(SnailSegment, Actor.StatefulActor):
 	def __init__(self, owner, cargoHold):
 		Actor.StatefulActor.__init__(self, owner)
+		Actor.Director.SetMainSubject(self)
 		
-		self.Appendages = []
+		self.Head = None
+		self.Tail = None
 		self.CargoHold = cargoHold
 		self.Shell = None
 		self.Shockwave = None
 		self.Trail = None
+		self.Armature = None
 		SnailSegment.__init__(self, owner, None)
-		if (self.Appendages == []):
-			print "Warning: no appendages defined."
-		if (self.CargoHold == None):
+		if not self.Head:
+			raise Exception("No head defined.")
+		if not self.Tail:
+			raise Exception("No tail defined.")
+		if not self.CargoHold:
 			raise Exception("No CargoHold defined.")
-		if self.Shockwave == None:
+		if not self.Shockwave:
 			raise Exception("No Shockwave defined.")
 	
 	def parseChild(self, child, type):
 		if type == "AppendageRoot":
-			self.Appendages.append(AppendageRoot(child))
+			if child['Location'] == 'Fore':
+				self.Head = AppendageRoot(child)
+			elif child['Location'] == 'Aft':
+				self.Tail = AppendageRoot(child)
+			else:
+				raise Exception("Unknown appendage type %s on %s." %
+			                    (child['Location'], child.name))
 			return True
 		elif type == "Shockwave":
 			self.Shockwave = child
@@ -172,6 +208,9 @@ class Snail(SnailSegment, Actor.StatefulActor):
 			return True
 		elif type == "SnailTrail":
 			self.Trail = SnailTrail(child, self)
+			return True
+		elif type == 'Armature':
+			self.Armature = child
 			return True
 		else:
 			return SnailSegment.parseChild(self, child, type)
@@ -212,46 +251,8 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		
 		self.Owner.alignAxisToVect(orientation, 2)
 		
-		for appendage in self.Appendages:
-			appendage.orient()
-	
-	def setOrientation(self, ob, target, ref):
-		'''
-		Sets the orientation of 'ob' to match that of 'target'
-		using 'ref' as the referential. The final orientation
-		will be offset from 'target's by the difference between
-		'ob' and 'ref's orientations.
-		'''
-		
-		oOrn = ob.worldOrientation
-		oOrn = Mathutils.Matrix(oOrn[0], oOrn[1], oOrn[2])
-		
-		rOrn = ref.worldOrientation
-		rOrn = Mathutils.Matrix(rOrn[0], rOrn[1], rOrn[2])
-		rOrn.invert()
-		
-		localOrn = rOrn * oOrn
-		
-		orn = target.worldOrientation
-		orn = Mathutils.Matrix(orn[0], orn[1], orn[2])
-		orn = orn * localOrn
-		
-		ob.localOrientation = orn
-	
-	def setPosition(self, ob, target, ref):
-		'''
-		Sets the position of 'ob' to match that of 'target'
-		using 'ref' as the referential. The final position
-		will be offset from 'target's by the difference between
-		'ob' and 'ref's positions.
-		'''
-		oPos = Mathutils.Vector(ob.worldPosition)
-		rPos = Mathutils.Vector(ref.worldPosition)
-		tPos = Mathutils.Vector(target.worldPosition)
-		offset = rPos - oPos
-		posFinal = tPos - offset
-		
-		ob.worldPosition = posFinal
+		self.Head.orient()
+		self.Tail.orient()
 	
 	def _stowShell(self, shell):
 		referential = shell
@@ -259,8 +260,8 @@ class Snail(SnailSegment, Actor.StatefulActor):
 			if (child.Type == 'CargoHook'):
 				referential = child
 		
-		self.setOrientation(shell, self.CargoHold, referential)
-		self.setPosition(shell, self.CargoHold, referential)
+		Utilities.setRelOrn(shell, self.CargoHold, referential)
+		Utilities.setRelPos(shell, self.CargoHold, referential)
 		shell.setParent(self.CargoHold)
 	
 	def setShell(self, shell, animate):
@@ -320,6 +321,7 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Owner['InShell'] = 1
 		self.Shell.OnEntered()
 		self.Owner.setVisible(0, 1)
+		Actor.Director.SetMainSubject(self.Shell)
 	
 	def exitShell(self):
 		'''Transfers control of the character to the snail.
@@ -341,6 +343,7 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Owner['InShell'] = 0
 		self.Shell.OnExited()
 		self.Owner.setVisible(1, 1)
+		Actor.Director.SetMainSubject(self)
 	
 	def postExitShell(self):
 		'''Called when the snail has finished its exit shell
@@ -371,22 +374,108 @@ class Snail(SnailSegment, Actor.StatefulActor):
 			o['SpeedMultiplier'] = max(mult - dr, 1.0)
 		else:
 			o['SpeedMultiplier'] = min(mult + dr, 1.0)
-
-	def moveForward(self):
-		'''Make the snail take a step forward (should be called every frame when
-		going forward). Implicitely calls decaySpeed.'''
+	
+	def crawling(self):
+		return self.Owner.state & S_CRAWLING
+	
+	def onMovementImpulse(self, fwd, back, left, right):
+		'''
+		Make the snail move. If moving forward or backward, this implicitely
+		calls decaySpeed.'''
+		if not self.crawling():
+			return
+		
 		o = self.Owner
-		speed = o['NormalSpeed'] * o['SpeedMultiplier']
+		
+		#
+		# Decide which direction to move in on the Y-axis.
+		#
+		fwdSign = 0
+		if fwd:
+			fwdSign = fwdSign + 1
+		if back:
+			fwdSign = fwdSign - 1
+		
+		#
+		# Apply forward/backward motion.
+		#
+		speed = o['NormalSpeed'] * o['SpeedMultiplier'] * float(fwdSign)
 		o.applyMovement((0.0, speed, 0.0), True)
 		self.decaySpeed()
-
-	def moveBackward(self):
-		'''Make the snail take a step backward(should be called every frame when
-		going backward). Implicitely calls decaySpeed.'''
-		o = self.Owner
-		speed = o['NormalSpeed'] * o['SpeedMultiplier']
-		o.applyMovement((0.0, 0.0 - speed, 0.0), True)
-		self.decaySpeed()
+		
+		#
+		# Decide which way to turn.
+		#
+		targetBendAngleFore = 0.0
+		targetRot = 0.0
+		targetBendAngleAft = None
+		if left:
+			#
+			# Bend left.
+			#
+			targetBendAngleFore = targetBendAngleFore - o['MaxBendAngle']
+			targetRot = targetRot + o['MaxRot']
+		if right:
+			#
+			# Bend right. If bending left too, the net result will be
+			# zero.
+			#
+			targetBendAngleFore = targetBendAngleFore + o['MaxBendAngle']
+			targetRot = targetRot - o['MaxRot']
+		
+		locomotionStep = self.Owner['SpeedMultiplier'] * 0.4
+		if fwdSign > 0:
+			#
+			# Moving forward.
+			#
+			targetBendAngleAft = targetBendAngleFore
+			self.Armature['LocomotionFrame'] = (
+				self.Armature['LocomotionFrame'] + locomotionStep)
+		elif fwdSign < 0:
+			#
+			# Reversing: invert rotation direction.
+			#
+			targetBendAngleAft = targetBendAngleFore
+			targetRot = 0.0 - targetRot
+			self.Armature['LocomotionFrame'] = (
+				self.Armature['LocomotionFrame'] - locomotionStep)
+		else:
+			#
+			# Stationary. Only bend the head.
+			#
+			targetBendAngleAft = 0.0
+			targetRot = 0.0
+		
+		self.Armature['LocomotionFrame'] = (
+			self.Armature['LocomotionFrame'] % 19)
+		
+		#
+		# Rotate the snail.
+		#
+		o['Rot'] = Utilities._lerp(o['Rot'], targetRot, o['RotFactor'])
+		o.applyRotation((0.0, 0.0, o['Rot']), True)
+		
+		#
+		# Match the bend angle with the current speed.
+		#
+		targetBendAngleAft = targetBendAngleAft / o['SpeedMultiplier']
+		
+		o['BendAngleFore'] = Utilities._lerp(o['BendAngleFore'],
+		                                     targetBendAngleFore,
+		                                     o['BendFactor'])
+		if fwdSign != 0:
+			o['BendAngleAft'] = Utilities._lerp(o['BendAngleAft'],
+		                                        targetBendAngleAft,
+		                                        o['BendFactor'])
+		
+		#
+		# Bend the snail. This will be applied by other logic bricks, so it may
+		# happen one frame later.
+		#
+		self.Head.setBendAngle(o['BendAngleFore'])
+		self.Tail.setBendAngle(o['BendAngleAft'])
+		
+		self.Trail.onSnailMoved()
 
 class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 	'''A collection of SnailRays. These will cast a ray once per frame in the
@@ -424,10 +513,10 @@ class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 		If none hit, the default value of the first ray is returned."""
 		p = None
 		n = None
-		hit = 0
+		hit = False
 		for ray in self.Rays:
 			hit, p = ray.getHitPosition()
-			if (hit == 1):
+			if (hit == True):
 				self.LastHitPoint = Utilities._toLocal(self.Owner, p)
 				break
 		
@@ -450,14 +539,11 @@ class SnailRay(ISnailRay, Utilities.SemanticGameObject):
 			child.removeParent()
 			return True
 
-	def lerp(self, A, B, fac):
-		return (A * fac) + (B * (1.0 - fac))
-
 	def getHitPosition(self):
 		origin = Mathutils.Vector(self.Owner.worldPosition)
-		dir = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
-		through = origin + dir
-		object, hitPoint, normal = self.Owner.rayCast(
+		vec = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
+		through = origin + vec
+		ob, hitPoint, normal = self.Owner.rayCast(
 			through,            # to
 			origin,             # from
 			self.Owner.Length,  # dist
@@ -466,14 +552,14 @@ class SnailRay(ISnailRay, Utilities.SemanticGameObject):
 			1                   # xray
 		)
 		
-		hit = 0
-		if (object):
+		hit = False
+		if (ob):
 			#
 			# Ensure the hit was not from inside an object.
 			#
 			normal = Mathutils.Vector(normal)
-			if (Mathutils.DotVecs(normal, dir) < 0.0):
-				hit = 1
+			if (Mathutils.DotVecs(normal, vec) < 0.0):
+				hit = True
 				self.LastPoint = Mathutils.Vector(hitPoint)
 		
 		if (self.Marker):
@@ -495,15 +581,34 @@ class SnailTrail(Utilities.SemanticGameObject):
 			child.removeParent()
 			return True
 	
-	def AddSpot(self, touchedObject, addActuator):
+	def AddSpot(self):
+		scene = GameLogic.getCurrentScene()
 		spot = self.TrailSpots[self.SpotIndex]
-		addActuator.object = spot
-		addActuator.instantAddObject()
-		spotI = addActuator.objectLastCreated
-		spotI.setParent(touchedObject)
+		spotI = scene.addObject(spot, self.Owner)
+		
+		#
+		# Find the nearest object below the spawn point.
+		#
+		origin = Mathutils.Vector(self.Owner.worldPosition)
+		vec = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
+		through = origin - vec
+		hitOb, _, _ = self.Owner.rayCast(
+			through,            # to
+			origin,             # from
+			1.0,                # dist
+			'Ground',           # prop
+			0,                  # face
+			1                   # xray
+		)
+		spotI.setParent(hitOb)
+		
 		spotI.state = 1<<1
 		self.LastTrailPos = Mathutils.Vector(self.Owner.worldPosition)
 		self.SpotIndex = (self.SpotIndex + 1) % len(self.TrailSpots)
+	
+	def onSnailMoved(self):
+		if self.DistanceReached():
+			self.AddSpot()
 	
 	def DistanceReached(self):
 		pos = Mathutils.Vector(self.Owner.worldPosition)
@@ -588,12 +693,6 @@ def OnShellPreEnter(c):
 def OnStartCrawling(c):
 	c.owner['Snail'].onStartCrawling()
 
-def MoveForward(c):
-	c.owner['Snail'].moveForward()
-
-def MoveBackward(c):
-	c.owner['Snail'].moveBackward()
-
 def OnTouchSpeedModifier(c):
 	mult = 0.0
 	hitObs = c.sensors[0].hitObjectList
@@ -612,119 +711,6 @@ def OnTouchSpeedModifier(c):
 #
 # Independent functions.
 #
-
-def Turn(c):
-	'''
-	Make the snail bend to turn a corner.
-	
-	Sensors:
-	sLeft:  Makes the snail bend left.
-	sRight: Makes the snail bend right.
-	sDown:  Reverses the bend direction.
-	sHook_[H,T][1,2]: Sensors owned by the bend objects in the rig. The bend 
-	        angle will be copied to each object using the property "TurnAngle".
-	
-	Properties:
-	MaxTurnAngle: The amount to bend each segment by.
-	TurnAngle:    The current bend amount.
-	TurnFactor:   The speed at which the snail bends.
-	              0.0 <= TurnFactor <= 1.0
-	'''
-	
-	o = c.owner
-	sl = c.sensors['sLeft']
-	sr = c.sensors['sRight']
-	sfwd = c.sensors['sUp']
-	sbkwd = c.sensors['sDown']
-	
-	targetBendAngleFore = 0.0
-	targetRot = 0.0
-	targetBendAngleAft = None
-	if sl.positive:
-		#
-		# Bend left.
-		#
-		targetBendAngleFore = targetBendAngleFore - o['MaxBendAngle']
-		targetRot = targetRot + o['MaxRot']
-	if sr.positive:
-		#
-		# Bend right. If bending left too, the net result will be
-		# zero.
-		#
-		targetBendAngleFore = targetBendAngleFore + o['MaxBendAngle']
-		targetRot = targetRot - o['MaxRot']
-	
-	moving = False
-	if sfwd.positive and not sbkwd.positive:
-		#
-		# Moving forward.
-		#
-		targetBendAngleAft = targetBendAngleFore
-		moving = True
-	elif sbkwd.positive and not sfwd.positive:
-		#
-		# Reversing: invert rotation direction.
-		#
-		targetBendAngleAft = targetBendAngleFore
-		targetRot = 0.0 - targetRot
-		moving = True
-	else:
-		#
-		# Stationary. Only bend the head.
-		#
-		targetBendAngleAft = 0.0
-		targetRot = 0.0
-	
-	#
-	# Match the bend angle with the current speed.
-	#
-	targetBendAngleAft = targetBendAngleAft / o['SpeedMultiplier']
-	
-	o['BendAngleFore'] = Utilities._lerp(o['BendAngleFore'],
-	                                     targetBendAngleFore,
-	                                     o['BendFactor'])
-	if moving:
-		o['BendAngleAft'] = Utilities._lerp(o['BendAngleAft'],
-		                                    targetBendAngleAft,
-		                                    o['BendFactor'])
-	
-	o['Rot'] = Utilities._lerp(o['Rot'], targetRot, o['RotFactor'])
-	o.setAngularVelocity([0.0, 0.0, o['Rot']], 1)
-	
-	ah1 = c.actuators['aTurn_H1']
-	ah2 = c.actuators['aTurn_H2']
-	at1 = c.actuators['aTurn_T1']
-	at2 = c.actuators['aTurn_T2']
-	
-	h1 = ah1.owner
-	h2 = ah2.owner
-	t1 = at1.owner
-	t2 = at2.owner
-	
-	h1['BendAngle'] = o['BendAngleFore']
-	h2['BendAngle'] = o['BendAngleFore']
-	t1['BendAngle'] = o['BendAngleAft']
-	t2['BendAngle'] = o['BendAngleAft']
-	
-	c.activate(ah1)
-	c.activate(ah2)
-	c.activate(at1)
-	c.activate(at2)
-
-def SpawnTrail(c):
-	'''Add a piece of snail trail.'''
-	o = c.owner
-	addActuator = c.actuators['aSpawnTrail']
-	
-	sGrounded = c.sensors['sNearGround']
-	sUp = c.sensors['sDown']
-	sDown = c.sensors['sUp']
-	
-	if (sUp.positive or sDown.positive) and sGrounded.positive:
-		hitOb = sGrounded.hitObject
-		snail = o['Snail']
-		if snail.Trail.DistanceReached():
-			snail.Trail.AddSpot(hitOb, addActuator)
 
 def EyeLength(c):
 	'''Sets the length of the eyes. To be called by the snail.'''

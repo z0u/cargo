@@ -69,6 +69,24 @@ class Actor:
 		'''Called when the Actor touches deep water.'''
 		self.Owner.state = 1<<29 # state 30
 		return True
+	
+	def onMovementImpulse(self, fwd, back, left, right):
+		'''
+		Called when the actor should move forward, e.g. when the user presses
+		the up arrow. Usually only happens when the Actor is the the main
+		subject of game play.
+		
+		Parameters:
+		fwd:   True if the actor should move forward. If back is True, the net
+		       movement should be zero.
+		back:  True if the actor should move backward. If fwd is True, the net
+		       movement should be zero.
+		left:  True if the actor should move left. If right is True, the net
+		       movement should be zero.
+		right: True if the actor should move right. If left is True, the net
+		       movement should be zero.
+		'''
+		pass
 
 def CreateActor(c):
 	c.owner['Actor'] = Actor(c.owner)
@@ -101,6 +119,7 @@ class _Director:
 	def __init__(self):
 		self.Suspended = False
 		self.Actors = set()
+		self.MainSubject = None
 	
 	def AddActor(self, actor):
 		self.Actors.add(actor)
@@ -109,6 +128,8 @@ class _Director:
 	
 	def RemoveActor(self, actor):
 		self.Actors.remove(actor)
+		if self.MainSubject == actor:
+			self.MainSubject = None
 		if self.Suspended:
 			actor._Resume()
 	
@@ -131,6 +152,9 @@ class _Director:
 		for actor in self.Actors:
 			actor._Resume()
 		self.Suspended = False
+	
+	def SetMainSubject(self, actor):
+		self.MainSubject = actor
 
 Director = _Director()
 
@@ -139,3 +163,16 @@ def SuspendAction():
 
 def ResumeAction():
 	Director.ResumeAction()
+
+#
+# Methods for dealing with user input.
+#
+def onMovementImpulse(c):
+	a = Director.MainSubject
+	if not a:
+		return
+	fwd = c.sensors['sForward']
+	back = c.sensors['sBackward']
+	left = c.sensors['sLeft']
+	right = c.sensors['sRight']
+	a.onMovementImpulse(fwd.positive, back.positive, left.positive, right.positive)

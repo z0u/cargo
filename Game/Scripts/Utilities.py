@@ -199,6 +199,41 @@ def RestorePos(c):
 	o.worldPosition = o['_storedPos']
 	o.worldOrientation = o['_storedRot']
 
+def setRelOrn(ob, target, ref):
+	'''
+	Sets the orientation of 'ob' to match that of 'target' using 'ref' as the
+	referential. The final orientation will be offset from 'target's by the
+	difference between 'ob' and 'ref's orientations.
+	'''
+	oOrn = ob.worldOrientation
+	oOrn = Mathutils.Matrix(oOrn[0], oOrn[1], oOrn[2])
+	
+	rOrn = ref.worldOrientation
+	rOrn = Mathutils.Matrix(rOrn[0], rOrn[1], rOrn[2])
+	rOrn.invert()
+	
+	localOrn = rOrn * oOrn
+	
+	orn = target.worldOrientation
+	orn = Mathutils.Matrix(orn[0], orn[1], orn[2])
+	orn = orn * localOrn
+	
+	ob.localOrientation = orn
+
+def setRelPos(ob, target, ref):
+	'''
+	Sets the position of 'ob' to match that of 'target' using 'ref' as the
+	referential. The final position will be offset from 'target's by the
+	difference between 'ob' and 'ref's positions.
+	'''
+	oPos = Mathutils.Vector(ob.worldPosition)
+	rPos = Mathutils.Vector(ref.worldPosition)
+	tPos = Mathutils.Vector(target.worldPosition)
+	offset = rPos - oPos
+	posFinal = tPos - offset
+	
+	ob.worldPosition = posFinal
+
 def RayFollow(c):
 	'''
 	Position an object some distance along its parent's z-axis. The object will 

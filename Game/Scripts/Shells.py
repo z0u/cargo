@@ -17,8 +17,11 @@
 
 import Actor
 import Camera
+import Mathutils
 
-class Shell(Actor.Actor):
+ZAXIS = Mathutils.Vector((0.0, 0.0, 1.0))
+
+class ShellBase(Actor.Actor):
 	def __init__(self, owner, cameraGoal):
 		Actor.Actor.__init__(self, owner)
 		self.Snail = None
@@ -81,21 +84,69 @@ class Shell(Actor.Actor):
 	def IsCarried(self):
 		return self.Owner['Carried']
 
+class Shell(ShellBase):
+	def onMovementImpulse(self, fwd, back, left, right):
+		'''Make the shell roll around based on user input.'''
+		if not self.Owner['OnGround']:
+			return
+		
+		#
+		# Decide which direction to roll in on the two axes.
+		#
+		fwdMagnitude = 0.0
+		leftMagnitude = 0.0
+		if fwd:
+			fwdMagnitude = fwdMagnitude + 1.0
+		if back:
+			fwdMagnitude = fwdMagnitude - 1.0
+		if left:
+			leftMagnitude = leftMagnitude + 1.0
+		if right:
+			leftMagnitude = leftMagnitude - 1.0
+		
+		#
+		# Get the vectors to apply force along.
+		#
+		cam = Camera.AutoCamera.Camera
+		p1 = Mathutils.Vector(cam.worldPosition)
+		p2 = Mathutils.Vector(self.Owner.worldPosition)
+		fwdVec = p2 - p1
+		fwdVec.normalize()
+		leftVec = Mathutils.CrossVecs(ZAXIS, fwdVec)
+		
+		#
+		# Set the direction of the vectors.
+		#
+		fwdVec = fwdVec * fwdMagnitude
+		leftVec = leftVec * leftMagnitude
+		finalVec = (fwdVec + leftVec) * self.Owner['Power']
+		
+		#
+		# Apply the force.
+		#
+		self.Owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
+
+class Wheel(ShellBase):
+	pass
+
+class Nut(ShellBase):
+	pass
+
+class BottleCap(ShellBase):
+	def Drown(self, water):
+		return False
+
 def CreateShell(c):
 	cameraGoal = c.sensors['sCameraGoal'].owner
 	Shell(c.owner, cameraGoal)
 
 def CreateNut(c):
 	cameraGoal = c.sensors['sCameraGoal'].owner
-	Shell(c.owner, cameraGoal)
+	Nut(c.owner, cameraGoal)
 
 def CreateWheel(c):
 	cameraGoal = c.sensors['sCameraGoal'].owner
-	Shell(c.owner, cameraGoal)
-
-class BottleCap(Shell):
-	def Drown(self, water):
-		return False
+	Wheel(c.owner, cameraGoal)
 
 def CreateBottleCap(c):
 	cameraGoal = c.sensors['sCameraGoal'].owner

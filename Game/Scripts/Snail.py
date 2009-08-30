@@ -381,7 +381,8 @@ class Snail(SnailSegment, Actor.StatefulActor):
 	def onMovementImpulse(self, fwd, back, left, right):
 		'''
 		Make the snail move. If moving forward or backward, this implicitely
-		calls decaySpeed.'''
+		calls decaySpeed.
+		'''
 		if not self.crawling():
 			return
 		

@@ -74,7 +74,8 @@ class Actor:
 		'''
 		Called when the actor should move forward, e.g. when the user presses
 		the up arrow. Usually only happens when the Actor is the the main
-		subject of game play.
+		subject of game play. This will be called once per frame, even if all
+		inputs are False.
 		
 		Parameters:
 		fwd:   True if the actor should move forward. If back is True, the net

@@ -49,14 +49,17 @@ class _AutoCamera:
 		
 		self.Observers = []
 	
-	def SetCamera(self, camera, defaultGoal, defaultFactor):
-		'''
-		Bind to a camera, and set the default goal. If there is already a goal
-		on the GoalStack, it will be used intead of defaultGoal.
-		'''
+	def SetCamera(self, camera):
+		'''Bind to a camera.'''
 		self.Camera = camera
-		
-		self.DefaultGoal = CameraGoal(defaultGoal, defaultFactor, False)
+	
+	def SetDefaultGoal(self, goal, factor):
+		'''
+		Set the default goal. If there is already a goal on the GoalStack, it
+		will be used instead of this default one - until it is popped off the
+		stack.
+		'''
+		self.DefaultGoal = CameraGoal(goal, factor, False)
 		self.StackModified = True
 		self.InstantCut = False
 	
@@ -65,7 +68,7 @@ class _AutoCamera:
 		Update the location of the camera. Observers will be notified. The
 		camera should have a controller set up to call this once per frame.
 		'''
-		if not self.Camera:
+		if not self.Camera or not self.DefaultGoal:
 			return
 		
 		if self.StackModified:
@@ -76,6 +79,7 @@ class _AutoCamera:
 			if self.InstantCut:
 				self.Camera.worldPosition = self.CurrentGoal.Goal.worldPosition
 				self.Camera.worldOrientation = self.CurrentGoal.Goal.worldOrientation
+			self.StackModified = False
 		
 		Utilities._SlowCopyLoc(self.Camera, self.CurrentGoal.Goal, self.CurrentGoal.Factor)
 		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.Goal, self.CurrentGoal.Factor)
@@ -83,10 +87,10 @@ class _AutoCamera:
 		for o in self.Observers:
 			o.OnCameraMoved(self)
 	
-	def PushGoal(self, goal, fac = None, instantCut = False):
+	def AddGoal(self, goal, fac = None, instantCut = False):
 		'''
-		Give the camera a new goal, and remember the last one. Call PopGoal to
-		restore the previous relationship. The camera position isn't changed
+		Give the camera a new goal, and remember the last one. Call RemoveGoal 
+		to restore the previous relationship. The camera position isn't changed
 		until OnRender is called.
 		
 		Paremeters:
@@ -101,19 +105,34 @@ class _AutoCamera:
 		if instantCut:
 			self.InstantCut = True
 	
-	def PopGoal(self):
+	def RemoveGoal(self, goalOb):
 		'''
-		Restore the camera's previous goal relationship. The transform isn't
+		Remove a goal from the stack. If it was currently in use, the camera
+		will switch to follow the next one on the stack. The transform isn't
 		changed until OnRender is called.
 		'''
 		try:
-			oldGoal = self.GoalStack.pop()
-		except IndexError:
-			print "Warning: Camera goal stack already empty."
-			return
-		self.StackModified = True
-		if oldGoal.InstantCut:
-			self.InstantCut = True
+			if self.GoalStack[-1].Goal == goalOb:
+				#
+				# Goal is on top of the stack: it's in use!
+				#
+				oldGoal = self.GoalStack.pop()
+				self.StackModified = True
+				if oldGoal.InstantCut:
+					self.InstantCut = True
+			else:
+				#
+				# Remove the goal from the rest of the stack.
+				#
+				found = False
+				for g in self.GoalStack:
+					if g.Goal == goalOb:
+						self.GoalStack.remove(g)
+						found = True
+						break
+				raise KeyError
+		except (IndexError, KeyError):
+			print "Warning: camera goal %s not found in stack." % goalOb.name
 	
 	def ResetGoal(self):
 		'''Reset the camera to follow its original goal. This clears the
@@ -137,8 +156,19 @@ AutoCamera = _AutoCamera()
 
 def SetCamera(c):
 	camera = c.owner
-	goal = c.sensors['sGoalHook'].owner
-	AutoCamera.SetCamera(camera, goal, camera['SlowFac'])
+	AutoCamera.SetCamera(camera)
+
+def SetDefaultGoal(c):
+	goal = c.owner
+	AutoCamera.SetDefaultGoal(goal, goal['SlowFac'])
+
+def AddGoal(c):
+	goal = c.owner
+	AutoCamera.AddGoal(goal, goal['SlowFac'], goal['InstantCut'])
+
+def RemoveGoal(c):
+	goal = c.owner
+	AutoCamera.RemoveGoal(goal)
 
 class CameraGoal:
 	def __init__(self, goal, factor = None, instantCut = False):

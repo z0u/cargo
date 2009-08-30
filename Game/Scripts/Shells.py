@@ -53,7 +53,7 @@ class ShellBase(Actor.Actor):
 				"Warning: Shell %s has no cargo hook." % self.Owner.name)
 		
 		if self.Occupier:
-			self.Occupier.setVisible(False, True)
+			self.Occupier.state = 1<<0 # state 1
 	
 	def CanSuspend(self):
 		'''Only suspend if this shell is currently dynamic.
@@ -90,28 +90,32 @@ class ShellBase(Actor.Actor):
 		activeCam = Camera.AutoCamera.Camera
 		self.CameraGoal.worldPosition = activeCam.worldPosition
 		self.CameraGoal.worldOrientation = activeCam.worldOrientation
-		Camera.AutoCamera.AddGoal(self.CameraGoal, fac = self.CameraGoal['SlowFac'])
+		Camera.AutoCamera.AddGoal(
+			self.CameraGoal,
+			self.CameraGoal['Priority'],
+			self.CameraGoal['SlowFac'],
+			False)
 		self.CameraGoal.state = 1<<1 # state 2
-		if self.Occupier:
-			self.Occupier.setVisible(True, True)
 	
 	def OnEntered(self):
 		'''Called when a snail enters this shell (just after
 		control is transferred).'''
 		self.Owner.state = S_OCCUPIED
+		if self.Occupier:
+			self.Occupier.state = 1<<1 # state 2
 	
 	def OnExited(self):
 		'''Called when a snail exits this shell (just after
 		control is transferred).'''
 		self.Owner.state = S_CARRIED
+		if self.Occupier:
+			self.Occupier.state = 1<<0 # state 1
 	
 	def OnPostExit(self):
 		'''Called when the snail has finished its exit shell
 		animation.'''
 		Camera.AutoCamera.RemoveGoal(self.CameraGoal)
 		self.CameraGoal.state = 1<<0 # state 1
-		if self.Occupier:
-			self.Occupier.setVisible(False, True)
 	
 	def IsCarried(self):
 		return self.Owner['Carried']

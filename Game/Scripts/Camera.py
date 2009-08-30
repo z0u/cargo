@@ -43,7 +43,8 @@ class _AutoCamera:
 		self.Camera = None
 		self.DefaultGoal = None
 		self.CurrentGoal = None
-		self.GoalStack = []
+		
+		self.Q = Utilities.PriorityQueue()
 		self.StackModified = False
 		self.InstantCut = False
 		
@@ -61,7 +62,6 @@ class _AutoCamera:
 		'''
 		self.DefaultGoal = CameraGoal(goal, factor, False)
 		self.StackModified = True
-		self.InstantCut = False
 	
 	def OnRender(self):
 		'''
@@ -73,12 +73,14 @@ class _AutoCamera:
 		
 		if self.StackModified:
 			self.CurrentGoal = self.DefaultGoal
-			if len(self.GoalStack) > 0:
-				self.CurrentGoal = self.GoalStack[-1]
+			
+			if len(self.Q) > 0:
+				self.CurrentGoal = self.Q.top()
 			
 			if self.InstantCut:
 				self.Camera.worldPosition = self.CurrentGoal.Goal.worldPosition
 				self.Camera.worldOrientation = self.CurrentGoal.Goal.worldOrientation
+				self.InstantCut = False
 			self.StackModified = False
 		
 		fac = self.DefaultGoal.Factor
@@ -90,7 +92,7 @@ class _AutoCamera:
 		for o in self.Observers:
 			o.OnCameraMoved(self)
 	
-	def AddGoal(self, goal, fac = None, instantCut = False):
+	def AddGoal(self, goal, priority, fac, instantCut):
 		'''
 		Give the camera a new goal, and remember the last one. Call RemoveGoal 
 		to restore the previous relationship. The camera position isn't changed
@@ -98,12 +100,15 @@ class _AutoCamera:
 		
 		Paremeters:
 		goal:       The new goal (KX_GameObject).
+		highPriority: True if this goal should override regular goals.
 		fac:        The speed factor to use for the slow parent relationship.
+		            If None, the factor of the default goal will be used.
 		            0.0 <= fac <= 1.0.
 		instantCut: Whether to make the camera jump immediately to the new
-		            position.
+		            position. Thereafter, the camera will follow its goal
+		            according to 'fac'.
 		'''
-		self.GoalStack.append(CameraGoal(goal, fac, instantCut))
+		self.Q.push(goal, CameraGoal(goal, fac, instantCut), priority)
 		self.StackModified = True
 		if instantCut:
 			self.InstantCut = True
@@ -115,11 +120,11 @@ class _AutoCamera:
 		changed until OnRender is called.
 		'''
 		try:
-			if self.GoalStack[-1].Goal == goalOb:
+			if self.Q.top().Goal == goalOb:
 				#
 				# Goal is on top of the stack: it's in use!
 				#
-				oldGoal = self.GoalStack.pop()
+				oldGoal = self.Q.pop()
 				self.StackModified = True
 				if oldGoal.InstantCut:
 					self.InstantCut = True
@@ -127,26 +132,17 @@ class _AutoCamera:
 				#
 				# Remove the goal from the rest of the stack.
 				#
-				found = False
-				for g in self.GoalStack:
-					if g.Goal == goalOb:
-						self.GoalStack.remove(g)
-						found = True
-						break
-				raise KeyError
+				self.Q.remove(goalOb)
 		except (IndexError, KeyError):
 			print "Warning: camera goal %s not found in stack." % goalOb.name
 	
 	def ResetGoal(self):
 		'''Reset the camera to follow its original goal. This clears the
 		relationship stack.'''
-		if len(self.GoalStack) == 0:
-			return
-		for g in self.GoalStack:
+		while len(self.Q) > 0:
+			g = self.Q.pop()
 			if g.InstantCut:
 				self.InstantCut = True
-				break
-		self.GoalStack = []
 		self.StackModified = True
 	
 	def AddObserver(self, camObserver):
@@ -167,12 +163,18 @@ def SetDefaultGoal(c):
 
 def AddGoal(c):
 	goal = c.owner
-	if goal.has_key('SlowFac') and goal.has_key('InstantCut'):
-		AutoCamera.AddGoal(goal, goal['SlowFac'], goal['InstantCut'])
-	elif goal.has_key('SlowFac'):
-		AutoCamera.AddGoal(goal, goal['SlowFac'])
-	else:
-		AutoCamera.AddGoal(goal)
+	
+	pri = goal['Priority']
+	
+	fac = None
+	if goal.has_key('SlowFac'):
+		fac = goal['SlowFac']
+		
+	instant = False
+	if goal.has_key('InstantCut'):
+		instant = goal['InstantCut']
+	
+	AutoCamera.AddGoal(goal, pri, fac, instant)
 
 def RemoveGoal(c):
 	goal = c.owner

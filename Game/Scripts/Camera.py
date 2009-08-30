@@ -81,8 +81,11 @@ class _AutoCamera:
 				self.Camera.worldOrientation = self.CurrentGoal.Goal.worldOrientation
 			self.StackModified = False
 		
-		Utilities._SlowCopyLoc(self.Camera, self.CurrentGoal.Goal, self.CurrentGoal.Factor)
-		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.Goal, self.CurrentGoal.Factor)
+		fac = self.DefaultGoal.Factor
+		if self.CurrentGoal.Factor != None:
+			fac = self.CurrentGoal.Factor
+		Utilities._SlowCopyLoc(self.Camera, self.CurrentGoal.Goal, fac)
+		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.Goal, fac)
 		
 		for o in self.Observers:
 			o.OnCameraMoved(self)
@@ -164,7 +167,12 @@ def SetDefaultGoal(c):
 
 def AddGoal(c):
 	goal = c.owner
-	AutoCamera.AddGoal(goal, goal['SlowFac'], goal['InstantCut'])
+	if goal.has_key('SlowFac') and goal.has_key('InstantCut'):
+		AutoCamera.AddGoal(goal, goal['SlowFac'], goal['InstantCut'])
+	elif goal.has_key('SlowFac'):
+		AutoCamera.AddGoal(goal, goal['SlowFac'])
+	else:
+		AutoCamera.AddGoal(goal)
 
 def RemoveGoal(c):
 	goal = c.owner

@@ -312,6 +312,7 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		'''Transfers control of the character to the shell.
 		The snail must have a shell.'''
 		self.Shell.Owner.removeParent()
+		self.Owner.setVisible(0, 1)
 		self.Owner.setParent(self.Shell.Owner)
 	
 		#
@@ -323,7 +324,6 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		
 		self.Owner['InShell'] = 1
 		self.Shell.OnEntered()
-		self.Owner.setVisible(0, 1)
 		Actor.Director.SetMainSubject(self.Shell)
 	
 	def exitShell(self):
@@ -332,6 +332,7 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		linV = self.Shell.Owner.getLinearVelocity()
 		angV = self.Shell.Owner.getAngularVelocity()
 		self.Owner.removeParent()
+		self.Owner.setVisible(1, 1)
 		self._stowShell(self.Shell.Owner)
 		self.Owner.setLinearVelocity(linV)
 		self.Owner.setAngularVelocity(angV)
@@ -345,7 +346,6 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		
 		self.Owner['InShell'] = 0
 		self.Shell.OnExited()
-		self.Owner.setVisible(1, 1)
 		Actor.Director.SetMainSubject(self)
 	
 	def postExitShell(self):

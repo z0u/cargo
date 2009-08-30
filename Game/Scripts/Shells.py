@@ -96,26 +96,26 @@ class ShellBase(Actor.Actor):
 			self.CameraGoal['SlowFac'],
 			False)
 		self.CameraGoal.state = 1<<1 # state 2
+		if self.Occupier:
+			self.Occupier.state = 1<<1 # state 2
 	
 	def OnEntered(self):
 		'''Called when a snail enters this shell (just after
 		control is transferred).'''
 		self.Owner.state = S_OCCUPIED
-		if self.Occupier:
-			self.Occupier.state = 1<<1 # state 2
 	
 	def OnExited(self):
 		'''Called when a snail exits this shell (just after
 		control is transferred).'''
 		self.Owner.state = S_CARRIED
-		if self.Occupier:
-			self.Occupier.state = 1<<0 # state 1
 	
 	def OnPostExit(self):
 		'''Called when the snail has finished its exit shell
 		animation.'''
 		Camera.AutoCamera.RemoveGoal(self.CameraGoal)
 		self.CameraGoal.state = 1<<0 # state 1
+		if self.Occupier:
+			self.Occupier.state = 1<<0 # state 1
 	
 	def IsCarried(self):
 		return self.Owner['Carried']

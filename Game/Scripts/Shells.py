@@ -18,14 +18,42 @@
 import Actor
 import Camera
 import Mathutils
+import Utilities
 
 ZAXIS = Mathutils.Vector((0.0, 0.0, 1.0))
+
+#
+# States.
+#
+S_INIT     = 1<<0 # State 1
+S_IDLE     = 1<<1 # State 2
+S_CARRIED  = 1<<2 # State 3
+S_OCCUPIED = 1<<3 # State 4
 
 class ShellBase(Actor.Actor):
 	def __init__(self, owner, cameraGoal):
 		Actor.Actor.__init__(self, owner)
+		
 		self.Snail = None
 		self.CameraGoal = cameraGoal
+		
+		self.CargoHook = None
+		self.Occupier = None
+		for child in owner.children:
+			if child['Type'] == 'CargoHook':
+				self.CargoHook = child
+			elif child['Type'] == 'Occupier':
+				self.Occupier = child
+		
+		#
+		# A cargo hook is required.
+		#
+		if not self.CargoHook:
+			raise Utilities.SemanticException, (
+				"Warning: Shell %s has no cargo hook." % self.Owner.name)
+		
+		if self.Occupier:
+			self.Occupier.setVisible(False, True)
 	
 	def CanSuspend(self):
 		'''Only suspend if this shell is currently dynamic.
@@ -43,14 +71,14 @@ class ShellBase(Actor.Actor):
 		'''Called when a snail picks up this shell.'''
 		self.Snail = snail
 		self.Owner['Carried'] = True
-		self.Owner.state = 1<<2 # state 3
+		self.Owner.state = S_CARRIED
 		self.Owner['NoPickupAnim'] = not animate
 	
 	def OnDropped(self):
 		'''Called when a snail drops this shell.'''
 		self.Snail = None
 		self.Owner['Carried'] = False
-		self.Owner.state = 1<<1 # state 2
+		self.Owner.state = S_IDLE
 	
 	def OnPreEnter(self):
 		'''Called when the snail starts to enter this shell
@@ -64,22 +92,26 @@ class ShellBase(Actor.Actor):
 		self.CameraGoal.worldOrientation = activeCam.worldOrientation
 		Camera.AutoCamera.AddGoal(self.CameraGoal, fac = self.CameraGoal['SlowFac'])
 		self.CameraGoal.state = 1<<1 # state 2
+		if self.Occupier:
+			self.Occupier.setVisible(True, True)
 	
 	def OnEntered(self):
 		'''Called when a snail enters this shell (just after
 		control is transferred).'''
-		self.Owner.state = 1<<3 # state 4
+		self.Owner.state = S_OCCUPIED
 	
 	def OnExited(self):
 		'''Called when a snail exits this shell (just after
 		control is transferred).'''
-		self.Owner.state = 1<<2 # state 3
+		self.Owner.state = S_CARRIED
 	
 	def OnPostExit(self):
 		'''Called when the snail has finished its exit shell
 		animation.'''
 		Camera.AutoCamera.RemoveGoal(self.CameraGoal)
 		self.CameraGoal.state = 1<<0 # state 1
+		if self.Occupier:
+			self.Occupier.setVisible(False, True)
 	
 	def IsCarried(self):
 		return self.Owner['Carried']

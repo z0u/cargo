@@ -17,6 +17,9 @@
 
 from Blender import Mathutils
 
+class SemanticException(Exception):
+	pass
+
 class SemanticGameObject:
 	'''Abstract class that decorates game engine objects. Children will be
 	parsed and decorated according to their type.'''
@@ -31,15 +34,12 @@ class SemanticGameObject:
 	
 	def parseChildren(self):
 		for child in self.Owner.children:
-			try:
+			if child.has_key('Type'):
 				if (not self.parseChild(child, child['Type'])):
 					print "Warning: child %s of %s has unexpected type (%s)" % (
 						child.name,
 						self.Owner.name,
 						child['Type'])
-			
-			except KeyError:
-				continue
 
 class Box2D:
 	'''A 2D bounding box.'''

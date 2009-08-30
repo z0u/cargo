@@ -80,17 +80,20 @@ class SnailSegment(Utilities.SemanticGameObject):
 			return True
 		elif (type == "SnailSegment"):
 			if (self.Child):
-				raise Exception("Segment %s already has a child." % self.Owner.name)
+				raise SemanticException, (
+					"Segment %s already has a child." % self.Owner.name)
 			self.Child = SnailSegment(child, self)
 			return True
 		elif (type == "SegmentChildPivot"):
 			if (self.Child):
-				raise Exception("Segment %s already has a child." % self.Owner.name)
+				raise SemanticException, (
+					"Segment %s already has a child." % self.Owner.name)
 			self.Child = SegmentChildPivot(child)
 			return True
 		elif (type == "Fulcrum"):
 			if (self.Fulcrum):
-				raise Exception("Segment %s already has a fulcrum." % self.Owner.name)
+				raise SemanticException, (
+					"Segment %s already has a fulcrum." % self.Owner.name)
 			self.Fulcrum = child
 			return True
 		else:
@@ -193,7 +196,7 @@ class Snail(SnailSegment, Actor.StatefulActor):
 			elif child['Location'] == 'Aft':
 				self.Tail = AppendageRoot(child)
 			else:
-				raise Exception("Unknown appendage type %s on %s." %
+				raise SemanticException, ("Unknown appendage type %s on %s." %
 			                    (child['Location'], child.name))
 			return True
 		elif type == "Shockwave":
@@ -257,7 +260,7 @@ class Snail(SnailSegment, Actor.StatefulActor):
 	def _stowShell(self, shell):
 		referential = shell
 		for child in shell.children:
-			if (child.Type == 'CargoHook'):
+			if child.has_key('Type') and (child.Type == 'CargoHook'):
 				referential = child
 		
 		Utilities.setRelOrn(shell, self.CargoHold, referential)

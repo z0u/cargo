@@ -81,8 +81,8 @@ def _smerp(CurrentDelta, CurrentValue, Target, SpeedFactor, Responsiveness):
 	For each time step, try to move toward the target by some fraction of
 	the distance (as is the case for normal exponential averages). If this
 	would result in a positive acceleration, take a second exponential
-	average of the acceleration. The resulting resulting motion has smooth
-	acceleration and smooth deceleration.'''
+	average of the acceleration. The resulting motion has smooth acceleration
+	and smooth deceleration, with minimal oscillation.'''
 	
 	targetDelta = (Target - CurrentValue) * SpeedFactor
 	if (targetDelta * targetDelta > CurrentDelta * CurrentDelta):

@@ -37,6 +37,10 @@ class ShellBase(Actor.Actor):
 		self.Snail = None
 		self.CameraGoal = cameraGoal
 		
+		#
+		# This should be handled by a SemanticGameObject - but the multiple
+		# inheritance is dodgy!
+		#
 		self.CargoHook = None
 		self.Occupier = None
 		for child in owner.children:
@@ -163,7 +167,43 @@ class Shell(ShellBase):
 		self.Owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
 class Wheel(ShellBase):
-	pass
+	def __init__(self, owner, cameraGoal):
+		ShellBase.__init__(self, owner, cameraGoal)
+		self.OrnFac = 1.0
+	
+	def OnPreEnter(self):
+		'''Reset the variables for rolling.'''
+		ShellBase.OnPreEnter(self)
+		self.OrnFac = self.Owner['OrnFacMax']
+	
+	def Orient(self):
+		'''Try to make the wheel sit upright.'''
+		vec = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
+		vec.z = 0.0
+		vec.normalize
+		self.Owner.alignAxisToVect(vec, 2, self.OrnFac)
+		self.OrnFac = Utilities._lerp(
+			self.OrnFac, self.Owner['OrnFacMin'], self.Owner['OrnFacFac'])
+	
+	def onMovementImpulse(self, fwd, back, left, right):
+		self.Orient()
+		
+		#
+		# Decide which direction to roll or turn.
+		#
+		fwdMagnitude = 0.0
+		leftMagnitude = 0.0
+		if fwd:
+			fwdMagnitude = fwdMagnitude + 1.0
+		if back:
+			fwdMagnitude = fwdMagnitude - 1.0
+		if left:
+			leftMagnitude = leftMagnitude + 1.0
+		if right:
+			leftMagnitude = leftMagnitude - 1.0
+		
+		self.Owner.applyRotation(ZAXIS * leftMagnitude * 0.03, False)
+		self.Owner.setAngularVelocity(ZAXIS * 10.0, True)
 
 class Nut(ShellBase):
 	pass

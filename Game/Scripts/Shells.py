@@ -180,19 +180,15 @@ class Wheel(ShellBase):
 		#
 		# Decide which direction to roll or turn.
 		#
-		fwdMagnitude = 0.0
 		leftMagnitude = 0.0
-		if fwd:
-			fwdMagnitude = fwdMagnitude + 1.0
-		if back:
-			fwdMagnitude = fwdMagnitude - 1.0
 		if left:
 			leftMagnitude = leftMagnitude + 1.0
 		if right:
 			leftMagnitude = leftMagnitude - 1.0
 		
-		self.Owner.applyRotation(ZAXIS * leftMagnitude * 0.03, False)
-		self.Owner.setAngularVelocity(ZAXIS * 10.0, True)
+		self.Owner.applyRotation(
+			ZAXIS * leftMagnitude * self.Owner['TurnSpeed'], False)
+		self.Owner.setAngularVelocity(ZAXIS * self.Owner['RotSpeed'], True)
 
 class Nut(ShellBase):
 	pass

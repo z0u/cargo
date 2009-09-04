@@ -167,23 +167,12 @@ class Shell(ShellBase):
 		self.Owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
 class Wheel(ShellBase):
-	def __init__(self, owner, cameraGoal):
-		ShellBase.__init__(self, owner, cameraGoal)
-		self.OrnFac = 1.0
-	
-	def OnPreEnter(self):
-		'''Reset the variables for rolling.'''
-		ShellBase.OnPreEnter(self)
-		self.OrnFac = self.Owner['OrnFacMax']
-	
 	def Orient(self):
 		'''Try to make the wheel sit upright.'''
 		vec = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
 		vec.z = 0.0
 		vec.normalize
-		self.Owner.alignAxisToVect(vec, 2, self.OrnFac)
-		self.OrnFac = Utilities._lerp(
-			self.OrnFac, self.Owner['OrnFacMin'], self.Owner['OrnFacFac'])
+		self.Owner.alignAxisToVect(vec, 2, self.Owner['OrnFac'])
 	
 	def onMovementImpulse(self, fwd, back, left, right):
 		self.Orient()

@@ -17,6 +17,8 @@
 
 from Blender import Mathutils
 
+ALMOST_ZERO = Mathutils.Vector((0.0, 0.0, 0.001))
+
 class SemanticException(Exception):
 	pass
 
@@ -93,6 +95,24 @@ def _smerp(CurrentDelta, CurrentValue, Target, SpeedFactor, Responsiveness):
 	CurrentValue = CurrentValue + CurrentDelta
 	return CurrentDelta, CurrentValue
 
+def _approachOne(x, c):
+	#
+	# To visualise this function, try it in gnuplot:
+	# f(x, c) =  1.0 - (1.0 / ((x + (1.0 / c)) * c))
+	# plot [0:100] f(x, 0.5)
+	#
+	return 1.0 - (1.0 / ((x + (1.0 / c)) * c))
+
+def _clamp(lower, upper, value):
+	'''
+	Ensure a value is within the given range.
+	
+	Parameters:
+	lower: The lower bound.
+	upper: The upper bound.
+	value: The value to clamp.
+	'''
+	return min(upper, max(lower, value))
 
 def _toLocal(referential, point):
 	'''
@@ -185,19 +205,6 @@ def SlowCopyLoc(c):
 	o = c.owner
 	goal = c.sensors['sGoal'].owner
 	_SlowCopyLoc(o, goal, o['SlowFac'])
-
-def StorePos(c):
-	'''Store the position and orientation of the owner.'''
-	o = c.owner
-	o['_storedPos'] = o.worldPosition
-	o['_storedRot'] = o.worldOrientation
-
-def RestorePos(c):
-	'''Reset the position and orientation of the owner to what it was when
-	StorePos was last called.'''
-	o = c.owner
-	o.worldPosition = o['_storedPos']
-	o.worldOrientation = o['_storedRot']
 
 def setRelOrn(ob, target, ref):
 	'''
@@ -342,6 +349,18 @@ def OrbitFollow(c):
 			return
 		pos = tPos + vec
 	o.worldPosition = pos
+	
+def SetDefaultProp(ob, propName, value):
+	'''
+	Ensure a game object has the given property.
+	
+	Parameters:
+	ob:       A KX_GameObject.
+	propName: The property to check.
+	value:    The value to assign to the property if it dosen't exist yet.
+	'''
+	if not ob.has_key(propName):
+		ob[propName] = value
 
 class _Random:
 	#

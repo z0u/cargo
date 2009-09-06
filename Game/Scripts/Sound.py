@@ -114,13 +114,7 @@ def ModulateByAngV(c):
 	
 	factor = 0.0
 	if speed > 0.0:
-		#
-		# To visualise this function, try it in gnuplot:
-		# f(speed, a) =  1.0 - (1.0 / ((speed + (1.0 / a)) * a))
-		# plot [0:100] f(x, 0.5)
-		#
-		a = o['SoundModScale']
-		factor = 1.0 - (1.0 / ((speed + (1.0 / a)) * a))
+		factor = Utilities._approachOne(speed, o['SoundModScale'])
 	
 	a = c.actuators[0]
 	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], factor)

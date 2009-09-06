@@ -112,6 +112,7 @@ class ShellBase(Actor.Actor):
 		'''Called when a snail exits this shell (just after
 		control is transferred).'''
 		self.Owner.state = S_CARRIED
+		self.Owner['CurrentBuoyancy'] = self.Owner['Buoyancy']
 	
 	def OnPostExit(self):
 		'''Called when the snail has finished its exit shell
@@ -194,8 +195,7 @@ class Nut(ShellBase):
 	pass
 
 class BottleCap(ShellBase):
-	def Drown(self, water):
-		return False
+	pass
 
 def CreateShell(c):
 	cameraGoal = c.sensors['sCameraGoal'].owner

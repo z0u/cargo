@@ -23,6 +23,7 @@ To kill an actor, call Actor.Destroy; don't call KX_GameObject.endObject
 directly.'''
 
 import LODTree
+import Utilities
 
 class Actor:
 	'''A basic actor. Physics may be suspended, but nothing else.'''
@@ -34,12 +35,24 @@ class Actor:
 		Director.AddActor(self)
 		if owner.has_key('LODRadius'):
 			LODTree.LODManager.AddCollider(self)
+		
+		#
+		# Prepare the actor for floatation. This is used by Water.Water.Float.
+		#
+		Utilities.SetDefaultProp(self.Owner, 'Buoyancy', 0.1)
+		Utilities.SetDefaultProp(
+			self.Owner, 'CurrentBuoyancy', self.Owner['Buoyancy'])
+		Utilities.SetDefaultProp(self.Owner, 'FloatRadius', 1.1)
+		Utilities.SetDefaultProp(self.Owner, 'FloatDamp', 0.1)
+		Utilities.SetDefaultProp(self.Owner, 'SinkFactor', 0.01)
+		
+		self.SaveLocation()
 	
 	def Destroy(self):
 		'''Remove this actor from the scene. This destroys the actor's
 		underlying KX_GameObject too.'''
 		Director.RemoveActor(self)
-		if owner.has_key('LODRadius'):
+		if self.Owner.has_key('LODRadius'):
 			LODTree.LODManager.RemoveCollider(self)
 		self.Owner.endObject()
 	
@@ -65,10 +78,9 @@ class Actor:
 			self.OnResume()
 			self.Suspended = False
 	
-	def Drown(self, water):
-		'''Called when the Actor touches deep water.'''
-		self.Owner.state = 1<<29 # state 30
-		return True
+	def Drown(self):
+		'''Called when the Actor is fully submerged in water.'''
+		self.RestoreLocation()
 	
 	def onMovementImpulse(self, fwd, back, left, right):
 		'''
@@ -88,6 +100,16 @@ class Actor:
 		       movement should be zero.
 		'''
 		pass
+	
+	def SaveLocation(self):
+		self.Pos = self.Owner.worldPosition
+		self.Orn = self.Owner.worldOrientation
+	
+	def RestoreLocation(self):
+		self.Owner.worldPosition = self.Pos
+		self.Owner.worldOrientation = self.Orn
+		self.Owner.setLinearVelocity(Utilities.ALMOST_ZERO)
+		self.Owner.setAngularVelocity(Utilities.ALMOST_ZERO)
 
 def CreateActor(c):
 	c.owner['Actor'] = Actor(c.owner)
@@ -95,8 +117,11 @@ def CreateActor(c):
 def DestroyActor(c):
 	c.owner['Actor'].Destroy()
 
-def DrownActor(c):
-	c.owner['Actor'].Drown()
+def SaveLocation(c):
+	c.owner['Actor'].SaveLocation()
+
+def RestoreLocation(c):
+	c.owner['Actor'].RestoreLocation()
 
 class StatefulActor(Actor):
 	'''In addition to physics suspension, the object transitions

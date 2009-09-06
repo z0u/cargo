@@ -88,6 +88,42 @@ def Fade(c, maxVolume = 1.0):
 	else:
 		c.deactivate(a)
 
+def _Modulate(speed, c):
+	o = c.owner
+	
+	factor = 0.0
+	if speed > 0.0:
+		factor = Utilities._approachOne(speed, o['SoundModScale'])
+	
+	a = c.actuators[0]
+	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], factor)
+	
+	Fade(c, factor)
+
+def ModulateByLinV(c):
+	'''
+	Change the pitch and volume of the sound depending on the angular velocity
+	of the controller's owner.
+	
+	Sensors:
+	sAlways:  Fires every frame to provide the fading effect.
+	<others>: At least one other. If any are positive, the sound will turn on.
+	          Otherwise the sound will turn off.
+	
+	Actuators:
+	<one>:    A sound actuator.
+	
+	Controller properties:
+	SoundModScale: The rate at which the pitch increases (float).
+	PitchMin:      The minimum pitch (when speed = 0) (float).
+	PitchMax:      The maximum pitch (as speed approaches infinity) (float).
+	VolumeMult:    The maximum volume (as speed approaches infinity) (float).
+	SoundFadeFac:  The response factor for the volume (float).
+	'''
+	o = c.owner
+	linV = Mathutils.Vector(o.getLinearVelocity(False))
+	_Modulate(linV.magnitude, c)
+
 def ModulateByAngV(c):
 	'''
 	Change the pitch and volume of the sound depending on the angular velocity
@@ -110,13 +146,4 @@ def ModulateByAngV(c):
 	'''
 	o = c.owner
 	angV = Mathutils.Vector(o.getAngularVelocity(False))
-	speed = angV.magnitude
-	
-	factor = 0.0
-	if speed > 0.0:
-		factor = Utilities._approachOne(speed, o['SoundModScale'])
-	
-	a = c.actuators[0]
-	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], factor)
-	
-	Fade(c, factor)
+	_Modulate(angV.magnitude, c)

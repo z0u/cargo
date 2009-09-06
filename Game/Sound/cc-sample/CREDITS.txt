@@ -36,23 +36,29 @@
 
 
 == Sample catalogue ==
-Sinking.wav:
- - 16740 kijjaz
- - 54037 arnaud
+Bell.wav:
+ - 24629 anamorphosis
+
+BusIdleLoop.wav:
+ - 54910 qubodup
+
+CarStart.wav:
+ - 19025 han1
 
 Puddle*.wav:
  - 13552 acclivity
 
-Bell.wav:
- - 24629 anamorphosis
-
-Slither*.wav:
+Rolling.wav
  - 15562 tigersound
- - 69208 FreqMan
 
 ShellPop.wav
  - 33369 HerbertBoland
  - 50457 MeltyMcFace
 
-Rolling.wav
+Sinking.wav:
+ - 16740 kijjaz
+ - 54037 arnaud
+
+Slither*.wav:
  - 15562 tigersound
+ - 69208 FreqMan

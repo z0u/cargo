@@ -76,6 +76,16 @@ class Box2D:
 		return w * h
 
 def _lerp(A, B, fac):
+	'''
+	Linearly interpolate between two values. Works for scalars and vectors.
+	
+	Parameters:
+	A:   The value to interpolate from.
+	B:   The value to interpolate to.
+	fac: The amount that the result should resemble B.
+	
+	Returns: A if fac == 0.0; B if fac == 1.0; a value in between otherwise.
+	'''
 	return A + ((B - A) * fac)
 
 def _smerp(CurrentDelta, CurrentValue, Target, SpeedFactor, Responsiveness):
@@ -96,12 +106,39 @@ def _smerp(CurrentDelta, CurrentValue, Target, SpeedFactor, Responsiveness):
 	return CurrentDelta, CurrentValue
 
 def _approachOne(x, c):
-	#
-	# To visualise this function, try it in gnuplot:
-	# f(x, c) =  1.0 - (1.0 / ((x + (1.0 / c)) * c))
-	# plot [0:100] f(x, 0.5)
-	#
+	'''
+	Shift a value to be in the range 0.0 - 1.0. The result increases
+	monotonically. For low values, the result will be close to zero, and will
+	increase quickly. High values will be close to one, and will increase
+	slowly.
+	
+	To visualise this function, try it in gnuplot:
+		f(x, c) =  1.0 - (1.0 / ((x + (1.0 / c)) * c))
+		plot [0:100] f(x, 0.5)
+	
+	Parameters:
+	x: The value to shift. 0.0 <= x.
+	c: An amount to scale the result by.
+	
+	Returns: the shifted value, y. 0.0 <= y < 1.0.
+	'''
 	return 1.0 - (1.0 / ((x + (1.0 / c)) * c))
+
+def _safeInvert(x, c = 2.0):
+	'''
+	Invert a value, but ensure that the result is not infinity.
+	
+	To visualise this function, try it in gnuplot:
+		f(x, c) = 1.0 / ((x * c) + 1.0)
+		plot [0:1] f(x, 2.0)
+	
+	Parameters:
+	x: The value to invert. 0.0 <= x
+	c: An amount to scale the result by.
+	
+	Returns: the inverted value, y. 0.0 < y <= 1.0.
+	'''
+	return 1.0 / ((x * c) + 1.0)
 
 def _clamp(lower, upper, value):
 	'''

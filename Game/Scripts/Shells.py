@@ -168,12 +168,24 @@ class Shell(ShellBase):
 		self.Owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
 class Wheel(ShellBase):
+	def __init__(self, owner, cameraGoal):
+		ShellBase.__init__(self, owner, cameraGoal)
+		self._ResetSpeed()
+	
 	def Orient(self):
 		'''Try to make the wheel sit upright.'''
 		vec = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
 		vec.z = 0.0
 		vec.normalize
 		self.Owner.alignAxisToVect(vec, 2, self.Owner['OrnFac'])
+	
+	def _ResetSpeed(self):
+		self.CurrentRotSpeed = 0.0
+		self.CurrentTurnSpeed = 0.0
+	
+	def OnPreEnter(self):
+		ShellBase.OnPreEnter(self)
+		self._ResetSpeed()
 	
 	def onMovementImpulse(self, fwd, back, left, right):
 		self.Orient()
@@ -187,9 +199,29 @@ class Wheel(ShellBase):
 		if right:
 			leftMagnitude = leftMagnitude - 1.0
 		
+		#
+		# Turn (steer).
+		#
+		self.CurrentTurnSpeed = Utilities._lerp(
+			self.CurrentTurnSpeed,
+			self.Owner['TurnSpeed'] * leftMagnitude,
+			self.Owner['SpeedFac'])
 		self.Owner.applyRotation(
-			ZAXIS * leftMagnitude * self.Owner['TurnSpeed'], False)
-		self.Owner.setAngularVelocity(ZAXIS * self.Owner['RotSpeed'], True)
+			ZAXIS * self.CurrentTurnSpeed, False)
+		
+		#
+		# Apply acceleration. The speed will be influenced by the rate that
+		# the wheel is being steered at (above).
+		#
+		turnStrength = abs(self.CurrentTurnSpeed) / self.Owner['TurnSpeed']
+		targetRotSpeed = self.Owner['RotSpeed'] * Utilities._safeInvert(
+			turnStrength, self.Owner['TurnInfluence'])
+		
+		self.CurrentRotSpeed = Utilities._lerp(
+			self.CurrentRotSpeed,
+			targetRotSpeed,
+			self.Owner['SpeedFac'])
+		self.Owner.setAngularVelocity(ZAXIS * self.CurrentRotSpeed, True)
 
 class Nut(ShellBase):
 	pass

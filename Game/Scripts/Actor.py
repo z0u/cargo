@@ -45,6 +45,7 @@ class Actor:
 		Utilities.SetDefaultProp(self.Owner, 'FloatRadius', 1.1)
 		Utilities.SetDefaultProp(self.Owner, 'FloatDamp', 0.1)
 		Utilities.SetDefaultProp(self.Owner, 'SinkFactor', 0.01)
+		Utilities.SetDefaultProp(self.Owner, 'MinRippleSpeed', 1.0)
 		
 		self.SaveLocation()
 	

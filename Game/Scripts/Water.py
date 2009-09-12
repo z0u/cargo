@@ -18,7 +18,7 @@ class Water:
 		self.InstanceAngle = 0.0
 		self.BubbleTemplate = scene.objectsInactive['OB' + owner['BubbleTemplate']]
 		self.RippleTemplate = scene.objectsInactive['OB' + owner['RippleTemplate']]
-		self.MinDist = self.Owner['MinDist']
+		self.CurrentFrame = 0
 		
 		self.LastHitActors = set()
 	
@@ -89,12 +89,19 @@ class Water:
 	
 	def SpawnRipples(self, actor):
 		ob = actor.Owner
-		pos = Mathutils.Vector(ob.worldPosition)
 		
 		try:
-			if (pos - ob['Water_LastPos']).magnitude < self.MinDist:
+			if ob['Water_LastFrame'] == self.CurrentFrame:
+				ob['Water_CanRipple'] = True
+			if not ob['Water_CanRipple']:
 				#
-				# The object hasn't moved far enough to cause another event.
+				# The object has rippled too recently.
+				#
+				return
+			linV = Mathutils.Vector(ob.getLinearVelocity(False))
+			if linV.magnitude < ob['MinRippleSpeed']:
+				#
+				# The object hasn't moved fast enough to cause another event.
 				#
 				return
 		except KeyError:
@@ -104,13 +111,14 @@ class Water:
 			#
 			pass
 		
-		ob['Water_LastPos'] = pos
+		ob['Water_LastFrame'] = self.CurrentFrame
+		ob['Water_CanRipple'] = False
 		self.SpawnSurfaceDecal(self.RippleTemplate, ob.worldPosition)
 	
 	def OnCollision(self, hitActors):
 		'''
 		Called when an object collides with the water. Creates ripples and
-		causes objects to float or sink.
+		causes objects to float or sink. Should only be called once per frame.
 		'''
 		for actor in hitActors:
 			self.SpawnRipples(actor)
@@ -120,6 +128,12 @@ class Water:
 			self.Float(actor, False)
 		
 		self.LastHitActors = hitActors
+		
+		#
+		# Increase the frame counter.
+		#
+		self.CurrentFrame = ((self.CurrentFrame + 1) %
+			self.Owner['RippleInterval'])
 
 def CreateWater(c):
 	'''

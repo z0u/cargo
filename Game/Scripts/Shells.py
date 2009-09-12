@@ -113,14 +113,14 @@ class ShellBase(Actor.Actor):
 		control is transferred).'''
 		self.Owner.state = S_CARRIED
 		self.Owner['CurrentBuoyancy'] = self.Owner['Buoyancy']
+		self.CameraGoal.state = 1<<0 # state 1
+		if self.Occupier:
+			self.Occupier.state = 1<<0 # state 1
 	
 	def OnPostExit(self):
 		'''Called when the snail has finished its exit shell
 		animation.'''
 		Camera.AutoCamera.RemoveGoal(self.CameraGoal)
-		self.CameraGoal.state = 1<<0 # state 1
-		if self.Occupier:
-			self.Occupier.state = 1<<0 # state 1
 	
 	def IsCarried(self):
 		return self.Owner['Carried']

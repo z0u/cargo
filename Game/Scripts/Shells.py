@@ -227,11 +227,6 @@ class Nut(ShellBase):
 	pass
 
 class BottleCap(ShellBase):
-	def __init__(self, owner, cameraGoal):
-		ShellBase.__init__(self, owner, cameraGoal)
-		self.FwdMagnitude = 0.0
-		self.LeftMagnitude = 0.0
-	
 	def Orient(self):
 		'''Try to make the cap sit upright, and face the direction of travel.'''
 		vec = Mathutils.Vector(ZAXIS)
@@ -246,50 +241,31 @@ class BottleCap(ShellBase):
 		'''Make the cap jump around around based on user input.'''
 		self.Orient()
 		
-		if self.Owner['JumpFrame'] > 0:
-			#
-			# A jump is in progress: move to the next frame.
-			#
-			self.Owner['JumpFrame'] = self.Owner['JumpFrame'] + 1
-			if self.Owner['JumpFrame'] >= self.Owner['JumpFrameMax']:
-				#
-				# End of animation; stop.
-				#
-				self.Owner['JumpFrame'] = 0
-				self.FwdMagnitude = 0.0
-				self.LeftMagnitude = 0.0
+		if not self.Occupier['JumpReady']:
+			return
 		
 		if not self.Owner['OnGround']:
 			return
 		
+		if fwd or back or left or right:
+			self.Occupier.state = self.Occupier.state | 1<<2 # Plus state 3
+		
+		if not self.Occupier['JumpNow']:
+			return
+		
 		#
-		# Decide which direction to roll in on the two axes. Stored in member
-		# variables in case the player releases the button before the jump
-		# actually happens.
+		# Decide which direction to jump on the two axes.
 		#
+		fwdMagnitude = 0.0
 		if fwd and not back:
-			self.FwdMagnitude = 1.0
+			fwdMagnitude = 1.0
 		elif back and not fwd:
-			self.FwdMagnitude = -1.0
+			fwdMagnitude = -1.0
+		leftMagnitude = 0.0
 		if left and not right:
-			self.LeftMagnitude = 1.0
+			leftMagnitude = 1.0
 		elif right and not left:
-			self.LeftMagnitude = -1.0
-		
-		if self.FwdMagnitude == 0.0 and self.LeftMagnitude == 0.0:
-			return
-		
-		if self.Owner['JumpFrame'] == 0:
-			#
-			# Start a new jump.
-			#
-			self.Owner['JumpFrame'] = 1
-		
-		if self.Owner['JumpFrame'] != self.Owner['JumpOnFrame']:
-			#
-			# Wait until the animation progresses further.
-			#
-			return
+			leftMagnitude = -1.0
 		
 		#
 		# Get the vectors to apply force along.
@@ -305,8 +281,8 @@ class BottleCap(ShellBase):
 		#
 		# Set the direction of the vectors.
 		#
-		fwdVec = fwdVec * self.FwdMagnitude
-		leftVec = leftVec * self.LeftMagnitude
+		fwdVec = fwdVec * fwdMagnitude
+		leftVec = leftVec * leftMagnitude
 		finalVec = fwdVec + leftVec
 		finalVec.z = self.Owner['Lift']
 		finalVec.normalize()
@@ -316,13 +292,14 @@ class BottleCap(ShellBase):
 		# Apply the force.
 		#
 		self.Owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
+		self.Occupier['JumpNow'] = False
 	
 	def OnExited(self):
 		'''Called when control is transferred to the snail. Reset propulsion.'''
 		ShellBase.OnExited(self)
 		self.FwdMagnitude = 0.0
 		self.LeftMagnitude = 0.0
-		self.Owner['JumpFrame'] = 0
+		self.Occupier['JumpFrame'] = 0
 
 def CreateShell(c):
 	cameraGoal = c.sensors['sCameraGoal'].owner

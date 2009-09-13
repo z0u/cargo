@@ -20,6 +20,12 @@ from Blender import Mathutils
 
 MIN_VOLUME = 0.01
 
+#
+# A mapping from sound name to actuator index. This lets PlayWithRandomPitch
+# cycle through different samples for a named sound.
+#
+_SoundActuatorIndices = {}
+
 def PlayWithRandomPitch(c):
 	'''
 	Play a sound with a random pitch. The pitch range is defined by the
@@ -34,6 +40,11 @@ def PlayWithRandomPitch(c):
 	Controller properties:
 	PitchMin: The minimum pitch (float).
 	PitchMax: The maximum pitch (float).
+	SoundID:  The name of the sound (any type). This lets different objects with
+	          the same SoundID coordinate the sequence that the sounds are
+	          played in. Note that if controllers with the same SoundID have
+	          different numbers of actuators, the additional actuators are not
+	          guaranteed to play.
 	'''
 	s = c.sensors[0]
 	if not s.triggered or not s.positive:
@@ -43,13 +54,17 @@ def PlayWithRandomPitch(c):
 	#
 	# Select an actuator.
 	#
+	i = 0
+	soundID = o['SoundID']
 	try:
-		a = c.actuators[o['SoundActIndex']]
+		i = _SoundActuatorIndices[soundID]
 	except KeyError:
-		o['SoundActIndex'] = 0
-		a = c.actuators[o['SoundActIndex']]
-	o['SoundActIndex'] = (o['SoundActIndex'] + 1) % len(c.actuators)
-	print o['SoundActIndex'], a
+		_SoundActuatorIndices[soundID] = 0
+		i = 0
+	
+	i = i % len(c.actuators)
+	a = c.actuators[i]
+	_SoundActuatorIndices[soundID] = i + 1
 	
 	#
 	# Set the pitch and activate!

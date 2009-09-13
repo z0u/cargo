@@ -43,8 +43,13 @@ def PlayWithRandomPitch(c):
 	#
 	# Select an actuator.
 	#
-	a = c.actuators[o['SoundActIndex']]
+	try:
+		a = c.actuators[o['SoundActIndex']]
+	except KeyError:
+		o['SoundActIndex'] = 0
+		a = c.actuators[o['SoundActIndex']]
 	o['SoundActIndex'] = (o['SoundActIndex'] + 1) % len(c.actuators)
+	print o['SoundActIndex'], a
 	
 	#
 	# Set the pitch and activate!

@@ -39,15 +39,6 @@
 Bell.wav:
  - 24629 anamorphosis
 
-BusIdleLoop.wav:
- - 54910 qubodup
-
-CarStart.wav:
- - 19025 han1
-
-Puddle*.wav:
- - 13552 acclivity
-
 Rolling.wav
  - 15562 tigersound
 

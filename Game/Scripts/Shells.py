@@ -21,6 +21,7 @@ import Mathutils
 import Utilities
 
 ZAXIS = Mathutils.Vector((0.0, 0.0, 1.0))
+EPSILON = 0.001
 
 #
 # States.
@@ -124,6 +125,12 @@ class ShellBase(Actor.Actor):
 	
 	def IsCarried(self):
 		return self.Owner['Carried']
+	
+	def Drown(self):
+		if not (self.Owner.state & S_CARRIED):
+			return Actor.Actor.Drown(self)
+		else:
+			return False
 
 class Shell(ShellBase):
 	def onMovementImpulse(self, fwd, back, left, right):
@@ -235,7 +242,9 @@ class BottleCap(ShellBase):
 		
 		facing = Mathutils.Vector(self.Owner.getLinearVelocity(False))
 		facing.z = 0.0
-		self.Owner.alignAxisToVect(facing, 1, self.Owner['TurnFac'] * facing.magnitude)
+		if facing.magnitude > EPSILON:
+			self.Owner.alignAxisToVect(
+				facing, 1, self.Owner['TurnFac'] * facing.magnitude)
 	
 	def onMovementImpulse(self, fwd, back, left, right):
 		'''Make the cap jump around around based on user input.'''

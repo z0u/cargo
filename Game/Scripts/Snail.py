@@ -44,7 +44,7 @@ S_CRAWLING = 1<<1  # state 2
 #S_NOSHELL  = 1<<15 # state 16
 #S_HASSHELL = 1<<16 # state 17
 #S_POPPING  = 1<<17 # state 18
-#S_INSHELL  = 1<<18 # state 19
+S_INSHELL  = 1<<18 # state 19
 #S_REINCARNATE = 1<<28 # state 29
 #S_DROWNING    = 1<<29 # state 30
 
@@ -380,6 +380,12 @@ class Snail(SnailSegment, Actor.StatefulActor):
 	
 	def crawling(self):
 		return self.Owner.state & S_CRAWLING
+	
+	def Drown(self):
+		if not self.Owner.state & S_INSHELL:
+			return Actor.Actor.Drown(self)
+		else:
+			return False
 	
 	def onMovementImpulse(self, fwd, back, left, right):
 		'''

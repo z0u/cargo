@@ -84,8 +84,9 @@ class Water:
 				#
 				# Object is fully submerged. Cause it to drown.
 				#
-				self.SpawnSurfaceDecal(self.BubbleTemplate, body.worldPosition)
-				actor.Drown()
+				pos = body.worldPosition
+				if actor.Drown():
+					self.SpawnSurfaceDecal(self.BubbleTemplate, pos)
 	
 	def SpawnRipples(self, actor):
 		ob = actor.Owner

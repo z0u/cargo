@@ -80,8 +80,13 @@ class Actor:
 			self.Suspended = False
 	
 	def Drown(self):
-		'''Called when the Actor is fully submerged in water.'''
+		'''
+		Called when the Actor is fully submerged in water.
+		
+		Returns: True iff the actor drowned.
+		'''
 		self.RestoreLocation()
+		return True
 	
 	def onMovementImpulse(self, fwd, back, left, right):
 		'''

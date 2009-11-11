@@ -399,6 +399,55 @@ def SetDefaultProp(ob, propName, value):
 	if not ob.has_key(propName):
 		ob[propName] = value
 
+def addState(ob, state):
+	'''Add a set of states to this object's state.'''
+	stateBitmask = 1 << (state - 1)
+	ob.state |= stateBitmask
+
+def remState(ob, state):
+	'''Remove a state from this object's state.'''
+	stateBitmask = 1 << (state - 1)
+	ob.state &= (~stateBitmask)
+
+def setState(ob, state):
+	'''Set the object's state. All current states will be un-set and replaced
+	with the one specified.'''
+	stateBitmask = 1 << (state - 1)
+	ob.state = stateBitmask
+
+def hasState(ob, state):
+	'''Test whether the object is in the specified state.'''
+	stateBitmask = 1 << (state - 1)
+	return (ob.state & stateBitmask) != 0
+
+def allSensorsPositive(c):
+	'''
+	Test whether all sensors are positive.
+	
+	Parameters:
+	c: A controller.
+	
+	Returns: true iff all sensors are positive.
+	'''
+	for s in c.sensors:
+		if not s.positive:
+			return False
+	return True
+
+def someSensorPositive(c):
+	'''
+	Test whether at least one sensor is positive.
+	
+	Parameters:
+	c: A controller.
+	
+	Returns: true iff at least one sensor is positive.
+	'''
+	for s in c.sensors:
+		if s.positive:
+			return True
+	return False
+
 class _Random:
 	#
 	# 100 random numbers (saves needing to import the 'random' module).

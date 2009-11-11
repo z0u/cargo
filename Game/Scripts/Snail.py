@@ -37,16 +37,17 @@ MIN_SPEED = -3.0
 # States for main snail object. The commented-out ones aren't currently used
 # in the code, and are only set by logic bricks.
 #
-#S_INIT     = 1<<0  # state 1
-S_CRAWLING = 1<<1  # state 2
-#S_FALLING  = 1<<2  # state 3
-#S_ACTIVE   = 1<<3  # state 4
-#S_NOSHELL  = 1<<15 # state 16
-#S_HASSHELL = 1<<16 # state 17
-#S_POPPING  = 1<<17 # state 18
-S_INSHELL  = 1<<18 # state 19
-#S_REINCARNATE = 1<<28 # state 29
-#S_DROWNING    = 1<<29 # state 30
+#S_INIT     = 1
+S_CRAWLING = 2
+S_FALLING  = 3
+#S_ACTIVE   = 4
+S_NOSHELL  = 16
+S_HASSHELL = 17
+S_POPPING  = 18
+S_INSHELL  = 19
+S_EXITING  = 20
+#S_REINCARNATE = 29
+#S_DROWNING    = 30
 
 
 ZAXIS  = Mathutils.Vector([0.0, 0.0, 1.0])
@@ -279,6 +280,8 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		Adding the shell as a child prevents collision with the
 		parent. The shell's inactive state will also be set.
 		'''
+		Utilities.remState(self.Owner, S_NOSHELL)
+		Utilities.addState(self.Owner, S_HASSHELL)
 		
 		self._stowShell(shell.Owner)
 		
@@ -289,10 +292,15 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		if animate:
 			self.Shockwave.worldPosition = self.Shell.Owner.worldPosition
 			self.Shockwave.worldOrientation = self.Shell.Owner.worldOrientation
-			self.Shockwave.state = 1<<1 # state 2
+			Utilities.setState(self.Shockwave, 2)
 	
 	def removeShell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
+		
+		Utilities.remState(self.Owner, S_POPPING)
+		Utilities.remState(self.Owner, S_HASSHELL)
+		Utilities.addState(self.Owner, S_NOSHELL)
+		
 		self.Shell.Owner.removeParent()
 		velocity = self.Owner.getAxisVect(ZAXIS)
 		velocity = Mathutils.Vector(velocity)
@@ -303,14 +311,16 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Shell.OnDropped()
 		self.Shell = None
 	
-	def preEnterShell(self):
+	def onPreEnterShell(self):
 		'''Called when the snail starts getting into the shell
 		(several frames before control is transferred).'''
 		self.Shell.OnPreEnter()
 	
-	def enterShell(self):
+	def onEnterShell(self):
 		'''Transfers control of the character to the shell.
 		The snail must have a shell.'''
+		Utilities.remState(self.Owner, S_CRAWLING)
+		
 		self.Shell.Owner.removeParent()
 		self.Owner.setVisible(0, 1)
 		self.Owner.setParent(self.Shell.Owner)
@@ -327,8 +337,17 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		Actor.Director.SetMainSubject(self.Shell)
 	
 	def exitShell(self):
-		'''Transfers control of the character to the snail.
-		The snail must be the child of a shell.'''
+		'''
+		Tries to make the snail exit the shell. If possible, control will be
+		transferred to the snail. The snail must currently be in a shell.
+		'''
+		if not Utilities.hasState(self.Owner, S_INSHELL):
+			return
+		
+		Utilities.remState(self.Owner, S_INSHELL)
+		Utilities.addState(self.Owner, S_EXITING)
+		Utilities.addState(self.Owner, S_FALLING)
+		
 		linV = self.Shell.Owner.getLinearVelocity()
 		angV = self.Shell.Owner.getAngularVelocity()
 		self.Owner.removeParent()
@@ -348,10 +367,12 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Shell.OnExited()
 		Actor.Director.SetMainSubject(self)
 	
-	def postExitShell(self):
+	def onPostExitShell(self):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
 		transferred).'''
+		Utilities.remState(self.Owner, S_EXITING)
+		Utilities.addState(self.Owner, S_HASSHELL)
 		self.Shell.OnPostExit()
 	
 	def onStartCrawling(self):
@@ -379,10 +400,10 @@ class Snail(SnailSegment, Actor.StatefulActor):
 			o['SpeedMultiplier'] = min(mult + dr, 1.0)
 	
 	def crawling(self):
-		return self.Owner.state & S_CRAWLING
+		return Utilities.hasState(self.Owner, S_CRAWLING)
 	
 	def Drown(self):
-		if not self.Owner.state & S_INSHELL:
+		if not Utilities.hasState(self.Owner, S_INSHELL):
 			return Actor.Actor.Drown(self)
 		else:
 			return False
@@ -638,15 +659,10 @@ def Orient(c):
 	c.owner['Snail'].orient()
 
 def _OnShellTouched(c, animate):
-	o = c.owner
-	
-	activate = True
-	for s in c.sensors:
-		if not s.positive:
-			activate = False
-	
-	if not activate:
+	if not Utilities.allSensorsPositive(c):
 		return
+	
+	o = c.owner
 	
 	if not o['HasShell']:
 		ob = c.sensors['sShellPickup'].hitObject
@@ -663,23 +679,19 @@ def OnShellTouched(c):
 def DropShell(c):
 	c.owner['Snail'].removeShell()
 
-def OnShellPostExit(c):
-	'''Called when the shell has been fully exited.'''
-	for s in c.sensors:
-		if not s.positive:
-			return
-	c.owner['Snail'].postExitShell()
-
-def OnShellExit(c):
+def ExitShell(c):
 	'''
 	Transfers control of the character to the snail. To be run from a controller
 	on the snail. The snail must be carrying a shell. To reverse this, run
 	OnShellExit from a controller on the snail.
 	'''
-	for s in c.sensors:
-		if not s.positive:
-			return
-	c.owner['Snail'].exitShell()
+	if Utilities.allSensorsPositive(c):
+		c.owner['Snail'].exitShell()
+
+def OnShellPostExit(c):
+	'''Called when the shell has been fully exited.'''
+	if Utilities.allSensorsPositive(c):
+		c.owner['Snail'].onPostExitShell()
 
 def OnShellEnter(c):
 	'''
@@ -688,17 +700,13 @@ def OnShellEnter(c):
 	snail. The snail must be carrying a shell. To reverse this, run
 	OnShellExit from a controller on the snail.
 	'''
-	for s in c.sensors:
-		if not s.positive:
-			return
-	c.owner['Snail'].enterShell()
+	if Utilities.allSensorsPositive(c):
+		c.owner['Snail'].onEnterShell()
 
 def OnShellPreEnter(c):
 	'''Called when the shell is starting to be entered.'''
-	for s in c.sensors:
-		if not s.positive:
-			return
-	c.owner['Snail'].preEnterShell()
+	if Utilities.allSensorsPositive(c):
+		c.owner['Snail'].onPreEnterShell()
 
 def OnStartCrawling(c):
 	c.owner['Snail'].onStartCrawling()

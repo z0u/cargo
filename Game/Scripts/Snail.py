@@ -169,13 +169,15 @@ class SegmentChildPivot(SnailSegment):
 		self.Child.setBendAngle(angle)
 
 class Snail(SnailSegment, Actor.StatefulActor):
-	def __init__(self, owner, cargoHold):
+	def __init__(self, owner, cargoHold, eyeLocL, eyeLocR):
 		Actor.StatefulActor.__init__(self, owner)
 		Actor.Director.SetMainSubject(self)
 		
 		self.Head = None
 		self.Tail = None
 		self.CargoHold = cargoHold
+		self.EyeLocL = eyeLocL
+		self.EyeLocR = eyeLocR
 		self.Shell = None
 		self.Shockwave = None
 		self.Trail = None
@@ -257,6 +259,55 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		
 		self.Head.orient()
 		self.Tail.orient()
+	
+	def lookAt(self, targetList):
+		'''Turn the eyes to face the nearest object in targetList.'''
+		def getAngZ(vec):
+			vec.normalize()
+			angZIndex = 0.0
+			if vec.y >= 0:
+				angZIndex = vec.x * 100.0
+			else:
+				if vec.x >= 0:
+					angZIndex = ((1.0 - vec.x) * 100.0) + 100.0
+				else:
+					angZIndex = ((-1.0 - vec.x) * 100.0) - 100.0
+			return angZIndex
+		
+		if len(targetList) < 1:
+			self.Armature['Eye_X_L'] = 0
+			self.Armature['Eye_X_R'] = 0
+			self.Armature['Eye_Z_L'] = 0
+			self.Armature['Eye_Z_R'] = 0
+			return
+		
+		nearest = targetList[0]
+		minDist = self.Owner.getDistanceTo(nearest)
+		for target in targetList[1:]:
+			dist = self.Owner.getDistanceTo(target)
+			if dist < minDist:
+				nearest = target
+				minDist = dist
+		
+		#
+		# Normally we would need to find cos(x) to get the angle on the Z-axis.
+		# But here, x drives an IPO curve with the cosine wave baked into it.
+		#
+		p = Utilities._toLocal(self.EyeLocL,
+			Mathutils.Vector(nearest.worldPosition))
+		p.normalize()
+		angZIndex = Utilities._clamp(-150.0, 150.0, getAngZ(p))
+		self.Armature['Eye_Z_L'] = Utilities._lerp(self.Armature['Eye_Z_L'],
+			angZIndex, self.Owner['EyeRotFac'])
+		self.Armature['Eye_X_L'] = p.z * 100.0
+		
+		p = Utilities._toLocal(self.EyeLocR,
+			Mathutils.Vector(nearest.worldPosition))
+		p.normalize()
+		angZIndex = Utilities._clamp(-150.0, 150.0, getAngZ(p))
+		self.Armature['Eye_Z_R'] = Utilities._lerp(self.Armature['Eye_Z_R'],
+			angZIndex, self.Owner['EyeRotFac'])
+		self.Armature['Eye_X_R'] = p.z * 100.0
 	
 	def _stowShell(self, shell):
 		referential = shell
@@ -652,11 +703,17 @@ class SnailTrail(Utilities.SemanticGameObject):
 
 def Init(cont):
 	cargoHold = cont.sensors['sCargoHoldHook'].owner
-	snail = Snail(cont.owner, cargoHold)
+	eyeLocL = cont.sensors['sEyeLocHookL'].owner
+	eyeLocR = cont.sensors['sEyeLocHookR'].owner
+	snail = Snail(cont.owner, cargoHold, eyeLocL, eyeLocR)
 	cont.owner['Snail'] = snail
 
 def Orient(c):
 	c.owner['Snail'].orient()
+
+def Look(c):
+	sLookAt = c.sensors['sLookAt']
+	c.owner['Snail'].lookAt(sLookAt.hitObjectList)
 
 def _OnShellTouched(c, animate):
 	if not Utilities.allSensorsPositive(c):

@@ -731,11 +731,26 @@ def _OnShellTouched(c, animate):
 	
 	o = c.owner
 	
-	if not o['HasShell']:
-		ob = c.sensors['sShellPickup'].hitObject
-		shell = ob['Actor']
-		if (not shell.IsCarried()):
-			o['Snail'].setShell(shell, animate)
+	if o['HasShell']:
+		return
+	
+	shell = None
+	nearest = None
+	dist = None
+	for shellOb in c.sensors['sShellPickup'].hitObjectList:
+		shell = shellOb['Actor']
+		if shell.IsCarried():
+			continue
+		if not nearest:
+			nearest = shellOb
+			continue
+		d = shellOb.getDistanceTo(o)
+		if not nearest or d < dist:
+			nearest = shellOb
+			dist = d
+	
+	shell = nearest['Actor']
+	o['Snail'].setShell(shell, animate)
 
 def OnShellTouchedNoAnim(c):
 	_OnShellTouched(c, False)

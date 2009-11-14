@@ -261,8 +261,13 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Tail.orient()
 	
 	def lookAt(self, targetList):
-		'''Turn the eyes to face the nearest object in targetList.'''
-		def getAngZ(vec):
+		'''
+		Turn the eyes to face the nearest object in targetList. Objects with a
+		higher priority will always be prefered. In practice, the targetList
+		is provided by a Near sensor, so it won't include every object in the
+		scene. Objects with a LookAt priority of less than zero will be ignored.
+		'''
+		def getAngleIndices(vec):
 			vec.normalize()
 			angZIndex = 0.0
 			if vec.y >= 0:
@@ -272,22 +277,32 @@ class Snail(SnailSegment, Actor.StatefulActor):
 					angZIndex = ((1.0 - vec.x) * 100.0) + 100.0
 				else:
 					angZIndex = ((-1.0 - vec.x) * 100.0) - 100.0
-			return angZIndex
+			angZIndex = Utilities._clamp(-150, 150, angZIndex)
+			angXIndex = p.z * 100
+			return angXIndex, angZIndex
 		
-		if len(targetList) < 1:
-			self.Armature['Eye_X_L'] = 0
-			self.Armature['Eye_X_R'] = 0
-			self.Armature['Eye_Z_L'] = 0
-			self.Armature['Eye_Z_R'] = 0
-			return
+		def setEyeRot(ob, XL, ZL, XR, ZR, fac):
+			ob['Eye_X_L'] = Utilities._lerp(ob['Eye_X_L'], XL, fac)
+			ob['Eye_Z_L'] = Utilities._lerp(ob['Eye_Z_L'], ZL, fac)
+			ob['Eye_X_R'] = Utilities._lerp(ob['Eye_X_R'], XR, fac)
+			ob['Eye_Z_R'] = Utilities._lerp(ob['Eye_Z_R'], ZR, fac)
 		
-		nearest = targetList[0]
-		minDist = self.Owner.getDistanceTo(nearest)
-		for target in targetList[1:]:
+		nearest = None
+		minDist = None
+		maxPriority = 0
+		for target in targetList:
+			if target['LookAt'] < maxPriority:
+				continue
 			dist = self.Owner.getDistanceTo(target)
-			if dist < minDist:
+			if nearest == None or dist < minDist:
 				nearest = target
 				minDist = dist
+				maxPriority = target['LookAt']
+		
+		if not nearest:
+			setEyeRot(self.Armature, 0.0, 0.0, 0.0, 0.0, 
+			          self.Owner['EyeRotFac'])
+			return
 		
 		#
 		# Normally we would need to find cos(x) to get the angle on the Z-axis.
@@ -295,19 +310,14 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		#
 		p = Utilities._toLocal(self.EyeLocL,
 			Mathutils.Vector(nearest.worldPosition))
-		p.normalize()
-		angZIndex = Utilities._clamp(-150.0, 150.0, getAngZ(p))
-		self.Armature['Eye_Z_L'] = Utilities._lerp(self.Armature['Eye_Z_L'],
-			angZIndex, self.Owner['EyeRotFac'])
-		self.Armature['Eye_X_L'] = p.z * 100.0
+		angXIndexL, angZIndexL = getAngleIndices(p)
 		
 		p = Utilities._toLocal(self.EyeLocR,
 			Mathutils.Vector(nearest.worldPosition))
-		p.normalize()
-		angZIndex = Utilities._clamp(-150.0, 150.0, getAngZ(p))
-		self.Armature['Eye_Z_R'] = Utilities._lerp(self.Armature['Eye_Z_R'],
-			angZIndex, self.Owner['EyeRotFac'])
-		self.Armature['Eye_X_R'] = p.z * 100.0
+		angXIndexR, angZIndexR = getAngleIndices(p)
+		
+		setEyeRot(self.Armature, angXIndexL, angZIndexL, angXIndexR, angZIndexR,
+		          self.Owner['EyeRotFac'])
 	
 	def _stowShell(self, shell):
 		referential = shell

@@ -59,6 +59,8 @@ class ShellBase(Actor.Actor):
 		
 		if self.Occupier:
 			self.Occupier.state = 1<<0 # state 1
+		
+		self.LookAt = -1
 	
 	def CanSuspend(self):
 		'''Only suspend if this shell is currently dynamic.
@@ -78,12 +80,20 @@ class ShellBase(Actor.Actor):
 		self.Owner['Carried'] = True
 		self.Owner.state = S_CARRIED
 		self.Owner['NoPickupAnim'] = not animate
+		
+		try:
+			self.LookAt = self.Owner['LookAt']
+			self.Owner['LookAt'] = -1
+		except KeyError:
+			self.Owner['LookAt'] = -1
 	
 	def OnDropped(self):
 		'''Called when a snail drops this shell.'''
 		self.Snail = None
 		self.Owner['Carried'] = False
 		self.Owner.state = S_IDLE
+		
+		self.Owner['LookAt'] = self.LookAt
 	
 	def OnPreEnter(self):
 		'''Called when the snail starts to enter this shell

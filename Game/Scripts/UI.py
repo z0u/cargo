@@ -54,12 +54,11 @@ class _HUD(Utilities.SemanticGameObject):
 		self.DialogueBox.Content = ""
 		Actor.ResumeAction()
 
+HUD = None
 def CreateHUD(c):
-	GameLogic.HUD = _HUD(c.owner)
+	global HUD
+	HUD = _HUD(c.owner)
 	print "HUD created"
-
-def GetHUD():
-	return GameLogic.HUD
 
 class Font:
 	GlyphDict = None
@@ -142,6 +141,7 @@ class Font:
 
 _fonts = {}
 def CreateFont(c):
+	global _fonts
 	_fonts[c.owner['FontName']] = Font(c.owner)
 
 class TextRenderer:
@@ -233,7 +233,7 @@ class TextRenderer:
 		#
 		# Clear the canvas.
 		#
-		for child in self.canvas.getChildren():
+		for child in self.canvas.children:
 			if child == self.caret:
 				continue
 			child.endObject()

@@ -139,7 +139,7 @@ class StatefulActor(Actor):
 	
 	def OnSuspend(self):
 		self.State = self.Owner.state
-		self.Owner.state = 1<<9 # state 10
+		Utilities.setState(self.Owner, 10)
 	
 	def OnResume(self):
 		self.Owner.state = self.State

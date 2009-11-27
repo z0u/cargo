@@ -26,6 +26,7 @@ import GrassBlade
 import Camera
 import Water
 import Sound
+import Story
 
 #
 # Configure the environment.

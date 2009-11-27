@@ -31,7 +31,7 @@ class Actor:
 	def __init__(self, owner):
 		self.Owner = owner
 		owner['Actor'] = self
-		self.Suspended = 0
+		self.Suspended = False
 		Director.AddActor(self)
 		if owner.has_key('LODRadius'):
 			LODTree.LODManager.AddCollider(self)

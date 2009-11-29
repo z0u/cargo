@@ -35,12 +35,13 @@ class ActResumeInput:
 		Actor.Director.ResumeUserInput()
 
 class ActActionPair:
-	def __init__(self, aArmName, aMeshName, actionPrefix, start, end):
+	def __init__(self, aArmName, aMeshName, actionPrefix, start, end, loop = False):
 		self.aArmName = aArmName
 		self.aMeshName = aMeshName
 		self.ActionPrefix = actionPrefix
 		self.Start = start
 		self.End = end
+		self.Loop = loop
 		
 	def Execute(self, c):
 		aArm = c.actuators[self.aArmName]
@@ -51,6 +52,11 @@ class ActActionPair:
 		aArm.frameStart = aMesh.frameStart = self.Start
 		aArm.frameEnd = aMesh.frameEnd = self.End
 		aArm.frame = aMesh.frame = self.Start
+		
+		if self.Loop:
+			aArm.mode = aMesh.mode = GameLogic.KX_ACTIONACT_LOOPEND
+		else:
+			aArm.mode = aMesh.mode = GameLogic.KX_ACTIONACT_PLAY
 		
 		c.activate(aArm)
 		c.activate(aMesh)
@@ -172,13 +178,10 @@ def CreateWorm(c):
 		snail.exitShell()
 	
 	worm = Character(c.owner)
-
-	cam1 = 'WormCamera1'
-	cam2 = 'WormCamera2'
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
-	step.AddAction(ActSetCamera(cam1))
+	step.AddAction(ActSetCamera('WormCamera0'))
 	step.AddAction(ActSuspendInput())
 	step.AddAction(ActGenericContext(SleepSnail))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
@@ -190,14 +193,21 @@ def CreateWorm(c):
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
-	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 75.0, 240.0))
+	step.AddAction(ActRemoveCamera('WormCamera0'))
+	step.AddAction(ActSetCamera('WormCamera1'))
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 75.0, 180.0))
 	
 	step = worm.NewStep()
-	step.AddCondition(CondPropertyGE('ActionFrame', 160.0))
+	step.AddCondition(CondPropertyGE('ActionFrame', 180.0))
 	step.AddAction(ActShowDialogue("Wake up, Cargo!"))
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 181.0, 197.0, True))
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 181.0, 240.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 205.0))
 	step.AddAction(ActGenericContext(WakeSnail))
 	step.AddAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
 	
@@ -209,5 +219,5 @@ def CreateWorm(c):
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActResumeInput())
 	step.AddAction(ActHideDialogue())
-	step.AddAction(ActRemoveCamera(cam1))
+	step.AddAction(ActRemoveCamera('WormCamera1'))
 

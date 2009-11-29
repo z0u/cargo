@@ -49,15 +49,15 @@ class _HUD(Utilities.SemanticGameObject):
 			self.HideDialogue()
 		else:
 			self.DialogueBox['Content'] = message
-			if not Actor.Director.Suspended:
-				Actor.SuspendAction()
+			if not Actor.Director.InputSuspended:
+				Actor.Director.SuspendUserInput()
 				self.CausedSuspension = True
 	
 	def HideDialogue(self):
-		if self.DialogueBox.Content != "":
-			self.DialogueBox.Content = ""
+		if self.DialogueBox['Content'] != "":
+			self.DialogueBox['Content'] = ""
 			if self.CausedSuspension:
-				Actor.ResumeAction()
+				Actor.Director.ResumeUserInput()
 
 HUD = None
 def CreateHUD(c):

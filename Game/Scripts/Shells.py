@@ -26,10 +26,10 @@ EPSILON = 0.001
 #
 # States.
 #
-S_INIT     = 1<<0 # State 1
-S_IDLE     = 1<<1 # State 2
-S_CARRIED  = 1<<2 # State 3
-S_OCCUPIED = 1<<3 # State 4
+S_INIT     = 1
+S_IDLE     = 2
+S_CARRIED  = 3
+S_OCCUPIED = 4
 
 class ShellBase(Actor.Actor):
 	def __init__(self, owner, cameraGoal):
@@ -78,7 +78,7 @@ class ShellBase(Actor.Actor):
 		'''Called when a snail picks up this shell.'''
 		self.Snail = snail
 		self.Owner['Carried'] = True
-		self.Owner.state = S_CARRIED
+		Utilities.setState(self.Owner, S_CARRIED)
 		self.Owner['NoPickupAnim'] = not animate
 		
 		try:
@@ -91,13 +91,13 @@ class ShellBase(Actor.Actor):
 		'''Called when a snail drops this shell.'''
 		self.Snail = None
 		self.Owner['Carried'] = False
-		self.Owner.state = S_IDLE
+		Utilities.setState(self.Owner, S_IDLE)
 		
 		self.Owner['LookAt'] = self.LookAt
 	
 	def OnPreEnter(self):
-		'''Called when the snail starts to enter this shell
-		(seveal frames before control is passed).'''
+		'''Called when the snail starts to enter this shell. This may happen
+		seveal frames before control is passed, but may be on the same frame.'''
 		#
 		# Set a new goal for the camera, initialised to the
 		# current camera position.
@@ -117,12 +117,12 @@ class ShellBase(Actor.Actor):
 	def OnEntered(self):
 		'''Called when a snail enters this shell (just after
 		control is transferred).'''
-		self.Owner.state = S_OCCUPIED
+		Utilities.setState(self.Owner, S_OCCUPIED)
 	
 	def OnExited(self):
 		'''Called when a snail exits this shell (just after
 		control is transferred).'''
-		self.Owner.state = S_CARRIED
+		Utilities.setState(self.Owner, S_CARRIED)
 		self.Owner['CurrentBuoyancy'] = self.Owner['Buoyancy']
 		self.CameraGoal.state = 1<<0 # state 1
 		if self.Occupier:
@@ -137,13 +137,20 @@ class ShellBase(Actor.Actor):
 		return self.Owner['Carried']
 	
 	def Drown(self):
-		if not (self.Owner.state & S_CARRIED):
+		if not Utilities.hasState(self.Owner, S_CARRIED):
 			return Actor.Actor.Drown(self)
 		else:
 			return False
+	
+	def OnButton1(self, positive, triggered):
+		if not Utilities.hasState(self.Owner, S_OCCUPIED):
+			return
+		
+		if positive and triggered:
+			self.Snail.exitShell()
 
 class Shell(ShellBase):
-	def onMovementImpulse(self, fwd, back, left, right):
+	def OnMovementImpulse(self, fwd, back, left, right):
 		'''Make the shell roll around based on user input.'''
 		if not self.Owner['OnGround']:
 			return
@@ -204,7 +211,7 @@ class Wheel(ShellBase):
 		ShellBase.OnPreEnter(self)
 		self._ResetSpeed()
 	
-	def onMovementImpulse(self, fwd, back, left, right):
+	def OnMovementImpulse(self, fwd, back, left, right):
 		self.Orient()
 		
 		#
@@ -256,7 +263,7 @@ class BottleCap(ShellBase):
 			self.Owner.alignAxisToVect(
 				facing, 1, self.Owner['TurnFac'] * facing.magnitude)
 	
-	def onMovementImpulse(self, fwd, back, left, right):
+	def OnMovementImpulse(self, fwd, back, left, right):
 		'''Make the cap jump around around based on user input.'''
 		self.Orient()
 		

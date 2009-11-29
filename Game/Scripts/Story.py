@@ -26,21 +26,13 @@ class CondPropertyGE:
 #
 # Actions. These belong to and are executed by steps.
 #
-class ActGeneric:
-	def __init__(self, f, *closure):
-		self.Function = f
-		self.Closure = closure
-	
+class ActSuspendInput:
 	def Execute(self, c):
-		self.Function(*self.Closure)
+		Actor.Director.SuspendUserInput()
 
-class ActSuspend:
+class ActResumeInput:
 	def Execute(self, c):
-		Actor.SuspendAction()
-
-class ActResume:
-	def Execute(self, c):
-		Actor.ResumeAction()
+		Actor.Director.ResumeUserInput()
 
 class ActActionPair:
 	def __init__(self, aArmName, aMeshName, actionPrefix, start, end):
@@ -102,6 +94,25 @@ class ActRemoveCamera:
 			return
 		Camera.AutoCamera.RemoveGoal(cam)
 
+class ActGeneric:
+	def __init__(self, f, *closure):
+		self.Function = f
+		self.Closure = closure
+	
+	def Execute(self, c):
+		self.Function(*self.Closure)
+
+class ActGenericContext(ActGeneric):
+	def Execute(self, c):
+		self.Function(c, *self.Closure)
+
+class ActDebug:
+	def __init__(self, message):
+		self.Message = message
+	
+	def Execute(self, c):
+		print self.Message
+
 #
 # Steps. These are executed by Characters when their conditions are met and they
 # are at the front of the queue.
@@ -152,15 +163,24 @@ def Progress(c):
 	character.Progress(c)
 
 def CreateWorm(c):
+	def SleepSnail(c):
+		snail = c.sensors['sNearSnail'].hitObject['Actor']
+		snail.enterShell(animate = False)
+	
+	def WakeSnail(c):
+		snail = c.sensors['sNearSnail'].hitObject['Actor']
+		snail.exitShell()
+	
 	worm = Character(c.owner)
 
-	cam1 = 'WormCam1'
-	cam2 = 'WormCam2'
-
+	cam1 = 'WormCamera1'
+	cam2 = 'WormCamera2'
+	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActSetCamera(cam1))
-	step.AddAction(ActSuspend())
+	step.AddAction(ActSuspendInput())
+	step.AddAction(ActGenericContext(SleepSnail))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 	
 	step = worm.NewStep()
@@ -173,12 +193,21 @@ def CreateWorm(c):
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 75.0, 240.0))
 	
 	step = worm.NewStep()
-	step.AddCondition(CondPropertyGE('ActionFrame', 240.0))
-	step.AddAction(ActShowDialogue("Wake up, Cargo! I need you to deliver this letter for me."))
+	step.AddCondition(CondPropertyGE('ActionFrame', 160.0))
+	step.AddAction(ActShowDialogue("Wake up, Cargo!"))
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
-	step.AddAction(ActResume())
+	step.AddAction(ActGenericContext(WakeSnail))
+	step.AddAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondSensor('sReturn'))
+	step.AddAction(ActShowDialogue("Please deliver this letter to the lighthouse keeper."))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondSensor('sReturn'))
+	step.AddAction(ActResumeInput())
 	step.AddAction(ActHideDialogue())
 	step.AddAction(ActRemoveCamera(cam1))
 

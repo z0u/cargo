@@ -46,8 +46,15 @@ S_HASSHELL = 17
 S_POPPING  = 18
 S_INSHELL  = 19
 S_EXITING  = 20
+S_ENTERING = 21
 #S_REINCARNATE = 29
 #S_DROWNING    = 30
+
+S_ARM_CRAWL      = 1
+S_ARM_LOCOMOTION = 2
+S_ARM_POP        = 16
+S_ARM_ENTER      = 17
+S_ARM_EXIT       = 18
 
 
 ZAXIS  = Mathutils.Vector([0.0, 0.0, 1.0])
@@ -168,9 +175,9 @@ class SegmentChildPivot(SnailSegment):
 		self.Owner['BendAngle'] = angle
 		self.Child.setBendAngle(angle)
 
-class Snail(SnailSegment, Actor.StatefulActor):
+class Snail(SnailSegment, Actor.Actor):
 	def __init__(self, owner, cargoHold, eyeLocL, eyeLocR):
-		Actor.StatefulActor.__init__(self, owner)
+		Actor.Actor.__init__(self, owner)
 		Actor.Director.SetMainSubject(self)
 		
 		self.Head = None
@@ -178,6 +185,7 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.CargoHold = cargoHold
 		self.EyeLocL = eyeLocL
 		self.EyeLocR = eyeLocR
+		self.NearestShell = None
 		self.Shell = None
 		self.Shockwave = None
 		self.Trail = None
@@ -355,11 +363,24 @@ class Snail(SnailSegment, Actor.StatefulActor):
 			self.Shockwave.worldOrientation = self.Shell.Owner.worldOrientation
 			Utilities.setState(self.Shockwave, 2)
 	
-	def removeShell(self):
+	def dropShell(self):
+		'''Causes the snail to drop its shell, if it is carrying one.'''
+		if self.Suspended:
+			return
+		
+		if not Utilities.hasState(self.Owner, S_HASSHELL):
+			return
+		
+		Utilities.remState(self.Owner, S_HASSHELL)
+		Utilities.addState(self.Owner, S_POPPING)
+		Utilities.addState(self.Armature, S_ARM_POP)
+	
+	def onDropShell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
+		if not Utilities.hasState(self.Owner, S_POPPING):
+			return
 		
 		Utilities.remState(self.Owner, S_POPPING)
-		Utilities.remState(self.Owner, S_HASSHELL)
 		Utilities.addState(self.Owner, S_NOSHELL)
 		
 		self.Shell.Owner.removeParent()
@@ -372,15 +393,34 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Shell.OnDropped()
 		self.Shell = None
 	
-	def onPreEnterShell(self):
-		'''Called when the snail starts getting into the shell
-		(several frames before control is transferred).'''
+	def enterShell(self, animate = True):
+		'''
+		Starts the snail entering the shell. Shell.OnPreEnter will be called
+		immediately; Snail.onShellEnter and Shell.OnEntered will be called
+		later, at the appropriate point in the animation.
+		'''
+		if self.Suspended and not ignoreSuspension:
+			return
+		
+		if not Utilities.hasState(self.Owner, S_HASSHELL):
+			return
+		
+		Utilities.remState(self.Owner, S_HASSHELL)
+		Utilities.addState(self.Owner, S_ENTERING)
+		Utilities.remState(self.Armature, S_ARM_CRAWL)
+		Utilities.remState(self.Armature, S_ARM_LOCOMOTION)
+		Utilities.addState(self.Armature, S_ARM_ENTER)
 		self.Shell.OnPreEnter()
 	
 	def onEnterShell(self):
-		'''Transfers control of the character to the shell.
-		The snail must have a shell.'''
+		'''Transfers control of the character to the shell. The snail must have
+		a shell.'''
+		if not Utilities.hasState(self.Owner, S_ENTERING):
+			return
+		
 		Utilities.remState(self.Owner, S_CRAWLING)
+		Utilities.remState(self.Owner, S_ENTERING)
+		Utilities.addState(self.Owner, S_INSHELL)
 		
 		self.Shell.Owner.removeParent()
 		self.Owner.setVisible(0, 1)
@@ -402,12 +442,18 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		Tries to make the snail exit the shell. If possible, control will be
 		transferred to the snail. The snail must currently be in a shell.
 		'''
+		if self.Suspended:
+			return
+		
 		if not Utilities.hasState(self.Owner, S_INSHELL):
 			return
 		
 		Utilities.remState(self.Owner, S_INSHELL)
 		Utilities.addState(self.Owner, S_EXITING)
 		Utilities.addState(self.Owner, S_FALLING)
+		Utilities.addState(self.Armature, S_ARM_EXIT)
+		Utilities.addState(self.Armature, S_ARM_CRAWL)
+		Utilities.addState(self.Armature, S_ARM_LOCOMOTION)
 		
 		linV = self.Shell.Owner.getLinearVelocity()
 		angV = self.Shell.Owner.getAngularVelocity()
@@ -432,6 +478,9 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
 		transferred).'''
+		if not Utilities.hasState(self.Owner, S_EXITING):
+			return
+		
 		Utilities.remState(self.Owner, S_EXITING)
 		Utilities.addState(self.Owner, S_HASSHELL)
 		self.Shell.OnPostExit()
@@ -469,12 +518,12 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		else:
 			return False
 	
-	def onMovementImpulse(self, fwd, back, left, right):
+	def OnMovementImpulse(self, fwd, back, left, right):
 		'''
 		Make the snail move. If moving forward or backward, this implicitely
 		calls decaySpeed.
 		'''
-		if not self.crawling():
+		if not self.crawling() or self.Suspended:
 			return
 		
 		o = self.Owner
@@ -568,6 +617,21 @@ class Snail(SnailSegment, Actor.StatefulActor):
 		self.Tail.setBendAngle(o['BendAngleAft'])
 		
 		self.Trail.onSnailMoved()
+	
+	def OnButton1(self, positive, triggered):
+		if positive and triggered:
+			if Utilities.hasState(self.Owner, S_INSHELL):
+				self.exitShell()
+			elif Utilities.hasState(self.Owner, S_HASSHELL):
+				self.enterShell()
+			elif Utilities.hasState(self.Owner, S_NOSHELL):
+				if self.NearestShell:
+					self.setShell(self.NearestShell, True)
+	
+	def OnButton2(self, positive, triggered):
+		if positive and triggered:
+			if Utilities.hasState(self.Owner, S_HASSHELL):
+				self.dropShell()
 
 class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 	'''A collection of SnailRays. These will cast a ray once per frame in the
@@ -725,50 +789,46 @@ def Look(c):
 	sLookAt = c.sensors['sLookAt']
 	c.owner['Snail'].lookAt(sLookAt.hitObjectList)
 
-def _OnShellTouched(c, animate):
-	if not Utilities.allSensorsPositive(c):
-		return
-	
-	o = c.owner
-	
-	if o['HasShell']:
-		return
-	
-	shell = None
+def _GetNearestShell(snailOb, shellObs):
 	nearest = None
 	dist = None
-	for shellOb in c.sensors['sShellPickup'].hitObjectList:
+	for shellOb in shellObs:
 		shell = shellOb['Actor']
 		if shell.IsCarried():
 			continue
 		if not nearest:
 			nearest = shellOb
 			continue
-		d = shellOb.getDistanceTo(o)
+		d = shellOb.getDistanceTo(snailOb)
 		if not nearest or d < dist:
 			nearest = shellOb
 			dist = d
 	
-	shell = nearest['Actor']
-	o['Snail'].setShell(shell, animate)
+	if not nearest:
+		return None
+	else:
+		return nearest['Actor']
 
-def OnShellTouchedNoAnim(c):
-	_OnShellTouched(c, False)
+def SetShellImmediate(c):
+	if not Utilities.allSensorsPositive(c):
+		return
+	
+	snail = c.owner['Snail']
+	closeShells = c.sensors['sShellPickup'].hitObjectList
+	snail.setShell(_GetNearestShell(c.owner, closeShells), False)
 
 def OnShellTouched(c):
-	_OnShellTouched(c, True)
+	snail = c.owner['Snail']
+	closeShells = c.sensors['sShellPickup'].hitObjectList
+	snail.NearestShell = _GetNearestShell(c.owner, closeShells)
 
-def DropShell(c):
-	c.owner['Snail'].removeShell()
-
-def ExitShell(c):
+def OnDropShell(c):
 	'''
-	Transfers control of the character to the snail. To be run from a controller
-	on the snail. The snail must be carrying a shell. To reverse this, run
-	OnShellExit from a controller on the snail.
+	Called when the snail should drop its shell. This happens on a certain frame
+	of the drop animation, as triggered by DropShell.
 	'''
 	if Utilities.allSensorsPositive(c):
-		c.owner['Snail'].exitShell()
+		c.owner['Snail'].onDropShell()
 
 def OnShellPostExit(c):
 	'''Called when the shell has been fully exited.'''
@@ -784,11 +844,6 @@ def OnShellEnter(c):
 	'''
 	if Utilities.allSensorsPositive(c):
 		c.owner['Snail'].onEnterShell()
-
-def OnShellPreEnter(c):
-	'''Called when the shell is starting to be entered.'''
-	if Utilities.allSensorsPositive(c):
-		c.owner['Snail'].onPreEnterShell()
 
 def OnStartCrawling(c):
 	c.owner['Snail'].onStartCrawling()

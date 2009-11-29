@@ -69,13 +69,15 @@ class Actor:
 	
 	def _Suspend(self):
 		if self.CanSuspend() and not self.Suspended:
-			self.Owner.suspendDynamics()
+			if not self.Owner.parent:
+				self.Owner.suspendDynamics()
 			self.OnSuspend()
 			self.Suspended = True
 	
 	def _Resume(self):
 		if self.CanSuspend() and self.Suspended:
-			self.Owner.restoreDynamics()
+			if not self.Owner.parent:
+				self.Owner.restoreDynamics()
 			self.OnResume()
 			self.Suspended = False
 	
@@ -88,7 +90,7 @@ class Actor:
 		self.RestoreLocation()
 		return True
 	
-	def onMovementImpulse(self, fwd, back, left, right):
+	def OnMovementImpulse(self, fwd, back, left, right):
 		'''
 		Called when the actor should move forward, e.g. when the user presses
 		the up arrow. Usually only happens when the Actor is the the main
@@ -105,6 +107,12 @@ class Actor:
 		right: True if the actor should move right. If left is True, the net
 		       movement should be zero.
 		'''
+		pass
+	
+	def OnButton1(self, positive, triggered):
+		pass
+		
+	def OnButton2(self, positive, triggered):
 		pass
 	
 	def SaveLocation(self):
@@ -150,6 +158,7 @@ def CreateStatefulActor(c):
 class _Director:
 	def __init__(self):
 		self.Suspended = False
+		self.InputSuspended = False
 		self.Actors = set()
 		self.MainSubject = None
 	
@@ -187,6 +196,24 @@ class _Director:
 	
 	def SetMainSubject(self, actor):
 		self.MainSubject = actor
+	
+	def SuspendUserInput(self):
+		self.InputSuspended = True
+	
+	def ResumeUserInput(self):
+		self.InputSuspended = False
+	
+	def OnMovementImpulse(self, fwd, back, left, right):
+		if self.MainSubject and not self.InputSuspended:
+			self.MainSubject.OnMovementImpulse(fwd, back, left, right)
+	
+	def OnButton1(self, positive, triggered):
+		if self.MainSubject and not self.InputSuspended:
+			self.MainSubject.OnButton1(positive, triggered)
+		
+	def OnButton2(self, positive, triggered):
+		if self.MainSubject and not self.InputSuspended:
+			self.MainSubject.OnButton2(positive, triggered)
 
 Director = _Director()
 
@@ -199,12 +226,15 @@ def ResumeAction():
 #
 # Methods for dealing with user input.
 #
-def onMovementImpulse(c):
-	a = Director.MainSubject
-	if not a:
-		return
+def OnImpulse(c):
 	fwd = c.sensors['sForward']
 	back = c.sensors['sBackward']
 	left = c.sensors['sLeft']
 	right = c.sensors['sRight']
-	a.onMovementImpulse(fwd.positive, back.positive, left.positive, right.positive)
+	btn1 = c.sensors['sButton1']
+	btn2 = c.sensors['sButton2']
+	Director.OnMovementImpulse(fwd.positive, back.positive, left.positive,
+		right.positive)
+	Director.OnButton1(btn1.positive, btn1.triggered)
+	Director.OnButton2(btn2.positive, btn2.triggered)
+

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from Blender import Mathutils
+import Mathutils
 
 ALMOST_ZERO = Mathutils.Vector((0.0, 0.0, 0.001))
 

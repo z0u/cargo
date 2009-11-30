@@ -180,6 +180,14 @@ def CreateWorm(c):
 	worm = Character(c.owner)
 	
 	step = worm.NewStep()
+	step.AddAction(ActShowDialogue("Press Return to start."))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondSensor('sReturn'))
+	step.AddAction(ActHideDialogue())
+	step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen))
+	
+	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActSetCamera('WormCamera0'))
 	step.AddAction(ActSuspendInput())

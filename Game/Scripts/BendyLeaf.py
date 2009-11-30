@@ -16,7 +16,7 @@
 #
 
 import Utilities
-from Blender import Mathutils
+import Mathutils
 
 def BendLeaf(c):
 	'''

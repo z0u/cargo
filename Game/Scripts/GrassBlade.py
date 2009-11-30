@@ -1,5 +1,5 @@
 
-from Blender import Mathutils
+import Mathutils
 from Scripts import Utilities
 
 class SBParticle:

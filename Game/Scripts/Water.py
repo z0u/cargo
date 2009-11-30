@@ -1,5 +1,5 @@
 import GameLogic
-from Blender import Mathutils
+import Mathutils
 import Utilities
 
 ANGLE_INCREMENT = 81.0

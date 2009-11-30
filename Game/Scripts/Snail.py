@@ -25,7 +25,7 @@ by fetching the resulting object from the GameLogic.Snails
 dictionary.
 '''
 
-from Blender import Mathutils
+import Mathutils
 import Utilities
 import Actor
 import GameLogic

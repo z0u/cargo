@@ -20,10 +20,9 @@ import Utilities
 import Actor
 
 class _HUD(Utilities.SemanticGameObject):
-	Owner = None
-	DialogueBox = None
-	
 	def __init__(self, owner):
+		self.DialogueBox = None
+		self.LoadingScreen = None
 		Utilities.SemanticGameObject.__init__(self, owner)
 		self.CausedSuspension = False
 	
@@ -33,6 +32,12 @@ class _HUD(Utilities.SemanticGameObject):
 				print "Warning: HUD already has a dialogue box."
 			self.DialogueBox = child
 			return True
+		elif type == "LoadingScreen":
+			if self.LoadingScreen:
+				print "Warning: HUD already has a loading screen."
+			self.LoadingScreen = child
+			return True
+		return False
 
 	def ShowDialogue(self, message):
 		'''
@@ -58,6 +63,13 @@ class _HUD(Utilities.SemanticGameObject):
 			self.DialogueBox['Content'] = ""
 			if self.CausedSuspension:
 				Actor.Director.ResumeUserInput()
+	
+	def ShowLoadingScreen(self):
+		Utilities.setState(self.LoadingScreen, 1)
+	
+	def HideLoadingScreen(self):
+		print "hide"
+		Utilities.setState(self.LoadingScreen, 2)
 
 HUD = None
 def CreateHUD(c):

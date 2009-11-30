@@ -16,7 +16,7 @@
 #
 
 import Utilities
-from Blender import Mathutils
+import Mathutils
 
 MIN_VOLUME = 0.01
 

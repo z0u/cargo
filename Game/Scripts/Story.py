@@ -169,13 +169,13 @@ def Progress(c):
 	character.Progress(c)
 
 def CreateWorm(c):
-	def SleepSnail(c):
+	def SleepSnail(c, animate):
 		snail = c.sensors['sNearSnail'].hitObject['Actor']
-		snail.enterShell(animate = False)
+		snail.enterShell(animate)
 	
-	def WakeSnail(c):
+	def WakeSnail(c, animate):
 		snail = c.sensors['sNearSnail'].hitObject['Actor']
-		snail.exitShell()
+		snail.exitShell(animate)
 	
 	worm = Character(c.owner)
 	
@@ -183,7 +183,7 @@ def CreateWorm(c):
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActSetCamera('WormCamera0'))
 	step.AddAction(ActSuspendInput())
-	step.AddAction(ActGenericContext(SleepSnail))
+	step.AddAction(ActGenericContext(SleepSnail, False))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 	
 	step = worm.NewStep()
@@ -208,7 +208,7 @@ def CreateWorm(c):
 	
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 205.0))
-	step.AddAction(ActGenericContext(WakeSnail))
+	step.AddAction(ActGenericContext(WakeSnail, True))
 	step.AddAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
 	
 	step = worm.NewStep()

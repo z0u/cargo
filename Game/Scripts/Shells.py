@@ -147,7 +147,7 @@ class ShellBase(Actor.Actor):
 			return
 		
 		if positive and triggered:
-			self.Snail.exitShell()
+			self.Snail.exitShell(animate = True)
 
 class Shell(ShellBase):
 	def OnMovementImpulse(self, fwd, back, left, right):

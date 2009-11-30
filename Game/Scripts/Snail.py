@@ -363,7 +363,7 @@ class Snail(SnailSegment, Actor.Actor):
 			self.Shockwave.worldOrientation = self.Shell.Owner.worldOrientation
 			Utilities.setState(self.Shockwave, 2)
 	
-	def dropShell(self):
+	def dropShell(self, animate):
 		'''Causes the snail to drop its shell, if it is carrying one.'''
 		if self.Suspended:
 			return
@@ -374,6 +374,7 @@ class Snail(SnailSegment, Actor.Actor):
 		Utilities.remState(self.Owner, S_HASSHELL)
 		Utilities.addState(self.Owner, S_POPPING)
 		Utilities.addState(self.Armature, S_ARM_POP)
+		self.Armature['NoTransition'] = not animate
 	
 	def onDropShell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
@@ -393,7 +394,7 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Shell.OnDropped()
 		self.Shell = None
 	
-	def enterShell(self, animate = True):
+	def enterShell(self, animate):
 		'''
 		Starts the snail entering the shell. Shell.OnPreEnter will be called
 		immediately; Snail.onShellEnter and Shell.OnEntered will be called
@@ -410,6 +411,7 @@ class Snail(SnailSegment, Actor.Actor):
 		Utilities.remState(self.Armature, S_ARM_CRAWL)
 		Utilities.remState(self.Armature, S_ARM_LOCOMOTION)
 		Utilities.addState(self.Armature, S_ARM_ENTER)
+		self.Armature['NoTransition'] = not animate
 		self.Shell.OnPreEnter()
 	
 	def onEnterShell(self):
@@ -437,7 +439,7 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Shell.OnEntered()
 		Actor.Director.SetMainSubject(self.Shell)
 	
-	def exitShell(self):
+	def exitShell(self, animate):
 		'''
 		Tries to make the snail exit the shell. If possible, control will be
 		transferred to the snail. The snail must currently be in a shell.
@@ -454,6 +456,7 @@ class Snail(SnailSegment, Actor.Actor):
 		Utilities.addState(self.Armature, S_ARM_EXIT)
 		Utilities.addState(self.Armature, S_ARM_CRAWL)
 		Utilities.addState(self.Armature, S_ARM_LOCOMOTION)
+		self.Armature['NoTransition'] = not animate
 		
 		linV = self.Shell.Owner.getLinearVelocity()
 		angV = self.Shell.Owner.getAngularVelocity()
@@ -621,17 +624,17 @@ class Snail(SnailSegment, Actor.Actor):
 	def OnButton1(self, positive, triggered):
 		if positive and triggered:
 			if Utilities.hasState(self.Owner, S_INSHELL):
-				self.exitShell()
+				self.exitShell(animate = True)
 			elif Utilities.hasState(self.Owner, S_HASSHELL):
-				self.enterShell()
+				self.enterShell(animate = True)
 			elif Utilities.hasState(self.Owner, S_NOSHELL):
 				if self.NearestShell:
-					self.setShell(self.NearestShell, True)
+					self.setShell(self.NearestShell, animate = True)
 	
 	def OnButton2(self, positive, triggered):
 		if positive and triggered:
 			if Utilities.hasState(self.Owner, S_HASSHELL):
-				self.dropShell()
+				self.dropShell(animate = True)
 
 class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 	'''A collection of SnailRays. These will cast a ray once per frame in the

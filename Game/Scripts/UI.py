@@ -306,9 +306,13 @@ class TextRenderer:
 			self.caret.position = [x + glyph['xOffset'], y + glyph['yOffset'], z]
 			glyphInstance = scene.addObject(glyph, self.caret, 0)
 			glyphInstance.setParent(self.canvas)
-			glyphInstance['Delay'] = delay
-			delay = delay + (font.TypingSpeed * width * glyph['DelayMultiplier'])
-			glyphInstance.state = 1<<1
+			if self.canvas['Instant']:
+				Utilities.setState(glyphInstance, 4)
+			else:
+				glyphInstance['Delay'] = delay
+				delay = delay + (font.TypingSpeed * width *
+					glyph['DelayMultiplier'])
+				Utilities.setState(glyphInstance, 2)
 			
 			x = x + width
 

@@ -3,6 +3,7 @@ import Actor
 import UI
 import GameLogic
 import Camera
+import Utilities
 
 #
 # Step progression conditions. These determine whether a step may execute.
@@ -169,6 +170,9 @@ def Progress(c):
 	character.Progress(c)
 
 def CreateWorm(c):
+	if not Utilities.allSensorsPositive(c):
+		return
+	
 	def SleepSnail(c, animate):
 		snail = c.sensors['sNearSnail'].hitObject['Actor']
 		snail.enterShell(animate)
@@ -180,18 +184,18 @@ def CreateWorm(c):
 	worm = Character(c.owner)
 	
 	step = worm.NewStep()
+	step.AddAction(ActGenericContext(SleepSnail, False))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondSensor('sSnailInShell'))
+	step.AddAction(ActSetCamera('WormCamera0'))
+	step.AddAction(ActSuspendInput())
 	step.AddAction(ActShowDialogue("Press Return to start."))
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
 	step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen))
-	
-	step = worm.NewStep()
-	step.AddCondition(CondSensor('sReturn'))
-	step.AddAction(ActSetCamera('WormCamera0'))
-	step.AddAction(ActSuspendInput())
-	step.AddAction(ActGenericContext(SleepSnail, False))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 	
 	step = worm.NewStep()

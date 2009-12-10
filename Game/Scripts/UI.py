@@ -68,7 +68,6 @@ class _HUD(Utilities.SemanticGameObject):
 		Utilities.setState(self.LoadingScreen, 1)
 	
 	def HideLoadingScreen(self):
-		print "hide"
 		Utilities.setState(self.LoadingScreen, 2)
 
 HUD = None

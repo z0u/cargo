@@ -4,6 +4,7 @@ import UI
 import GameLogic
 import Camera
 import Utilities
+import Mathutils
 
 #
 # Step progression conditions. These determine whether a step may execute.
@@ -34,6 +35,13 @@ class ActSuspendInput:
 class ActResumeInput:
 	def Execute(self, c):
 		Actor.Director.ResumeUserInput()
+
+class ActActuate:
+	def __init__(self, actuatorName):
+		self.ActuatorName = actuatorName
+	
+	def Execute(self, c):
+		c.activate(c.actuators[self.ActuatorName])
 
 class ActActionPair:
 	def __init__(self, aArmName, aMeshName, actionPrefix, start, end, loop = False):
@@ -181,6 +189,22 @@ def CreateWorm(c):
 		snail = c.sensors['sNearSnail'].hitObject['Actor']
 		snail.exitShell(animate)
 	
+	def SprayDirt(c, number, maxSpeed):
+		act = c.actuators['aParticleEmitter']
+		emitterBase = act.owner.parent
+		
+		angle = 0.0
+		ANGLE_INCREMENT = 80.0
+		
+		for _ in xrange(number):
+			elr = Mathutils.Euler(0.0, 0.0, angle)
+			angle = angle + ANGLE_INCREMENT
+			oMat = elr.toMatrix()
+			oMat.transpose()
+			emitterBase.worldOrientation = oMat
+			act.linearVelocity = (0.0, 0.0, maxSpeed * Utilities.Random.next())
+			act.instantAddObject()
+	
 	worm = Character(c.owner)
 	
 	step = worm.NewStep()
@@ -196,6 +220,7 @@ def CreateWorm(c):
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
 	step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen))
+	step.AddAction(ActGenericContext(SprayDirt, 10, 15.0))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 	
 	step = worm.NewStep()
@@ -208,6 +233,18 @@ def CreateWorm(c):
 	step.AddAction(ActRemoveCamera('WormCamera0'))
 	step.AddAction(ActSetCamera('WormCamera1'))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 75.0, 180.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 115))
+	step.AddAction(ActGenericContext(SprayDirt, 3, 10.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 147))
+	step.AddAction(ActGenericContext(SprayDirt, 5, 10.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 153))
+	step.AddAction(ActGenericContext(SprayDirt, 5, 10.0))
 	
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 180.0))

@@ -187,7 +187,7 @@ def CreateWorm(c):
 	step.AddAction(ActGenericContext(SleepSnail, False))
 	
 	step = worm.NewStep()
-	step.AddCondition(CondSensor('sSnailInShell'))
+	step.AddCondition(CondSensor('sSnailAsleep'))
 	step.AddAction(ActSetCamera('WormCamera0'))
 	step.AddAction(ActSuspendInput())
 	step.AddAction(ActShowDialogue("Press Return to start."))
@@ -221,6 +221,10 @@ def CreateWorm(c):
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 205.0))
 	step.AddAction(ActGenericContext(WakeSnail, True))
+	step.AddAction(ActHideDialogue())
+	
+	step = worm.NewStep()
+	step.AddCondition(CondSensor('sSnailAwake'))
 	step.AddAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
 	
 	step = worm.NewStep()

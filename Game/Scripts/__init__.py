@@ -27,6 +27,7 @@ import Camera
 import Water
 import Sound
 import Story
+import Story_Level1
 
 #
 # Configure the environment.

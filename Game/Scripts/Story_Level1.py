@@ -96,7 +96,7 @@ def CreateWorm(c):
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
-	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 181.0, 240.0))
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 181.0, 220.0))
 	
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 200.0))
@@ -113,7 +113,25 @@ def CreateWorm(c):
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
-	step.AddAction(ActShowDialogue("Please deliver this letter to the lighthouse keeper."))
+	step.AddAction(ActShowDialogue("I have something for you!"))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondSensor('sReturn'))
+	step.AddAction(ActHideDialogue())
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 220.0, 280.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 280.0))
+	step.AddAction(ActShowDialogue("Ta-da! Please deliver this \[envelope] to the lighthouse keeper."))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondSensor('sReturn'))
+	step.AddAction(ActHideDialogue())
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 290.0, 330.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 315.0))
+	step.AddAction(ActActuate('aHideLetter'))
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))

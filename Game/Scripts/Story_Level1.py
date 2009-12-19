@@ -121,12 +121,17 @@ def CreateWorm(c):
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 220.0, 280.0))
 	
 	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 275.0))
+	step.AddAction(ActSetCamera('WormCamera_Envelope', instantCut = True))
+	
+	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 280.0))
 	step.AddAction(ActShowDialogue("Ta-da! Please deliver this \[envelope] to the lighthouse keeper."))
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
+	step.AddAction(ActRemoveCamera('WormCamera_Envelope'))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 290.0, 330.0))
 	
 	step = worm.NewStep()

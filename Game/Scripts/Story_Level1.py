@@ -32,20 +32,9 @@ def CreateWorm(c):
 		snail.exitShell(animate)
 	
 	def SprayDirt(c, number, maxSpeed):
-		act = c.actuators['aParticleEmitter']
-		emitterBase = act.owner.parent
-		
-		angle = 0.0
-		ANGLE_INCREMENT = 80.0
-		
-		for _ in xrange(number):
-			elr = Mathutils.Euler(0.0, 0.0, angle)
-			angle = angle + ANGLE_INCREMENT
-			oMat = elr.toMatrix()
-			oMat.transpose()
-			emitterBase.worldOrientation = oMat
-			act.linearVelocity = (0.0, 0.0, maxSpeed * Utilities.Random.next())
-			act.instantAddObject()
+		o = c.sensors['sParticleHook'].owner
+		o['nParticles'] = o['nParticles'] + number
+		o['maxSpeed'] = maxSpeed
 	
 	def CleanUp(c):
 		worm = c.owner['Actor']

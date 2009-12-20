@@ -386,6 +386,41 @@ def OrbitFollow(c):
 			return
 		pos = tPos + vec
 	o.worldPosition = pos
+
+def SprayParticle(c):
+	'''
+	Instance one particle, and decrement the particle counter. The particle will
+	move along the z-axis of the emitter. The emitter will then be repositioned.
+	
+	The intention is that one particle will be emitten on each frame. This
+	should be fast enough for a spray effect. Staggering the emission reduces
+	the liklihood that the frame rate will suffer.
+	
+	Actuators:
+	aEmit:	A particle emitter, connected to its target object.
+	aRot:	An actuator that moves the emitter by a fixed amount (e.g. movement
+			or IPO).
+	
+	Controller properties:
+	maxSpeed:	The maximum speed that a particle will have when it is created.
+			Actually the particle will move at a random speed s, where 0.0 <= s
+			<= maxSpeed.
+	nParticles:	The number of particles waiting to be created. This will be
+			reduced by 1. If less than or equal to 0, no particle will be
+			created.
+	'''
+	if not allSensorsPositive(c):
+		return
+	
+	o = c.owner
+	if o['nParticles'] <= 0:
+		return
+	
+	o['nParticles'] = o['nParticles'] - 1
+	speed = o['maxSpeed'] * Random.next()
+	c.actuators['aEmit'].linearVelocity = (0.0, 0.0, speed)
+	c.activate('aEmit')
+	c.activate('aRot')
 	
 def SetDefaultProp(ob, propName, value):
 	'''

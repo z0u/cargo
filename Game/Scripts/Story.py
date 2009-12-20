@@ -21,6 +21,9 @@ import GameLogic
 import Camera
 import Utilities
 
+class StoryError(Exception):
+	pass
+
 #
 # Step progression conditions. These determine whether a step may execute.
 #
@@ -130,11 +133,17 @@ class ActGeneric:
 		self.Closure = closure
 	
 	def Execute(self, c):
-		self.Function(*self.Closure)
+		try:
+			self.Function(*self.Closure)
+		except Exception, e:
+			raise StoryError("Error executing " + str(self.Function), e)
 
 class ActGenericContext(ActGeneric):
 	def Execute(self, c):
-		self.Function(c, *self.Closure)
+		try:
+			self.Function(c, *self.Closure)
+		except Exception, e:
+			raise StoryError("Error executing " + str(self.Function), e)
 
 class ActDebug:
 	def __init__(self, message):
@@ -170,7 +179,7 @@ class Step:
 				act.Execute(c)
 			except Exception, e:
 				print "Warning: Action %s failed." % act
-				print e.message
+				print e
 
 class Character(Actor.Actor):
 

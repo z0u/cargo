@@ -47,6 +47,10 @@ def CreateWorm(c):
 			act.linearVelocity = (0.0, 0.0, maxSpeed * Utilities.Random.next())
 			act.instantAddObject()
 	
+	def CleanUp(c):
+		worm = c.owner['Actor']
+		worm.Destroy()
+	
 	worm = Character(c.owner)
 	
 	step = worm.NewStep()
@@ -58,6 +62,9 @@ def CreateWorm(c):
 	step.AddAction(ActSuspendInput())
 	step.AddAction(ActShowDialogue("Press Return to start."))
 	
+	#
+	# Peer out of ground
+	#
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
@@ -69,6 +76,9 @@ def CreateWorm(c):
 	step.AddCondition(CondPropertyGE('ActionFrame', 75.0))
 	step.AddAction(ActShowDialogue("Cargo?"))
 	
+	#
+	# Get out of the ground
+	#
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
@@ -88,6 +98,9 @@ def CreateWorm(c):
 	step.AddCondition(CondPropertyGE('ActionFrame', 153))
 	step.AddAction(ActGenericContext(SprayDirt, 5, 10.0))
 	
+	#
+	# Knock on shell
+	#
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 180.0))
 	step.AddAction(ActSetCamera('WormCamera_Knock', instantCut = True))
@@ -101,7 +114,10 @@ def CreateWorm(c):
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 200.0))
 	step.AddAction(ActRemoveCamera('WormCamera_Knock'))
-	
+
+	#
+	# Wake / chastise
+	#	
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 205.0))
 	step.AddAction(ActGenericContext(WakeSnail, True))
@@ -115,10 +131,34 @@ def CreateWorm(c):
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActShowDialogue("I have something for you!"))
 	
+	#
+	# Dig up letter
+	#
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
+	step.AddAction(ActActuate('aParticleEmitMove'))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 220.0, 280.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 235))
+	step.AddAction(ActGenericContext(SprayDirt, 3, 10.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 241))
+	step.AddAction(ActGenericContext(SprayDirt, 3, 7.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 249))
+	step.AddAction(ActGenericContext(SprayDirt, 3, 7.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 257))
+	step.AddAction(ActGenericContext(SprayDirt, 3, 7.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 265))
+	step.AddAction(ActGenericContext(SprayDirt, 3, 7.0))
 	
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 275.0))
@@ -126,8 +166,11 @@ def CreateWorm(c):
 	
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 280.0))
-	step.AddAction(ActShowDialogue("Ta-da! Please deliver this \[envelope] to the lighthouse keeper."))
+	step.AddAction(ActShowDialogue("Ta-da! Please deliver this letter for me."))
 	
+	#
+	# Give letter
+	#
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
@@ -137,10 +180,46 @@ def CreateWorm(c):
 	step = worm.NewStep()
 	step.AddCondition(CondPropertyGE('ActionFrame', 315.0))
 	step.AddAction(ActActuate('aHideLetter'))
+	step.AddAction(ActShowDialogue("Is that OK?"))
 	
+	#
+	# Point to lighthouse
+	#
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
-	step.AddAction(ActResumeInput())
+	step.AddAction(ActShowDialogue("Great! Please take it to the lighthouse keeper."))
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 330.0, 395.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 360.0))
+	step.AddAction(ActSetCamera('WormCamera_Lighthouse', fac = 0.01))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 395.0))
+	step.AddCondition(CondSensor('sReturn'))
+	step.AddAction(ActRemoveCamera('WormCamera_Lighthouse'))
+	step.AddAction(ActShowDialogue("See you later!"))
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 395.0, 420.0))
+	
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 420.0))
+	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
+	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 420.0, 540.0))
+	
+	#
+	# Return to game
+	#
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 460.0))
+	step.AddAction(ActActuate('aFadeSods'))
+	step.AddAction(ActResumeInput())
 	step.AddAction(ActRemoveCamera('WormCamera_Converse'))
+	
+	#
+	# Clean up. At this point, the worm is completely hidden and the sods have faded.
+	#
+	step = worm.NewStep()
+	step.AddCondition(CondPropertyGE('ActionFrame', 540.0))
+	step.AddAction(ActGenericContext(CleanUp))
 

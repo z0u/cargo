@@ -166,7 +166,11 @@ class Step:
 	
 	def Execute(self, c):
 		for act in self.Actions:
-			act.Execute(c)
+			try:
+				act.Execute(c)
+			except Exception, e:
+				print "Warning: Action %s failed." % act
+				print e.message
 
 class Character(Actor.Actor):
 

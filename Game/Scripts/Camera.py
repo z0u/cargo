@@ -49,6 +49,11 @@ class _AutoCamera:
 		self.InstantCut = False
 		
 		self.Observers = []
+		
+		Utilities.SceneManager.Subscribe(self)
+	
+	def OnSceneEnd(self):
+		self.__init__()
 	
 	def SetCamera(self, camera):
 		'''Bind to a camera.'''
@@ -185,3 +190,4 @@ class CameraGoal:
 		self.Goal = goal
 		self.Factor = factor
 		self.InstantCut = instantCut
+

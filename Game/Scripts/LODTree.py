@@ -42,11 +42,14 @@ class _LODManager:
 	(singleton; instance created below). Other scripts then have a central place
 	to access LODTrees, such as the module function ActivateRange, below.'''
 	def __init__(self):
-		self.Trees = []
+		self.Trees = set()
 		self.Colliders = set()
 	
 	def AddTree(self, tree):
-		self.Trees.append(tree)
+		self.Trees.add(tree)
+	
+	def RemoveTree(self, tree):
+		self.Trees.remove(tree)
 	
 	def AddCollider(self, actor):
 		self.Colliders.add(actor)
@@ -98,6 +101,13 @@ class LODTree:
 		
 		self.Root = root
 		LODManager.AddTree(self)
+		
+		Utilities.SceneManager.Subscribe(self)
+	
+	def OnSceneEnd(self):
+		LODManager.RemoveTree(self)
+		self.Root = None
+		Utilities.SceneManager.Unsubscribe(self)
 	
 	def ActivateRange(self, boundsList):
 		'''

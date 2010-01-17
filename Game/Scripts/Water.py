@@ -38,6 +38,13 @@ class Water:
 		self.CurrentFrame = 0
 		
 		self.LastHitActors = set()
+		
+		Utilities.SceneManager.Subscribe(self)
+	
+	def OnSceneEnd(self):
+		self.Owner['Water'] = None
+		self.Owner = None
+		Utilities.SceneManager.Unsubscribe(self)
 	
 	def SpawnSurfaceDecal(self, template, position):
 		pos = position

@@ -190,6 +190,13 @@ class TextRenderer:
 			raise Exception("Error: Text renderer must be the only child of " +
 				"another object.")
 		self.Clear()
+		
+		Utilities.SceneManager.Subscribe(self)
+	
+	def OnSceneEnd(self):
+		self.caret = None
+		self.canvas = None
+		Utilities.SceneManager.Unsubscribe(self)
 	
 	def Clear(self):
 		for child in self.canvas.children:

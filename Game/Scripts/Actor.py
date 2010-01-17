@@ -48,6 +48,13 @@ class Actor:
 		Utilities.SetDefaultProp(self.Owner, 'MinRippleSpeed', 1.0)
 		
 		self.SaveLocation()
+		
+		Utilities.SceneManager.Subscribe(self)
+	
+	def OnSceneEnd(self):
+		self.Owner['Actor'] = None
+		self.Owner = None
+		Utilities.SceneManager.Unsubscribe(self)
 	
 	def Destroy(self):
 		'''Remove this actor from the scene. This destroys the actor's
@@ -175,9 +182,8 @@ class _Director:
 			actor._Resume()
 	
 	def SuspendAction(self):
-		'''
-		Suspends dynamics of each actor. Calls each actor's _Suspend function.
-		'''
+		'''Suspends dynamics of each actor. Calls each actor's _Suspend
+		function.'''
 		if self.Suspended:
 			return
 		for actor in self.Actors:
@@ -185,8 +191,7 @@ class _Director:
 		self.Suspended = True
 	
 	def ResumeAction(self):
-		'''
-		Resumes dynamics of each actor. Calls each actor's _Resume function.
+		'''Resumes dynamics of each actor. Calls each actor's _Resume function.
 		'''
 		if not self.Suspended:
 			return

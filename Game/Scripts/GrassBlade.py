@@ -57,6 +57,13 @@ class GrassBlade:
 			self.Segments.append(p)
 		
 		self.LastBaseFrame = Mathutils.Vector(0.0, 0.0)
+		
+		Utilities.SceneManager.Subscribe(self)
+	
+	def OnSceneEnd(self):
+		self.Owner['GrassBlade'] = None
+		self.Owner = None
+		Utilities.SceneManager.Unsubscribe(self)
 
 	def GetCollisionForce(self, collider):
 		#

@@ -16,8 +16,49 @@
 #
 
 import Mathutils
+import GameLogic
 
 ALMOST_ZERO = Mathutils.Vector((0.0, 0.0, 0.001))
+
+class _SceneManager:
+	def __init__(self):
+		self.Observers = set()
+		self.NewScene = True
+	
+	def OnNewScene(self):
+		GameLogic.setGravity([0.0, 0.0, -75.0])
+		self.NewScene = False
+	
+	def Subscribe(self, observer):
+		if self.NewScene:
+			self.OnNewScene()
+		self.Observers.add(observer)
+	
+	def Unsubscribe(self, observer):
+		self.Observers.remove(observer)
+	
+	def EndScene(self):
+		'''Notifies observers that they should release all game objects.
+		Observers should unsubscribe themselves if they are no longer interested
+		in the scene.'''
+		observers = self.Observers.copy()
+		for o in observers:
+			o.OnSceneEnd()
+		self.NewScene = True
+
+SceneManager = _SceneManager()
+
+def EndScene(c):
+	'''Releases all object references (e.g. Actors). Then, all actuators are
+	activated. Call this from a Python controller attached to a switch scene
+	actuator instead of using an AND controller.'''
+	
+	if not allSensorsPositive(c):
+		return
+		
+	SceneManager.EndScene()
+	for act in c.actuators:
+		c.activate(act)
 
 class SemanticException(Exception):
 	pass
@@ -646,3 +687,4 @@ def RunTests():
 	
 	suite = unittest.TestLoader().loadTestsFromTestCase(PQTest)
 	unittest.TextTestRunner(verbosity=2).run(suite)
+

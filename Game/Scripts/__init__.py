@@ -28,9 +28,5 @@ import Water
 import Sound
 import Story
 import Story_Level1
+import Button
 
-#
-# Configure the environment.
-#
-import GameLogic
-GameLogic.setGravity([0.0, 0.0, -75.0])

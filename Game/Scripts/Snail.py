@@ -426,6 +426,7 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.Shell.Owner.removeParent()
 		self.Owner.setVisible(0, 1)
+		self.Owner.localScale = (0.01, 0.01, 0.01)
 		self.Owner.setParent(self.Shell.Owner)
 	
 		#
@@ -461,6 +462,7 @@ class Snail(SnailSegment, Actor.Actor):
 		linV = self.Shell.Owner.getLinearVelocity()
 		angV = self.Shell.Owner.getAngularVelocity()
 		self.Owner.removeParent()
+		self.Owner.localScale = (1.0, 1.0, 1.0)
 		self.Owner.setVisible(1, 1)
 		self._stowShell(self.Shell.Owner)
 		self.Owner.setLinearVelocity(linV)

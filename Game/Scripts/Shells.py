@@ -38,17 +38,7 @@ class ShellBase(Actor.Actor):
 		self.Snail = None
 		self.CameraGoal = cameraGoal
 		
-		#
-		# This should be handled by a SemanticGameObject - but the multiple
-		# inheritance is dodgy!
-		#
-		self.CargoHook = None
-		self.Occupier = None
-		for child in owner.children:
-			if child['Type'] == 'CargoHook':
-				self.CargoHook = child
-			elif child['Type'] == 'Occupier':
-				self.Occupier = child
+		Utilities.parseChildren(self, owner)
 		
 		#
 		# A cargo hook is required.
@@ -61,6 +51,16 @@ class ShellBase(Actor.Actor):
 			self.Occupier.state = 1<<0 # state 1
 		
 		self.LookAt = -1
+	
+	def parseChild(self, child, t):
+		if t == 'CargoHook':
+			self.CargoHook = child
+			return True
+		elif t == 'Occupier':
+			self.Occupier = child
+			return True
+		else:
+			return False
 	
 	def CanSuspend(self):
 		'''Only suspend if this shell is currently dynamic.

@@ -19,23 +19,33 @@ import GameLogic
 import Utilities
 import Actor
 
-class _HUD(Utilities.SemanticGameObject):
+class _HUD:
 	def __init__(self, owner):
 		self.DialogueBox = None
 		self.LoadingScreen = None
-		Utilities.SemanticGameObject.__init__(self, owner)
+		self.Gauges = {}
+		Utilities.parseChildren(self, owner)
 		self.CausedSuspension = False
 	
 	def parseChild(self, child, type):
 		if type == "DialogueBox":
 			if self.DialogueBox:
 				print "Warning: HUD already has a dialogue box."
+				return False
 			self.DialogueBox = child
 			return True
 		elif type == "LoadingScreen":
 			if self.LoadingScreen:
 				print "Warning: HUD already has a loading screen."
+				return False
 			self.LoadingScreen = child
+			return True
+		elif type == "Gauge":
+			name = child['Name']
+			if self.Gauges.has_key(name):
+				print "Warning: duplicate gauge '%s'" % name
+				return False
+			self.Gauges[name] = Gauge(child)
 			return True
 		return False
 
@@ -64,6 +74,9 @@ class _HUD(Utilities.SemanticGameObject):
 			if self.CausedSuspension:
 				Actor.Director.ResumeUserInput()
 	
+	def GetGauge(self, name):
+		return self.Gauges[name]
+	
 	def ShowLoadingScreen(self):
 		Utilities.setState(self.LoadingScreen, 1)
 	
@@ -75,6 +88,22 @@ def CreateHUD(c):
 	global HUD
 	HUD = _HUD(c.owner)
 	print "HUD created"
+
+class Gauge(Actor.Actor):
+	S_HIDDEN  = 1
+	S_VISIBLE = 2
+
+	def __init__(self, owner):
+		Actor.Actor.__init__(self, owner)
+	
+	def Show(self):
+		Utilities.setState(self.Owner, self.S_VISIBLE)
+	
+	def Hide(self):
+		Utilities.setState(self.Owner, self.S_HIDDEN)
+	
+	def SetFraction(self, fraction):
+		self.Owner['NeedleFrame'] = fraction
 
 class Font:
 	GlyphDict = None

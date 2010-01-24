@@ -63,26 +63,14 @@ def EndScene(c):
 class SemanticException(Exception):
 	pass
 
-class SemanticGameObject:
-	'''Abstract class that decorates game engine objects. Children will be
-	parsed and decorated according to their type.'''
-	Owner = None
-	
-	def __init__(self, owner):
-		self.Owner = owner
-		self.parseChildren()
-
-	def parseChild(self, child, type):
-		return False
-	
-	def parseChildren(self):
-		for child in self.Owner.children:
-			if child.has_key('Type'):
-				if (not self.parseChild(child, child['Type'])):
-					print "Warning: child %s of %s has unexpected type (%s)" % (
-						child.name,
-						self.Owner.name,
-						child['Type'])
+def parseChildren(self, o):
+	for child in o.children:
+		if child.has_key('Type'):
+			if (not self.parseChild(child, child['Type'])):
+				print "Warning: child %s of %s has unexpected type (%s)" % (
+					child.name,
+					o.name,
+					child['Type'])
 
 class Box2D:
 	'''A 2D bounding box.'''

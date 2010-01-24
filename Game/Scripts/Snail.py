@@ -71,13 +71,14 @@ class ISnailRay:
 # Concrete classes
 #
 	
-class SnailSegment(Utilities.SemanticGameObject):
+class SnailSegment:
 	def __init__(self, owner, parent):
 		self.Parent  = parent # SnailSegment or None
 		self.Child   = None   # SnailSegment or None
 		self.Fulcrum = None   # KX_GameObject
 		self.Rays    = {}     # Dictionary of SnailRays
-		Utilities.SemanticGameObject.__init__(self, owner)
+		self.Owner = owner
+		Utilities.parseChildren(self, owner)
 
 	def parseChild(self, child, type):
 		if (type == "SnailRay"):
@@ -177,6 +178,7 @@ class SegmentChildPivot(SnailSegment):
 
 class Snail(SnailSegment, Actor.Actor):
 	def __init__(self, owner, cargoHold, eyeLocL, eyeLocR):
+		# FIXME: This derives from two classes, and both set the Owner property.
 		Actor.Actor.__init__(self, owner)
 		Actor.Director.SetMainSubject(self)
 		
@@ -638,7 +640,7 @@ class Snail(SnailSegment, Actor.Actor):
 			if Utilities.hasState(self.Owner, S_HASSHELL):
 				self.dropShell(animate = True)
 
-class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
+class SnailRayCluster(ISnailRay):
 	'''A collection of SnailRays. These will cast a ray once per frame in the
 	order defined by their Priority property (ascending order). The first one
 	that hits is used.'''
@@ -649,7 +651,8 @@ class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 	def __init__(self, owner):
 		self.Rays = []
 		self.Marker = None
-		Utilities.SemanticGameObject.__init__(self, owner)
+		self.Owner = owner
+		Utilities.parseChildren(self, owner)
 		if (len(self.Rays) <= 0):
 			raise Exception("Ray cluster %s has no ray children." % self.Owner.name)
 		self.Rays.sort(lambda a, b: a.Owner.Priority - b.Owner.Priority)
@@ -686,12 +689,13 @@ class SnailRayCluster(ISnailRay, Utilities.SemanticGameObject):
 			
 		return hit, Utilities._toWorld(self.Owner, self.LastHitPoint)
 
-class SnailRay(ISnailRay, Utilities.SemanticGameObject):
+class SnailRay(ISnailRay):
 	LastPoint = None
 
 	def __init__(self, owner):
 		self.Marker = None
-		Utilities.SemanticGameObject.__init__(self, owner)
+		self.Owner = owner
+		Utilities.parseChildren(self, owner)
 		self.LastPoint = Mathutils.Vector(self.Owner.worldPosition)
 	
 	def parseChild(self, child, type):
@@ -728,13 +732,14 @@ class SnailRay(ISnailRay, Utilities.SemanticGameObject):
 		
 		return hit, self.LastPoint
 
-class SnailTrail(Utilities.SemanticGameObject):
+class SnailTrail:
 	def __init__(self, owner, snail):
 		self.LastTrailPos = Mathutils.Vector(owner.worldPosition)
 		self.TrailSpots = []
 		self.SpotIndex = 0
 		self.Snail = snail
-		Utilities.SemanticGameObject.__init__(self, owner)
+		self.Owner = owner
+		Utilities.parseChildren(self, owner)
 	
 	def parseChild(self, child, type):
 		if (type == "TrailSpot"):

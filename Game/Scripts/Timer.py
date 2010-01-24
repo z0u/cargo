@@ -2,6 +2,7 @@ import GameLogic
 import Utilities
 import Actor
 import time
+import UI
 
 S_RUNNING = 2
 
@@ -26,7 +27,10 @@ class Timer(Actor.Actor):
 		if self.Suspended:
 			return
 		
-		if time.time() > (self.StartTime + self.Owner['Duration']):
+		fraction = (time.time() - self.StartTime) / (float)(self.Owner['Duration'])
+		if UI.HUD:
+			UI.HUD.ShowGuage(self.Owner['Style'], fraction)
+		if fraction >= 1.0:
 			self.Stop()
 			self.OnFinished()
 	

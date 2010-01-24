@@ -17,6 +17,7 @@
 #
 
 import GameLogic
+import Utilities
 
 ACTIVATION_TIMEOUT = 120
 

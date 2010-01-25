@@ -1,7 +1,6 @@
 import GameLogic
 import Utilities
 import Actor
-import time
 import UI
 
 S_RUNNING = 2
@@ -9,18 +8,20 @@ S_RUNNING = 2
 class Timer(Actor.Actor):
 	def __init__(self, owner):
 		Actor.Actor.__init__(self, owner)
-		self.StartTime = time.time()
+		self.Tics = 0.0
+		self.TargetTics = 1.0
 		self.SuspendStart = None
 		Utilities.SetDefaultProp(owner, 'Message', 'TimerFinished')
 	
 	def Start(self):
-		self.StartTime = time.time()
+		self.Tics = 0.0
+		self.TargetTics = self.Owner['Duration'] * GameLogic.getLogicTicRate()
+		if self.TargetTics < 1.0:
+			self.TargetTics = 1.0
 		Utilities.addState(self.Owner, S_RUNNING)
-		print "Timer started."
 		self.Pulse()
 
 	def Stop(self):
-		print "Timer stopped."
 		Utilities.remState(self.Owner, S_RUNNING)
 		gauge = UI.HUD.GetGauge(self.Owner['Style'])
 		if gauge:
@@ -31,7 +32,8 @@ class Timer(Actor.Actor):
 			return
 		
 		gauge = UI.HUD.GetGauge(self.Owner['Style'])
-		fraction = (time.time() - self.StartTime) / (float)(self.Owner['Duration'])
+		self.Tics = self.Tics + 1.0
+		fraction = self.Tics / self.TargetTics
 		if gauge:
 			gauge.SetFraction(1.0 - fraction)
 			gauge.Show()
@@ -41,13 +43,6 @@ class Timer(Actor.Actor):
 	
 	def OnFinished(self):
 		GameLogic.sendMessage(self.Owner['Message'])
-	
-	def OnSuspend(self):
-		self.SuspendStart = time.time()
-	
-	def OnResume(self):
-		suspendDuration = time.time() - self.SuspendStart
-		self.StartTime = self.StartTime + suspendDuration
 
 def CreateTimer(c):
 	if Utilities.allSensorsPositive(c):
@@ -60,6 +55,8 @@ def Stop(c):
 	if Utilities.allSensorsPositive(c):
 		c.owner['Actor'].Stop()
 def Pulse(c):
+	'''Advance the timer by one logic tic. This must be called once per frame
+	while the timer is active.'''
 	if Utilities.allSensorsPositive(c):
 		c.owner['Actor'].Pulse()
 

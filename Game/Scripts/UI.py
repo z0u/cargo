@@ -20,12 +20,26 @@ import Utilities
 import Actor
 
 class _HUD:
-	def __init__(self, owner):
+	def __init__(self):
+		self.DialogueText = ""
 		self.DialogueBox = None
-		self.LoadingScreen = None
-		self.Gauges = {}
-		Utilities.parseChildren(self, owner)
 		self.CausedSuspension = False
+		
+		self.LoadingScreenVisible = True
+		self.LoadingScreen = None
+		self.LoadingScreenCallers = set()
+		
+		self.Gauges = {}
+		
+		Utilities.SceneManager.Subscribe(self)
+	
+	def Attach(self, owner):
+		Utilities.parseChildren(self, owner)
+		self._UpdateDialogue()
+		self._UpdateLoadingScreen()
+	
+	def OnSceneEnd(self):
+		self.__init__()
 	
 	def parseChild(self, child, type):
 		if type == "DialogueBox":
@@ -48,6 +62,18 @@ class _HUD:
 			self.Gauges[name] = Gauge(child)
 			return True
 		return False
+	
+	def _UpdateDialogue(self):
+		if self.DialogueText == "":
+			if self.DialogueBox['Content'] != "":
+				self.DialogueBox['Content'] = ""
+				if self.CausedSuspension:
+					Actor.Director.ResumeUserInput()
+		else:
+			self.DialogueBox['Content'] = self.DialogueText
+			if not Actor.Director.InputSuspended:
+				Actor.Director.SuspendUserInput()
+				self.CausedSuspension = True
 
 	def ShowDialogue(self, message):
 		'''
@@ -60,50 +86,102 @@ class _HUD:
 		message: The message to show. An empty string causes the box to be
 		         hidden.
 		'''
-		if message == "":
-			self.HideDialogue()
-		else:
-			self.DialogueBox['Content'] = message
-			if not Actor.Director.InputSuspended:
-				Actor.Director.SuspendUserInput()
-				self.CausedSuspension = True
+		self.DialogueText = message
+		if self.DialogueBox:
+			self._UpdateDialogue()
 	
 	def HideDialogue(self):
-		if self.DialogueBox['Content'] != "":
-			self.DialogueBox['Content'] = ""
-			if self.CausedSuspension:
-				Actor.Director.ResumeUserInput()
+		self.DialogueText = ""
+		if self.DialogueBox:
+			self._UpdateDialogue()
 	
 	def GetGauge(self, name):
-		return self.Gauges[name]
+		if self.Gauges.has_key(name):
+			return self.Gauges[name]
+		else:
+			return None
 	
-	def ShowLoadingScreen(self):
-		Utilities.setState(self.LoadingScreen, 1)
+	def _UpdateLoadingScreen(self):
+		if self.LoadingScreenVisible:
+			Utilities.setState(self.LoadingScreen, 1)
+		else:
+			Utilities.setState(self.LoadingScreen, 2)
 	
-	def HideLoadingScreen(self):
-		Utilities.setState(self.LoadingScreen, 2)
+	def ShowLoadingScreen(self, caller):
+		print "%s started loading." % caller
+		if len(self.LoadingScreenCallers) == 0:
+			self.LoadingScreenVisible = True
+			if self.LoadingScreen:
+				self._UpdateLoadingScreen()
+		self.LoadingScreenCallers.add(caller)
+	
+	def HideLoadingScreen(self, caller):
+		self.LoadingScreenCallers.discard(caller)
+		print "%s finished loading. %d remaining." % (caller,
+			len(self.LoadingScreenCallers))
+		if len(self.LoadingScreenCallers) == 0:
+			self.LoadingScreenVisible = False
+			if self.LoadingScreen:
+				self._UpdateLoadingScreen()
 
-HUD = None
+HUD = _HUD()
+
 def CreateHUD(c):
 	global HUD
-	HUD = _HUD(c.owner)
+	HUD.Attach(c.owner)
 	print "HUD created"
+
+def ShowLoadingScreen(c):
+	global HUD
+	HUD.ShowLoadingScreen(c.owner)
+
+def HideLoadingScreen(c):
+	global HUD
+	HUD.HideLoadingScreen(c.owner)
 
 class Gauge(Actor.Actor):
 	S_HIDDEN  = 1
 	S_VISIBLE = 2
+	S_HIDING  = 3
 
 	def __init__(self, owner):
 		Actor.Actor.__init__(self, owner)
+		self.TargetFraction = 0.0
+		self.Fraction = 0.0
+		self.Indicator = None
+		Utilities.parseChildren(self, owner)
+	
+	def parseChild(self, child, type):
+		if type == "Indicator":
+			if self.Indicator:
+				print "Warning: Gauge already has an indicator."
+				return False
+			self.Indicator = child
+			return True
+		return False
+	
+	def OnSceneEnd(self):
+		self.Indicator = None
+		Actor.Actor.OnSceneEnded()
 	
 	def Show(self):
 		Utilities.setState(self.Owner, self.S_VISIBLE)
 	
 	def Hide(self):
-		Utilities.setState(self.Owner, self.S_HIDDEN)
+		Utilities.setState(self.Owner, self.S_HIDING)
 	
 	def SetFraction(self, fraction):
-		self.Owner['NeedleFrame'] = fraction
+		self.TargetFraction = fraction
+	
+	def Update(self, c):
+		self.Fraction = Utilities._lerp(self.Fraction, self.TargetFraction,
+			self.Owner['Speed'])
+		self.Indicator['Frame'] = self.Fraction * 100.0
+		c.activate(c.actuators['aUpdate'])
+
+def UpdateGauge(c):
+	gauge = c.owner['Actor']
+	gauge.Update(c)
 
 class Font:
 	GlyphDict = None

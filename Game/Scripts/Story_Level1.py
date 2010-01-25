@@ -40,6 +40,7 @@ def CreateWorm(c):
 		worm = c.owner['Actor']
 		worm.Destroy()
 	
+	UI.HUD.ShowLoadingScreen('Worm')
 	worm = Character(c.owner)
 	
 	step = worm.NewStep()
@@ -57,7 +58,7 @@ def CreateWorm(c):
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sReturn'))
 	step.AddAction(ActHideDialogue())
-	step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen))
+	step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen, 'Worm'))
 	step.AddAction(ActGenericContext(SprayDirt, 10, 15.0))
 	step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 	

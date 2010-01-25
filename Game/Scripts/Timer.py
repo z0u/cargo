@@ -22,14 +22,19 @@ class Timer(Actor.Actor):
 	def Stop(self):
 		print "Timer stopped."
 		Utilities.remState(self.Owner, S_RUNNING)
+		gauge = UI.HUD.GetGauge(self.Owner['Style'])
+		if gauge:
+			gauge.Hide()
 
 	def Pulse(self):
 		if self.Suspended:
 			return
 		
+		gauge = UI.HUD.GetGauge(self.Owner['Style'])
 		fraction = (time.time() - self.StartTime) / (float)(self.Owner['Duration'])
-		if UI.HUD:
-			UI.HUD.ShowGuage(self.Owner['Style'], fraction)
+		if gauge:
+			gauge.SetFraction(1.0 - fraction)
+			gauge.Show()
 		if fraction >= 1.0:
 			self.Stop()
 			self.OnFinished()

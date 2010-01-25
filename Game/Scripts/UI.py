@@ -20,7 +20,12 @@ import Utilities
 import Actor
 
 class _HUD:
+	'''The head-up display manages the 2D user interface that is drawn over the
+	3D scene. This is a Singleton (see HUD instance below). This object
+	maintains is state even if no HUD objects are attached to it.'''
+
 	def __init__(self):
+		'''Reset the internal state and detach all UI elements.'''
 		self.DialogueText = ""
 		self.DialogueBox = None
 		self.CausedSuspension = False
@@ -34,6 +39,18 @@ class _HUD:
 		Utilities.SceneManager.Subscribe(self)
 	
 	def Attach(self, owner):
+		'''Attach a new user interface, e.g. at the start of a new scene.
+		
+		Hierarchy:
+		 - Owner: The root of the HUD.
+		   - DialogueBox: An object to display text on. Must have a Content
+		                  property (String).
+		   - LoadingScreen: The object to display when the game is loading. This
+		                  must be visible by default. In state 1 it will show
+		                  itself; in state 2 it will hide itself.
+		   - Gauge:       Any number of gauge objects (see Gauge, below). Must
+		                  have a Name property to distinguish itself from other
+		                  gauges.'''
 		Utilities.parseChildren(self, owner)
 		self._UpdateDialogue()
 		self._UpdateLoadingScreen()
@@ -129,7 +146,6 @@ HUD = _HUD()
 def CreateHUD(c):
 	global HUD
 	HUD.Attach(c.owner)
-	print "HUD created"
 
 def ShowLoadingScreen(c):
 	global HUD

@@ -85,7 +85,7 @@ class SnailSegment:
 			self.Rays[child.Position] = SnailRay(child)
 			return True
 		elif (type == "SnailRayCluster"):
-			self.Rays[child.Position] = SnailRayCluster(child)
+			self.Rays[child['Position']] = SnailRayCluster(child)
 			return True
 		elif (type == "SnailSegment"):
 			if (self.Child):
@@ -332,7 +332,7 @@ class Snail(SnailSegment, Actor.Actor):
 	def _stowShell(self, shell):
 		referential = shell
 		for child in shell.children:
-			if child.has_key('Type') and (child.Type == 'CargoHook'):
+			if child.has_key('Type') and (child['Type'] == 'CargoHook'):
 				referential = child
 		
 		Utilities.setRelOrn(shell, self.CargoHold, referential)
@@ -655,7 +655,7 @@ class SnailRayCluster(ISnailRay):
 		Utilities.parseChildren(self, owner)
 		if (len(self.Rays) <= 0):
 			raise Exception("Ray cluster %s has no ray children." % self.Owner.name)
-		self.Rays.sort(lambda a, b: a.Owner.Priority - b.Owner.Priority)
+		self.Rays.sort(lambda a, b: a.Owner['Priority'] - b.Owner['Priority'])
 		self.LastHitPoint = Mathutils.Vector([0,0,0])
 	
 	def parseChild(self, child, type):
@@ -711,7 +711,7 @@ class SnailRay(ISnailRay):
 		ob, hitPoint, normal = self.Owner.rayCast(
 			through,            # to
 			origin,             # from
-			self.Owner.Length,  # dist
+			self.Owner['Length'],  # dist
 			'Ground',           # prop
 			1,                  # face
 			1                   # xray
@@ -779,7 +779,7 @@ class SnailTrail:
 	def DistanceReached(self):
 		pos = Mathutils.Vector(self.Owner.worldPosition)
 		dist = (pos - self.LastTrailPos).magnitude
-		return dist > self.Snail.Owner.TrailSpacing
+		return dist > self.Snail.Owner['TrailSpacing']
 
 #
 # Module interface functions.

@@ -323,13 +323,13 @@ def RayFollow(c):
 	hitOb, hitPoint, hitNorm = p.rayCast(
 		through,		# obTo
 		origin,			# obFrom
-		o.RestDist, 	# dist
+		o['RestDist'], 	# dist
 		'Ray',			# prop
 		1,				# face normal
 		1				# x-ray
 	)
 	
-	targetDist = o.RestDist
+	targetDist = o['RestDist']
 	obscured = False
 	if hitOb:
 		hitPoint = Mathutils.Vector(hitPoint)
@@ -343,17 +343,14 @@ def RayFollow(c):
 			#
 			targetDist = (hitPoint - origin).magnitude
 	
-	targetDist = targetDist * o.DistBias
+	targetDist = targetDist * o['DistBias']
 	
-	try:
-		if targetDist < o['_RF_Dist']:
-			o['_RF_Dist'] = targetDist
-		else:
-			o['_RF_Dist'] = _lerp(targetDist, o['_RF_Dist'], o['Fact'])
-	except KeyError:
-			o['_RF_Dist'] = targetDist
+	if targetDist < o['Dist']:
+		o['Dist'] = targetDist
+	else:
+		o['Dist'] = _lerp(targetDist, o['Dist'], o['Fact'])
 	
-	pos = origin + (direction * o['_RF_Dist'])
+	pos = origin + (direction * o['Dist'])
 	
 	o.worldPosition = pos
 

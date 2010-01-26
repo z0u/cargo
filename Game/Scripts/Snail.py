@@ -426,10 +426,14 @@ class Snail(SnailSegment, Actor.Actor):
 		Utilities.remState(self.Owner, S_ENTERING)
 		Utilities.addState(self.Owner, S_INSHELL)
 		
+		linV = self.Owner.getLinearVelocity()
+		angV = self.Owner.getAngularVelocity()
 		self.Shell.Owner.removeParent()
 		self.Owner.setVisible(0, 1)
 		self.Owner.localScale = (0.01, 0.01, 0.01)
 		self.Owner.setParent(self.Shell.Owner)
+		self.Shell.Owner.setLinearVelocity(linV)
+		self.Shell.Owner.setAngularVelocity(angV)
 	
 		#
 		# Swap mass with shell so the shell can influence bendy leaves properly

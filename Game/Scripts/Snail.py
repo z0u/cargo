@@ -465,6 +465,7 @@ class Snail(SnailSegment, Actor.Actor):
 		angV = self.Shell.Owner.getAngularVelocity()
 		self.Owner.removeParent()
 		self.Owner.localScale = (1.0, 1.0, 1.0)
+		self.Owner.worldPosition = self.Shell.Owner.worldPosition
 		self.Owner.setVisible(1, 1)
 		self._stowShell(self.Shell.Owner)
 		self.Owner.setLinearVelocity(linV)

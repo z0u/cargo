@@ -766,7 +766,7 @@ class SnailTrail:
 		hitOb, _, _ = self.Owner.rayCast(
 			through,            # to
 			origin,             # from
-			1.0,                # dist
+			3.0,                # dist
 			'Ground',           # prop
 			0,                  # face
 			1                   # xray

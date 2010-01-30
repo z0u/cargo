@@ -32,6 +32,7 @@ import GameLogic
 
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
+DEBUG = False
 
 #
 # States for main snail object. The commented-out ones aren't currently used
@@ -664,6 +665,8 @@ class SnailRayCluster(ISnailRay):
 		self.LastHitPoint = Mathutils.Vector([0,0,0])
 	
 	def parseChild(self, child, type):
+		global DEBUG
+		
 		if (type == "SnailRay"):
 			self.Rays.append(SnailRay(child))
 			return True
@@ -673,6 +676,9 @@ class SnailRayCluster(ISnailRay):
 		elif (type == "Marker"):
 			self.Marker = child
 			child.removeParent()
+			return True
+		elif type == 'Debug':
+			child.setVisible(DEBUG)
 			return True
 		else:
 			return False

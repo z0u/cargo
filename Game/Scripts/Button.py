@@ -81,11 +81,14 @@ class Button:
 
 class ToughButton(Button):
 	'''A button that filters objects by their speed: only fast objects will
-	trigger this button.'''
+	trigger this button. This button only works with Actors.'''
 	
 	def Accept(self, ob):
-		vel = Mathutils.Vector(ob.getLinearVelocity())
-		print vel.magnitude 
+		if not ob.has_key('Actor'):
+			return False
+		
+		actor = ob['Actor']
+		vel = Mathutils.Vector(actor.GetLastLinearVelocity())
 		return vel.magnitude >= self.Owner['MinSpeed']
 
 def CreateButton(c):

@@ -33,6 +33,8 @@ class Actor:
 		owner['Actor'] = self
 		self.Suspended = False
 		Director.AddActor(self)
+		self.Velocity1 = [0.0, 0.0, 0.0]
+		self.Velocity2 = [0.0, 0.0, 0.0]
 		if owner.has_key('LODRadius'):
 			LODTree.LODManager.AddCollider(self)
 		
@@ -131,6 +133,18 @@ class Actor:
 		self.Owner.worldOrientation = self.Orn
 		self.Owner.setLinearVelocity(Utilities.ALMOST_ZERO)
 		self.Owner.setAngularVelocity(Utilities.ALMOST_ZERO)
+	
+	def RecordVelocity(self):
+		'''Store the velocity of this object for one frame. See
+		GetLastLinearVelocity.'''
+		self.Velocity2 = self.Velocity1
+		self.Velocity1 = self.Owner.getLinearVelocity()
+	
+	def GetLastLinearVelocity(self):
+		'''Get the second-last velocity of this actor. This is useful in touch
+		handlers, because the object's energy is absorbed by the time the
+		handler is called.'''
+		return self.Velocity2
 
 def CreateActor(c):
 	c.owner['Actor'] = Actor(c.owner)
@@ -208,6 +222,11 @@ class _Director:
 	def ResumeUserInput(self):
 		self.InputSuspended = False
 	
+	def Update(self):
+		'''Update the state of all the actors.'''
+		for actor in self.Actors:
+			actor.RecordVelocity()
+	
 	def OnMovementImpulse(self, fwd, back, left, right):
 		if self.MainSubject and not self.InputSuspended:
 			self.MainSubject.OnMovementImpulse(fwd, back, left, right)
@@ -221,6 +240,11 @@ class _Director:
 			self.MainSubject.OnButton2(positive, triggered)
 
 Director = _Director()
+
+def Update(c):
+	'''Call this once per frame to allow the Director to update the state of its
+	Actors.'''
+	Director.Update()
 
 def SuspendAction():
 	Director.SuspendAction()

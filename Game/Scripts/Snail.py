@@ -222,6 +222,7 @@ class Snail(SnailSegment, Actor.Actor):
 			# implicitely and incorrectly made visible.
 			#
 			child.removeParent()
+			child.setVisible(True, True)
 			return True
 		elif type == "SnailTrail":
 			self.Trail = SnailTrail(child, self)
@@ -680,6 +681,8 @@ class SnailRayCluster(ISnailRay):
 		elif type == 'Debug':
 			if not DEBUG:
 				child.endObject()
+			else:
+				child.setVisible(True, True)
 			return True
 		else:
 			return False

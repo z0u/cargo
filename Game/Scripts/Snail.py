@@ -678,7 +678,8 @@ class SnailRayCluster(ISnailRay):
 			child.removeParent()
 			return True
 		elif type == 'Debug':
-			child.setVisible(DEBUG)
+			if not DEBUG:
+				child.endObject()
 			return True
 		else:
 			return False

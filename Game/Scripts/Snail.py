@@ -60,18 +60,9 @@ S_ARM_EXIT       = 18
 
 ZAXIS  = Mathutils.Vector([0.0, 0.0, 1.0])
 ORIGIN = Mathutils.Vector([0.0, 0.0, 0.0])
+EPSILON = 0.000001
+MINVECTOR = Mathutils.Vector([0.0, 0.0, EPSILON])
 
-#
-# Abstract classes
-#
-class ISnailRay:
-	def getHitPosition(self):
-		return ORIGIN
-
-#
-# Concrete classes
-#
-	
 class SnailSegment:
 	def __init__(self, owner, parent):
 		self.Parent  = parent # SnailSegment or None
@@ -120,8 +111,8 @@ class SnailSegment:
 			right = self.Parent.Owner.getAxisVect([1.0, 0.0, 0.0])
 			self.Owner.alignAxisToVect(right, 0)
 		
-		hit, p1 = self.Parent.Rays['Right'].getHitPosition()
-		hit, p2 = self.Parent.Rays['Left'].getHitPosition()
+		_, p1 = self.Parent.Rays['Right'].getHitPosition()
+		_, p2 = self.Parent.Rays['Left'].getHitPosition()
 		p3 = Mathutils.Vector(self.Parent.Fulcrum.worldPosition)
 		normal = Mathutils.TriangleNormal(p1, p2, p3)
 		
@@ -193,6 +184,7 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Shockwave = None
 		self.Trail = None
 		self.Armature = None
+		self.TouchedObject = None
 		SnailSegment.__init__(self, owner, None)
 		if not self.Head:
 			raise Exception("No head defined.")
@@ -234,39 +226,44 @@ class Snail(SnailSegment, Actor.Actor):
 			return SnailSegment.parseChild(self, child, type)
 	
 	def orient(self):
-		hitPs = []
-		hitNs = []
-		nHit = 0
-		hit, p0 = self.Rays['0'].getHitPosition()
-		if (hit):
-			nHit = nHit + 1
-		hit, p1 = self.Rays['1'].getHitPosition()
-		if (hit):
-			nHit = nHit + 1
-		hit, p2 = self.Rays['2'].getHitPosition()
-		if (hit):
-			nHit = nHit + 1
-		hit, p3 = self.Rays['3'].getHitPosition()
-		if (hit):
-			nHit = nHit + 1
+		'''Adjust the orientation of the snail to match the nearest surface.'''
+		counter = Utilities.Counter()
+		ob0, p0 = self.Rays['0'].getHitPosition()
+		if ob0:
+			counter.add(ob0)
+		ob1, p1 = self.Rays['1'].getHitPosition()
+		if ob1:
+			counter.add(ob1)
+		ob2, p2 = self.Rays['2'].getHitPosition()
+		if ob2:
+			counter.add(ob2)
+		ob3, p3 = self.Rays['3'].getHitPosition()
+		if ob3:
+			counter.add(ob3)
 		
 		#
-		# Set property on object so it knows whether it's falling.
+		# Inherit the angular velocity of a nearby surface. The object that was
+		# hit by the most rays (above) is used.
+		# TODO: The linear velocity should probably be set, too: fast-moving
+		# objects can be problematic.
 		#
-		if (self.Owner['nHit'] != nHit):
-			self.Owner['nHit'] = nHit
+		if counter.mode:
+			angV = Mathutils.Vector(counter.mode.getAngularVelocity())
+			if angV.magnitude < EPSILON:
+				angV = MINVECTOR
+			self.Owner.setAngularVelocity(angV)
+		self.TouchedObject = counter.mode
+		
+		#
+		# Set property on object so it knows whether it's falling. This is used
+		# to detect when to transition from S_FALLING to S_CRAWLING.
+		#
+		self.Owner['nHit'] = counter.n
 		
 		#
 		# Derive normal from hit points and update orientation.
 		#
-		normal = Mathutils.QuadNormal(p0, p1, p2, p3)
-		oldNormal = Mathutils.Vector(self.Owner.getAxisVect([0,0,1]))
-		
-		#
-		# Don't use a factor of 0.5: potential for normal to average out to be (0,0,0)
-		#
-		orientation = Utilities._lerp(normal, oldNormal, 0.4)
-		
+		orientation = Mathutils.QuadNormal(p0, p1, p2, p3)
 		self.Owner.alignAxisToVect(orientation, 2)
 		
 		self.Head.orient()
@@ -647,7 +644,7 @@ class Snail(SnailSegment, Actor.Actor):
 			if Utilities.hasState(self.Owner, S_HASSHELL):
 				self.dropShell(animate = True)
 
-class SnailRayCluster(ISnailRay):
+class SnailRayCluster:
 	'''A collection of SnailRays. These will cast a ray once per frame in the
 	order defined by their Priority property (ascending order). The first one
 	that hits is used.'''
@@ -692,19 +689,19 @@ class SnailRayCluster(ISnailRay):
 		If none hit, the default value of the first ray is returned."""
 		p = None
 		n = None
-		hit = False
+		ob = None
 		for ray in self.Rays:
-			hit, p = ray.getHitPosition()
-			if (hit == True):
+			ob, p = ray.getHitPosition()
+			if ob:
 				self.LastHitPoint = Utilities._toLocal(self.Owner, p)
 				break
 		
 		if (self.Marker):
 			self.Marker.setWorldPosition(Utilities._toWorld(self.Owner, self.LastHitPoint))
 			
-		return hit, Utilities._toWorld(self.Owner, self.LastHitPoint)
+		return ob, Utilities._toWorld(self.Owner, self.LastHitPoint)
 
-class SnailRay(ISnailRay):
+class SnailRay:
 	LastPoint = None
 
 	def __init__(self, owner):
@@ -732,20 +729,20 @@ class SnailRay(ISnailRay):
 			1                   # xray
 		)
 		
-		hit = False
 		if (ob):
 			#
 			# Ensure the hit was not from inside an object.
 			#
 			normal = Mathutils.Vector(normal)
-			if (Mathutils.DotVecs(normal, vec) < 0.0):
-				hit = True
+			if (Mathutils.DotVecs(normal, vec) > 0.0):
+				ob = None
+			else:
 				self.LastPoint = Mathutils.Vector(hitPoint)
 		
 		if (self.Marker):
 			self.Marker.setWorldPosition(self.LastPoint)
 		
-		return hit, self.LastPoint
+		return ob, self.LastPoint
 
 class SnailTrail:
 	def __init__(self, owner, snail):
@@ -768,20 +765,10 @@ class SnailTrail:
 		spotI = scene.addObject(spot, self.Owner)
 		
 		#
-		# Find the nearest object below the spawn point.
+		# Attach the spot to the object that the snail is crawling on.
 		#
-		origin = Mathutils.Vector(self.Owner.worldPosition)
-		vec = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
-		through = origin - vec
-		hitOb, _, _ = self.Owner.rayCast(
-			through,            # to
-			origin,             # from
-			3.0,                # dist
-			'Ground',           # prop
-			0,                  # face
-			1                   # xray
-		)
-		spotI.setParent(hitOb)
+		if self.Snail.TouchedObject:
+			spotI.setParent(self.Snail.TouchedObject)
 		
 		spotI.state = 1<<1
 		self.LastTrailPos = Mathutils.Vector(self.Owner.worldPosition)
@@ -952,3 +939,4 @@ def CopyRotToArmature(c):
 	o['Heading_T2'] = t2['Heading']
 	o['Pitch_T2'] = t2['Pitch']
 	o['Roll_T2'] = t2['Roll']
+

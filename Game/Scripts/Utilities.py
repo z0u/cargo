@@ -509,6 +509,26 @@ def someSensorPositive(c):
 			return True
 	return False
 
+class Counter:
+	'''Counts the frequency of objects.'''
+	def __init__(self):
+		self.map = {}
+		self.mode = None
+		self.max = 0
+		self.n = 0
+	
+	def add(self, ob):
+		'''Add an object to this counter. If this object is the most frequent
+		so far, it will be stored in the member variable 'mode'.'''
+		count = 1
+		if self.map.has_key(ob):
+			count = self.map[ob] + 1
+		self.map[ob] = count
+		if count > self.max:
+			self.max = count
+			self.mode = ob
+		self.n = self.n + 1
+
 class _Random:
 	#
 	# 100 random numbers (saves needing to import the 'random' module).

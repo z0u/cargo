@@ -18,10 +18,15 @@
 import GameLogic
 import Mathutils
 import Utilities
+import Actor
 
 ANGLE_INCREMENT = 81.0
 
-class Water:
+class Water(Actor.ActorListener):
+	S_INIT = 1
+	S_IDLE = 2
+	S_FLOATING = 3
+
 	def __init__(self, owner):
 		'''
 		Create a water object that can respond to things touching it. The mesh
@@ -37,7 +42,7 @@ class Water:
 		self.RippleTemplate = scene.objectsInactive['OB' + owner['RippleTemplate']]
 		self.CurrentFrame = 0
 		
-		self.LastHitActors = set()
+		self.FloatingActors = set()
 		
 		Utilities.SceneManager.Subscribe(self)
 	
@@ -64,9 +69,15 @@ class Water:
 		# Create object.
 		#
 		scene = GameLogic.getCurrentScene()
-		instance = scene.addObject(template, template)
+		scene.addObject(template, template)
 	
-	def Float(self, actor, hit):
+	def Float(self, actor):
+		'''
+		Adjust the velocity of an object to make it float on the water.
+		
+		Returns: True if the object is floating; False otherwise (e.g. if it has
+		sunk or emerged fully).
+		'''
 		#
 		# Find the distance to the water from the UPPER END
 		# of the object.
@@ -77,40 +88,46 @@ class Water:
 		depth = self.Owner.worldPosition[2] - base
 		
 		submergedFactor = depth / diam
-		if hit:
-			submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
-			
-			#
-			# Object is partially submerged. Apply acceleration away from the
-			# water (up). Acceleration increases linearly with the depth.
-			#
-			accel = depth * body['CurrentBuoyancy']
-			linV = Mathutils.Vector(body.getLinearVelocity(False))
-			linV.z = linV.z + accel
-			linV = linV - (linV * body['FloatDamp'])
-			body.setLinearVelocity(linV, False)
-			
-			#
-			# Update buoyancy (take on water).
-			#
-			targetBuoyancy = 1.0 / ((5.0 * submergedFactor) + 1.0)
-			body['CurrentBuoyancy'] = Utilities._lerp(
-				body['CurrentBuoyancy'], targetBuoyancy, body['SinkFactor'])
-		
-		else:
-			if submergedFactor < 0.5:
-				#
-				# Object is probably no longer touching; reset buoyancy.
-				#
-				body['CurrentBuoyancy'] = body['Buoyancy']
-			
-			else:
-				#
-				# Object is fully submerged. Cause it to drown.
-				#
+		print body['Oxygen']
+		if submergedFactor > 0.9:
+			# Object is almost fully submerged. Try to cause it to drown.
+			body['Oxygen'] -= body['OxygenDepletionRate']
+			if body['Oxygen'] <= 0.0:
 				pos = body.worldPosition
 				if actor.Drown():
+					body['CurrentBuoyancy'] = body['Buoyancy']
 					self.SpawnSurfaceDecal(self.BubbleTemplate, pos)
+					return False
+		else:
+			body['Oxygen'] = 1.0
+		
+		if submergedFactor < 0.0:
+			# Object has emerged.
+			body['CurrentBuoyancy'] = body['Buoyancy']
+			return False
+		
+		#
+		# Object is partially submerged. Apply acceleration away from the
+		# water (up). Acceleration increases linearly with the depth, until the
+		# object is fully submerged.
+		#
+		submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
+		accel = depth * body['CurrentBuoyancy']
+		linV = Mathutils.Vector(body.getLinearVelocity(False))
+		linV.z = linV.z + accel
+		linV = linV - (linV * body['FloatDamp'] * submergedFactor)
+		body.setLinearVelocity(linV, False)
+		
+		#
+		# Update buoyancy (take on water).
+		#
+		targetBuoyancy = (1.0 - submergedFactor) * body['Buoyancy']
+		if targetBuoyancy > body['CurrentBuoyancy']:
+			body['CurrentBuoyancy'] += body['SinkFactor']
+		else:
+			body['CurrentBuoyancy'] -= body['SinkFactor']
+		
+		return True
 	
 	def SpawnRipples(self, actor):
 		ob = actor.Owner
@@ -147,18 +164,50 @@ class Water:
 		'''
 		for actor in hitActors:
 			self.SpawnRipples(actor)
-			self.Float(actor, True)
 		
-		for actor in (self.LastHitActors - hitActors):
-			self.Float(actor, False)
+		self.FloatingActors.update(hitActors)
+		for actor in self.FloatingActors.copy():
+			floating = self.Float(actor)
+			if not floating:
+				self.FloatingActors.remove(actor)
+				actor.RemoveListener(self)
+			else:
+				actor.AddListener(self)
 		
-		self.LastHitActors = hitActors
+		if len(self.FloatingActors) > 0:
+			Utilities.setState(self.Owner, self.S_FLOATING)
+		else:
+			Utilities.setState(self.Owner, self.S_IDLE)
 		
 		#
 		# Increase the frame counter.
 		#
 		self.CurrentFrame = ((self.CurrentFrame + 1) %
 			self.Owner['RippleInterval'])
+	
+	def ActorDestroyed(self, actor):
+		self.FloatingActors.discard(actor)
+	
+	def ActorChildDetached(self, actor, oldChild):
+		'''Actor's child has become a free body. Assume that it is now floating,
+		and inherit the current buoyancy of its old parent.'''
+		
+		if actor in self.FloatingActors:
+			oldChild.Owner['CurrentBuoyancy'] = actor.Owner['CurrentBuoyancy']
+			oldChild.Owner['Oxygen'] = actor.Owner['Oxygen']
+			self.FloatingActors.add(oldChild)
+			oldChild.AddListener(self)
+			print "detached", oldChild, len(self.FloatingActors), "remaining"
+	
+	def ActorAttachedToParent(self, actor, newParent):
+		'''Actor has become attached to another. Re-set its buoyancy in case it
+		emerges from the water while still attached to its new parent.'''
+		
+		actor.Owner['CurrentBuoyancy'] = actor.Owner['Buoyancy']
+		actor.Owner['Oxygen'] = actor.Owner['Oxygen']
+		self.FloatingActors.discard(actor)
+		actor.RemoveListener(self)
+		print "attached", actor, len(self.FloatingActors), "remaining"
 
 def CreateWater(c):
 	'''

@@ -81,20 +81,17 @@ class SnailSegment:
 			return True
 		elif (type == "SnailSegment"):
 			if (self.Child):
-				raise SemanticException, (
-					"Segment %s already has a child." % self.Owner.name)
+				print "Segment %s already has a child." % self.Owner.name
 			self.Child = SnailSegment(child, self)
 			return True
 		elif (type == "SegmentChildPivot"):
 			if (self.Child):
-				raise SemanticException, (
-					"Segment %s already has a child." % self.Owner.name)
+				print "Segment %s already has a child." % self.Owner.name
 			self.Child = SegmentChildPivot(child)
 			return True
 		elif (type == "Fulcrum"):
 			if (self.Fulcrum):
-				raise SemanticException, (
-					"Segment %s already has a fulcrum." % self.Owner.name)
+				print "Segment %s already has a fulcrum." % self.Owner.name
 			self.Fulcrum = child
 			return True
 		else:
@@ -177,6 +174,7 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Head = None
 		self.Tail = None
 		self.CargoHold = cargoHold
+		self.getAttachPoints()['CargoHold'] = cargoHold
 		self.EyeLocL = eyeLocL
 		self.EyeLocR = eyeLocR
 		self.NearestShell = None
@@ -190,8 +188,6 @@ class Snail(SnailSegment, Actor.Actor):
 			raise Exception("No head defined.")
 		if not self.Tail:
 			raise Exception("No tail defined.")
-		if not self.CargoHold:
-			raise Exception("No CargoHold defined.")
 		if not self.Shockwave:
 			raise Exception("No Shockwave defined.")
 	
@@ -202,8 +198,8 @@ class Snail(SnailSegment, Actor.Actor):
 			elif child['Location'] == 'Aft':
 				self.Tail = AppendageRoot(child)
 			else:
-				raise SemanticException, ("Unknown appendage type %s on %s." %
-			                    (child['Location'], child.name))
+				print "Unknown appendage type %s on %s." % (
+				    (child['Location'], child.name))
 			return True
 		elif type == "Shockwave":
 			self.Shockwave = child
@@ -329,14 +325,15 @@ class Snail(SnailSegment, Actor.Actor):
 		          self.Owner['EyeRotFac'])
 	
 	def _stowShell(self, shell):
-		referential = shell
-		for child in shell.children:
-			if child.has_key('Type') and (child['Type'] == 'CargoHook'):
-				referential = child
+		referential = shell.CargoHook
 		
-		Utilities.setRelOrn(shell, self.CargoHold, referential)
-		Utilities.setRelPos(shell, self.CargoHold, referential)
-		shell.setParent(self.CargoHold)
+		Utilities.setRelOrn(shell.Owner,
+						    self.getAttachPoints()['CargoHold'],
+						    referential)
+		Utilities.setRelPos(shell.Owner,
+						    self.getAttachPoints()['CargoHold'],
+						    referential)
+		self.AddChild(shell, 'CargoHold', compound = False)
 	
 	def setShell(self, shell, animate):
 		'''
@@ -353,7 +350,7 @@ class Snail(SnailSegment, Actor.Actor):
 		Utilities.remState(self.Owner, S_NOSHELL)
 		Utilities.addState(self.Owner, S_HASSHELL)
 		
-		self._stowShell(shell.Owner)
+		self._stowShell(shell)
 		
 		self.Shell = shell
 		self.Owner['HasShell'] = 1
@@ -385,7 +382,7 @@ class Snail(SnailSegment, Actor.Actor):
 		Utilities.remState(self.Owner, S_POPPING)
 		Utilities.addState(self.Owner, S_NOSHELL)
 		
-		self.Shell.Owner.removeParent()
+		self.RemoveChild(self.Shell)
 		velocity = self.Owner.getAxisVect(ZAXIS)
 		velocity = Mathutils.Vector(velocity)
 		velocity = velocity * self.Owner['ShellPopForce']
@@ -401,7 +398,7 @@ class Snail(SnailSegment, Actor.Actor):
 		immediately; Snail.onShellEnter and Shell.OnEntered will be called
 		later, at the appropriate point in the animation.
 		'''
-		if self.Suspended and not ignoreSuspension:
+		if self.Suspended:
 			return
 		
 		if not Utilities.hasState(self.Owner, S_HASSHELL):
@@ -427,10 +424,12 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		linV = self.Owner.getLinearVelocity()
 		angV = self.Owner.getAngularVelocity()
-		self.Shell.Owner.removeParent()
+		
+		self.RemoveChild(self.Shell)
 		self.Owner.setVisible(0, 1)
 		self.Owner.localScale = (0.01, 0.01, 0.01)
-		self.Owner.setParent(self.Shell.Owner)
+		self.Shell.AddChild(self)
+		
 		self.Shell.Owner.setLinearVelocity(linV)
 		self.Shell.Owner.setAngularVelocity(angV)
 	
@@ -466,11 +465,13 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		linV = self.Shell.Owner.getLinearVelocity()
 		angV = self.Shell.Owner.getAngularVelocity()
-		self.Owner.removeParent()
+		
+		self.Shell.RemoveChild(self)
 		self.Owner.localScale = (1.0, 1.0, 1.0)
 		self.Owner.worldPosition = self.Shell.Owner.worldPosition
 		self.Owner.setVisible(1, 1)
-		self._stowShell(self.Shell.Owner)
+		self._stowShell(self.Shell)
+		
 		self.Owner.setLinearVelocity(linV)
 		self.Owner.setAngularVelocity(angV)
 	
@@ -688,7 +689,6 @@ class SnailRayCluster:
 		"""Return the hit point of the first child ray that hits.
 		If none hit, the default value of the first ray is returned."""
 		p = None
-		n = None
 		ob = None
 		for ray in self.Rays:
 			ob, p = ray.getHitPosition()

@@ -36,6 +36,7 @@ class ShellBase(Actor.Actor):
 		Actor.Actor.__init__(self, owner)
 		
 		self.Snail = None
+		self.CargoHook = None
 		self.CameraGoal = cameraGoal
 		
 		Utilities.parseChildren(self, owner)

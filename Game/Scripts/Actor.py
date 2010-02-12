@@ -25,6 +25,30 @@ directly.'''
 import LODTree
 import Utilities
 
+class ActorListener:
+	def ActorDestroyed(self, actor):
+		'''Called when the actor is destroyed. See Actor.AddListener and
+		Actor.Destroy.'''
+		pass
+	
+	def ActorAttachedToParent(self, actor, newParent):
+		'''
+		Called just before the logical parent is set for this actor. The
+		actual game object hierarchy may not exactly reflect this assignment.
+		actor.Owner will have a new parent, but it will not necessarily be
+		newParent.Owner: it may be any game object controlled by newParent.  
+		
+		Parameters:
+		actor: The actor being made the child of another.
+		newParent: The actor that will be the parent.
+		'''
+		pass
+	
+	def ActorChildDetached(self, actor, oldChild):
+		'''Called just before the this actor is un-set as the parent of
+		another.'''
+		pass
+
 class Actor:
 	'''A basic actor. Physics may be suspended, but nothing else.'''
 	
@@ -33,19 +57,32 @@ class Actor:
 		owner['Actor'] = self
 		self.Suspended = False
 		Director.AddActor(self)
+		
+		#
+		# Used to calculate the velocity on impact. Because the velocity is
+		# changed by the time the impact is detected, these need to be updated
+		# every frame.
+		#
 		self.Velocity1 = [0.0, 0.0, 0.0]
 		self.Velocity2 = [0.0, 0.0, 0.0]
+		
+		self.Listeners = None # set
+		self.AttachPoints = None # {}
+		self.Children = None # set
+		
 		if owner.has_key('LODRadius'):
 			LODTree.LODManager.AddCollider(self)
 		
 		#
 		# Prepare the actor for floatation. This is used by Water.Water.Float.
 		#
-		Utilities.SetDefaultProp(self.Owner, 'Buoyancy', 0.1)
+		Utilities.SetDefaultProp(self.Owner, 'Oxygen', 1.0)
+		Utilities.SetDefaultProp(self.Owner, 'OxygenDepletionRate', 0.005)
+		Utilities.SetDefaultProp(self.Owner, 'Buoyancy', 0.5)
 		Utilities.SetDefaultProp(
 			self.Owner, 'CurrentBuoyancy', self.Owner['Buoyancy'])
 		Utilities.SetDefaultProp(self.Owner, 'FloatRadius', 1.1)
-		Utilities.SetDefaultProp(self.Owner, 'FloatDamp', 0.1)
+		Utilities.SetDefaultProp(self.Owner, 'FloatDamp', 0.2)
 		Utilities.SetDefaultProp(self.Owner, 'SinkFactor', 0.01)
 		Utilities.SetDefaultProp(self.Owner, 'MinRippleSpeed', 1.0)
 		
@@ -53,14 +90,88 @@ class Actor:
 		
 		Utilities.SceneManager.Subscribe(self)
 	
+	def AddChild(self, child, attachPoint = None, compound = True, ghost = True):
+		'''
+		Add a child to this actor. The child's listeners will be notified via an
+		AttachedToParent event.
+		
+		Parameters:
+		child: Another actor. Its owner will be made a child of this actor's
+				owner or another object it controls (see attachPoint).
+		attachPoint: The name of the object to attach to, or None to attach to
+				this actor's owner.
+		compound: Whether the child's bounds will be added to the attach point's
+				bounds (for physics).
+		ghost: Whether the child should physically react to collisions.
+		'''
+		children = self.getChildren()
+		if child in children:
+			return
+		children.add(child)
+		
+		attachObject = self.Owner
+		if attachPoint != None:
+			attachObject = self.getAttachPoints()[attachPoint]
+		child.Owner.setParent(attachObject, compound, ghost)
+		for l in child.getListeners().copy():
+			l.ActorAttachedToParent(child, self)
+	
+	def RemoveChild(self, child):
+		'''
+		Remove a child from this actor. The child's owner will be freed from its
+		parent. Listeners bound to this actor will be notified via a
+		ChildDetached event.
+		
+		Parameters:
+		child: The actor to remove from this actor's list of children. If it is
+				not already a child of this actor, nothing will happen.
+		'''
+		children = self.getChildren()
+		if not child in children:
+			return
+		
+		children.discard(child)
+		child.Owner.removeParent()
+		for l in self.getListeners().copy():
+			l.ActorChildDetached(self, child)
+	
 	def OnSceneEnd(self):
 		self.Owner['Actor'] = None
 		self.Owner = None
 		Utilities.SceneManager.Unsubscribe(self)
 	
+	def getChildren(self):
+		if self.Children == None:
+			self.Children = set()
+		return self.Children
+	
+	def getAttachPoints(self):
+		if self.AttachPoints == None:
+			self.AttachPoints = {}
+		return self.AttachPoints
+	
+	def getListeners(self):
+		if self.Listeners == None:
+			self.Listeners = set()
+		return self.Listeners
+	
+	def AddListener(self, listener):
+		if not listener in self.getListeners():
+			self.getListeners().add(listener)
+			print "+", self.Owner, len(self.getListeners()), "listeners"
+	
+	def RemoveListener(self, listener):
+		if listener in self.getListeners():
+			self.getListeners().discard(listener)
+			print "-", self.Owner, len(self.getListeners()), "listeners"
+	
 	def Destroy(self):
 		'''Remove this actor from the scene. This destroys the actor's
 		underlying KX_GameObject too.'''
+		for listener in self.getListeners().copy():
+			listener.ActorDestroyed(self)
+		self.getListeners().clear()
+		
 		Director.RemoveActor(self)
 		if self.Owner.has_key('LODRadius'):
 			LODTree.LODManager.RemoveCollider(self)

@@ -213,6 +213,21 @@ def _toWorld(referential, point):
 	refOMat.transpose()
 	return (point * refOMat) + refP
 
+def _toWorldVec(referential, dir):
+	'''
+	Transform direction vector 'dir' into world space. 'dir' must be specified
+	in the coordinate space of 'referential'.
+	
+	Parameters:
+	referential: The object that defines the coordinate space to transform from.
+	             (KX_GameObject)
+	point:       The point, in local space, to transform. (Mathutils.Vector)
+	'''
+	refOMat = referential.worldOrientation
+	refOMat = Mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
+	refOMat.transpose()
+	return dir * refOMat
+
 def _SlowCopyRot(o, goal, factor):
 	'''
 	Slow parenting (Rotation only). 'o' will copy the rotation of the 'goal'.

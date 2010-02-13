@@ -88,7 +88,6 @@ class Water(Actor.ActorListener):
 		depth = self.Owner.worldPosition[2] - base
 		
 		submergedFactor = depth / diam
-		print body['Oxygen']
 		if submergedFactor > 0.9:
 			# Object is almost fully submerged. Try to cause it to drown.
 			body['Oxygen'] -= body['OxygenDepletionRate']
@@ -197,7 +196,6 @@ class Water(Actor.ActorListener):
 			oldChild.Owner['Oxygen'] = actor.Owner['Oxygen']
 			self.FloatingActors.add(oldChild)
 			oldChild.AddListener(self)
-			print "detached", oldChild, len(self.FloatingActors), "remaining"
 	
 	def ActorAttachedToParent(self, actor, newParent):
 		'''Actor has become attached to another. Re-set its buoyancy in case it
@@ -207,7 +205,6 @@ class Water(Actor.ActorListener):
 		actor.Owner['Oxygen'] = actor.Owner['Oxygen']
 		self.FloatingActors.discard(actor)
 		actor.RemoveListener(self)
-		print "attached", actor, len(self.FloatingActors), "remaining"
 
 def CreateWater(c):
 	'''

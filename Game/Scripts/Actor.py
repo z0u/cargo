@@ -158,12 +158,10 @@ class Actor:
 	def AddListener(self, listener):
 		if not listener in self.getListeners():
 			self.getListeners().add(listener)
-			print "+", self.Owner, len(self.getListeners()), "listeners"
 	
 	def RemoveListener(self, listener):
 		if listener in self.getListeners():
 			self.getListeners().discard(listener)
-			print "-", self.Owner, len(self.getListeners()), "listeners"
 	
 	def Destroy(self):
 		'''Remove this actor from the scene. This destroys the actor's

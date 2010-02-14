@@ -36,7 +36,33 @@ class ForceField(Actor.Actor):
         '''
         return distance / limit
     
-    def getEffectSquare(self, distance, limit):
+    def getMagnitude(self, distance):
+        effect = 0.0
+        if distance < self.Owner['FFDist1']:
+            effect = self.modulate(distance, self.Owner['FFDist1'])
+        else:
+            effect = 1.0 - self.modulate(distance - self.Owner['FFDist1'],
+                                         self.Owner['FFDist2'])
+        if effect > 1.0:
+            effect = 1.0
+        if effect < 0.0:
+            effect = 0.0
+        return self.Owner['FFMagnitude'] * effect
+    
+    def touched(self, actor):
+        '''Called when an object is inside the force field.'''
+        pass
+
+class RadialForceField2D(ForceField):
+    def __init__(self, owner):
+        ForceField.__init__(self, owner)
+    
+    def getForceDirection(self, posLocal):
+        dir = Mathutils.Vector(posLocal)
+        dir.z = 0.0
+        return dir
+    
+    def modulate(self, distance, limit):
         '''
         To visualise this function, try it in gnuplot:
             f(d, l) = (d*d) / (l*l)
@@ -44,53 +70,83 @@ class ForceField(Actor.Actor):
         '''
         return (distance * distance) / (limit * limit)
     
-    def modulateMagnitude(self, distance):
-        effect = 0.0
-        if distance < self.Owner['FFDist1']:
-            effect = self.getEffectSquare(distance, self.Owner['FFDist1'])
-        else:
-            effect = 1.0 - self.getEffectSquare(distance - self.Owner['FFDist1'],
-                                                self.Owner['FFDist2'])
-        return self.Owner['FFMagnitude'] * effect
-    
-    def Touched(self, actor):
-        '''Called when an object is inside the force field.'''
-        pass
-
-class Vortex(ForceField):
-    '''Propels objects around the force field's origin.'''
-    
-    def __init__(self, owner):
-        ForceField.__init__(self, owner)
-    
-    def getTangent(self, pos):
-        tan = Mathutils.Vector((pos.y, 0.0 - pos.x, 0.0))
-        return tan
-    
-    def Touched(self, actor):
+    def touched(self, actor):
         pos = Mathutils.Vector(actor.Owner.worldPosition)
         pos = Utilities._toLocal(self.Owner, pos)
         if pos.z > 0.0 and self.Owner['FFZCut']:
             return
         
-        dir = self.getTangent(pos)
+        dir = self.getForceDirection(pos)
         radius = dir.magnitude
         if radius != 0.0:
             dir.normalize()
-        magnitude = self.modulateMagnitude(radius)
+        magnitude = self.getMagnitude(radius)
         dir *= magnitude
         dir = Utilities._toWorldVec(self.Owner, dir)
-        
-        print dir
         
         linV = Mathutils.Vector(actor.Owner.getLinearVelocity(False))
         linV += dir
         actor.Owner.setLinearVelocity(linV, False)
 
-def CreateVortex(c):
-    Vortex(c.owner)
+class Repeller2D(RadialForceField2D):
+    '''
+    Repels objects away from the force field's origin on the local XY axis.
+    
+    Object properties:
+    FFMagnitude: The maximum acceleration.
+    FFDist1: The distance from the origin at which the maximum acceleration will
+        be applied.
+    FFDist2: The distance from the origin at which the acceleration will be
+        zero.
+    FFZCut: If True, force will only be applied to objects underneath the force
+        field's XY plane (in force field local space).
+    '''
+    def __init__(self, owner):
+        RadialForceField2D.__init__(self, owner)
 
-def OnTouched(c):
+class Vortex2D(RadialForceField2D):
+    '''
+    Propels objects around the force field's origin, so that the rotate around
+    the Z-axis. Rotation will be clockwise for positive magnitudes. Force is
+    applied tangentially to a circle around the Z-axis, so the objects will tend
+    to spiral out from the centre. The magnitude of the acceleration varies
+    depending on the distance of the object from the origin: at the centre, the
+    acceleration is zero. It ramps up slowly (r-squared) to the first distance
+    marker; then ramps down (1 - r-squared) to the second.
+    
+    Object properties:
+    FFMagnitude: The maximum acceleration.
+    FFDist1: The distance from the origin at which the maximum acceleration will
+        be applied.
+    FFDist2: The distance from the origin at which the acceleration will be
+        zero.
+    FFZCut: If True, force will only be applied to objects underneath the force
+        field's XY plane (in force field local space).
+    '''
+    
+    def __init__(self, owner):
+        RadialForceField2D.__init__(self, owner)
+    
+    def getForceDirection(self, posLocal):
+        tan = Mathutils.Vector((posLocal.y, 0.0 - posLocal.x, 0.0))
+        return tan
+
+def createRepeller2D(c):
+    Repeller2D(c.owner)
+    
+def createVortex2D(c):
+    Vortex2D(c.owner)
+
+def onTouched(c):
+    '''Activate the force field.
+    
+    Controller owner: a ForceField, created with one of the Create functions
+        above.
+    
+    Sensors:
+    <any>: Near sensors (also includes Collision) that detect objects in range
+        to act upon.
+    '''
     ffield = c.owner['Actor']
     
     actors = set()
@@ -98,9 +154,8 @@ def OnTouched(c):
         if not s.positive:
             continue
         for ob in s.hitObjectList:
-            print ob
             if ob.has_key('Actor'):
                 actors.add(ob['Actor'])
         
     for a in actors: 
-        ffield.Touched(a)
+        ffield.touched(a)

@@ -169,7 +169,7 @@ class Snail(SnailSegment, Actor.Actor):
 	def __init__(self, owner, cargoHold, eyeLocL, eyeLocR):
 		# FIXME: This derives from two classes, and both set the Owner property.
 		Actor.Actor.__init__(self, owner)
-		Actor.Director.SetMainSubject(self)
+		Actor.Director.setMainCharacter(self)
 		
 		self.Head = None
 		self.Tail = None
@@ -442,7 +442,7 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.Owner['InShell'] = 1
 		self.Shell.OnEntered()
-		Actor.Director.SetMainSubject(self.Shell)
+		Actor.Director.setMainCharacter(self.Shell)
 	
 	def exitShell(self, animate):
 		'''
@@ -484,7 +484,7 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.Owner['InShell'] = 0
 		self.Shell.OnExited()
-		Actor.Director.SetMainSubject(self)
+		Actor.Director.setMainCharacter(self)
 	
 	def onPostExitShell(self):
 		'''Called when the snail has finished its exit shell

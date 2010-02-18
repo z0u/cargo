@@ -19,7 +19,7 @@ import GameLogic
 import Utilities
 import Actor
 
-class _HUD:
+class _HUD(Actor.DirectorListener, Actor.ActorListener):
 	'''The head-up display manages the 2D user interface that is drawn over the
 	3D scene. This is a Singleton (see HUD instance below). This object
 	maintains is state even if no HUD objects are attached to it.'''
@@ -37,6 +37,7 @@ class _HUD:
 		self.Gauges = {}
 		
 		Utilities.SceneManager.Subscribe(self)
+		Actor.Director.addListener(self)
 	
 	def Attach(self, owner):
 		'''Attach a new user interface, e.g. at the start of a new scene.
@@ -54,6 +55,7 @@ class _HUD:
 		Utilities.parseChildren(self, owner)
 		self._UpdateDialogue()
 		self._UpdateLoadingScreen()
+		self._updateHealthGauge()
 	
 	def OnSceneEnd(self):
 		self.__init__()
@@ -140,6 +142,32 @@ class _HUD:
 			self.LoadingScreenVisible = False
 			if self.LoadingScreen:
 				self._UpdateLoadingScreen()
+	
+	def _updateHealthGauge(self):
+		gauge = self.GetGauge("Health")
+		if gauge == None:
+			return
+		
+		actor = Actor.Director.getMainCharacter()
+		if actor != None:
+			gauge.Show()
+			#gauge.SetFraction(actor.getHealth())
+			gauge.SetFraction(actor.getOxygen(), 'Oxygen')
+		else:
+			gauge.Hide()
+	
+	def directorMainCharacterChanged(self, oldActor, newActor):
+		if oldActor != None:
+			oldActor.removeListener(self)
+		if newActor != None:
+			newActor.addListener(self)  
+			self._updateHealthGauge()
+			
+	def actorHealthChanged(self, actor):
+		self._updateHealthGauge()
+		
+	def actorOxygenChanged(self, actor):
+		self._updateHealthGauge()
 
 HUD = _HUD()
 
@@ -156,29 +184,59 @@ def HideLoadingScreen(c):
 	HUD.HideLoadingScreen(c.owner)
 
 class Gauge(Actor.Actor):
+	'''
+	Displays a value on the screen between 0 and 1.
+	
+	Hierarchy:
+	Owner
+	  - Indicator
+	
+	Owner properties:
+	Type: 'Gauge'
+	Name: Key for accessing gauge through HUD.getGauge.
+	
+	Indicator properties:
+	Type: 'Indicator'
+	Name: Key for accessing indicator through SetFraction. If not set, the
+		indicator can be accessed using the key None.
+	Speed: The responsiveness to changes in value. 0 <= Speed <= 1.
+	Frame [out]: The animation frame that displays a fraction, as a percentage.
+		0 <= Frame <= 100.
+	'''
+	
 	S_HIDDEN  = 1
 	S_VISIBLE = 2
 	S_HIDING  = 3
+	
+	class Indicator:
+		def __init__(self, owner):
+			self.Fraction = 0.0
+			self.TargetFraction = 0.0
+			self.Owner = owner
+		
+		def update(self):
+			self.Fraction = Utilities._lerp(self.Fraction, self.TargetFraction,
+				self.Owner['Speed'])
+			self.Owner['Frame'] = self.Fraction * 100.0
 
 	def __init__(self, owner):
 		Actor.Actor.__init__(self, owner)
-		self.TargetFraction = 0.0
-		self.Fraction = 0.0
-		self.Indicator = None
+		self.Indicators = {}
 		Utilities.parseChildren(self, owner)
 	
 	def parseChild(self, child, type):
 		if type == "Indicator":
-			if self.Indicator:
-				print "Warning: Gauge already has an indicator."
-				return False
-			self.Indicator = child
+			if 'Name' in child:
+				self.Indicators[child['Name']] = self.Indicator(child)
+			else:
+				self.Indicators[None] = self.Indicator(child)
 			return True
 		return False
 	
 	def OnSceneEnd(self):
-		self.Indicator = None
-		Actor.Actor.OnSceneEnded()
+		for i in self.Indicators.values():
+			i.Owner = None
+		super(Gauge, self).OnSceneEnd()
 	
 	def Show(self):
 		Utilities.setState(self.Owner, self.S_VISIBLE)
@@ -186,16 +244,27 @@ class Gauge(Actor.Actor):
 	def Hide(self):
 		Utilities.setState(self.Owner, self.S_HIDING)
 	
-	def SetFraction(self, fraction):
-		self.TargetFraction = fraction
+	def SetFraction(self, fraction, name = None):
+		self.Indicators[name].TargetFraction = fraction
 	
 	def Update(self, c):
-		self.Fraction = Utilities._lerp(self.Fraction, self.TargetFraction,
-			self.Owner['Speed'])
-		self.Indicator['Frame'] = self.Fraction * 100.0
-		c.activate(c.actuators['aUpdate'])
+		for i in self.Indicators.values():
+			i.update()
+		for a in c.actuators:
+			c.activate(a)
 
 def UpdateGauge(c):
+	'''
+	Update the indicators of a gauge. This sets the Frame property of each
+	indicator, and instructs them to update.
+	
+	Sensors:
+	<any>: Should be in pulse mode.
+	
+	Actuators:
+	<any>: Update the indicator animation according to the indicator's Frame
+		property.
+	'''
 	gauge = c.owner['Actor']
 	gauge.Update(c)
 

@@ -90,15 +90,16 @@ class Water(Actor.ActorListener):
 		submergedFactor = depth / diam
 		if submergedFactor > 0.9:
 			# Object is almost fully submerged. Try to cause it to drown.
-			body['Oxygen'] -= body['OxygenDepletionRate']
-			if body['Oxygen'] <= 0.0:
+			actor.setOxygen(actor.getOxygen() - body['OxygenDepletionRate'])
+			if actor.getOxygen() <= 0.0:
 				pos = body.worldPosition
 				if actor.Drown():
 					body['CurrentBuoyancy'] = body['Buoyancy']
+					actor.setOxygen(1.0)
 					self.SpawnSurfaceDecal(self.BubbleTemplate, pos)
 					return False
 		else:
-			body['Oxygen'] = 1.0
+			actor.setOxygen(1.0)
 		
 		if submergedFactor < 0.0:
 			# Object has emerged.
@@ -169,9 +170,9 @@ class Water(Actor.ActorListener):
 			floating = self.Float(actor)
 			if not floating:
 				self.FloatingActors.remove(actor)
-				actor.RemoveListener(self)
+				actor.removeListener(self)
 			else:
-				actor.AddListener(self)
+				actor.addListener(self)
 		
 		if len(self.FloatingActors) > 0:
 			Utilities.setState(self.Owner, self.S_FLOATING)
@@ -184,27 +185,27 @@ class Water(Actor.ActorListener):
 		self.CurrentFrame = ((self.CurrentFrame + 1) %
 			self.Owner['RippleInterval'])
 	
-	def ActorDestroyed(self, actor):
+	def actorDestroyed(self, actor):
 		self.FloatingActors.discard(actor)
 	
-	def ActorChildDetached(self, actor, oldChild):
+	def actorChildDetached(self, actor, oldChild):
 		'''Actor's child has become a free body. Assume that it is now floating,
 		and inherit the current buoyancy of its old parent.'''
 		
 		if actor in self.FloatingActors:
 			oldChild.Owner['CurrentBuoyancy'] = actor.Owner['CurrentBuoyancy']
-			oldChild.Owner['Oxygen'] = actor.Owner['Oxygen']
+			oldChild.setOxygen(actor.getOxygen())
 			self.FloatingActors.add(oldChild)
-			oldChild.AddListener(self)
+			oldChild.addListener(self)
 	
-	def ActorAttachedToParent(self, actor, newParent):
+	def actorAttachedToParent(self, actor, newParent):
 		'''Actor has become attached to another. Re-set its buoyancy in case it
 		emerges from the water while still attached to its new parent.'''
 		
 		actor.Owner['CurrentBuoyancy'] = actor.Owner['Buoyancy']
-		actor.Owner['Oxygen'] = actor.Owner['Oxygen']
+		actor.setOxygen(1.0)
 		self.FloatingActors.discard(actor)
-		actor.RemoveListener(self)
+		actor.removeListener(self)
 
 def CreateWater(c):
 	'''

@@ -26,14 +26,14 @@ import LODTree
 import Utilities
 
 class ActorListener:
-	def ActorDestroyed(self, actor):
-		'''Called when the actor is destroyed. See Actor.AddListener and
+	def actorDestroyed(self, actor):
+		'''Called when the actor is destroyed. See Actor.addListener and
 		Actor.Destroy.'''
 		pass
 	
-	def ActorAttachedToParent(self, actor, newParent):
+	def actorAttachedToParent(self, actor, newParent):
 		'''
-		Called just before the logical parent is set for this actor. The
+		Called just before the logical parent is set for the actor. The
 		actual game object hierarchy may not exactly reflect this assignment.
 		actor.Owner will have a new parent, but it will not necessarily be
 		newParent.Owner: it may be any game object controlled by newParent.  
@@ -44,9 +44,17 @@ class ActorListener:
 		'''
 		pass
 	
-	def ActorChildDetached(self, actor, oldChild):
-		'''Called just before the this actor is un-set as the parent of
-		another.'''
+	def actorChildDetached(self, actor, oldChild):
+		'''Called just before the actor is un-set as the parent of another.'''
+		pass
+
+	def actorHealthChanged(self, actor):
+		'''Called when the health of the actor changes (e.g. when damaged).'''
+		pass
+	
+	def actorOxygenChanged(self, actor):
+		'''Called when the amount of oxygen the actor has changes (e.g. while
+		under water).'''
 		pass
 
 class Actor:
@@ -114,7 +122,7 @@ class Actor:
 			attachObject = self.getAttachPoints()[attachPoint]
 		child.Owner.setParent(attachObject, compound, ghost)
 		for l in child.getListeners().copy():
-			l.ActorAttachedToParent(child, self)
+			l.actorAttachedToParent(child, self)
 	
 	def RemoveChild(self, child):
 		'''
@@ -133,7 +141,7 @@ class Actor:
 		children.discard(child)
 		child.Owner.removeParent()
 		for l in self.getListeners().copy():
-			l.ActorChildDetached(self, child)
+			l.actorChildDetached(self, child)
 	
 	def OnSceneEnd(self):
 		self.Owner['Actor'] = None
@@ -155,19 +163,17 @@ class Actor:
 			self.Listeners = set()
 		return self.Listeners
 	
-	def AddListener(self, listener):
-		if not listener in self.getListeners():
-			self.getListeners().add(listener)
+	def addListener(self, listener):
+		self.getListeners().add(listener)
 	
-	def RemoveListener(self, listener):
-		if listener in self.getListeners():
-			self.getListeners().discard(listener)
+	def removeListener(self, listener):
+		self.getListeners().discard(listener)
 	
 	def Destroy(self):
 		'''Remove this actor from the scene. This destroys the actor's
 		underlying KX_GameObject too.'''
 		for listener in self.getListeners().copy():
-			listener.ActorDestroyed(self)
+			listener.actorDestroyed(self)
 		self.getListeners().clear()
 		
 		Director.RemoveActor(self)
@@ -254,6 +260,22 @@ class Actor:
 		handlers, because the object's energy is absorbed by the time the
 		handler is called.'''
 		return self.Velocity2
+	
+	def getHealth(self):
+		return self.Health
+	
+	def setHealth(self, value):
+		self.Health = value
+		for l in self.getListeners().copy():
+			l.actorHealthChanged(self)
+	
+	def getOxygen(self):
+		return self.Owner['Oxygen']
+	
+	def setOxygen(self, value):
+		self.Owner['Oxygen'] = value
+		for l in self.getListeners().copy():
+			l.actorOxygenChanged(self)
 
 def CreateActor(c):
 	c.owner['Actor'] = Actor(c.owner)
@@ -285,12 +307,32 @@ class StatefulActor(Actor):
 def CreateStatefulActor(c):
 	StatefulActor(c.owner)
 
+class DirectorListener:
+	def directorMainCharacterChanged(self, oldActor, newActor):
+		'''
+		Called immediately after the main subject (i.e. the actor receiving user
+		input) changes.
+		
+		Parameters:
+		oldActor: The previous main subject. May be None.
+		newActor: The new main subject. May be None.
+		'''
+		pass
+
 class _Director:
 	def __init__(self):
 		self.Suspended = False
 		self.InputSuspended = False
 		self.Actors = set()
-		self.MainSubject = None
+		self.MainCharacter = None
+		
+		self.Listeners = set()
+	
+	def addListener(self, listener):
+		self.Listeners.add(listener)
+	
+	def removeListener(self, listener):
+		self.Listeners.discard(listener)
 	
 	def AddActor(self, actor):
 		self.Actors.add(actor)
@@ -299,8 +341,8 @@ class _Director:
 	
 	def RemoveActor(self, actor):
 		self.Actors.remove(actor)
-		if self.MainSubject == actor:
-			self.MainSubject = None
+		if self.MainCharacter == actor:
+			self.setMainCharacter(None)
 		if self.Suspended:
 			actor._Resume()
 	
@@ -322,8 +364,14 @@ class _Director:
 			actor._Resume()
 		self.Suspended = False
 	
-	def SetMainSubject(self, actor):
-		self.MainSubject = actor
+	def getMainCharacter(self):
+		return self.MainCharacter
+	
+	def setMainCharacter(self, actor):
+		oldMainSubject = self.MainCharacter
+		self.MainCharacter = actor
+		for l in self.Listeners.copy():
+			l.directorMainCharacterChanged(oldMainSubject, actor)
 	
 	def SuspendUserInput(self):
 		self.InputSuspended = True
@@ -337,16 +385,16 @@ class _Director:
 			actor.RecordVelocity()
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
-		if self.MainSubject and not self.InputSuspended:
-			self.MainSubject.OnMovementImpulse(fwd, back, left, right)
+		if self.MainCharacter and not self.InputSuspended:
+			self.MainCharacter.OnMovementImpulse(fwd, back, left, right)
 	
 	def OnButton1(self, positive, triggered):
-		if self.MainSubject and not self.InputSuspended:
-			self.MainSubject.OnButton1(positive, triggered)
+		if self.MainCharacter and not self.InputSuspended:
+			self.MainCharacter.OnButton1(positive, triggered)
 		
 	def OnButton2(self, positive, triggered):
-		if self.MainSubject and not self.InputSuspended:
-			self.MainSubject.OnButton2(positive, triggered)
+		if self.MainCharacter and not self.InputSuspended:
+			self.MainCharacter.OnButton2(positive, triggered)
 
 Director = _Director()
 

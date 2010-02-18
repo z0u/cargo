@@ -60,6 +60,8 @@ class ActorListener:
 class Actor:
 	'''A basic actor. Physics may be suspended, but nothing else.'''
 	
+	s_LocationIndex = 0
+	
 	def __init__(self, owner):
 		self.Owner = owner
 		owner['Actor'] = self
@@ -77,6 +79,7 @@ class Actor:
 		self.Listeners = None # set
 		self.AttachPoints = None # {}
 		self.Children = None # set
+		self.Parent = None
 		
 		if owner.has_key('LODRadius'):
 			LODTree.LODManager.AddCollider(self)
@@ -116,6 +119,7 @@ class Actor:
 		if child in children:
 			return
 		children.add(child)
+		child.Parent = self
 		
 		attachObject = self.Owner
 		if attachPoint != None:
@@ -139,6 +143,7 @@ class Actor:
 			return
 		
 		children.discard(child)
+		child.Parent = None
 		child.Owner.removeParent()
 		for l in self.getListeners().copy():
 			l.actorChildDetached(self, child)
@@ -207,10 +212,14 @@ class Actor:
 	
 	def Drown(self):
 		'''
-		Called when the Actor is fully submerged in water.
+		Called when the Actor is fully submerged in water, and its Oxigen
+		property reaches zero.
 		
 		Returns: True iff the actor drowned.
 		'''
+		if self.Parent != None:
+			return False
+		
 		self.RestoreLocation()
 		return True
 	
@@ -240,8 +249,12 @@ class Actor:
 		pass
 	
 	def SaveLocation(self):
+		'''Save the location of the owner for later. This may happen when the
+		object touches a safe point.'''
 		self.Pos = self.Owner.worldPosition
 		self.Orn = self.Owner.worldOrientation
+		for child in self.getChildren():
+			child.SaveLocation()
 	
 	def RestoreLocation(self):
 		self.Owner.worldPosition = self.Pos

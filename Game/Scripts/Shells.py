@@ -137,12 +137,6 @@ class ShellBase(Actor.Actor):
 	def IsCarried(self):
 		return self.Owner['Carried']
 	
-	def Drown(self):
-		if not Utilities.hasState(self.Owner, S_CARRIED):
-			return Actor.Actor.Drown(self)
-		else:
-			return False
-	
 	def OnButton1(self, positive, triggered):
 		if not Utilities.hasState(self.Owner, S_OCCUPIED):
 			return

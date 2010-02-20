@@ -169,7 +169,7 @@ class Water(Actor.ActorListener):
 		for actor in self.FloatingActors.copy():
 			floating = self.Float(actor)
 			if not floating:
-				self.FloatingActors.remove(actor)
+				self.FloatingActors.discard(actor)
 				actor.removeListener(self)
 			else:
 				actor.addListener(self)

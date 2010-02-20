@@ -143,6 +143,11 @@ class ShellBase(Actor.Actor):
 		
 		if positive and triggered:
 			self.Snail.exitShell(animate = True)
+		
+	def RestoreLocation(self):
+		Actor.Actor.RestoreLocation(self)
+		if Utilities.hasState(self.Owner, S_OCCUPIED):
+			self.Snail.exitShell(False)
 
 class Shell(ShellBase):
 	def OnMovementImpulse(self, fwd, back, left, right):

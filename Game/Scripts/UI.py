@@ -236,7 +236,7 @@ class Gauge(Actor.Actor):
 	def OnSceneEnd(self):
 		for i in self.Indicators.values():
 			i.Owner = None
-		super(Gauge, self).OnSceneEnd()
+		Actor.Actor.OnSceneEnd(self)
 	
 	def Show(self):
 		Utilities.setState(self.Owner, self.S_VISIBLE)

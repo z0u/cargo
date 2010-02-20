@@ -18,7 +18,7 @@
 import Utilities
 import Mathutils
 
-MIN_VOLUME = 0.01
+MIN_VOLUME = 0.001
 
 #
 # A mapping from sound name to actuator index. This lets PlayWithRandomPitch
@@ -72,7 +72,7 @@ def PlayWithRandomPitch(c):
 	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], Utilities.Random.next())
 	c.activate(a)
 
-def Fade(c, maxVolume = 1.0):
+def Fade(c):
 	'''
 	Causes a sound to play a long as its inputs are active. On activation, the
 	sound fades in; on deactivation, it fades out. The fade rate is determined
@@ -87,10 +87,14 @@ def Fade(c, maxVolume = 1.0):
 	<one>:    A sound actuator.
 	
 	Controller properties:
-	VolumeMult:    The maximum volume (as speed approaches infinity) (float).
+	VolumeMult:    The maximum volume (float).
 	SoundFadeFac:  The response factor for the volume (float).
 	'''
-	o = c.owner
+	_Fade(c, 1.0)
+
+def _Fade(c, maxVolume):
+	a = c.actuators[0]
+	o = a.owner
 	maxVolume = maxVolume * o['VolumeMult']
 	
 	targetVolume = 0.0
@@ -101,7 +105,6 @@ def Fade(c, maxVolume = 1.0):
 			targetVolume = maxVolume
 			break
 	
-	a = c.actuators[0]
 	a.volume = Utilities._lerp(a.volume, targetVolume, o['SoundFadeFac'])
 	if a.volume > MIN_VOLUME:
 		c.activate(a)
@@ -118,7 +121,7 @@ def _Modulate(speed, c):
 	a = c.actuators[0]
 	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], factor)
 	
-	Fade(c, factor)
+	_Fade(c, factor)
 
 def ModulateByLinV(c):
 	'''

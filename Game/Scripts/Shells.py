@@ -30,6 +30,7 @@ S_INIT     = 1
 S_IDLE     = 2
 S_CARRIED  = 3
 S_OCCUPIED = 4
+S_ALWAYS   = 16
 
 class ShellBase(Actor.Actor):
 	def __init__(self, owner, cameraGoal):
@@ -52,6 +53,8 @@ class ShellBase(Actor.Actor):
 			self.Occupier.state = 1<<0 # state 1
 		
 		self.LookAt = -1
+		Utilities.setState(self.Owner, S_IDLE)
+		Utilities.addState(self.Owner, S_ALWAYS)
 	
 	def parseChild(self, child, t):
 		if t == 'CargoHook':
@@ -80,6 +83,7 @@ class ShellBase(Actor.Actor):
 		self.Snail = snail
 		self.Owner['Carried'] = True
 		Utilities.setState(self.Owner, S_CARRIED)
+		Utilities.addState(self.Owner, S_ALWAYS)
 		self.Owner['NoPickupAnim'] = not animate
 		
 		try:
@@ -93,6 +97,7 @@ class ShellBase(Actor.Actor):
 		self.Snail = None
 		self.Owner['Carried'] = False
 		Utilities.setState(self.Owner, S_IDLE)
+		Utilities.addState(self.Owner, S_ALWAYS)
 		
 		self.Owner['LookAt'] = self.LookAt
 	
@@ -119,11 +124,13 @@ class ShellBase(Actor.Actor):
 		'''Called when a snail enters this shell (just after
 		control is transferred).'''
 		Utilities.setState(self.Owner, S_OCCUPIED)
+		Utilities.addState(self.Owner, S_ALWAYS)
 	
 	def OnExited(self):
 		'''Called when a snail exits this shell (just after
 		control is transferred).'''
 		Utilities.setState(self.Owner, S_CARRIED)
+		Utilities.addState(self.Owner, S_ALWAYS)
 		self.Owner['CurrentBuoyancy'] = self.Owner['Buoyancy']
 		self.CameraGoal.state = 1<<0 # state 1
 		if self.Occupier:

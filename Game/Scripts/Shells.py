@@ -155,6 +155,21 @@ class ShellBase(Actor.Actor):
 		Actor.Actor.RestoreLocation(self)
 		if Utilities.hasState(self.Owner, S_OCCUPIED):
 			self.Snail.exitShell(False)
+	
+	def getHealth(self):
+		if (Utilities.hasState(self.Owner, S_CARRIED) or
+		    Utilities.hasState(self.Owner, S_OCCUPIED)):
+			return self.Snail.getHealth()
+		else:
+			return Actor.Actor.getHealth(self)
+	
+	def setHealth(self, value):
+		if (Utilities.hasState(self.Owner, S_CARRIED) or
+		    Utilities.hasState(self.Owner, S_OCCUPIED)):
+			return self.Snail.setHealth(value)
+		else:
+			return Actor.Actor.setHealth(self, value)
+		
 
 class Shell(ShellBase):
 	def OnMovementImpulse(self, fwd, back, left, right):

@@ -86,6 +86,8 @@ class Actor:
 		if owner.has_key('LODRadius'):
 			LODTree.LODManager.AddCollider(self)
 		
+		Utilities.SetDefaultProp(self.Owner, 'Health', 1.0)
+		
 		#
 		# Prepare the actor for floatation. This is used by Water.Water.Float.
 		#
@@ -237,6 +239,7 @@ class Actor:
 			return False
 		
 		self.RestoreLocation()
+		self.damage(1.0, shock = False)
 		return True
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
@@ -291,12 +294,16 @@ class Actor:
 		return self.Velocity2
 	
 	def getHealth(self):
-		return self.Health
+		return self.Owner['Health']
 	
 	def setHealth(self, value):
-		self.Health = value
+		self.Owner['Health'] = value
 		for l in self.getListeners().copy():
 			l.actorHealthChanged(self)
+		print self.Owner['Health']
+	
+	def damage(self, amount, shock):
+		self.setHealth(self.getHealth() - amount)
 	
 	def getOxygen(self):
 		return self.Owner['Oxygen']
@@ -317,6 +324,18 @@ def SaveLocation(c):
 
 def RestoreLocation(c):
 	c.owner['Actor'].RestoreLocation()
+
+def Damage(c):
+	print "damaged"
+	for s in c.sensors:
+		if (not s.positive) or (not s.triggered):
+			continue
+		shock = False
+		if 'Shock' in s.owner:
+			shock = s.owner['Shock'] == True
+		for o in s.hitObjectList:
+			if 'Actor' in o:
+				o['Actor'].damage(c.owner['Damage'], shock)
 
 class StatefulActor(Actor):
 	'''In addition to physics suspension, the object transitions

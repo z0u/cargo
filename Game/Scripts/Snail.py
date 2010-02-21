@@ -42,6 +42,7 @@ DEBUG = False
 S_CRAWLING = 2
 S_FALLING  = 3
 #S_ACTIVE   = 4
+S_SHOCKED  = 5
 S_NOSHELL  = 16
 S_HASSHELL = 17
 S_POPPING  = 18
@@ -190,6 +191,7 @@ class Snail(SnailSegment, Actor.Actor):
 			raise Exception("No tail defined.")
 		if not self.Shockwave:
 			raise Exception("No Shockwave defined.")
+		self.setHealth(7.0)
 	
 	def parseChild(self, child, type):
 		if type == "AppendageRoot":
@@ -223,6 +225,7 @@ class Snail(SnailSegment, Actor.Actor):
 	
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
+		print "ORient"
 		counter = Utilities.Counter()
 		ob0, p0 = self.Rays['0'].getHitPosition()
 		if ob0:
@@ -529,6 +532,15 @@ class Snail(SnailSegment, Actor.Actor):
 			return Actor.Actor.Drown(self)
 		else:
 			return False
+	
+	def damage(self, amount, shock):
+		if (Utilities.hasState(self.Owner, S_ENTERING) or
+		    Utilities.hasState(self.Owner, S_EXITING)):
+			return
+		Actor.Actor.damage(self, amount, shock)
+		if amount > 0.0:
+			if shock and Utilities.hasState(self.Owner, S_HASSHELL):
+				self.enterShell(True)
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
 		'''

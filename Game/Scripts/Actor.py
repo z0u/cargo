@@ -64,6 +64,8 @@ class Actor:
 	
 	def __init__(self, owner):
 		self.Owner = owner
+		self.invalid = False
+		
 		owner['Actor'] = self
 		self.Suspended = False
 		Director.AddActor(self)
@@ -89,12 +91,12 @@ class Actor:
 		#
 		Utilities.SetDefaultProp(self.Owner, 'Oxygen', 1.0)
 		Utilities.SetDefaultProp(self.Owner, 'OxygenDepletionRate', 0.005)
-		Utilities.SetDefaultProp(self.Owner, 'Buoyancy', 0.5)
+		Utilities.SetDefaultProp(self.Owner, 'Buoyancy', 1)
 		Utilities.SetDefaultProp(
 			self.Owner, 'CurrentBuoyancy', self.Owner['Buoyancy'])
 		Utilities.SetDefaultProp(self.Owner, 'FloatRadius', 1.1)
 		Utilities.SetDefaultProp(self.Owner, 'FloatDamp', 0.2)
-		Utilities.SetDefaultProp(self.Owner, 'SinkFactor', 0.01)
+		Utilities.SetDefaultProp(self.Owner, 'SinkFactor', 0.02)
 		Utilities.SetDefaultProp(self.Owner, 'MinRippleSpeed', 1.0)
 		
 		self.SaveLocation()
@@ -175,8 +177,21 @@ class Actor:
 		self.getListeners().discard(listener)
 	
 	def Destroy(self):
-		'''Remove this actor from the scene. This destroys the actor's
-		underlying KX_GameObject too.'''
+		'''
+		Remove this actor from the scene. This destroys the actor's underlying
+		KX_GameObject too. All listeners will be notified by the actorDestroyed
+		callback.
+		
+		Even after the game object (self.Owner) has been destroyed, it hangs
+		around for the rest of the frame. It may be passed in to other scripts
+		via Near and Collision sensors. It is NOT safe to store an actor whose
+		owner has been destroyed. Therefore, Actor.invalid should be checked
+		before storing a reference.
+		'''
+		
+		for child in self.getChildren():
+			child.Destroy()
+		
 		for listener in self.getListeners().copy():
 			listener.actorDestroyed(self)
 		self.getListeners().clear()
@@ -185,6 +200,7 @@ class Actor:
 		if self.Owner.has_key('LODRadius'):
 			LODTree.LODManager.RemoveCollider(self)
 		self.Owner.endObject()
+		self.invalid = True
 	
 	def CanSuspend(self):
 		'''Check whether the object can be suspended at this time.'''

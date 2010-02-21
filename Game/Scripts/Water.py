@@ -20,7 +20,11 @@ import Mathutils
 import Utilities
 import Actor
 
+# The angle to rotate successive ripples by (giving them a random appearance),
+# in degrees.
 ANGLE_INCREMENT = 81.0
+# Extra spacing to bubble spawn points, in Blender units.
+BUBBLE_BIAS = 0.4
 
 class Water(Actor.ActorListener):
 	S_INIT = 1
@@ -71,6 +75,33 @@ class Water(Actor.ActorListener):
 		scene = GameLogic.getCurrentScene()
 		scene.addObject(template, template)
 	
+	def spawnBubble(self, actor):
+		global counter
+		if actor.Owner == self.BubbleTemplate:
+			return
+		
+		#
+		# Transform template.
+		#
+		vec = Mathutils.Vector(actor.Owner.getLinearVelocity(False))
+		if vec.magnitude == 0.0:
+			vec = Mathutils.Vector(0.0, 0.0, -1.0)
+		else:
+			vec.normalize()
+		vec *= (actor.Owner['FloatRadius'] + BUBBLE_BIAS)
+		pos = Mathutils.Vector(actor.Owner.worldPosition)
+		pos -= vec
+		self.BubbleTemplate.worldPosition = pos
+		
+		#
+		# Create object.
+		#
+		scene = GameLogic.getCurrentScene()
+		bubOb = scene.addObject(self.BubbleTemplate, self.BubbleTemplate)
+		bubble = Actor.Actor(bubOb)
+		self.FloatingActors.add(bubble)
+		Utilities.setState(self.Owner, self.S_FLOATING)
+	
 	def Float(self, actor):
 		'''
 		Adjust the velocity of an object to make it float on the water.
@@ -86,18 +117,30 @@ class Water(Actor.ActorListener):
 		base = body.worldPosition[2] - body['FloatRadius']
 		diam = body['FloatRadius'] * 2.0
 		depth = self.Owner.worldPosition[2] - base
-		
 		submergedFactor = depth / diam
-		if submergedFactor > 0.9:
+		
+		if submergedFactor > 0.9 and not self.isBubble(actor):
 			# Object is almost fully submerged. Try to cause it to drown.
-			actor.setOxygen(actor.getOxygen() - body['OxygenDepletionRate'])
+			o2 = actor.getOxygen()
+			o22 = o2 - body['OxygenDepletionRate']
+			actor.setOxygen(o22)
+			if int(o2 * 10) != int(o22 * 10):
+				self.spawnBubble(actor)
+			
 			if actor.getOxygen() <= 0.0:
-				pos = body.worldPosition
 				if actor.Drown():
 					body['CurrentBuoyancy'] = body['Buoyancy']
 					actor.setOxygen(1.0)
-					self.SpawnSurfaceDecal(self.BubbleTemplate, pos)
 					return False
+		
+		elif submergedFactor < 0.9 and self.isBubble(actor):
+			# Bubbles are the opposite: they lose 'oxygen' when they are not
+			# fully submerged.
+			actor.setOxygen(actor.getOxygen() - body['OxygenDepletionRate'])
+			if actor.getOxygen() <= 0.0:
+				self.SpawnSurfaceDecal(self.RippleTemplate, body.worldPosition)
+				actor.Destroy()
+		
 		else:
 			actor.setOxygen(1.0)
 		
@@ -112,7 +155,7 @@ class Water(Actor.ActorListener):
 		# object is fully submerged.
 		#
 		submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
-		accel = depth * body['CurrentBuoyancy']
+		accel = submergedFactor * body['CurrentBuoyancy']
 		linV = Mathutils.Vector(body.getLinearVelocity(False))
 		linV.z = linV.z + accel
 		linV = linV - (linV * body['FloatDamp'] * submergedFactor)
@@ -130,6 +173,9 @@ class Water(Actor.ActorListener):
 		return True
 	
 	def SpawnRipples(self, actor):
+		if self.isBubble(actor):
+			return
+		
 		ob = actor.Owner
 		
 		try:
@@ -206,6 +252,9 @@ class Water(Actor.ActorListener):
 		actor.setOxygen(1.0)
 		self.FloatingActors.discard(actor)
 		actor.removeListener(self)
+	
+	def isBubble(self, actor):
+		return actor.Owner.name == self.BubbleTemplate.name
 
 def CreateWater(c):
 	'''
@@ -241,8 +290,12 @@ def OnCollision(c):
 		if not s.positive:
 			continue
 		for ob in s.hitObjectList:
-			if ob.has_key('Actor'):
-				actors.add(ob['Actor'])
+			if not 'Actor' in ob:
+				continue
+			a = ob['Actor']
+			if a.invalid:
+				continue
+			actors.add(ob['Actor'])
 	
 	#
 	# Call Water.OnCollision regardless of collisions: this allows for one more

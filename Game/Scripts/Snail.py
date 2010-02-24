@@ -225,7 +225,6 @@ class Snail(SnailSegment, Actor.Actor):
 	
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
-		print "ORient"
 		counter = Utilities.Counter()
 		ob0, p0 = self.Rays['0'].getHitPosition()
 		if ob0:

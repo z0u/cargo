@@ -187,6 +187,11 @@ class Character(Actor.Actor):
 		Actor.Actor.__init__(self, owner)
 		self.NextStep = 0
 		self.Steps = []
+		self.CreateSteps()
+		self.setCyclic(False)
+	
+	def setCyclic(self, value):
+		self.Cyclic = value
 	
 	def NewStep(self):
 		step = Step()
@@ -195,11 +200,20 @@ class Character(Actor.Actor):
 
 	def Progress(self, controller):
 		if self.NextStep >= len(self.Steps):
-			return
+			if self.Cyclic:
+				# Loop.
+				self.NextStep = 0
+			else:
+				# Finished.
+				return
+		
 		step = self.Steps[self.NextStep]
 		if step.CanExecute(controller):
 			step.Execute(controller)
 			self.NextStep = self.NextStep + 1
+	
+	def CreateSteps(self):
+		pass
 
 def Progress(c):
 	character = c.owner['Actor']

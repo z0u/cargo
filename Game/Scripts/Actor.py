@@ -24,6 +24,7 @@ directly.'''
 
 import LODTree
 import Utilities
+import GameTypes
 
 class ActorListener:
 	def actorDestroyed(self, actor):
@@ -472,3 +473,10 @@ def OnImpulse(c):
 	Director.OnButton1(btn1.positive, btn1.triggered)
 	Director.OnButton2(btn2.positive, btn2.triggered)
 
+def isTouchingMainCharacter(touchSensor):
+	for o in touchSensor.hitObjectList:
+		if 'Actor' in o:
+			a = o['Actor']
+			if a == Director.getMainCharacter():
+				return True
+	return False

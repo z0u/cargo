@@ -462,6 +462,26 @@ def SprayParticle(c):
 	c.actuators['aEmit'].linearVelocity = (0.0, 0.0, speed)
 	c.activate('aEmit')
 	c.activate('aRot')
+
+def timeOffsetChildren(c):
+	'''Copy the 'Frame' property to all children, incrementally adding an offset
+	as defined by the 'Offset' property.'''
+	o = c.owner
+	a = c.actuators[0]
+	range = a.frameEnd - a.frameStart
+	increment = 0.0
+	if len(o.children) > 0:
+		increment = range / len(o.children)
+	
+	offset = 0.0
+	for child in o.children:
+		frame = o['Frame'] + offset
+		frame -= a.frameStart
+		frame %= range
+		frame += a.frameStart
+		child['Frame'] = frame
+		offset += increment
+	c.activate(a)
 	
 def SetDefaultProp(ob, propName, value):
 	'''
@@ -619,7 +639,7 @@ class PriorityQueue:
 		          0 <= priority. (Integer)
 		'''
 		if key in self.ItemSet:
-			self.remove(key)
+			self.discard(key)
 		
 		pqi = PriorityQueueItem(key, item, priority)
 		
@@ -636,15 +656,12 @@ class PriorityQueue:
 		
 		self.ItemSet.add(key)
 	
-	def remove(self, key):
+	def discard(self, key):
 		'''
 		Remove an item from the queue.
 		
 		Parameters:
 		key: The key that was used to insert the item.
-		
-		Raises:
-		KeyError: if no item matching 'key' is in the queue.
 		'''
 		i = len(self.Q) - 1
 		while i >= 0:
@@ -653,7 +670,6 @@ class PriorityQueue:
 				self.ItemSet.remove(key)
 				return
 			i = i - 1
-		raise KeyError, "Item not found in queue."
 	
 	def pop(self):
 		'''

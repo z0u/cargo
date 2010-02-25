@@ -16,6 +16,7 @@
 #
 
 import Utilities
+import Actor
 
 class CameraObserver:
 	'''
@@ -124,22 +125,22 @@ class _AutoCamera:
 		will switch to follow the next one on the stack. The transform isn't
 		changed until OnRender is called.
 		'''
-		try:
-			if self.Q.top().Goal == goalOb:
-				#
-				# Goal is on top of the stack: it's in use!
-				#
-				oldGoal = self.Q.pop()
-				self.StackModified = True
-				if oldGoal.InstantCut:
-					self.InstantCut = True
-			else:
-				#
-				# Remove the goal from the rest of the stack.
-				#
-				self.Q.remove(goalOb)
-		except (IndexError, KeyError):
-			print "Warning: camera goal %s not found in stack." % goalOb.name
+		if len(self.Q) == 0:
+			return
+		
+		if self.Q.top().Goal == goalOb:
+			#
+			# Goal is on top of the stack: it's in use!
+			#
+			oldGoal = self.Q.pop()
+			self.StackModified = True
+			if oldGoal.InstantCut:
+				self.InstantCut = True
+		else:
+			#
+			# Remove the goal from the rest of the stack.
+			#
+			self.Q.discard(goalOb)
 	
 	def ResetGoal(self):
 		'''Reset the camera to follow its original goal. This clears the
@@ -155,7 +156,7 @@ class _AutoCamera:
 	
 	def RemoveObserver(self, camObserver):
 		self.Observers.remove(camObserver)
- 
+
 AutoCamera = _AutoCamera()
 
 def SetCamera(c):
@@ -166,23 +167,34 @@ def SetDefaultGoal(c):
 	goal = c.owner
 	AutoCamera.SetDefaultGoal(goal, goal['SlowFac'])
 
-def AddGoal(c):
-	goal = c.owner
-	
-	pri = goal['Priority']
+def addGoalOb(goal):
+	pri = False
+	if 'Priority' in goal:
+		pri = goal['Priority']
 	
 	fac = None
-	if goal.has_key('SlowFac'):
+	if 'SlowFac' in goal:
 		fac = goal['SlowFac']
 		
 	instant = False
-	if goal.has_key('InstantCut'):
+	if 'InstantCut' in goal:
 		instant = goal['InstantCut']
 	
 	AutoCamera.AddGoal(goal, pri, fac, instant)
 
-def RemoveGoal(c):
+def AddGoal(c):
+	if not Utilities.allSensorsPositive(c):
+		return
 	goal = c.owner
+	addGoalOb(goal)
+
+def RemoveGoal(c):
+	if not Utilities.allSensorsPositive(c):
+		return
+	goal = c.owner
+	removeGoalOb(goal)
+
+def removeGoalOb(goal):
 	AutoCamera.RemoveGoal(goal)
 
 class CameraGoal:

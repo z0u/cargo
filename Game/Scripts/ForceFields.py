@@ -51,16 +51,29 @@ class ForceField(Actor.Actor):
     
     def touched(self, actor):
         '''Called when an object is inside the force field.'''
+        pos = Mathutils.Vector(actor.Owner.worldPosition)
+        pos = Utilities._toLocal(self.Owner, pos)
+        if 'FFZCut' in self.Owner and self.Owner['FFZCut'] and (pos.z > 0.0):
+            return
+        
+        dir = self.getForceDirection(pos)
+        dist = dir.magnitude
+        if dist != 0.0:
+            dir.normalize()
+        magnitude = self.getMagnitude(dist)
+        dir *= magnitude
+        dir = Utilities._toWorldVec(self.Owner, dir)
+        
+        linV = Mathutils.Vector(actor.Owner.getLinearVelocity(False))
+        linV += dir
+        actor.Owner.setLinearVelocity(linV, False)
+        
+    def getForceDirection(self, localPos):
         pass
 
-class RadialForceField2D(ForceField):
+class RadialForceField(ForceField):
     def __init__(self, owner):
         ForceField.__init__(self, owner)
-    
-    def getForceDirection(self, posLocal):
-        dir = Mathutils.Vector(posLocal)
-        dir.z = 0.0
-        return dir
     
     def modulate(self, distance, limit):
         '''
@@ -69,26 +82,27 @@ class RadialForceField2D(ForceField):
             plot [0:10][0:1] f(x, 10)
         '''
         return (distance * distance) / (limit * limit)
-    
-    def touched(self, actor):
-        pos = Mathutils.Vector(actor.Owner.worldPosition)
-        pos = Utilities._toLocal(self.Owner, pos)
-        if pos.z > 0.0 and self.Owner['FFZCut']:
-            return
-        
-        dir = self.getForceDirection(pos)
-        radius = dir.magnitude
-        if radius != 0.0:
-            dir.normalize()
-        magnitude = self.getMagnitude(radius)
-        dir *= magnitude
-        dir = Utilities._toWorldVec(self.Owner, dir)
-        
-        linV = Mathutils.Vector(actor.Owner.getLinearVelocity(False))
-        linV += dir
-        actor.Owner.setLinearVelocity(linV, False)
 
-class Repeller2D(RadialForceField2D):
+class Repeller3D(RadialForceField):
+    '''
+    Repels objects away from the force field's origin.
+    
+    Object properties:
+    FFMagnitude: The maximum acceleration.
+    FFDist1: The distance from the origin at which the maximum acceleration will
+        be applied.
+    FFDist2: The distance from the origin at which the acceleration will be
+        zero.
+    FFZCut: If True, force will only be applied to objects underneath the force
+        field's XY plane (in force field local space).
+    '''
+    def __init__(self, owner):
+        RadialForceField.__init__(self, owner)
+    
+    def getForceDirection(self, posLocal):
+        return dir
+
+class Repeller2D(RadialForceField):
     '''
     Repels objects away from the force field's origin on the local XY axis.
     
@@ -102,9 +116,14 @@ class Repeller2D(RadialForceField2D):
         field's XY plane (in force field local space).
     '''
     def __init__(self, owner):
-        RadialForceField2D.__init__(self, owner)
+        RadialForceField.__init__(self, owner)
+    
+    def getForceDirection(self, posLocal):
+        dir = Mathutils.Vector(posLocal)
+        dir.z = 0.0
+        return dir
 
-class Vortex2D(RadialForceField2D):
+class Vortex2D(RadialForceField):
     '''
     Propels objects around the force field's origin, so that the rotate around
     the Z-axis. Rotation will be clockwise for positive magnitudes. Force is
@@ -125,11 +144,14 @@ class Vortex2D(RadialForceField2D):
     '''
     
     def __init__(self, owner):
-        RadialForceField2D.__init__(self, owner)
+        RadialForceField.__init__(self, owner)
     
     def getForceDirection(self, posLocal):
         tan = Mathutils.Vector((posLocal.y, 0.0 - posLocal.x, 0.0))
         return tan
+
+def createRepeller3D(c):
+    Repeller3D(c.owner)
 
 def createRepeller2D(c):
     Repeller2D(c.owner)

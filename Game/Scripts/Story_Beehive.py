@@ -15,10 +15,40 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import UI
 import GameLogic
 import Actor
 import Utilities
 import Camera
+from Story import *
+
+class Intro(Character):
+    def __init__(self, owner):
+        Character.__init__(self, owner)
+    
+    def CreateSteps(self):
+        step = self.NewStep()
+        step.AddAction(ActSuspendInput())
+        step.AddAction(ActSetCamera('IntroCam'))
+        step.AddAction(ActShowDialogue("Welcome to the Cargo demo! This level is a short version of the main dungeon."))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Use the arrow keys to control the snail."))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Press space to go inside the shell."))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActRemoveCamera('IntroCam'))
+        step.AddAction(ActResumeInput())
+        step.AddAction(ActHideDialogue())
+        step.AddAction(ActGeneric(Intro.Destroy, self))
+
+def createIntro(c):
+    Intro(c.owner)
 
 class Bucket(Actor.Actor):
     DIR_UP = 1

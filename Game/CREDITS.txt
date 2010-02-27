@@ -1,11 +1,20 @@
 = Contributors =
-Story:            Alex Fraser, Lara Mikocki
+Story:            Alex Fraser[1], Lara Mikocki
 Character design: Alex Fraser, Lara Mikocki
+Sound effects:    Alex Fraser, Freesound[2] users: anamorphosis, tigersound,
+                  HerbertBoland, MeltyMcFace, kijjaz, arnaud, FreqMan
+Music:            Robert Leigh
 Storyboards:      Alex Fraser
 3D modelling:     Alex Fraser
 Rigging:          Alex Fraser
 Animation:        Alex Fraser
 Textures:         Alex Fraser
-Code:             Alex Fraser, Mark Triggs
-Engine:           The Blender Foundation
+Code:             Alex Fraser
+Engines:          The Blender Foundation (Blender)[3], Game Physics Simulation
+                  (Bullet)[4]
+
+[1] alex@phatcore.com
+[2] http://www.freesound.org
+[3] http://www.blender.org/
+[4] http://bulletphysics.org
 

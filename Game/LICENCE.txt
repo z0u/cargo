@@ -1,0 +1,19 @@
+The following licences apply:
+ - Executable code (e.g. Python scripts) is licenced under the GNU General
+   Public Licence, version 3 or above. See:
+   
+       http://www.gnu.org/licenses/gpl-3.0.html
+   
+ - All artwork, including the textures (.jpg, .png), Blender (.blend) files and
+   music (the sound files in the Sound/Music directory) is licenced under the
+   Creative Commons Attribution-Share Alike 2.5 Australia licence. See:
+   
+       http://creativecommons.org/licenses/by-sa/2.5/au/
+
+ - All sound effects (the sound files in the Sound and Sound/cc-sample) are
+   licenced under the Creative Commons Sampling Plus licence. See:
+  
+       http://creativecommons.org/licenses/sampling+/1.0/
+
+See CREDITS.txt for information on who owns the respective copyrights.
+

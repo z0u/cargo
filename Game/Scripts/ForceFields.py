@@ -24,17 +24,19 @@ import Utilities
 import Actor
 import Mathutils
 
+YAXIS = (0.0, 1.0, 0.0)
+
 class ForceField(Actor.Actor):
     def __init__(self, owner):
         Actor.Actor.__init__(self, owner)
     
-    def getEffectLinear(self, distance, limit):
+    def modulate(self, distance, limit):
         '''
         To visualise this function, try it in gnuplot:
-            f(d, l) = d / l
+            f(d, l) = (d*d) / (l*l)
             plot [0:10][0:1] f(x, 10)
         '''
-        return distance / limit
+        return (distance * distance) / (limit * limit)
     
     def getMagnitude(self, distance):
         effect = 0.0
@@ -69,21 +71,27 @@ class ForceField(Actor.Actor):
         actor.Owner.setLinearVelocity(linV, False)
         
     def getForceDirection(self, localPos):
+        '''Returns the Vector along which the acceleration will be applied, in
+        local space.'''
         pass
-
-class RadialForceField(ForceField):
+    
+class LinearForceField(ForceField):
     def __init__(self, owner):
         ForceField.__init__(self, owner)
+        self.direction = Mathutils.Vector(YAXIS)
+    
+    def getForceDirection(self, posLocal):
+        return self.direction
     
     def modulate(self, distance, limit):
         '''
         To visualise this function, try it in gnuplot:
-            f(d, l) = (d*d) / (l*l)
+            f(d, l) = d / l
             plot [0:10][0:1] f(x, 10)
         '''
-        return (distance * distance) / (limit * limit)
+        return distance / limit
 
-class Repeller3D(RadialForceField):
+class Repeller3D(ForceField):
     '''
     Repels objects away from the force field's origin.
     
@@ -97,12 +105,12 @@ class Repeller3D(RadialForceField):
         field's XY plane (in force field local space).
     '''
     def __init__(self, owner):
-        RadialForceField.__init__(self, owner)
+        ForceField.__init__(self, owner)
     
     def getForceDirection(self, posLocal):
-        return dir
+        return posLocal
 
-class Repeller2D(RadialForceField):
+class Repeller2D(ForceField):
     '''
     Repels objects away from the force field's origin on the local XY axis.
     
@@ -116,14 +124,14 @@ class Repeller2D(RadialForceField):
         field's XY plane (in force field local space).
     '''
     def __init__(self, owner):
-        RadialForceField.__init__(self, owner)
+        ForceField.__init__(self, owner)
     
     def getForceDirection(self, posLocal):
         dir = Mathutils.Vector(posLocal)
         dir.z = 0.0
         return dir
 
-class Vortex2D(RadialForceField):
+class Vortex2D(ForceField):
     '''
     Propels objects around the force field's origin, so that the rotate around
     the Z-axis. Rotation will be clockwise for positive magnitudes. Force is
@@ -144,11 +152,14 @@ class Vortex2D(RadialForceField):
     '''
     
     def __init__(self, owner):
-        RadialForceField.__init__(self, owner)
+        ForceField.__init__(self, owner)
     
     def getForceDirection(self, posLocal):
         tan = Mathutils.Vector((posLocal.y, 0.0 - posLocal.x, 0.0))
         return tan
+
+def createLinear(c):
+    LinearForceField(c.owner)
 
 def createRepeller3D(c):
     Repeller3D(c.owner)

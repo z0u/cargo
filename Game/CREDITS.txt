@@ -9,9 +9,10 @@ Storyboards:      Alex Fraser
 Rigging:          Alex Fraser
 Animation:        Alex Fraser
 Textures:         Alex Fraser
-Code:             Alex Fraser
+Code:             Alex Fraser, Mark Triggs
 Engines:          The Blender Foundation (Blender)[3], Game Physics Simulation
                   (Bullet)[4]
+Testing:          Jodie Fraser, Lachlan Kanaley, Damien Elmes
 
 [1] alex@phatcore.com
 [2] http://www.freesound.org

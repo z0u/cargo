@@ -31,11 +31,11 @@ class Intro(Character):
         step = self.NewStep()
         step.AddAction(ActSuspendInput())
         step.AddAction(ActShowDialogue("Press Return to continue."))
+        step.AddAction(ActSetCamera('IntroCam'))
         
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))
         step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen, self))
-        step.AddAction(ActSetCamera('IntroCam'))
         step.AddAction(ActShowDialogue("Welcome to the Cargo demo! This level is a short version of the main dungeon."))
         
         step = self.NewStep()
@@ -45,6 +45,10 @@ class Intro(Character):
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))
         step.AddAction(ActShowDialogue("Press space to go inside the shell."))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Press Escape at any time to quit."))
         
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))
@@ -149,6 +153,10 @@ class Bucket(Actor.Actor):
             return
         
         self.isTouchingPlayer = isTouchingPlayer
+        if isTouchingPlayer:
+            Actor.Director.SuspendUserInput()
+        else:
+            Actor.Director.ResumeUserInput()
         self.updateCamera()
 
 def createBucket(c):

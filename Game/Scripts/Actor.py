@@ -65,6 +65,7 @@ class Actor:
 	
 	def __init__(self, owner):
 		self.Owner = owner
+		self.name = owner.name[2:]
 		self.invalid = False
 		
 		owner['Actor'] = self
@@ -98,7 +99,6 @@ class Actor:
 		Utilities.SetDefaultProp(
 			self.Owner, 'CurrentBuoyancy', self.Owner['Buoyancy'])
 		Utilities.SetDefaultProp(self.Owner, 'FloatRadius', 1.1)
-		Utilities.SetDefaultProp(self.Owner, 'FloatDamp', 0.2)
 		Utilities.SetDefaultProp(self.Owner, 'SinkFactor', 0.02)
 		Utilities.SetDefaultProp(self.Owner, 'MinRippleSpeed', 1.0)
 		

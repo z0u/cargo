@@ -25,6 +25,8 @@ import Actor
 ANGLE_INCREMENT = 81.0
 # Extra spacing to bubble spawn points, in Blender units.
 BUBBLE_BIAS = 0.4
+ZAXIS = Mathutils.Vector((0.0, 0.0, 1.0))
+ZERO = Mathutils.Vector((0.0, 0.0, 0.0))
 
 class Water(Actor.ActorListener):
 	S_INIT = 1
@@ -37,14 +39,18 @@ class Water(Actor.ActorListener):
 		is assumed to be a globally-aligned XY plane that passes through the
 		object's origin.
 		'''
-		scene = GameLogic.getCurrentScene()
 		self.Owner = owner
 		owner['Water'] = self
 		
+		Utilities.SetDefaultProp(self.Owner, 'RippleInterval', 20)
+		Utilities.SetDefaultProp(self.Owner, 'DampingFactor', 0.2)
+		
 		self.InstanceAngle = 0.0
-		self.BubbleTemplate = scene.objectsInactive['OB' + owner['BubbleTemplate']]
-		self.RippleTemplate = scene.objectsInactive['OB' + owner['RippleTemplate']]
 		self.CurrentFrame = 0
+		
+		scene = GameLogic.getCurrentScene()
+		self.BubbleTemplate = scene.objectsInactive['OB' + self.Owner['BubbleTemplate']]
+		self.RippleTemplate = scene.objectsInactive['OB' + self.Owner['RippleTemplate']]
 		
 		self.FloatingActors = set()
 		
@@ -53,6 +59,8 @@ class Water(Actor.ActorListener):
 	def OnSceneEnd(self):
 		self.Owner['Water'] = None
 		self.Owner = None
+		self.BubbleTemplate = None
+		self.RippleTemplate = None
 		Utilities.SceneManager.Unsubscribe(self)
 	
 	def SpawnSurfaceDecal(self, template, position):
@@ -77,7 +85,8 @@ class Water(Actor.ActorListener):
 	
 	def spawnBubble(self, actor):
 		global counter
-		if actor.Owner == self.BubbleTemplate:
+		template = self.BubbleTemplate
+		if actor.Owner.name == template.name:
 			return
 		
 		#
@@ -91,16 +100,27 @@ class Water(Actor.ActorListener):
 		vec *= (actor.Owner['FloatRadius'] + BUBBLE_BIAS)
 		pos = Mathutils.Vector(actor.Owner.worldPosition)
 		pos -= vec
-		self.BubbleTemplate.worldPosition = pos
+		template.worldPosition = pos
 		
 		#
 		# Create object.
 		#
 		scene = GameLogic.getCurrentScene()
-		bubOb = scene.addObject(self.BubbleTemplate, self.BubbleTemplate)
+		bubOb = scene.addObject(template, template)
+		bubOb['Bubble'] = True
 		bubble = Actor.Actor(bubOb)
 		self.FloatingActors.add(bubble)
 		Utilities.setState(self.Owner, self.S_FLOATING)
+	
+	def getSubmergedFactor(self, actor):
+		body = actor.Owner
+		base = body.worldPosition[2] - body['FloatRadius']
+		diam = body['FloatRadius'] * 2.0
+		depth = self.Owner.worldPosition[2] - base
+		return depth / diam
+	
+	def applyDamping(self, linV, submergedFactor):
+		return Utilities._lerp(linV, ZERO, self.Owner['DampingFactor'] * submergedFactor)
 	
 	def Float(self, actor):
 		'''
@@ -114,10 +134,7 @@ class Water(Actor.ActorListener):
 		# of the object.
 		#
 		body = actor.Owner
-		base = body.worldPosition[2] - body['FloatRadius']
-		diam = body['FloatRadius'] * 2.0
-		depth = self.Owner.worldPosition[2] - base
-		submergedFactor = depth / diam
+		submergedFactor = self.getSubmergedFactor(actor)
 		
 		if submergedFactor > 0.9 and not self.isBubble(actor):
 			# Object is almost fully submerged. Try to cause it to drown.
@@ -138,13 +155,13 @@ class Water(Actor.ActorListener):
 			# fully submerged.
 			actor.setOxygen(actor.getOxygen() - body['OxygenDepletionRate'])
 			if actor.getOxygen() <= 0.0:
-				self.SpawnSurfaceDecal(self.RippleTemplate, body.worldPosition)
+				self.SpawnSurfaceDecal(self.RippleTemplate, actor.Owner.worldPosition)
 				actor.Destroy()
 		
 		else:
 			actor.setOxygen(1.0)
 		
-		if submergedFactor < 0.0:
+		if submergedFactor <= 0.1:
 			# Object has emerged.
 			body['CurrentBuoyancy'] = body['Buoyancy']
 			return False
@@ -158,7 +175,7 @@ class Water(Actor.ActorListener):
 		accel = submergedFactor * body['CurrentBuoyancy']
 		linV = Mathutils.Vector(body.getLinearVelocity(False))
 		linV.z = linV.z + accel
-		linV = linV - (linV * body['FloatDamp'] * submergedFactor)
+		linV = self.applyDamping(linV, submergedFactor)
 		body.setLinearVelocity(linV, False)
 		
 		#
@@ -172,32 +189,26 @@ class Water(Actor.ActorListener):
 		
 		return True
 	
-	def SpawnRipples(self, actor):
+	def SpawnRipples(self, actor, force = False):
 		if self.isBubble(actor):
 			return
 		
 		ob = actor.Owner
 		
-		try:
+		if not force and 'Water_LastFrame' in ob:
+			# This is at least the first time the object has touched the water.
+			# Make sure it has moved a minimum distance before adding a ripple.
 			if ob['Water_LastFrame'] == self.CurrentFrame:
 				ob['Water_CanRipple'] = True
+			
 			if not ob['Water_CanRipple']:
-				#
 				# The object has rippled too recently.
-				#
 				return
+			
 			linV = Mathutils.Vector(ob.getLinearVelocity(False))
 			if linV.magnitude < ob['MinRippleSpeed']:
-				#
 				# The object hasn't moved fast enough to cause another event.
-				#
 				return
-		except KeyError:
-			#
-			# This is the first time the object has touched the water.
-			# Continue; the required key will be added below.
-			#
-			pass
 		
 		ob['Water_LastFrame'] = self.CurrentFrame
 		ob['Water_CanRipple'] = False
@@ -209,16 +220,22 @@ class Water(Actor.ActorListener):
 		causes objects to float or sink. Should only be called once per frame.
 		'''
 		for actor in hitActors:
-			self.SpawnRipples(actor)
+			self.SpawnRipples(actor, False)
 		
 		self.FloatingActors.update(hitActors)
 		for actor in self.FloatingActors.copy():
-			floating = self.Float(actor)
-			if not floating:
+			try:
+				floating = self.Float(actor)
+				if not floating:
+					self.FloatingActors.discard(actor)
+					actor.removeListener(self)
+				else:
+					actor.addListener(self)
+			except SystemError:
+				# Shouldn't get here, but just in case!
+				print "Error: tried to float dead actor", actor.name
 				self.FloatingActors.discard(actor)
 				actor.removeListener(self)
-			else:
-				actor.addListener(self)
 		
 		if len(self.FloatingActors) > 0:
 			Utilities.setState(self.Owner, self.S_FLOATING)
@@ -254,7 +271,60 @@ class Water(Actor.ActorListener):
 		actor.removeListener(self)
 	
 	def isBubble(self, actor):
-		return actor.Owner.name == self.BubbleTemplate.name
+		return 'Bubble' in actor.Owner
+
+class Honey(Water):
+	def __init__(self, owner):
+		Water.__init__(self, owner)
+		Utilities.parseChildren(self, owner)
+	
+	def parseChild(self, child, t):
+		if t == 'ExternalTarget':
+			self.rayTarget = child
+			return True
+		return False
+	
+	def applyDamping(self, linV, submergedFactor):
+		return Utilities._lerp(linV, ZERO, self.Owner['DampingFactor'])
+	
+	def getSubmergedFactor(self, actor):
+		'''Returns 1.0 if the centre of the actor is inside the honey; 0.0
+		otherwise.'''
+		
+		# Cast a ray out from the actor. If it hits this honey object from
+		# inside, the actor is considered to be fully submerged. Otherwise, it
+		# is fully emerged.
+		
+		origin = Mathutils.Vector(actor.Owner.worldPosition)
+		through = Mathutils.Vector(self.rayTarget.worldPosition)
+		vec = Mathutils.Vector(through - origin)
+		ob, _, normal = actor.Owner.rayCast(
+			through,            # to
+			origin,             # from
+			vec.magnitude,      # dist
+			'IsHoney',          # prop
+			1,                  # face
+			1                   # xray
+		)
+		
+		if (ob):
+			normal = Mathutils.Vector(normal)
+			if (Mathutils.DotVecs(normal, vec) > 0.0):
+				# Hit was from inside.
+				return 1.0
+			else:
+				# Hit was from outside.
+				return 0.0
+		# No hit, therefore actor is outside.
+		return 0.0
+	
+	def spawnBubble(self, actor):
+		'''No bubbles in honey.'''
+		pass
+	
+	def SpawnRipples(self, actor, force = False):
+		'''No ripples on honey: too hard to find surface.'''
+		pass
 
 def CreateWater(c):
 	'''
@@ -270,6 +340,21 @@ def CreateWater(c):
 	'''
 	
 	Water(c.owner)
+
+def CreateHoney(c):
+	'''
+	Create a new Honey object. The object does not have to be flat, but it has
+	the following constraints. The object must:
+	 - Have a manifold mesh with normals pointing out.
+	 - Have a child outside the volume, with the property Type=ExternalTarget.
+	 - Be a ghost.
+	 - Detect collisions (e.g. Static mesh type).
+	
+	Controller properties:
+	BubbleTemplate: The object to spawn as bubbles when another object drowns.
+	                Must be on a hidden layer.
+	'''
+	Honey(c.owner)
 
 def OnCollision(c):
 	'''

@@ -25,10 +25,16 @@ from Story import *
 class Intro(Character):
     def __init__(self, owner):
         Character.__init__(self, owner)
+        UI.HUD.ShowLoadingScreen(self)
     
     def CreateSteps(self):
         step = self.NewStep()
         step.AddAction(ActSuspendInput())
+        step.AddAction(ActShowDialogue("Press Return to continue."))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen, self))
         step.AddAction(ActSetCamera('IntroCam'))
         step.AddAction(ActShowDialogue("Welcome to the Cargo demo! This level is a short version of the main dungeon."))
         

@@ -113,11 +113,54 @@ class Water(Actor.ActorListener):
 		Utilities.setState(self.Owner, self.S_FLOATING)
 	
 	def getSubmergedFactor(self, actor):
-		body = actor.Owner
-		base = body.worldPosition[2] - body['FloatRadius']
-		diam = body['FloatRadius'] * 2.0
-		depth = self.Owner.worldPosition[2] - base
-		return depth / diam
+		'''Determine the fraction of the object that is inside the water. This
+		works vertically only: if the object touches the water from the side
+		(shaped water such as honey), and the centre is outside, the factor will
+		be zero.'''
+		
+		# Cast a ray out from the actor. If it hits this water object from
+		# inside, the actor is considered to be fully submerged. Otherwise, it
+		# is fully emerged.
+		
+		origin = Mathutils.Vector(actor.Owner.worldPosition)
+		origin.z = origin.z - actor.Owner['FloatRadius']
+		through = Mathutils.Vector(self.Owner.worldPosition)
+		# Force ray to be vertical.
+		through.xy = origin.xy
+		through.z += 1.0
+		vec = Mathutils.Vector(through - origin)
+		ob, hitPoint, normal = actor.Owner.rayCast(
+			through,             # to
+			origin,              # from
+			vec.z,               # dist
+			'IsWater',           # prop
+			1,                   # face
+			1                    # xray
+		)
+		
+		if ob == None:
+			# No hit; object is not submerged.
+			return 0.0
+		
+		inside = False
+		if (ob):
+			normal = Mathutils.Vector(normal)
+			if (Mathutils.DotVecs(normal, vec) > 0.0):
+				# Hit was from inside.
+				inside = True
+		
+		depth = hitPoint[2] - origin.z
+		submergedFactor = depth / (actor.Owner['FloatRadius'] * 2.0)
+		submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
+		
+		if not inside:
+			# The object is submerged, but its base is outside the water object.
+			# Invert the submergedFactor, since it is the object's top that is
+			# protruding into the water.
+			# This must be a shaped water object (such as honey).
+			submergedFactor = 1.0 - submergedFactor
+		
+		return submergedFactor
 	
 	def applyDamping(self, linV, submergedFactor):
 		return Utilities._lerp(linV, ZERO, self.Owner['DampingFactor'] * submergedFactor)
@@ -276,47 +319,9 @@ class Water(Actor.ActorListener):
 class Honey(Water):
 	def __init__(self, owner):
 		Water.__init__(self, owner)
-		Utilities.parseChildren(self, owner)
-	
-	def parseChild(self, child, t):
-		if t == 'ExternalTarget':
-			self.rayTarget = child
-			return True
-		return False
 	
 	def applyDamping(self, linV, submergedFactor):
 		return Utilities._lerp(linV, ZERO, self.Owner['DampingFactor'])
-	
-	def getSubmergedFactor(self, actor):
-		'''Returns 1.0 if the centre of the actor is inside the honey; 0.0
-		otherwise.'''
-		
-		# Cast a ray out from the actor. If it hits this honey object from
-		# inside, the actor is considered to be fully submerged. Otherwise, it
-		# is fully emerged.
-		
-		origin = Mathutils.Vector(actor.Owner.worldPosition)
-		through = Mathutils.Vector(self.rayTarget.worldPosition)
-		vec = Mathutils.Vector(through - origin)
-		ob, _, normal = actor.Owner.rayCast(
-			through,            # to
-			origin,             # from
-			vec.magnitude,      # dist
-			'IsHoney',          # prop
-			1,                  # face
-			1                   # xray
-		)
-		
-		if (ob):
-			normal = Mathutils.Vector(normal)
-			if (Mathutils.DotVecs(normal, vec) > 0.0):
-				# Hit was from inside.
-				return 1.0
-			else:
-				# Hit was from outside.
-				return 0.0
-		# No hit, therefore actor is outside.
-		return 0.0
 	
 	def spawnBubble(self, actor):
 		'''No bubbles in honey.'''

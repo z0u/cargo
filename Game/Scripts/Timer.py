@@ -72,6 +72,14 @@ class Timer(Actor.Actor):
 		if self.Suspended:
 			return
 		
+		if 'Paused' in self.Owner:
+			if self.Owner['Paused'] == 'Temporary':
+				# Pause this frame, but resume on the next.
+				self.Owner['Paused'] = 'No'
+				return
+			elif self.Owner['Paused'] == 'Yes':
+				return
+		
 		self.Tics = self.Tics + 1.0
 		fraction = self.Tics / self.TargetTics
 		

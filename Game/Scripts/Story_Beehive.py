@@ -30,7 +30,7 @@ class Intro(Character):
     def CreateSteps(self):
         step = self.NewStep()
         step.AddAction(ActSuspendInput())
-        step.AddAction(ActShowDialogue("Press Return to continue."))
+        step.AddAction(ActShowDialogue("Press Return to start."))
         step.AddAction(ActSetCamera('IntroCam'))
         
         step = self.NewStep()

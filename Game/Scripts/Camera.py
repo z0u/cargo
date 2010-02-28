@@ -193,6 +193,20 @@ def RemoveGoal(c):
 		return
 	goal = c.owner
 	removeGoalOb(goal)
+	
+def AddGoalIfMainChar(c):
+	if not Actor._hitMainCharacter(c):
+		return
+	
+	goal = c.owner
+	addGoalOb(goal)
+
+def RemoveGoalIfNotMainChar(c):
+	if Actor._hitMainCharacter(c):
+		return
+	
+	goal = c.owner
+	removeGoalOb(goal)
 
 def removeGoalOb(goal):
 	AutoCamera.RemoveGoal(goal)

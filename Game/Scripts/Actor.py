@@ -562,6 +562,17 @@ def SuspendAction():
 def ResumeAction():
 	Director.ResumeAction()
 
+def _hitMainCharacter(c):
+	for s in c.sensors:
+		if not s.isA(GameTypes.KX_TouchSensor):
+			continue
+		for o in s.hitObjectList:
+			if 'Actor' in o:
+				actor = o['Actor']
+				if Director.getMainCharacter() == actor:
+					return True
+	return False
+
 #
 # Methods for dealing with user input.
 #

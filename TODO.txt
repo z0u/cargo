@@ -1,7 +1,5 @@
 TODO:
- * Detect falling out of world and re-spawn.
  * Add external camera for paddles.
- * Suspend input while in bucket.
  * Slow down the wheels.
  * Pop-up note when player drowns for the first time.
  * Fix camera going through walls.
@@ -12,5 +10,11 @@ TODO:
  * Credits.
  * Title screen.
 
+ * Fix up camera setters for the paddles: they fire every frame, so fight
+   against each other.
  * Add a map.
  * Check out Rasterizer.getWindowWidth()
+
+TODONE:
+ * Detect falling out of world and re-spawn.
+ * Suspend input while in bucket.

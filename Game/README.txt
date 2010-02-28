@@ -17,8 +17,8 @@ Thanks for playing!
 
     http://www.blender.org/download/get-blender/
  
- 2. a. Double-click on SphereMinigames.blend, or 
-    b. Start Blender browse to SphereMinigames.blend using the File > Open
+ 2. a. Double-click on Dungeon.blend, or 
+    b. Start Blender browse to Dungeon.blend using the File > Open
        interface, and then choose Game > Start Game (from the menu at the top).
 
 == Playing the game ==

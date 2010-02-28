@@ -42,7 +42,7 @@ class Intro(Character):
         
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))
-        step.AddAction(ActShowDialogue("Use the arrow keys to control the snail. You can crawl up walls, and even on the roof!"))
+        step.AddAction(ActShowDialogue("Use the arrow keys to control the snail. You can crawl up walls, and even on the ceiling!"))
         
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))

@@ -30,6 +30,8 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 		self.DialogueBox = None
 		self.CausedSuspension = False
 		
+		self.MessageBox = None
+		
 		self.LoadingScreenVisible = True
 		self.LoadingScreen = None
 		self.LoadingScreenCallers = set()
@@ -70,6 +72,12 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 				return False
 			self.DialogueBox = child
 			return True
+		if type == "MessageBox":
+			if self.MessageBox:
+				print "Warning: HUD already has a message box."
+				return False
+			self.MessageBox = child
+			return True
 		elif type == "LoadingScreen":
 			if self.LoadingScreen:
 				print "Warning: HUD already has a loading screen."
@@ -90,6 +98,20 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 			self.Filter = Filter(child)
 			return True
 		return False
+	
+	def showMessage(self, message):
+		'''
+		Display a message. This is non-modal: game play is not suspended, and
+		return does not need to be pressed. The message will disappear after a
+		short time.
+
+		Parameters:
+		message: The message to show.
+		'''
+		if self.MessageBox == None:
+			return
+		
+		self.MessageBox['Content'] = message
 	
 	def _UpdateDialogue(self):
 		if self.DialogueText == "":
@@ -178,6 +200,10 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 	def actorOxygenChanged(self, actor):
 		self._updateHealthGauge()
 	
+	def actorRespawned(self, actor, reason):
+		if reason != None:
+			self.showMessage(reason)
+	
 	def _updateFilter(self):
 		if self.Filter == None:
 			return
@@ -193,15 +219,12 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 HUD = _HUD()
 
 def CreateHUD(c):
-	global HUD
 	HUD.Attach(c.owner)
 
 def ShowLoadingScreen(c):
-	global HUD
 	HUD.ShowLoadingScreen(c.owner)
 
 def HideLoadingScreen(c):
-	global HUD
 	HUD.HideLoadingScreen(c.owner)
 
 class Filter(Actor.Actor):

@@ -108,7 +108,7 @@ class Water(Actor.ActorListener):
 		scene = GameLogic.getCurrentScene()
 		bubOb = scene.addObject(template, template)
 		bubOb['Bubble'] = True
-		bubble = Actor.Actor(bubOb)
+		bubble = Bubble(bubOb)
 		self.FloatingActors.add(bubble)
 		Utilities.setState(self.Owner, self.S_FLOATING)
 	
@@ -330,6 +330,14 @@ class Honey(Water):
 	def SpawnRipples(self, actor, force = False):
 		'''No ripples on honey: too hard to find surface.'''
 		pass
+
+class Bubble(Actor.Actor):
+	def __init__(self, owner):
+		Actor.Actor.__init__(self, owner)
+	
+	def RestoreLocation(self, reason = None):
+		'''Bubbles aren't important enough to respawn. Just destroy them.'''
+		self.Destroy()
 
 def CreateWater(c):
 	'''

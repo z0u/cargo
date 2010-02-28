@@ -1,0 +1,16 @@
+TODO:
+ * Detect falling out of world and re-spawn.
+ * Add external camera for paddles.
+ * Suspend input while in bucket.
+ * Slow down the wheels.
+ * Pop-up note when player drowns for the first time.
+ * Fix camera going through walls.
+ * Disable D and S keys.
+ * Give a hint about the buckets, and the button.
+   - "This is a big button! You'll have to push it hard."
+ * Say "You won" at the end.
+ * Credits.
+ * Title screen.
+
+ * Add a map.
+ * Check out Rasterizer.getWindowWidth()

@@ -25,6 +25,9 @@ directly.'''
 import LODTree
 import Utilities
 import GameTypes
+import Mathutils
+
+SANITY_RAY_LENGTH = 10000
 
 class ActorListener:
 	def actorDestroyed(self, actor):
@@ -56,6 +59,17 @@ class ActorListener:
 	def actorOxygenChanged(self, actor):
 		'''Called when the amount of oxygen the actor has changes (e.g. while
 		under water).'''
+		pass
+	
+	def actorRespawned(self, actor, reason):
+		'''
+		Called when the actor is respawned to the last safe point.
+		
+		Parameters:
+		actor:  The actor being respawned.
+		reason: A string explaining why the actor respawned, e.g. "Drowned", or
+			None.
+		'''
 		pass
 
 class Actor:
@@ -239,7 +253,7 @@ class Actor:
 		if self.Parent != None:
 			return False
 		
-		self.RestoreLocation()
+		self.RestoreLocation("Drowned! Try again.")
 		self.damage(1.0, shock = False)
 		return True
 	
@@ -276,11 +290,14 @@ class Actor:
 		for child in self.getChildren():
 			child.SaveLocation()
 	
-	def RestoreLocation(self):
+	def RestoreLocation(self, reason = None):
 		self.Owner.worldPosition = self.Pos
 		self.Owner.worldOrientation = self.Orn
 		self.Owner.setLinearVelocity(Utilities.ALMOST_ZERO)
 		self.Owner.setAngularVelocity(Utilities.ALMOST_ZERO)
+		
+		for l in self.getListeners().copy():
+			l.actorRespawned(self, reason)
 	
 	def RecordVelocity(self):
 		'''Store the velocity of this object for one frame. See
@@ -313,6 +330,74 @@ class Actor:
 		self.Owner['Oxygen'] = value
 		for l in self.getListeners().copy():
 			l.actorOxygenChanged(self)
+	
+	def isInsideWorld(self):
+		'''
+		Make sure the actor is in a sensible place. This searches for objects
+		with the 'Ground' property directly above and directly below the actor.
+		A free actor is considered to be outside the world if:
+		 - No ground is found.
+		 - Ground is found but the actor is on the wrong side of it, i.e. the
+		   surface normal is facing away from the actor.
+		Otherwise, the actor is inside the world.
+		
+		If the actor is the child of another, or if its owner is the child of
+		another KX_GameObject, it is always considered to be inside the world.
+		
+		Returns True if the object seems to be inside the world; False
+		otherwise.
+		'''
+		if self.Parent != None or self.Owner.parent != None:
+			# Responsibility delegated to parent.
+			return True
+		
+		foundGround = False
+		outsideGround = True
+		
+		# First, look up.
+		origin = Mathutils.Vector(self.Owner.worldPosition)
+		vec = Mathutils.Vector((0.0, 0.0, 1.0))
+		through = origin + vec
+		ob, _, normal = self.Owner.rayCast(
+			through,             # to
+			origin,              # from
+			SANITY_RAY_LENGTH,   # dist
+			'Ground',            # prop
+			1,                   # face
+			1                    # xray
+		)
+		
+		if ob != None:
+			# Found some ground. Are we outside of it?
+			foundGround = True
+			if (ob):
+				normal = Mathutils.Vector(normal)
+				if (Mathutils.DotVecs(normal, vec) > 0.0):
+					# Hit was from inside.
+					outsideGround = False
+		
+		# Now look down.
+		vec = Mathutils.Vector((0.0, 0.0, -1.0))
+		through = origin + vec
+		ob, _, normal = self.Owner.rayCast(
+			through,             # to
+			origin,              # from
+			SANITY_RAY_LENGTH,   # dist
+			'Ground',            # prop
+			1,                   # face
+			1                    # xray
+		)
+		
+		if ob != None:
+			# Found some ground. Are we outside of it?
+			foundGround = True
+			if (ob):
+				normal = Mathutils.Vector(normal)
+				if (Mathutils.DotVecs(normal, vec) > 0.0):
+					# Hit was from inside.
+					outsideGround = False
+		
+		return foundGround and outsideGround
 
 def CreateActor(c):
 	c.owner['Actor'] = Actor(c.owner)
@@ -374,6 +459,7 @@ class _Director:
 		self.InputSuspended = False
 		self.Actors = set()
 		self.MainCharacter = None
+		self.SanityCheckIndex = 0
 		
 		self.Listeners = set()
 	
@@ -384,12 +470,20 @@ class _Director:
 		self.Listeners.discard(listener)
 	
 	def AddActor(self, actor):
+		if actor in self.Actors:
+			return
+		
 		self.Actors.add(actor)
+		
 		if self.Suspended:
 			actor._Suspend()
 	
 	def RemoveActor(self, actor):
-		self.Actors.remove(actor)
+		if not actor in self.Actors:
+			return
+		
+		self.Actors.discard(actor)
+		
 		if self.MainCharacter == actor:
 			self.setMainCharacter(None)
 		if self.Suspended:
@@ -430,8 +524,18 @@ class _Director:
 	
 	def Update(self):
 		'''Update the state of all the actors.'''
-		for actor in self.Actors:
+		if self.SanityCheckIndex >= len(self.Actors):
+			self.SanityCheckIndex = 0
+		
+		i = 0
+		for actor in self.Actors.copy():
+			if actor == self.MainCharacter or i == self.SanityCheckIndex:
+				if not actor.isInsideWorld():
+					print "Actor %s was outside world!" % actor.name
+					actor.RestoreLocation("Ouch! You got squashed.")
+			
 			actor.RecordVelocity()
+			i += 1
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
 		if self.MainCharacter and not self.InputSuspended:

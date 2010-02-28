@@ -15,7 +15,10 @@
    id="svg3073"
    version="1.1"
    inkscape:version="0.47pre4 r22446"
-   sodipodi:docname="TitleGraphic.svg">
+   sodipodi:docname="TitleGraphic.svg"
+   inkscape:export-filename="/home/alex/Projects/Cargo/Game/Textures/TitleGraphic.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
   <defs
      id="defs3075">
     <inkscape:perspective
@@ -431,8 +434,8 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="497.45726"
-     inkscape:cy="204.59022"
+     inkscape:cx="440.25315"
+     inkscape:cy="191.10518"
      inkscape:document-units="px"
      inkscape:current-layer="g3694"
      showgrid="false"
@@ -477,6 +480,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>

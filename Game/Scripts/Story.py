@@ -99,6 +99,13 @@ class ActHideDialogue:
 	def Execute(self, c):
 		UI.HUD.HideDialogue()
 
+class ActShowMessage:
+	def __init__(self, message):
+		self.Message = message
+	
+	def Execute(self, c):
+		UI.HUD.showMessage(self.Message)
+
 class ActSetCamera:
 	def __init__(self, camName, fac = None, instantCut = False):
 		self.CamName = camName

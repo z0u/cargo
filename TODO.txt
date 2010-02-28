@@ -1,7 +1,4 @@
 TODO:
- * Say "You won" at the end.
- * Credits.
- * Title screen.
 
  * Give a hint about the buckets, and the button.
    - "This is a big button! You'll have to push it hard."
@@ -12,6 +9,9 @@ TODO:
  * Fix camera going through walls.
 
 TODONE:
+ * Say "You won" at the end.
+ * Credits.
+ * Title screen.
  * Disable D and S keys.
  * Pop-up note when player drowns for the first time.
  * Slow down the wheels.

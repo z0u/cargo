@@ -60,6 +60,73 @@ class Intro(Character):
 def createIntro(c):
     Intro(c.owner)
 
+class Extro(Character):
+    def __init__(self, owner):
+        Character.__init__(self, owner)
+    
+    def CreateSteps(self):
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sTouch'))
+        step.AddAction(ActSuspendInput())
+        step.AddAction(ActSetCamera('EndGameCamera'))
+        step.AddAction(ActShowDialogue("To be continued..."))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActGeneric(UI.HUD.ShowLoadingScreen, self))
+        step.AddAction(ActHideDialogue())
+        
+        # Empty step to re-sync with timer.
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sStoryTimer'))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sStoryTimer'))
+        step.AddAction(ActShowMessage("Credits"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sStoryTimer'))
+        step.AddAction(ActShowDialogue("Story: Alex Fraser, Lara Mikocki"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Design, modelling, rigging, animation: Alex Fraser"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Music: Robert Leigh"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Programming: Alex Fraser, Mark Triggs"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Sound effects: Alex Fraser, freesound.org users: anamorphosis, tigersound, HerbertBoland"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Sound effects (cont.): freesound.org users: MeltyMcFace, kijjaz, arnaud, FreqMan"))
+    
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Testing: Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Made with: Blender, Bullet, The GIMP and Inkscape"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Thanks for playing! You can follow development at phatcore.com/alex?cat=8"))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sReturn'))
+        step.AddAction(ActShowDialogue("Press ESC to exit."))
+
+def createExtro(c):
+    Extro(c.owner)
+
 class Bucket(Actor.Actor):
     DIR_UP = 1
     DIR_DOWN = 2

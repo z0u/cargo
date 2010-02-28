@@ -20,6 +20,7 @@ import GameLogic
 import Actor
 import Utilities
 import Camera
+import Snail
 from Story import *
 
 class Intro(Character):
@@ -36,6 +37,7 @@ class Intro(Character):
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))
         step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen, self))
+        step.AddAction(ActActuate('aStartDungeonMusic'))
         step.AddAction(ActShowDialogue("Welcome to the Cargo demo! This level is a short version of the main dungeon."))
         
         step = self.NewStep()
@@ -61,20 +63,28 @@ def createIntro(c):
     Intro(c.owner)
 
 class Extro(Character):
+    S_MUSIC = 3
+    
     def __init__(self, owner):
         Character.__init__(self, owner)
     
     def CreateSteps(self):
+        
         step = self.NewStep()
         step.AddCondition(CondSensor('sTouch'))
         step.AddAction(ActSuspendInput())
         step.AddAction(ActSetCamera('EndGameCamera'))
+        
+        step = self.NewStep()
+        step.AddCondition(CondSensor('sStoryTimer'))
         step.AddAction(ActShowDialogue("To be continued..."))
+        step.AddAction(ActActuate('aStopDungeonMusic'))
         
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))
         step.AddAction(ActGeneric(UI.HUD.ShowLoadingScreen, self))
         step.AddAction(ActHideDialogue())
+        step.AddAction(ActActuate('aStartEndingMusic'))
         
         # Empty step to re-sync with timer.
         step = self.NewStep()

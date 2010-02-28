@@ -253,7 +253,7 @@ class Actor:
 		if self.Parent != None:
 			return False
 		
-		self.RestoreLocation("Drowned! Try again.")
+		self.RestoreLocation("You drowned! Try again.")
 		self.damage(1.0, shock = False)
 		return True
 	

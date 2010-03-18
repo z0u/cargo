@@ -652,9 +652,6 @@ class Snail(SnailSegment, Actor.Actor):
 					self.setShell(self.NearestShell, animate = True)
 	
 	def OnButton2(self, positive, triggered):
-		# TODO: Reinstate this. 
-		return
-	
 		if positive and triggered:
 			if Utilities.hasState(self.Owner, S_HASSHELL):
 				self.dropShell(animate = True)

@@ -563,6 +563,15 @@ def ResumeAction():
 	Director.ResumeAction()
 
 def _hitMainCharacter(c):
+	'''
+	Test whether the main character was hit.
+	
+	Sensors:
+	<any>: Any touch sensors attached to this controller will be used to look
+		for the main character.
+	
+	@return: True if the main character is hit; False otherwise.
+	'''
 	for s in c.sensors:
 		if not s.isA(GameTypes.KX_TouchSensor):
 			continue

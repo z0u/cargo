@@ -17,6 +17,7 @@
 
 import Utilities
 import Actor
+import GameTypes
 
 class CameraObserver:
 	'''
@@ -42,6 +43,7 @@ class _AutoCamera:
 		camera.
 		'''
 		self.Camera = None
+		self.DefaultLens = 22.0
 		self.DefaultGoal = None
 		self.CurrentGoal = None
 		
@@ -59,6 +61,7 @@ class _AutoCamera:
 	def SetCamera(self, camera):
 		'''Bind to a camera.'''
 		self.Camera = camera
+		self.DefaultLens = camera.lens
 	
 	def SetDefaultGoal(self, goal, factor):
 		'''
@@ -86,6 +89,10 @@ class _AutoCamera:
 			if self.InstantCut:
 				self.Camera.worldPosition = self.CurrentGoal.Goal.worldPosition
 				self.Camera.worldOrientation = self.CurrentGoal.Goal.worldOrientation
+				targetLens = self.DefaultLens
+				if self.CurrentGoal.Goal.isA(GameTypes.KX_Camera):
+					targetLens = self.CurrentGoal.Goal.lens
+				self.Camera.lens = targetLens
 				self.InstantCut = False
 			self.StackModified = False
 		
@@ -94,6 +101,11 @@ class _AutoCamera:
 			fac = self.CurrentGoal.Factor
 		Utilities._SlowCopyLoc(self.Camera, self.CurrentGoal.Goal, fac)
 		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.Goal, fac)
+		
+		targetLens = self.DefaultLens
+		if self.CurrentGoal.Goal.isA(GameTypes.KX_Camera):
+			targetLens = self.CurrentGoal.Goal.lens
+		self.Camera.lens = Utilities._lerp(self.Camera.lens, targetLens, fac)
 		
 		for o in self.Observers:
 			o.OnCameraMoved(self)
@@ -195,6 +207,11 @@ def RemoveGoal(c):
 	removeGoalOb(goal)
 	
 def AddGoalIfMainChar(c):
+	'''
+	Add the owner of this controller as a goal if the main actor has been hit.
+	
+	@see Actor._hitMainCharacter.
+	'''
 	if not Actor._hitMainCharacter(c):
 		return
 	
@@ -217,3 +234,23 @@ class CameraGoal:
 		self.Factor = factor
 		self.InstantCut = instantCut
 
+class BackgroundCamera(CameraObserver):
+	'''Links a second camera to the main 3D camera. This second, background
+	camera will always match the orientation and zoom of the main camera. It is
+	guaranteed to update after the main one.'''
+	
+	def __init__(self, owner):
+		self.Owner = owner
+		AutoCamera.AddObserver(self)
+		Utilities.SceneManager.Subscribe(self)
+	
+	def OnSceneEnd(self):
+		self.Owner = None
+		AutoCamera.RemoveObserver(self)
+	
+	def OnCameraMoved(self, autoCamera):
+		self.Owner.worldOrientation = autoCamera.Camera.worldOrientation
+		self.Owner.lens = autoCamera.Camera.lens
+
+def createBackgroundCamera(c):
+	BackgroundCamera(c.owner)

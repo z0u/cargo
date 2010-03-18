@@ -17,6 +17,7 @@
 
 import Mathutils
 import GameLogic
+import Rasterizer
 
 ALMOST_ZERO = Mathutils.Vector((0.0, 0.0, 0.001))
 
@@ -127,7 +128,7 @@ def _smerp(CurrentDelta, CurrentValue, Target, SpeedFactor, Responsiveness):
 	
 	targetDelta = (Target - CurrentValue) * SpeedFactor
 	if (targetDelta * targetDelta > CurrentDelta * CurrentDelta):
-	    CurrentDelta = CurrentDelta * (1.0 - Responsiveness) + targetDelta * Responsiveness
+		CurrentDelta = CurrentDelta * (1.0 - Responsiveness) + targetDelta * Responsiveness
 	else:
 		CurrentDelta = targetDelta
 	
@@ -345,7 +346,6 @@ def RayFollow(c):
 	)
 	
 	targetDist = o['RestDist']
-	obscured = False
 	if hitOb:
 		hitPoint = Mathutils.Vector(hitPoint)
 		hitNorm = Mathutils.Vector(hitNorm)
@@ -375,7 +375,6 @@ def OrbitFollow(c):
 	follow the player around without always sticking behind their back.
 	'''
 	
-	MIN_DIST = 0.05
 	target = c.sensors['sTarget'].owner
 	o = c.owner
 	
@@ -406,7 +405,7 @@ def OrbitFollow(c):
 	vec = vec * o['XYDist']
 	vec.z = o['ZDist']
 	pos = tPos + vec
-	hitOb, hitPoint, hitNormal = o.rayCast(
+	hitOb, hitPoint, _ = o.rayCast(
 		pos,          # to,
 		tPos,         # from,
 		o['MaxDist'], # dist,
@@ -543,6 +542,10 @@ def someSensorPositive(c):
 		if s.positive:
 			return True
 	return False
+
+def makeScreenshot(c):
+	if allSensorsPositive(c):
+		Rasterizer.makeScreenshot('//Screenshot#.jpg')
 
 class Counter:
 	'''Counts the frequency of objects.'''

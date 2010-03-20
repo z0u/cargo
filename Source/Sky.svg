@@ -19,7 +19,7 @@
    sodipodi:docname="Sky.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    style="display:inline"
-   inkscape:export-filename="/home/alex/Projects/Cargo/TexSource/Sky.png"
+   inkscape:export-filename="/home/alex/Projects/Cargo/Source/Sky.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -1908,6 +1908,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>

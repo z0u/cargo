@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
+
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -13,7 +14,7 @@
    height="512"
    id="svg2"
    sodipodi:version="0.32"
-   inkscape:version="0.46"
+   inkscape:version="0.47pre4 r22446"
    version="1.0"
    sodipodi:docname="Sky.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
@@ -26,11 +27,11 @@
     <linearGradient
        id="linearGradient4776">
       <stop
-         style="stop-color:#333a8a;stop-opacity:1;"
+         style="stop-color:#4f516e;stop-opacity:1;"
          offset="0"
          id="stop4778" />
       <stop
-         style="stop-color:#132a78;stop-opacity:0;"
+         style="stop-color:#3a4051;stop-opacity:0;"
          offset="1"
          id="stop4780" />
     </linearGradient>
@@ -69,7 +70,7 @@
       <stop
          id="stop4481"
          offset="1"
-         style="stop-color:#2942a9;stop-opacity:0.65490198;" />
+         style="stop-color:#5e6274;stop-opacity:0.65490198;" />
     </linearGradient>
     <linearGradient
        id="linearGradient4459">
@@ -84,7 +85,7 @@
       <stop
          id="stop4465"
          offset="1"
-         style="stop-color:#9497bf;stop-opacity:1;" />
+         style="stop-color:#a2a3b1;stop-opacity:1;" />
     </linearGradient>
     <inkscape:perspective
        sodipodi:type="inkscape:persp3d"
@@ -96,7 +97,7 @@
     <linearGradient
        id="linearGradient5388">
       <stop
-         style="stop-color:#9497bf;stop-opacity:1;"
+         style="stop-color:#a5a5ae;stop-opacity:1;"
          offset="0"
          id="stop5390" />
       <stop
@@ -111,7 +112,7 @@
     <linearGradient
        id="linearGradient5356">
       <stop
-         style="stop-color:#2942a9;stop-opacity:0.65517241;"
+         style="stop-color:#585f7a;stop-opacity:0.65490198;"
          offset="0"
          id="stop5358" />
       <stop
@@ -170,27 +171,27 @@
     <linearGradient
        id="linearGradient4105">
       <stop
-         style="stop-color:#1d226b;stop-opacity:1;"
+         style="stop-color:#626377;stop-opacity:1;"
          offset="0"
          id="stop4107" />
       <stop
          id="stop4115"
          offset="0.25"
-         style="stop-color:#4b52c3;stop-opacity:1;" />
+         style="stop-color:#9899a7;stop-opacity:1;" />
       <stop
-         style="stop-color:#9282d5;stop-opacity:1;"
+         style="stop-color:#a8a5b2;stop-opacity:1;"
          offset="0.375"
          id="stop4117" />
       <stop
          id="stop4119"
          offset="0.4375"
-         style="stop-color:#beaae2;stop-opacity:1;" />
+         style="stop-color:#c4bfcd;stop-opacity:1;" />
       <stop
          id="stop4113"
          offset="0.5"
-         style="stop-color:#c3c6f5;stop-opacity:1;" />
+         style="stop-color:#dadade;stop-opacity:1;" />
       <stop
-         style="stop-color:#555fd2;stop-opacity:1"
+         style="stop-color:#8c8d9b;stop-opacity:1;"
          offset="1"
          id="stop4109" />
     </linearGradient>
@@ -1860,19 +1861,20 @@
      objecttolerance="10"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.70710678"
-     inkscape:cx="710.17572"
-     inkscape:cy="327.59718"
+     inkscape:zoom="1"
+     inkscape:cx="810.01057"
+     inkscape:cy="281.45059"
      inkscape:document-units="px"
-     inkscape:current-layer="layer4"
+     inkscape:current-layer="layer2"
      showgrid="false"
      showguides="false"
      inkscape:guide-bbox="true"
-     inkscape:window-width="1679"
-     inkscape:window-height="997"
+     inkscape:window-width="1674"
+     inkscape:window-height="974"
      inkscape:window-x="0"
      inkscape:window-y="25"
-     inkscape:snap-global="false">
+     inkscape:snap-global="false"
+     inkscape:window-maximized="0">
     <sodipodi:guide
        orientation="0,1"
        position="823.18778,256"
@@ -1913,25 +1915,16 @@
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="BG"
-     style="opacity:1;display:inline"
-     sodipodi:insensitive="true">
+     style="display:none">
     <rect
-       style="opacity:1;fill:url(#linearGradient4111);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       style="fill:url(#linearGradient4111);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        id="rect3169"
        width="1500"
        height="512"
        x="0"
        y="0" />
     <rect
-       style="opacity:0.75;fill:url(#radialGradient5130);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;filter:url(#filter4329);enable-background:accumulate"
-       id="rect4121"
-       width="1668.9105"
-       height="48.6661"
-       x="-72.052567"
-       y="207.33385"
-       transform="matrix(0.9866286,0,0,1.5517916,-0.9634448,-141.25861)" />
-    <rect
-       style="opacity:0.57758622;fill:url(#linearGradient4974);fill-opacity:1;fill-rule:nonzero;stroke:#555fd2;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;filter:url(#filter5126);enable-background:accumulate"
+       style="opacity:0.57758622;fill:url(#linearGradient4974);fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter5126);enable-background:accumulate"
        id="rect4966"
        width="737.59564"
        height="164.62685"
@@ -1947,13 +1940,13 @@
        height="512" />
     <path
        sodipodi:type="arc"
-       style="opacity:0.92672412;fill:#ffffda;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:7;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       style="opacity:0.92672412;fill:#ffffda;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:7;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        id="path6262"
        sodipodi:cx="747.83942"
        sodipodi:cy="102.48495"
        sodipodi:rx="30.814013"
        sodipodi:ry="18.731092"
-       d="M 778.65343,102.48495 A 30.814013,18.731092 0 1 1 717.0254,102.48495 A 30.814013,18.731092 0 1 1 778.65343,102.48495 z"
+       d="m 778.65343,102.48495 a 30.814013,18.731092 0 1 1 -61.62803,0 30.814013,18.731092 0 1 1 61.62803,0 z"
        transform="matrix(1,0,0,1.2059925,2.1605835,-17.697016)" />
   </g>
   <g
@@ -2394,7 +2387,7 @@
          y="0"
          xlink:href="#path4419"
          id="use3409"
-         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#0028d2;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#5e6274;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
          transform="translate(0,322.80148)"
          width="1500"
          height="512" />

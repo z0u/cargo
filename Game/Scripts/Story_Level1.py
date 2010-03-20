@@ -45,11 +45,11 @@ def CreateWorm(c):
 	
 	step = worm.NewStep()
 	step.AddAction(ActGenericContext(SleepSnail, False))
+	step.AddAction(ActSuspendInput())
 	
 	step = worm.NewStep()
 	step.AddCondition(CondSensor('sSnailAsleep'))
 	step.AddAction(ActSetCamera('WormCamera_Enter'))
-	step.AddAction(ActSuspendInput())
 	step.AddAction(ActShowDialogue("Press Return to start."))
 	
 	#

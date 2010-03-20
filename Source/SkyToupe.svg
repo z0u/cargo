@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
+
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -13,12 +14,12 @@
    height="512"
    id="svg2"
    sodipodi:version="0.32"
-   inkscape:version="0.46"
+   inkscape:version="0.47pre4 r22446"
    version="1.0"
    sodipodi:docname="SkyToupe.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    style="display:inline"
-   inkscape:export-filename="/home/alex/Projects/Cargo/TexSource/SkyToupe.png"
+   inkscape:export-filename="/home/alex/Projects/Cargo/Source/SkyToupe.png"
    inkscape:export-xdpi="180"
    inkscape:export-ydpi="180">
   <defs
@@ -44,7 +45,7 @@
     <linearGradient
        id="linearGradient5388">
       <stop
-         style="stop-color:#9497bf;stop-opacity:1;"
+         style="stop-color:#a4a5af;stop-opacity:1;"
          offset="0"
          id="stop5390" />
       <stop
@@ -59,7 +60,7 @@
     <linearGradient
        id="linearGradient5356">
       <stop
-         style="stop-color:#2942a9;stop-opacity:0.65517241;"
+         style="stop-color:#595f79;stop-opacity:0.65490198;"
          offset="0"
          id="stop5358" />
       <stop
@@ -322,18 +323,19 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.70710678"
-     inkscape:cx="112.89356"
-     inkscape:cy="499.80355"
+     inkscape:cx="-134.38358"
+     inkscape:cy="346.0841"
      inkscape:document-units="px"
      inkscape:current-layer="layer3"
      showgrid="false"
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:window-width="1672"
-     inkscape:window-height="994"
+     inkscape:window-height="974"
      inkscape:window-x="0"
      inkscape:window-y="25"
-     inkscape:snap-global="false">
+     inkscape:snap-global="false"
+     inkscape:window-maximized="0">
     <sodipodi:guide
        orientation="0,1"
        position="823.18778,256"
@@ -367,6 +369,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>

@@ -771,8 +771,19 @@ class SnailTrail:
 			return True
 	
 	def AddSpot(self):
+		'''
+		Add a spot where the snail is now. Actually, this only adds a spot half
+		the time: gaps will be left in the trail, like so:
+		    -----     -----     -----     -----     -----
+		'''
+		i = self.SpotIndex
+		self.SpotIndex = (self.SpotIndex + 1) % (len(self.TrailSpots) * 2)
+		if i >= len(self.TrailSpots):
+			# Leave a gap
+			return
+		
 		scene = GameLogic.getCurrentScene()
-		spot = self.TrailSpots[self.SpotIndex]
+		spot = self.TrailSpots[i]
 		spotI = scene.addObject(spot, self.Owner)
 		
 		#
@@ -782,12 +793,11 @@ class SnailTrail:
 			spotI.setParent(self.Snail.TouchedObject)
 		
 		spotI.state = 1<<1
-		self.LastTrailPos = Mathutils.Vector(self.Owner.worldPosition)
-		self.SpotIndex = (self.SpotIndex + 1) % len(self.TrailSpots)
 	
 	def onSnailMoved(self):
 		if self.DistanceReached():
 			self.AddSpot()
+			self.LastTrailPos = Mathutils.Vector(self.Owner.worldPosition)
 	
 	def DistanceReached(self):
 		pos = Mathutils.Vector(self.Owner.worldPosition)

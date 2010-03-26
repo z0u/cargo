@@ -639,7 +639,7 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Head.setBendAngle(o['BendAngleFore'])
 		self.Tail.setBendAngle(o['BendAngleAft'])
 		
-		self.Trail.onSnailMoved()
+		self.Trail.onSnailMoved(self.Owner['SpeedMultiplier'])
 	
 	def OnButton1(self, positive, triggered):
 		if positive and triggered:
@@ -756,8 +756,15 @@ class SnailRay:
 		return ob, self.LastPoint
 
 class SnailTrail:
+	S_NORMAL = 2
+	S_SLOW = 3
+	S_FAST = 4
+	SPEED_EPSILON = 0.2
+	
 	def __init__(self, owner, snail):
-		self.LastTrailPos = Mathutils.Vector(owner.worldPosition)
+		self.LastMinorPos = Mathutils.Vector(owner.worldPosition)
+		self.LastMajorPos = self.LastMinorPos
+		self.Paused = False
 		self.TrailSpots = []
 		self.SpotIndex = 0
 		self.Snail = snail
@@ -770,20 +777,19 @@ class SnailTrail:
 			child.removeParent()
 			return True
 	
-	def AddSpot(self):
+	def AddSpot(self, speedStyle):
 		'''
 		Add a spot where the snail is now. Actually, this only adds a spot half
 		the time: gaps will be left in the trail, like so:
 		    -----     -----     -----     -----     -----
+		
+		@param speedStyle: The style to apply to the new spot. One of [S_SLOW,
+			S_NORMAL, S_FAST].
 		'''
-		i = self.SpotIndex
-		self.SpotIndex = (self.SpotIndex + 1) % (len(self.TrailSpots) * 2)
-		if i >= len(self.TrailSpots):
-			# Leave a gap
-			return
+		self.SpotIndex = (self.SpotIndex + 1) % len(self.TrailSpots)
 		
 		scene = GameLogic.getCurrentScene()
-		spot = self.TrailSpots[i]
+		spot = self.TrailSpots[self.SpotIndex]
 		spotI = scene.addObject(spot, self.Owner)
 		
 		#
@@ -792,17 +798,28 @@ class SnailTrail:
 		if self.Snail.TouchedObject:
 			spotI.setParent(self.Snail.TouchedObject)
 		
-		spotI.state = 1<<1
+		Utilities.setState(spotI, speedStyle)
 	
-	def onSnailMoved(self):
-		if self.DistanceReached():
-			self.AddSpot()
-			self.LastTrailPos = Mathutils.Vector(self.Owner.worldPosition)
-	
-	def DistanceReached(self):
+	def onSnailMoved(self, speedMultiplier):
 		pos = Mathutils.Vector(self.Owner.worldPosition)
-		dist = (pos - self.LastTrailPos).magnitude
-		return dist > self.Snail.Owner['TrailSpacing']
+		
+		distMajor = (pos - self.LastMajorPos).magnitude
+		if distMajor > self.Snail.Owner['TrailSpacingMajor']:
+			self.LastMajorPos = pos
+			self.Paused = not self.Paused
+		
+		if self.Paused:
+			return
+		
+		distMinor = (pos - self.LastMinorPos).magnitude
+		if distMinor > self.Snail.Owner['TrailSpacingMinor']:
+			self.LastMinorPos = pos
+			speedStyle = SnailTrail.S_NORMAL
+			if speedMultiplier > (1.0 + SnailTrail.SPEED_EPSILON):
+				speedStyle = SnailTrail.S_FAST
+			elif speedMultiplier < (1.0 - SnailTrail.SPEED_EPSILON):
+				speedStyle = SnailTrail.S_SLOW
+			self.AddSpot(speedStyle)
 
 #
 # Module interface functions.

@@ -29,6 +29,9 @@ YAXIS = (0.0, 1.0, 0.0)
 class ForceField(Actor.Actor):
     def __init__(self, owner):
         Actor.Actor.__init__(self, owner)
+        
+    def isInsideWorld(self):
+        return True
     
     def modulate(self, distance, limit):
         '''
@@ -54,6 +57,11 @@ class ForceField(Actor.Actor):
     def touched(self, actor):
         '''Called when an object is inside the force field.'''
         pos = Mathutils.Vector(actor.Owner.worldPosition)
+        
+        if (Utilities._manhattanDist(pos, self.Owner.worldPosition) >
+            self.Owner['FFDist2']):
+            return
+        
         pos = Utilities._toLocal(self.Owner, pos)
         if 'FFZCut' in self.Owner and self.Owner['FFZCut'] and (pos.z > 0.0):
             return
@@ -191,4 +199,23 @@ def onTouched(c):
                 actors.add(ob['Actor'])
         
     for a in actors: 
+        ffield.touched(a)
+
+def onRender(c):
+    '''Activate the force field. This is like onTouched, but should be used by
+    force fields with a very long range (i.e. those that affect the whole
+    level).
+    
+    Controller owner: a ForceField, created with one of the Create functions
+        above.
+    
+    Sensors:
+    <any>: One or more of any kind of sensor. While the force field is active,
+        these should fire every logic tic.
+    '''
+    if not Utilities.someSensorPositive(c):
+        return
+    
+    ffield = c.owner['Actor']
+    for a in Actor.Director.Actors:
         ffield.touched(a)

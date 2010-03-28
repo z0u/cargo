@@ -181,6 +181,15 @@ def _clamp(lower, upper, value):
 	'''
 	return min(upper, max(lower, value))
 
+def _manhattanDist(pA, pB):
+	'''Get the Manhattan distance between two points (the sum of the vector
+	components).'''
+	dx = abs(pA[0] - pB[0])
+	dy = abs(pA[1] - pB[1])
+	dz = abs(pA[2] - pB[2])
+	
+	return dx + dy + dz
+
 def _toLocal(referential, point):
 	'''
 	Transform 'point' (specified in world space) into the coordinate space of

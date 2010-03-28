@@ -536,6 +536,8 @@ class _Director:
 			
 			actor.RecordVelocity()
 			i += 1
+		
+		self.SanityCheckIndex += 1
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
 		if self.MainCharacter and not self.InputSuspended:

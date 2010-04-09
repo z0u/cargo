@@ -18,8 +18,8 @@
    sodipodi:docname="Shell.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    inkscape:export-filename="/home/alex/Projects/Cargo/Game/Textures/Shell_Shell.png"
-   inkscape:export-xdpi="180"
-   inkscape:export-ydpi="180"
+   inkscape:export-xdpi="45"
+   inkscape:export-ydpi="45"
    style="display:inline;enable-background:new">
   <sodipodi:namedview
      inkscape:window-height="976"
@@ -49,7 +49,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>

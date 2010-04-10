@@ -19,6 +19,7 @@ import GameLogic
 import Mathutils
 import Utilities
 import Actor
+import ForceFields
 
 # The angle to rotate successive ripples by (giving them a random appearance),
 # in degrees.
@@ -53,14 +54,25 @@ class Water(Actor.ActorListener):
 		self.RippleTemplate = scene.objectsInactive['OB' + self.Owner['RippleTemplate']]
 		
 		self.FloatingActors = set()
+		self.ForceFields = []
 		
+		Utilities.parseChildren(self, owner)
 		Utilities.SceneManager.Subscribe(self)
+	
+	def parseChild(self, child, t):
+		if t == 'ForceField':
+			self.ForceFields.append(ForceFields.create(child))
+			return True
+		else:
+			return False
 	
 	def OnSceneEnd(self):
 		self.Owner['Water'] = None
 		self.Owner = None
 		self.BubbleTemplate = None
 		self.RippleTemplate = None
+		self.FloatingActors = None
+		self.ForceFields = None
 		Utilities.SceneManager.Unsubscribe(self)
 	
 	def SpawnSurfaceDecal(self, template, position):
@@ -221,6 +233,10 @@ class Water(Actor.ActorListener):
 		linV = self.applyDamping(linV, submergedFactor)
 		body.setLinearVelocity(linV, False)
 		
+		angV = Mathutils.Vector(body.getAngularVelocity(False))
+		angV = self.applyDamping(angV, submergedFactor)
+		body.setAngularVelocity(angV, False)
+		
 		#
 		# Update buoyancy (take on water).
 		#
@@ -229,6 +245,9 @@ class Water(Actor.ActorListener):
 			body['CurrentBuoyancy'] += body['SinkFactor']
 		else:
 			body['CurrentBuoyancy'] -= body['SinkFactor']
+		
+		for ff in self.ForceFields:
+			ff.touched(actor, submergedFactor)
 		
 		return True
 	

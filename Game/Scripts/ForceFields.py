@@ -23,6 +23,7 @@ Created on 13/02/2010
 import Utilities
 import Actor
 import Mathutils
+import GameTypes
 
 YAXIS = (0.0, 1.0, 0.0)
 
@@ -54,7 +55,7 @@ class ForceField(Actor.Actor):
             effect = 0.0
         return self.Owner['FFMagnitude'] * effect
     
-    def touched(self, actor):
+    def touched(self, actor, factor = 1.0):
         '''Called when an object is inside the force field.'''
         pos = Mathutils.Vector(actor.Owner.worldPosition)
         
@@ -71,7 +72,7 @@ class ForceField(Actor.Actor):
         if dist != 0.0:
             dir.normalize()
         magnitude = self.getMagnitude(dist)
-        dir *= magnitude
+        dir *= magnitude * factor
         dir = Utilities._toWorldVec(self.Owner, dir)
         
         linV = Mathutils.Vector(actor.Owner.getLinearVelocity(False))
@@ -83,7 +84,7 @@ class ForceField(Actor.Actor):
         local space.'''
         pass
     
-class LinearForceField(ForceField):
+class Linear(ForceField):
     def __init__(self, owner):
         ForceField.__init__(self, owner)
         self.direction = Mathutils.Vector(YAXIS)
@@ -166,17 +167,25 @@ class Vortex2D(ForceField):
         tan = Mathutils.Vector((posLocal.y, 0.0 - posLocal.x, 0.0))
         return tan
 
-def createLinear(c):
-    LinearForceField(c.owner)
-
-def createRepeller3D(c):
-    Repeller3D(c.owner)
-
-def createRepeller2D(c):
-    Repeller2D(c.owner)
+def create(obOrController):
+    '''Create a new force field from an object, or from the object attached to a
+    controller. After completion, the object will have its state set to 2.
     
-def createVortex2D(c):
-    Vortex2D(c.owner)
+    Object properties:
+    FFType: The type of force field to create; must match the name of a subclass
+        of ForceField.
+    Other properties, as required by the force field type (see class
+        documentation).'''
+    o = None
+    if obOrController.isA(GameTypes.KX_GameObject):
+        o = obOrController
+    elif obOrController.isA(GameTypes.SCA_IController):
+        o = obOrController.owner
+    
+    ffClass = globals()[o['FFType']]
+    ffInstance = ffClass(o)
+    Utilities.setState(o, 2)
+    return ffInstance
 
 def onTouched(c):
     '''Activate the force field.

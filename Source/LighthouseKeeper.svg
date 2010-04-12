@@ -549,9 +549,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="4"
-     inkscape:cx="218.68845"
-     inkscape:cy="388.76836"
+     inkscape:zoom="1"
+     inkscape:cx="179.11539"
+     inkscape:cy="212.48332"
      inkscape:document-units="px"
      inkscape:current-layer="layer2"
      showgrid="false"
@@ -571,7 +571,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -677,13 +677,6 @@
        d="m 72.037383,150.21822 c -3.652867,16.86614 5.653641,19.59477 5.653641,36.75886 0,73.47372 -2.211091,258.59941 -3.019149,266.31201 -1.616116,15.4252 -19.054396,21.83355 -29.687847,2.26772 C 31.32452,430.42295 17.024891,336.09601 15.849647,229.21035 15.408019,189.04537 18.830896,184.78757 11.168625,179.35868 44.872441,136.68928 62.62947,139.47652 72.037383,150.21822 z"
        id="path3625"
        sodipodi:nodetypes="csssscc" />
-    <image
-       y="365.97525"
-       x="-398.71237"
-       id="image3639"
-       height="254.66142"
-       width="299.86383"
-       xlink:href="file:///home/alex/Projects/Cargo/References/Firefly/firefly_Purdue.jpg" />
     <path
        style="color:#000000;fill:#302a1f;fill-opacity:1;fill-rule:nonzero;stroke:#514947;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        d="m 60.911662,146.73656 c 9.599811,22.98783 16.259457,25.01358 21.183345,25.83562 4.923888,0.82204 16.932507,-23.8686 16.932507,-23.8686 l -3.825755,-11.65539 -34.290097,9.68837 z"
@@ -723,7 +716,7 @@
        sodipodi:nodetypes="cscccc" />
     <path
        sodipodi:type="arc"
-       style="opacity:0.15;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:4.68399382000000042;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter3993-0);enable-background:accumulate"
+       style="opacity:0.15;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:4.68399382;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter3993-0);enable-background:accumulate"
        id="path4369"
        sodipodi:cx="164.88972"
        sodipodi:cy="112.60788"
@@ -736,27 +729,5 @@
        d="m 202.12058,96.296044 c -3.96739,4.178116 -0.47571,22.976246 -0.47571,22.976246"
        id="path4371"
        sodipodi:nodetypes="cc" />
-  </g>
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-189.71428,-153.50504)"
-     sodipodi:insensitive="true"
-     style="display:none;filter:url(#filter4359)">
-    <image
-       y="153.50504"
-       x="189.71428"
-       id="image2826"
-       height="512"
-       width="512"
-       xlink:href="file:///home/alex/Desktop/Screenshot.png" />
-    <image
-       y="166.32675"
-       x="-339.64008"
-       id="image3612"
-       height="345"
-       width="500"
-       xlink:href="file:///home/alex/Projects/Cargo/References/Firefly/firefly-pics.jpg" />
   </g>
 </svg>

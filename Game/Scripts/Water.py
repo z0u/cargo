@@ -16,7 +16,7 @@
 #
 
 import GameLogic
-import Mathutils
+import mathutils
 import Utilities
 import Actor
 import ForceFields
@@ -26,8 +26,8 @@ import ForceFields
 ANGLE_INCREMENT = 81.0
 # Extra spacing to bubble spawn points, in Blender units.
 BUBBLE_BIAS = 0.4
-ZAXIS = Mathutils.Vector((0.0, 0.0, 1.0))
-ZERO = Mathutils.Vector((0.0, 0.0, 0.0))
+ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
+ZERO = mathutils.Vector((0.0, 0.0, 0.0))
 
 class Water(Actor.ActorListener):
 	S_INIT = 1
@@ -50,8 +50,8 @@ class Water(Actor.ActorListener):
 		self.CurrentFrame = 0
 		
 		scene = GameLogic.getCurrentScene()
-		self.BubbleTemplate = scene.objectsInactive['OB' + self.Owner['BubbleTemplate']]
-		self.RippleTemplate = scene.objectsInactive['OB' + self.Owner['RippleTemplate']]
+		self.BubbleTemplate = scene.objectsInactive[self.Owner['BubbleTemplate']]
+		self.RippleTemplate = scene.objectsInactive[self.Owner['RippleTemplate']]
 		
 		self.FloatingActors = set()
 		self.ForceFields = []
@@ -82,10 +82,10 @@ class Water(Actor.ActorListener):
 		#
 		# Transform template.
 		#
-		elr = Mathutils.Euler(0.0, 0.0, self.InstanceAngle)
+		elr = mathutils.Euler()
+		elr.z = self.InstanceAngle
 		self.InstanceAngle = self.InstanceAngle + ANGLE_INCREMENT
-		oMat = elr.toMatrix()
-		oMat.transpose()
+		oMat = elr.to_matrix()
 		template.worldOrientation = oMat
 		template.worldPosition = pos
 		
@@ -104,13 +104,13 @@ class Water(Actor.ActorListener):
 		#
 		# Transform template.
 		#
-		vec = Mathutils.Vector(actor.Owner.getLinearVelocity(False))
+		vec = actor.Owner.getLinearVelocity(False)
 		if vec.magnitude == 0.0:
-			vec = Mathutils.Vector(0.0, 0.0, -1.0)
+			vec = mathutils.Vector(0.0, 0.0, -1.0)
 		else:
 			vec.normalize()
 		vec *= (actor.Owner['FloatRadius'] + BUBBLE_BIAS)
-		pos = Mathutils.Vector(actor.Owner.worldPosition)
+		pos = actor.Owner.worldPosition.copy()
 		pos -= vec
 		template.worldPosition = pos
 		
@@ -134,13 +134,13 @@ class Water(Actor.ActorListener):
 		# inside, the actor is considered to be fully submerged. Otherwise, it
 		# is fully emerged.
 		
-		origin = Mathutils.Vector(actor.Owner.worldPosition)
+		origin = actor.Owner.worldPosition.copy()
 		origin.z = origin.z - actor.Owner['FloatRadius']
-		through = Mathutils.Vector(self.Owner.worldPosition)
+		through = self.Owner.worldPosition.copy()
 		# Force ray to be vertical.
 		through.xy = origin.xy
 		through.z += 1.0
-		vec = Mathutils.Vector(through - origin)
+		vec = through - origin
 		ob, hitPoint, normal = actor.Owner.rayCast(
 			through,             # to
 			origin,              # from
@@ -156,8 +156,7 @@ class Water(Actor.ActorListener):
 		
 		inside = False
 		if (ob):
-			normal = Mathutils.Vector(normal)
-			if (Mathutils.DotVecs(normal, vec) > 0.0):
+			if normal.dot(vec) > 0.0:
 				# Hit was from inside.
 				inside = True
 		
@@ -228,12 +227,12 @@ class Water(Actor.ActorListener):
 		#
 		submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
 		accel = submergedFactor * body['CurrentBuoyancy']
-		linV = Mathutils.Vector(body.getLinearVelocity(False))
+		linV = body.getLinearVelocity(False)
 		linV.z = linV.z + accel
 		linV = self.applyDamping(linV, submergedFactor)
 		body.setLinearVelocity(linV, False)
 		
-		angV = Mathutils.Vector(body.getAngularVelocity(False))
+		angV = body.getAngularVelocity(False)
 		angV = self.applyDamping(angV, submergedFactor)
 		body.setAngularVelocity(angV, False)
 		
@@ -267,7 +266,7 @@ class Water(Actor.ActorListener):
 				# The object has rippled too recently.
 				return
 			
-			linV = Mathutils.Vector(ob.getLinearVelocity(False))
+			linV = ob.getLinearVelocity(False)
 			if linV.magnitude < ob['MinRippleSpeed']:
 				# The object hasn't moved fast enough to cause another event.
 				return
@@ -295,7 +294,7 @@ class Water(Actor.ActorListener):
 					actor.addListener(self)
 			except SystemError:
 				# Shouldn't get here, but just in case!
-				print "Error: tried to float dead actor", actor.name
+				print("Error: tried to float dead actor", actor.name)
 				self.FloatingActors.discard(actor)
 				actor.removeListener(self)
 		

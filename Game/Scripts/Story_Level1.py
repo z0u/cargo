@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Mathutils
-import Utilities
-import Sound
-from Story import *
+import mathutils
+from . import Utilities
+from . import Sound
+from .Story import *
 
 class Worm(Character):
 	def __init__(self, owner):

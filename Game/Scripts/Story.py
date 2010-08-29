@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Actor
-import UI
+from . import Actor
+from . import UI
 import GameLogic
-import Camera
-import Utilities
+from . import Camera
+from . import Utilities
 
 class StoryError(Exception):
 	pass
@@ -114,10 +114,10 @@ class ActSetCamera:
 	
 	def Execute(self, c):
 		try:
-			cam = GameLogic.getCurrentScene().objects['OB' + self.CamName]
+			cam = GameLogic.getCurrentScene().objects[self.CamName]
 		except KeyError:
-			print ("Warning: couldn't find camera %s. Not adding." %
-				self.CamName)
+			print(("Warning: couldn't find camera %s. Not adding." %
+				self.CamName))
 			return
 		Camera.AutoCamera.AddGoal(cam, True, self.Fac, self.InstantCut)
 
@@ -127,10 +127,10 @@ class ActRemoveCamera:
 	
 	def Execute(self, c):
 		try:
-			cam = GameLogic.getCurrentScene().objects['OB' + self.CamName]
+			cam = GameLogic.getCurrentScene().objects[self.CamName]
 		except KeyError:
-			print ("Warning: couldn't find camera %s. Not removing." %
-				self.CamName)
+			print(("Warning: couldn't find camera %s. Not removing." %
+				self.CamName))
 			return
 		Camera.AutoCamera.RemoveGoal(cam)
 
@@ -142,14 +142,14 @@ class ActGeneric:
 	def Execute(self, c):
 		try:
 			self.Function(*self.Closure)
-		except Exception, e:
+		except Exception as e:
 			raise StoryError("Error executing " + str(self.Function), e)
 
 class ActGenericContext(ActGeneric):
 	def Execute(self, c):
 		try:
 			self.Function(c, *self.Closure)
-		except Exception, e:
+		except Exception as e:
 			raise StoryError("Error executing " + str(self.Function), e)
 
 class ActDebug:
@@ -157,7 +157,7 @@ class ActDebug:
 		self.Message = message
 	
 	def Execute(self, c):
-		print self.Message
+		print(self.Message)
 
 #
 # Steps. These are executed by Characters when their conditions are met and they
@@ -184,9 +184,9 @@ class Step:
 		for act in self.Actions:
 			try:
 				act.Execute(c)
-			except Exception, e:
-				print "Warning: Action %s failed." % act
-				print e
+			except Exception as e:
+				print("Warning: Action %s failed." % act)
+				print(e)
 
 class Character(Actor.Actor):
 

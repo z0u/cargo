@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Utilities
-import Mathutils
+from . import Utilities
+import mathutils
 
 def BendLeaf(c):
 	'''
@@ -43,12 +43,12 @@ def BendLeaf(c):
 	#
 	# Pass two: add up the effect of all touching objects.
 	#
-	origin = Mathutils.Vector(o.worldPosition)
+	origin = mathutils.Vector(o.worldPosition)
 	distRange = o['MaxDist'] - o['MinDist']
 	if len(hitObs) > 0:
 		totalInfluence = 0.0
 		for ob in hitObs:
-			pos = Mathutils.Vector(ob.worldPosition)
+			pos = mathutils.Vector(ob.worldPosition)
 			distance = (pos - origin).magnitude
 			influence = (distance - o['MinDist']) / distRange
 			influence = influence * ob['DynamicMass']

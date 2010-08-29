@@ -16,8 +16,8 @@
 #
 
 import GameLogic
-import Mathutils
-import Utilities
+import mathutils
+from . import Utilities
 
 class Button:
 	'''A generic 3D button that can be activated by objects in the scene. No
@@ -84,11 +84,11 @@ class ToughButton(Button):
 	trigger this button. This button only works with Actors.'''
 	
 	def Accept(self, ob):
-		if not ob.has_key('Actor'):
+		if 'Actor' not in ob:
 			return False
 		
 		actor = ob['Actor']
-		vel = Mathutils.Vector(actor.GetLastLinearVelocity())
+		vel = mathutils.Vector(actor.GetLastLinearVelocity())
 		return vel.magnitude >= self.Owner['MinSpeed']
 
 def CreateButton(c):

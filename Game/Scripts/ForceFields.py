@@ -22,7 +22,7 @@ Created on 13/02/2010
 
 import Utilities
 import Actor
-import Mathutils
+import mathutils
 import GameTypes
 
 YAXIS = (0.0, 1.0, 0.0)
@@ -57,7 +57,7 @@ class ForceField(Actor.Actor):
     
     def touched(self, actor, factor = 1.0):
         '''Called when an object is inside the force field.'''
-        pos = Mathutils.Vector(actor.Owner.worldPosition)
+        pos = mathutils.Vector(actor.Owner.worldPosition)
         
         if (Utilities._manhattanDist(pos, self.Owner.worldPosition) >
             self.Owner['FFDist2']):
@@ -75,7 +75,7 @@ class ForceField(Actor.Actor):
         dir *= magnitude * factor
         dir = Utilities._toWorldVec(self.Owner, dir)
         
-        linV = Mathutils.Vector(actor.Owner.getLinearVelocity(False))
+        linV = mathutils.Vector(actor.Owner.getLinearVelocity(False))
         linV += dir
         actor.Owner.setLinearVelocity(linV, False)
         
@@ -87,7 +87,7 @@ class ForceField(Actor.Actor):
 class Linear(ForceField):
     def __init__(self, owner):
         ForceField.__init__(self, owner)
-        self.direction = Mathutils.Vector(YAXIS)
+        self.direction = mathutils.Vector(YAXIS)
     
     def getForceDirection(self, posLocal):
         return self.direction
@@ -136,7 +136,7 @@ class Repeller2D(ForceField):
         ForceField.__init__(self, owner)
     
     def getForceDirection(self, posLocal):
-        dir = Mathutils.Vector(posLocal)
+        dir = mathutils.Vector(posLocal)
         dir.z = 0.0
         return dir
 
@@ -164,7 +164,7 @@ class Vortex2D(ForceField):
         ForceField.__init__(self, owner)
     
     def getForceDirection(self, posLocal):
-        tan = Mathutils.Vector((posLocal.y, 0.0 - posLocal.x, 0.0))
+        tan = mathutils.Vector((posLocal.y, 0.0 - posLocal.x, 0.0))
         return tan
 
 def create(obOrController):
@@ -204,7 +204,7 @@ def onTouched(c):
         if not s.positive:
             continue
         for ob in s.hitObjectList:
-            if ob.has_key('Actor'):
+            if 'Actor' in ob:
                 actors.add(ob['Actor'])
         
     for a in actors: 

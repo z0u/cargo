@@ -17,10 +17,10 @@
 
 import Actor
 import Camera
-import Mathutils
+import mathutils
 import Utilities
 
-ZAXIS = Mathutils.Vector((0.0, 0.0, 1.0))
+ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
 
 #
@@ -46,7 +46,7 @@ class ShellBase(Actor.Actor):
 		# A cargo hook is required.
 		#
 		if not self.CargoHook:
-			raise Utilities.SemanticException, (
+			raise Utilities.SemanticException(
 				"Warning: Shell %s has no cargo hook." % self.Owner.name)
 		
 		if self.Occupier:
@@ -195,11 +195,11 @@ class Shell(ShellBase):
 		# Get the vectors to apply force along.
 		#
 		cam = Camera.AutoCamera.Camera
-		p1 = Mathutils.Vector(cam.worldPosition)
-		p2 = Mathutils.Vector(self.Owner.worldPosition)
+		p1 = cam.worldPosition
+		p2 = self.Owner.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.normalize()
-		leftVec = Mathutils.CrossVecs(ZAXIS, fwdVec)
+		leftVec = ZAXIS.cross(fwdVec)
 		
 		#
 		# Set the direction of the vectors.
@@ -220,7 +220,7 @@ class Wheel(ShellBase):
 	
 	def Orient(self):
 		'''Try to make the wheel sit upright.'''
-		vec = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
+		vec = self.Owner.getAxisVect(ZAXIS)
 		vec.z = 0.0
 		vec.normalize
 		self.Owner.alignAxisToVect(vec, 2, self.Owner['OrnFac'])
@@ -275,11 +275,11 @@ class Nut(ShellBase):
 class BottleCap(ShellBase):
 	def Orient(self):
 		'''Try to make the cap sit upright, and face the direction of travel.'''
-		vec = Mathutils.Vector(ZAXIS)
+		vec = ZAXIS.copy()
 		vec.negate()
 		self.Owner.alignAxisToVect(vec, 2, self.Owner['OrnFac'])
 		
-		facing = Mathutils.Vector(self.Owner.getLinearVelocity(False))
+		facing = self.Owner.getLinearVelocity(False)
 		facing.z = 0.0
 		if facing.magnitude > EPSILON:
 			self.Owner.alignAxisToVect(
@@ -319,12 +319,12 @@ class BottleCap(ShellBase):
 		# Get the vectors to apply force along.
 		#
 		cam = Camera.AutoCamera.Camera
-		p1 = Mathutils.Vector(cam.worldPosition)
-		p2 = Mathutils.Vector(self.Owner.worldPosition)
+		p1 = cam.worldPosition
+		p2 = self.Owner.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.z = 0.0
 		fwdVec.normalize()
-		leftVec = Mathutils.CrossVecs(ZAXIS, fwdVec)
+		leftVec = ZAXIS.cross(fwdVec)
 		
 		#
 		# Set the direction of the vectors.

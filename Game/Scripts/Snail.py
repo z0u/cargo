@@ -25,14 +25,21 @@ by fetching the resulting object from the GameLogic.Snails
 dictionary.
 '''
 
-import Mathutils
+import mathutils
+import geometry
 import Utilities
 import Actor
 import GameLogic
 
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
-DEBUG = False
+DEBUG = True
+
+# FIXME: This is used for Euler bone transforms - but we should be able to
+# transform the bones using a matrix. See ActionActuator.setChannel
+PI = 3.14159
+def radToDegrees(angle):
+	return (angle / PI) * 180
 
 #
 # States for main snail object. The commented-out ones aren't currently used
@@ -59,10 +66,10 @@ S_ARM_ENTER      = 17
 S_ARM_EXIT       = 18
 
 
-ZAXIS  = Mathutils.Vector([0.0, 0.0, 1.0])
-ORIGIN = Mathutils.Vector([0.0, 0.0, 0.0])
+ZAXIS  = mathutils.Vector([0.0, 0.0, 1.0])
+ORIGIN = mathutils.Vector([0.0, 0.0, 0.0])
 EPSILON = 0.000001
-MINVECTOR = Mathutils.Vector([0.0, 0.0, EPSILON])
+MINVECTOR = mathutils.Vector([0.0, 0.0, EPSILON])
 
 class SnailSegment:
 	def __init__(self, owner, parent):
@@ -82,27 +89,21 @@ class SnailSegment:
 			return True
 		elif (type == "SnailSegment"):
 			if (self.Child):
-				print "Segment %s already has a child." % self.Owner.name
+				print("Segment %s already has a child." % self.Owner.name)
 			self.Child = SnailSegment(child, self)
 			return True
 		elif (type == "SegmentChildPivot"):
 			if (self.Child):
-				print "Segment %s already has a child." % self.Owner.name
+				print("Segment %s already has a child." % self.Owner.name)
 			self.Child = SegmentChildPivot(child)
 			return True
 		elif (type == "Fulcrum"):
 			if (self.Fulcrum):
-				print "Segment %s already has a fulcrum." % self.Owner.name
+				print("Segment %s already has a fulcrum." % self.Owner.name)
 			self.Fulcrum = child
 			return True
 		else:
 			return False
-		
-	def getOrientation(self):
-		ornMat = self.Owner.worldOrientation
-		ornMat = Mathutils.Matrix(ornMat[0], ornMat[1], ornMat[2])
-		ornMat.transpose()
-		return ornMat
 
 	def orient(self, parentOrnMat):
 		if (self.Parent):
@@ -111,12 +112,10 @@ class SnailSegment:
 		
 		_, p1 = self.Parent.Rays['Right'].getHitPosition()
 		_, p2 = self.Parent.Rays['Left'].getHitPosition()
-		p3 = Mathutils.Vector(self.Parent.Fulcrum.worldPosition)
-		normal = Mathutils.TriangleNormal(p1, p2, p3)
+		p3 = self.Parent.Fulcrum.worldPosition
+		normal = geometry.TriangleNormal(p1, p2, p3)
 		
-		parNorm = ZAXIS * parentOrnMat
-		dot = Mathutils.DotVecs(normal, parNorm)
-		if (dot > 0.0):
+		if normal.dot(ZAXIS * parentOrnMat) > 0.0:
 			#
 			# Normal is within 90 degrees of parent's normal -> segment not
 			# doubling back on itself.
@@ -125,7 +124,7 @@ class SnailSegment:
 			# Don't use a factor of 0.5: potential for normal to average out
 			# to be (0,0,0)
 			#
-			orientation = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
+			orientation = self.Owner.getAxisVect(ZAXIS)
 			orientation = Utilities._lerp(normal, orientation, 0.4)
 			self.Owner.alignAxisToVect(orientation, 2)
 		
@@ -133,13 +132,14 @@ class SnailSegment:
 		# Make orientation available to armature. Use the inverse of the
 		# parent's orientation to find the local orientation.
 		#
-		ornMat = self.getOrientation()
-		parentOrnMat.invert()
-		localOrnMat = ornMat * parentOrnMat
-		euler = localOrnMat.toEuler()
-		self.Owner['Heading'] = euler.x
-		self.Owner['Pitch'] = euler.y
-		self.Owner['Roll'] = euler.z
+		ornMat = self.Owner.worldOrientation
+		parentInverse = parentOrnMat.copy()
+		parentInverse.invert()
+		localOrnMat = parentInverse * ornMat
+		euler = localOrnMat.to_euler()
+		self.Owner['Heading'] = radToDegrees(euler.x)
+		self.Owner['Pitch'] = radToDegrees(euler.y)
+		self.Owner['Roll'] = radToDegrees(euler.z)
 		
 		if (self.Child):
 			self.Child.orient(ornMat)
@@ -153,7 +153,7 @@ class AppendageRoot(SnailSegment):
 		SnailSegment.__init__(self, owner, None)
 		
 	def orient(self):
-		self.Child.orient(self.getOrientation())
+		self.Child.orient(self.Owner.worldOrientation)
 
 class SegmentChildPivot(SnailSegment):
 	def __init__(self, owner):
@@ -192,6 +192,12 @@ class Snail(SnailSegment, Actor.Actor):
 		if not self.Shockwave:
 			raise Exception("No Shockwave defined.")
 		self.setHealth(7.0)
+		
+		global DEBUG
+		if DEBUG:
+			scene = GameLogic.getCurrentScene()
+			marker = scene.addObject("SnailMarker", self.Owner)
+			marker.setParent(self.Owner)
 	
 	def parseChild(self, child, type):
 		if type == "AppendageRoot":
@@ -200,8 +206,8 @@ class Snail(SnailSegment, Actor.Actor):
 			elif child['Location'] == 'Aft':
 				self.Tail = AppendageRoot(child)
 			else:
-				print "Unknown appendage type %s on %s." % (
-				    (child['Location'], child.name))
+				print("Unknown appendage type %s on %s." % (
+				    (child['Location'], child.name)))
 			return True
 		elif type == "Shockwave":
 			self.Shockwave = child
@@ -246,7 +252,7 @@ class Snail(SnailSegment, Actor.Actor):
 		# objects can be problematic.
 		#
 		if counter.mode:
-			angV = Mathutils.Vector(counter.mode.getAngularVelocity())
+			angV = counter.mode.getAngularVelocity()
 			if angV.magnitude < EPSILON:
 				angV = MINVECTOR
 			self.Owner.setAngularVelocity(angV)
@@ -261,7 +267,7 @@ class Snail(SnailSegment, Actor.Actor):
 		#
 		# Derive normal from hit points and update orientation.
 		#
-		orientation = Mathutils.QuadNormal(p0, p1, p2, p3)
+		orientation = geometry.QuadNormal(p0, p1, p2, p3)
 		self.Owner.alignAxisToVect(orientation, 2)
 		
 		self.Head.orient()
@@ -315,12 +321,10 @@ class Snail(SnailSegment, Actor.Actor):
 		# Normally we would need to find cos(x) to get the angle on the Z-axis.
 		# But here, x drives an IPO curve with the cosine wave baked into it.
 		#
-		p = Utilities._toLocal(self.EyeLocL,
-			Mathutils.Vector(nearest.worldPosition))
+		p = Utilities._toLocal(self.EyeLocL, nearest.worldPosition)
 		angXIndexL, angZIndexL = getAngleIndices(p)
 		
-		p = Utilities._toLocal(self.EyeLocR,
-			Mathutils.Vector(nearest.worldPosition))
+		p = Utilities._toLocal(self.EyeLocR, nearest.worldPosition)
 		angXIndexR, angZIndexR = getAngleIndices(p)
 		
 		setEyeRot(self.Armature, angXIndexL, angZIndexL, angXIndexR, angZIndexR,
@@ -386,7 +390,6 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.RemoveChild(self.Shell)
 		velocity = self.Owner.getAxisVect(ZAXIS)
-		velocity = Mathutils.Vector(velocity)
 		velocity = velocity * self.Owner['ShellPopForce']
 		self.Shell.Owner.applyImpulse(self.Shell.Owner.worldPosition, velocity)
 		self.Owner['HasShell'] = 0
@@ -617,7 +620,8 @@ class Snail(SnailSegment, Actor.Actor):
 		# Rotate the snail.
 		#
 		o['Rot'] = Utilities._lerp(o['Rot'], targetRot, o['RotFactor'])
-		o.applyRotation((0.0, 0.0, o['Rot']), True)
+		oRot = mathutils.RotationMatrix(o['Rot'], 3, ZAXIS)
+		o.localOrientation = o.localOrientation * oRot
 		
 		#
 		# Match the bend angle with the current speed.
@@ -660,19 +664,25 @@ class SnailRayCluster:
 	'''A collection of SnailRays. These will cast a ray once per frame in the
 	order defined by their Priority property (ascending order). The first one
 	that hits is used.'''
-	Rays = None
-	LastHitPoint = None
-	Marker = None
 	
 	def __init__(self, owner):
 		self.Rays = []
 		self.Marker = None
 		self.Owner = owner
+		self.DebugMesh = None
 		Utilities.parseChildren(self, owner)
 		if (len(self.Rays) <= 0):
 			raise Exception("Ray cluster %s has no ray children." % self.Owner.name)
-		self.Rays.sort(lambda a, b: a.Owner['Priority'] - b.Owner['Priority'])
-		self.LastHitPoint = Mathutils.Vector([0,0,0])
+		self.Rays.sort(key=lambda ray: ray.Owner['Priority'])
+		self.LastHitPoint = ORIGIN
+		
+		global DEBUG
+		if DEBUG:
+			self.DebugMesh.setVisible(True, True)
+			scene = GameLogic.getCurrentScene()
+			self.Marker = scene.addObject("RayMarker", self.Owner)
+		else:
+			self.DebugMesh.endObject()
 	
 	def parseChild(self, child, type):
 		global DEBUG
@@ -683,15 +693,8 @@ class SnailRayCluster:
 		elif (type == "SnailRayCluster"):
 			self.Rays.append(SnailRayCluster(child))
 			return True
-		elif (type == "Marker"):
-			self.Marker = child
-			child.removeParent()
-			return True
 		elif type == 'Debug':
-			if not DEBUG:
-				child.endObject()
-			else:
-				child.setVisible(True, True)
+			self.DebugMesh = child
 			return True
 		else:
 			return False
@@ -707,10 +710,11 @@ class SnailRayCluster:
 				self.LastHitPoint = Utilities._toLocal(self.Owner, p)
 				break
 		
+		wp = Utilities._toWorld(self.Owner, self.LastHitPoint)
 		if (self.Marker):
-			self.Marker.setWorldPosition(Utilities._toWorld(self.Owner, self.LastHitPoint))
+			self.Marker.worldPosition = wp
 			
-		return ob, Utilities._toWorld(self.Owner, self.LastHitPoint)
+		return ob, wp
 
 class SnailRay:
 	LastPoint = None
@@ -719,7 +723,7 @@ class SnailRay:
 		self.Marker = None
 		self.Owner = owner
 		Utilities.parseChildren(self, owner)
-		self.LastPoint = Mathutils.Vector(self.Owner.worldPosition)
+		self.LastPoint = self.Owner.worldPosition
 	
 	def parseChild(self, child, type):
 		if (type == "Marker"):
@@ -728,8 +732,8 @@ class SnailRay:
 			return True
 
 	def getHitPosition(self):
-		origin = Mathutils.Vector(self.Owner.worldPosition)
-		vec = Mathutils.Vector(self.Owner.getAxisVect(ZAXIS))
+		origin = self.Owner.worldPosition
+		vec = self.Owner.getAxisVect(ZAXIS)
 		through = origin + vec
 		ob, hitPoint, normal = self.Owner.rayCast(
 			through,            # to
@@ -744,14 +748,13 @@ class SnailRay:
 			#
 			# Ensure the hit was not from inside an object.
 			#
-			normal = Mathutils.Vector(normal)
-			if (Mathutils.DotVecs(normal, vec) > 0.0):
+			if normal.dot(vec) > 0.0:
 				ob = None
 			else:
-				self.LastPoint = Mathutils.Vector(hitPoint)
+				self.LastPoint = hitPoint
 		
 		if (self.Marker):
-			self.Marker.setWorldPosition(self.LastPoint)
+			self.Marker.worldPosition = self.LastPoint
 		
 		return ob, self.LastPoint
 
@@ -762,7 +765,7 @@ class SnailTrail:
 	SPEED_EPSILON = 0.2
 	
 	def __init__(self, owner, snail):
-		self.LastMinorPos = Mathutils.Vector(owner.worldPosition)
+		self.LastMinorPos = owner.worldPosition
 		self.LastMajorPos = self.LastMinorPos
 		self.Paused = False
 		self.TrailSpots = []
@@ -801,7 +804,7 @@ class SnailTrail:
 		Utilities.setState(spotI, speedStyle)
 	
 	def onSnailMoved(self, speedMultiplier):
-		pos = Mathutils.Vector(self.Owner.worldPosition)
+		pos = self.Owner.worldPosition
 		
 		distMajor = (pos - self.LastMajorPos).magnitude
 		if distMajor > self.Snail.Owner['TrailSpacingMajor']:
@@ -907,7 +910,7 @@ def OnTouchSpeedModifier(c):
 	
 	for hitOb in hitObs:
 		mult = mult + hitOb['SetSpeedMultiplier']
-		if hitOb.has_key('SingleUse'):
+		if 'SingleUse' in hitOb:
 			hitOb.endObject()
 	
 	mult = mult / float(len(hitObs))
@@ -920,8 +923,8 @@ def OnTouchSpeedModifier(c):
 def EyeLength(c):
 	'''Sets the length of the eyes. To be called by the snail.'''
 	def getRayLength(sensor):
-		origin = Mathutils.Vector(sensor.owner.worldPosition)
-		through = Mathutils.Vector(sensor.hitPosition)
+		origin = sensor.owner.worldPosition
+		through = mathutils.Vector(sensor.hitPosition)
 		return (through - origin).magnitude
 	
 	def getEyeLength(currentProportion, maxLen, sensor, factorUp):

@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Utilities
-import Mathutils
+from . import Utilities
+import mathutils
 
 MIN_VOLUME = 0.001
 
@@ -69,7 +69,7 @@ def PlayWithRandomPitch(c):
 	#
 	# Set the pitch and activate!
 	#
-	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], Utilities.Random.next())
+	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], next(Utilities.Random))
 	c.activate(a)
 
 def Fade(c):
@@ -144,7 +144,7 @@ def ModulateByLinV(c):
 	SoundFadeFac:  The response factor for the volume (float).
 	'''
 	o = c.owner
-	linV = Mathutils.Vector(o.getLinearVelocity(False))
+	linV = mathutils.Vector(o.getLinearVelocity(False))
 	_Modulate(linV.magnitude, c)
 
 def ModulateByAngV(c):
@@ -168,6 +168,6 @@ def ModulateByAngV(c):
 	SoundFadeFac:  The response factor for the volume (float).
 	'''
 	o = c.owner
-	angV = Mathutils.Vector(o.getAngularVelocity(False))
+	angV = mathutils.Vector(o.getAngularVelocity(False))
 	_Modulate(angV.magnitude, c)
 

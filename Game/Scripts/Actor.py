@@ -22,10 +22,10 @@ the main action of the level: minor animations should still play.
 To kill an actor, call Actor.Destroy; don't call KX_GameObject.endObject
 directly.'''
 
-import LODTree
-import Utilities
+from . import LODTree
+from . import Utilities
 import GameTypes
-import Mathutils
+import mathutils
 
 SANITY_RAY_LENGTH = 10000
 
@@ -79,7 +79,7 @@ class Actor:
 	
 	def __init__(self, owner):
 		self.Owner = owner
-		self.name = owner.name[2:]
+		self.name = owner.name
 		self.invalid = False
 		
 		owner['Actor'] = self
@@ -99,7 +99,7 @@ class Actor:
 		self.Children = None # set
 		self.Parent = None
 		
-		if owner.has_key('LODRadius'):
+		if 'LODRadius' in owner:
 			LODTree.LODManager.AddCollider(self)
 		
 		Utilities.SetDefaultProp(self.Owner, 'Health', 1.0)
@@ -214,7 +214,7 @@ class Actor:
 		self.getListeners().clear()
 		
 		Director.RemoveActor(self)
-		if self.Owner.has_key('LODRadius'):
+		if 'LODRadius' in self.Owner:
 			LODTree.LODManager.RemoveCollider(self)
 		self.Owner.endObject()
 		self.invalid = True
@@ -318,7 +318,7 @@ class Actor:
 		self.Owner['Health'] = value
 		for l in self.getListeners().copy():
 			l.actorHealthChanged(self)
-		print self.Owner['Health']
+		print(self.Owner['Health'])
 	
 	def damage(self, amount, shock):
 		self.setHealth(self.getHealth() - amount)
@@ -355,8 +355,8 @@ class Actor:
 		outsideGround = True
 		
 		# First, look up.
-		origin = Mathutils.Vector(self.Owner.worldPosition)
-		vec = Mathutils.Vector((0.0, 0.0, 1.0))
+		origin = mathutils.Vector(self.Owner.worldPosition)
+		vec = mathutils.Vector((0.0, 0.0, 1.0))
 		through = origin + vec
 		ob, _, normal = self.Owner.rayCast(
 			through,             # to
@@ -371,13 +371,13 @@ class Actor:
 			# Found some ground. Are we outside of it?
 			foundGround = True
 			if (ob):
-				normal = Mathutils.Vector(normal)
-				if (Mathutils.DotVecs(normal, vec) > 0.0):
+				normal = mathutils.Vector(normal)
+				if normal.dot(vec) > 0.0:
 					# Hit was from inside.
 					outsideGround = False
 		
 		# Now look down.
-		vec = Mathutils.Vector((0.0, 0.0, -1.0))
+		vec = mathutils.Vector((0.0, 0.0, -1.0))
 		through = origin + vec
 		ob, _, normal = self.Owner.rayCast(
 			through,             # to
@@ -392,8 +392,8 @@ class Actor:
 			# Found some ground. Are we outside of it?
 			foundGround = True
 			if (ob):
-				normal = Mathutils.Vector(normal)
-				if (Mathutils.DotVecs(normal, vec) > 0.0):
+				normal = mathutils.Vector(normal)
+				if normal.dot(vec) > 0.0:
 					# Hit was from inside.
 					outsideGround = False
 		
@@ -412,7 +412,7 @@ def RestoreLocation(c):
 	c.owner['Actor'].RestoreLocation()
 
 def Damage(c):
-	print "damaged"
+	print("damaged")
 	for s in c.sensors:
 		if (not s.positive) or (not s.triggered):
 			continue
@@ -531,7 +531,7 @@ class _Director:
 		for actor in self.Actors.copy():
 			if actor == self.MainCharacter or i == self.SanityCheckIndex:
 				if not actor.isInsideWorld():
-					print "Actor %s was outside world!" % actor.name
+					print("Actor %s was outside world!" % actor.name)
 					actor.RestoreLocation("Ouch! You got squashed.")
 			
 			actor.RecordVelocity()

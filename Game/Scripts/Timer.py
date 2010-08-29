@@ -16,9 +16,9 @@
 #
 
 import GameLogic
-import Utilities
-import Actor
-import UI
+from . import Utilities
+from . import Actor
+from . import UI
 
 class Timer(Actor.Actor):
 	'''A countdown timer actor. Uses a regular pulse to count down to zero over
@@ -61,7 +61,7 @@ class Timer(Actor.Actor):
 		'''
 		Utilities.remState(self.Owner, self.S_RUNNING)
 		
-		if self.Owner.has_key('Style'):
+		if 'Style' in self.Owner:
 			gauge = UI.HUD.GetGauge(self.Owner['Style'])
 			if gauge:
 				gauge.Hide()
@@ -83,7 +83,7 @@ class Timer(Actor.Actor):
 		self.Tics = self.Tics + 1.0
 		fraction = self.Tics / self.TargetTics
 		
-		if self.Owner.has_key('Style'):
+		if 'Style' in self.Owner:
 			gauge = UI.HUD.GetGauge(self.Owner['Style'])
 			if gauge:
 				gauge.SetFraction(1.0 - fraction)

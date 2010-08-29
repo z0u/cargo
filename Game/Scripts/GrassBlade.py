@@ -15,8 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Mathutils
-from Scripts import Utilities
+import mathutils
+import Utilities
+
+ZERO2 = mathutils.Vector((0.0, 0.0))
 
 class SBParticle:
 	'''
@@ -25,8 +27,8 @@ class SBParticle:
 	accelerate the particle back towards (0, 0).
 	'''
 	def __init__(self, spring, damp, index):
-		self.Velocity = Mathutils.Vector(0.0, 0.0)
-		self.Frame = Mathutils.Vector(0.0, 0.0)
+		self.Velocity = ZERO2.copy()
+		self.Frame = ZERO2.copy()
 		
 		self.Spring = spring
 		self.Damping = damp
@@ -56,7 +58,7 @@ class GrassBlade:
 			p = SBParticle(self.Owner['Spring'], self.Owner['Damping'], i)
 			self.Segments.append(p)
 		
-		self.LastBaseFrame = Mathutils.Vector(0.0, 0.0)
+		self.LastBaseFrame = ZERO2.copy()
 		
 		Utilities.SceneManager.Subscribe(self)
 	
@@ -69,8 +71,7 @@ class GrassBlade:
 		#
 		# Transform collider into blade's coordinate system.
 		#
-		cPos = Mathutils.Vector(collider.worldPosition)
-		cPos = Utilities._toLocal(self.Owner, cPos)
+		cPos = Utilities._toLocal(self.Owner, collider.worldPosition)
 		
 		#
 		# The blades are rotated 90 degrees to work better as Blender particles.
@@ -95,7 +96,7 @@ class GrassBlade:
 			#
 			# Boxes aren't touching; no force.
 			#
-			return Mathutils.Vector(0.0, 0.0)
+			return ZERO2.copy()
 		
 		areaFraction = area / self.BBox.GetArea()
 		
@@ -108,7 +109,7 @@ class GrassBlade:
 		#
 		# Find the offset of the base.
 		#
-		vec = Mathutils.Vector(0.0, 0.0)
+		vec = ZERO2.copy()
 		for col in colliders:
 			vec = vec + self.GetCollisionForce(col)
 		self.Owner['BladeXBase'] = vec.x

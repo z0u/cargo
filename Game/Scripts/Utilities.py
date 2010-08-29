@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Mathutils
+import mathutils
 import GameLogic
 import Rasterizer
 
-ALMOST_ZERO = Mathutils.Vector((0.0, 0.0, 0.001))
+ALMOST_ZERO = mathutils.Vector((0.0, 0.0, 0.001))
 
 class _SceneManager:
 	def __init__(self):
@@ -66,12 +66,12 @@ class SemanticException(Exception):
 
 def parseChildren(self, o):
 	for child in o.children:
-		if child.has_key('Type'):
+		if 'Type' in child:
 			if (not self.parseChild(child, child['Type'])):
-				print "Warning: child %s of %s has unexpected type (%s)" % (
+				print("Warning: child %s of %s has unexpected type (%s)" % (
 					child.name,
 					o.name,
-					child['Type'])
+					child['Type']))
 
 class Box2D:
 	'''A 2D bounding box.'''
@@ -198,12 +198,10 @@ def _toLocal(referential, point):
 	Parameters:
 	referential: The object that defines the coordinate space to transform to.
 	             (KX_GameObject)
-	point:       The point, in world space, to transform. (Mathutils.Vector)
+	point:       The point, in world space, to transform. (mathutils.Vector)
 	'''
-	refP = Mathutils.Vector(referential.worldPosition)
-	refOMat = referential.worldOrientation
-	refOMat = Mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
-	refOMat.transpose()
+	refP = referential.worldPosition
+	refOMat = mathutils.Matrix(referential.worldOrientation)
 	refOMat.invert()
 	return (point - refP) * refOMat
 
@@ -215,12 +213,10 @@ def _toWorld(referential, point):
 	Parameters:
 	referential: The object that defines the coordinate space to transform from.
 	             (KX_GameObject)
-	point:       The point, in local space, to transform. (Mathutils.Vector)
+	point:       The point, in local space, to transform. (mathutils.Vector)
 	'''
-	refP = Mathutils.Vector(referential.worldPosition)
+	refP = referential.worldPosition
 	refOMat = referential.worldOrientation
-	refOMat = Mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
-	refOMat.transpose()
 	return (point * refOMat) + refP
 
 def _toWorldVec(referential, dir):
@@ -231,10 +227,10 @@ def _toWorldVec(referential, dir):
 	Parameters:
 	referential: The object that defines the coordinate space to transform from.
 	             (KX_GameObject)
-	point:       The point, in local space, to transform. (Mathutils.Vector)
+	point:       The point, in local space, to transform. (mathutils.Vector)
 	'''
 	refOMat = referential.worldOrientation
-	refOMat = Mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
+	refOMat = mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
 	refOMat.transpose()
 	return dir * refOMat
 
@@ -244,25 +240,10 @@ def _SlowCopyRot(o, goal, factor):
 	'o' must have a SlowFac property: 0 <= SlowFac <= 1. Low values will result
 	in slower and smoother movement.
 	'''
-	goalOrn = goal.worldOrientation
-	goalOrn = Mathutils.Matrix(
-		goalOrn[0],
-		goalOrn[1],
-		goalOrn[2]
-	)
-	goalOrn.transpose()
-	goalOrn = goalOrn.toQuat()
-	orn = o.worldOrientation
-	orn = Mathutils.Matrix(
-		orn[0],
-		orn[1],
-		orn[2]
-	)
-	orn.transpose()
-	orn = orn.toQuat()
-	orn = Mathutils.Slerp(orn, goalOrn, factor)
-	orn = orn.toMatrix()
-	orn.transpose()
+	goalOrn = goal.worldOrientation.to_quat()
+	orn = o.worldOrientation.to_quat()
+	orn = orn.slerp(goalOrn, factor)
+	orn = orn.to_matrix()
 	
 	o.localOrientation = orn
 
@@ -282,8 +263,8 @@ def _SlowCopyLoc(o, goal, factor):
 	'o' must have a SlowFac property: 0 <= SlowFac <= 1. Low values will result
 	in slower and smoother movement.
 	'''
-	goalPos = Mathutils.Vector(goal.worldPosition)
-	pos = Mathutils.Vector(o.worldPosition)
+	goalPos = goal.worldPosition
+	pos = o.worldPosition
 	
 	o.worldPosition = _lerp(pos, goalPos, factor)
 
@@ -304,19 +285,13 @@ def setRelOrn(ob, target, ref):
 	difference between 'ob' and 'ref's orientations.
 	'''
 	oOrn = ob.worldOrientation
-	oOrn = Mathutils.Matrix(oOrn[0], oOrn[1], oOrn[2])
 	
-	rOrn = ref.worldOrientation
-	rOrn = Mathutils.Matrix(rOrn[0], rOrn[1], rOrn[2])
+	rOrn = mathutils.Matrix(ref.worldOrientation)
 	rOrn.invert()
 	
 	localOrn = rOrn * oOrn
 	
-	orn = target.worldOrientation
-	orn = Mathutils.Matrix(orn[0], orn[1], orn[2])
-	orn = orn * localOrn
-	
-	ob.localOrientation = orn
+	ob.localOrientation = target.worldOrientation * localOrn
 
 def setRelPos(ob, target, ref):
 	'''
@@ -324,13 +299,8 @@ def setRelPos(ob, target, ref):
 	referential. The final position will be offset from 'target's by the
 	difference between 'ob' and 'ref's positions.
 	'''
-	oPos = Mathutils.Vector(ob.worldPosition)
-	rPos = Mathutils.Vector(ref.worldPosition)
-	tPos = Mathutils.Vector(target.worldPosition)
-	offset = rPos - oPos
-	posFinal = tPos - offset
-	
-	ob.worldPosition = posFinal
+	offset = ref.worldPosition - ob.worldPosition
+	ob.worldPosition = target.worldPosition - offset
 
 def RayFollow(c):
 	'''
@@ -341,8 +311,8 @@ def RayFollow(c):
 	o = c.owner
 	p = o.parent
 	
-	origin = Mathutils.Vector(p.worldPosition)
-	direction = Mathutils.Vector(p.getAxisVect([0.0, 0.0, 1.0]))
+	origin = p.worldPosition
+	direction = p.getAxisVect([0.0, 0.0, 1.0])
 	through = origin + direction
 	
 	hitOb, hitPoint, hitNorm = p.rayCast(
@@ -355,17 +325,13 @@ def RayFollow(c):
 	)
 	
 	targetDist = o['RestDist']
-	if hitOb:
-		hitPoint = Mathutils.Vector(hitPoint)
-		hitNorm = Mathutils.Vector(hitNorm)
-		dot = Mathutils.DotVecs(hitNorm, direction)
-		if dot < 0:
-			#
-			# If dot > 0, the tracking object is inside another mesh.
-			# It's not perfect, but better not bring the camera forward
-			# in that case, or the camera will be inside too.
-			#
-			targetDist = (hitPoint - origin).magnitude
+	if hitOb and (hitNorm.dot(direction) < 0):
+		#
+		# If dot > 0, the tracking object is inside another mesh.
+		# It's not perfect, but better not bring the camera forward
+		# in that case, or the camera will be inside too.
+		#
+		targetDist = (hitPoint - origin).magnitude
 	
 	targetDist = targetDist * o['DistBias']
 	
@@ -390,8 +356,8 @@ def OrbitFollow(c):
 	#
 	# Get the vector from the camera to the target.
 	#
-	tPos = Mathutils.Vector(target.worldPosition)
-	pos = Mathutils.Vector(o.worldPosition)
+	tPos = target.worldPosition
+	pos = o.worldPosition
 	vec = pos - tPos
 	
 	#
@@ -424,7 +390,6 @@ def OrbitFollow(c):
 		0             # poly
 	)
 	if hitOb:
-		hitPoint = Mathutils.Vector(hitPoint)
 		vec = hitPoint - tPos
 		vec = vec * o['DistBias']
 		if vec.magnitude < o['MinDist']:
@@ -466,7 +431,7 @@ def SprayParticle(c):
 		return
 	
 	o['nParticles'] = o['nParticles'] - 1
-	speed = o['maxSpeed'] * Random.next()
+	speed = o['maxSpeed'] * next(Random)
 	c.actuators['aEmit'].linearVelocity = (0.0, 0.0, speed)
 	c.activate('aEmit')
 	c.activate('aRot')
@@ -500,7 +465,7 @@ def SetDefaultProp(ob, propName, value):
 	propName: The property to check.
 	value:    The value to assign to the property if it dosen't exist yet.
 	'''
-	if not ob.has_key(propName):
+	if propName not in ob:
 		ob[propName] = value
 
 def addState(ob, state):
@@ -568,7 +533,7 @@ class Counter:
 		'''Add an object to this counter. If this object is the most frequent
 		so far, it will be stored in the member variable 'mode'.'''
 		count = 1
-		if self.map.has_key(ob):
+		if ob in self.map:
 			count = self.map[ob] + 1
 		self.map[ob] = count
 		if count > self.max:
@@ -599,7 +564,7 @@ class _Random:
 	def __init__(self):
 		self.LastRandIndex = 0
 	
-	def next(self):
+	def __next__(self):
 		'''
 		Get a random number between 0.0 and 1.0. This is only vaguely random: each
 		number is drawn from a finite set of numbers, and the sequence repeats.

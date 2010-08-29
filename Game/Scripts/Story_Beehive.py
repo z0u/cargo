@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import UI
+from . import UI
 import GameLogic
-import Actor
-import Utilities
-import Camera
-import Snail
-from Story import *
+from . import Actor
+from . import Utilities
+from . import Camera
+from . import Snail
+from .Story import *
 
 class Intro(Character):
     def __init__(self, owner):
@@ -151,7 +151,7 @@ class Bucket(Actor.Actor):
         
         scene = GameLogic.getCurrentScene()
         self.water = None
-        self.waterBallTemplate = scene.objectsInactive['OB' + owner['WaterBallTemplate']]
+        self.waterBallTemplate = scene.objectsInactive[owner['WaterBallTemplate']]
         self.camTop = camTop
         self.camBottom = camBottom
         self.currentCamera = None

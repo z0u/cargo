@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Utilities
-import Actor
+from . import Utilities
+from . import Actor
 import GameTypes
 
 class CameraObserver:
@@ -90,7 +90,7 @@ class _AutoCamera:
 				self.Camera.worldPosition = self.CurrentGoal.Goal.worldPosition
 				self.Camera.worldOrientation = self.CurrentGoal.Goal.worldOrientation
 				targetLens = self.DefaultLens
-				if self.CurrentGoal.Goal.isA(GameTypes.KX_Camera):
+				if hasattr(self.CurrentGoal.Goal, 'lens'):
 					targetLens = self.CurrentGoal.Goal.lens
 				self.Camera.lens = targetLens
 				self.InstantCut = False
@@ -103,7 +103,7 @@ class _AutoCamera:
 		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.Goal, fac)
 		
 		targetLens = self.DefaultLens
-		if self.CurrentGoal.Goal.isA(GameTypes.KX_Camera):
+		if hasattr(self.CurrentGoal.Goal, 'lens'):
 			targetLens = self.CurrentGoal.Goal.lens
 		self.Camera.lens = Utilities._lerp(self.Camera.lens, targetLens, fac)
 		

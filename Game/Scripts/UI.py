@@ -16,8 +16,8 @@
 #
 
 import GameLogic
-import Utilities
-import Actor
+from . import Utilities
+from . import Actor
 
 class _HUD(Actor.DirectorListener, Actor.ActorListener):
 	'''The head-up display manages the 2D user interface that is drawn over the
@@ -68,32 +68,32 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 	def parseChild(self, child, type):
 		if type == "DialogueBox":
 			if self.DialogueBox:
-				print "Warning: HUD already has a dialogue box."
+				print("Warning: HUD already has a dialogue box.")
 				return False
 			self.DialogueBox = child
 			return True
 		if type == "MessageBox":
 			if self.MessageBox:
-				print "Warning: HUD already has a message box."
+				print("Warning: HUD already has a message box.")
 				return False
 			self.MessageBox = child
 			return True
 		elif type == "LoadingScreen":
 			if self.LoadingScreen:
-				print "Warning: HUD already has a loading screen."
+				print("Warning: HUD already has a loading screen.")
 				return False
 			self.LoadingScreen = child
 			return True
 		elif type == "Gauge":
 			name = child['Name']
-			if self.Gauges.has_key(name):
-				print "Warning: duplicate gauge '%s'" % name
+			if name in self.Gauges:
+				print("Warning: duplicate gauge '%s'" % name)
 				return False
 			self.Gauges[name] = Gauge(child)
 			return True
 		elif type == 'Filter':
 			if self.Filter:
-				print "Warning: HUD already has a filter."
+				print("Warning: HUD already has a filter.")
 				return False
 			self.Filter = Filter(child)
 			return True
@@ -146,7 +146,7 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 			self._UpdateDialogue()
 	
 	def GetGauge(self, name):
-		if self.Gauges.has_key(name):
+		if name in self.Gauges:
 			return self.Gauges[name]
 		else:
 			return None
@@ -158,7 +158,7 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 			Utilities.setState(self.LoadingScreen, 2)
 	
 	def ShowLoadingScreen(self, caller):
-		print "%s started loading." % caller
+		print("%s started loading." % caller)
 		if len(self.LoadingScreenCallers) == 0:
 			self.LoadingScreenVisible = True
 			if self.LoadingScreen:
@@ -167,8 +167,8 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 	
 	def HideLoadingScreen(self, caller):
 		self.LoadingScreenCallers.discard(caller)
-		print "%s finished loading. %d remaining." % (caller,
-			len(self.LoadingScreenCallers))
+		print("%s finished loading. %d remaining." % (caller,
+			len(self.LoadingScreenCallers)))
 		if len(self.LoadingScreenCallers) == 0:
 			self.LoadingScreenVisible = False
 			if self.LoadingScreen:
@@ -307,7 +307,7 @@ class Gauge(Actor.Actor):
 		return False
 	
 	def OnSceneEnd(self):
-		for i in self.Indicators.values():
+		for i in list(self.Indicators.values()):
 			i.Owner = None
 		Actor.Actor.OnSceneEnd(self)
 	
@@ -321,7 +321,7 @@ class Gauge(Actor.Actor):
 		self.Indicators[name].TargetFraction = fraction
 	
 	def Update(self, c):
-		for i in self.Indicators.values():
+		for i in list(self.Indicators.values()):
 			i.update()
 		for a in c.actuators:
 			c.activate(a)

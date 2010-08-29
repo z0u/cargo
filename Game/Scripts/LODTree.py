@@ -17,7 +17,7 @@
 #
 
 import GameLogic
-import Utilities
+from . import Utilities
 
 ACTIVATION_TIMEOUT = 120
 
@@ -85,7 +85,7 @@ class Cube:
 	def isInRange(self, point):
 		'''Tests whether a point is inside the cube.
 		Returns: False if the point is outside; True otherwise.'''
-		for i in xrange(len(point)):
+		for i in range(len(point)):
 			if point[i] < self.LowerBound[i]:
 				return False
 			elif point[i] > self.UpperBound[i]:
@@ -169,12 +169,12 @@ class LODNode:
 			state = "NS_VISIBLE"
 		elif self.Visibility == NS_IMPLICIT:
 			state = "NS_IMPLICIT"
-		print indent + ('          state=%s' % state)
+		print(indent + ('          state=%s' % state))
 		
 		try:
 			self.Verify(anscestorVisible)
-		except AssertionError, e:
-			print indent + '          ' + str(e)
+		except AssertionError as e:
+			print(indent + '          ' + str(e))
 
 class LODBranch(LODNode):
 	'''A branch in an LODTree. This type of node has two children: Left and
@@ -199,7 +199,7 @@ class LODBranch(LODNode):
 		
 		LODNode.__init__(self)
 		
-		self.Object = GameLogic.getCurrentScene().objectsInactive['OB' + obName]
+		self.Object = GameLogic.getCurrentScene().objectsInactive[obName]
 		#
 		# Parents just cause problems with visibility.
 		#
@@ -229,8 +229,8 @@ class LODBranch(LODNode):
 		# need to be hidden after Pulse is called if their sibling has since
 		# become hidden.
 		#
-		leftInRange = filter(lambda b: self.MedianValue > b.LowerBound[self.Axis], boundsList)
-		rightInRange = filter(lambda b: self.MedianValue < b.UpperBound[self.Axis], boundsList)
+		leftInRange = [b for b in boundsList if self.MedianValue > b.LowerBound[self.Axis]]
+		rightInRange = [b for b in boundsList if self.MedianValue < b.UpperBound[self.Axis]]
 		
 		if len(leftInRange) > 0:
 			left.ActivateRange(leftInRange)
@@ -332,7 +332,7 @@ class LODBranch(LODNode):
 		self.Right.DeepVerify(anscestorVisible)
 	
 	def PrettyPrint(self, indent, anscestorVisible):
-		print indent + ('LODBranch: %s, axis=%d, median=%f' % (self.Object.name, self.Axis, self.MedianValue))
+		print(indent + ('LODBranch: %s, axis=%d, median=%f' % (self.Object.name, self.Axis, self.MedianValue)))
 		
 		LODNode.PrettyPrint(self, indent, anscestorVisible)
 		
@@ -365,10 +365,10 @@ class LODLeaf(LODNode):
 		self.Name = str(obNames)
 		sceneObs = GameLogic.getCurrentScene().objectsInactive
 		for name in obNames:
-			oPos = sceneObs['OB' + name]
+			oPos = sceneObs[name]
 			oMesh = oPos
-			if oPos.has_key('LODObject'):
-				oMesh = sceneObs['OB' + oPos['LODObject']]
+			if 'LODObject' in oPos:
+				oMesh = sceneObs[oPos['LODObject']]
 			
 			#
 			# Parents just cause problems with visibility.
@@ -426,6 +426,6 @@ class LODLeaf(LODNode):
 		assert (len(self.ObjectInstances) > 0) == (self.Visibility in (NS_VISIBLE, NS_IMPLICIT)), 'Object visibility doesn\'t match node state.'
 	
 	def PrettyPrint(self, indent, anscestorVisible):
-		print indent + 'LODLeaf: age=%d children=' % self.NumFramesActive,
-		print self.Name
+		print(indent + 'LODLeaf: age=%d children=' % self.NumFramesActive, end=' ')
+		print(self.Name)
 		LODNode.PrettyPrint(self, indent, anscestorVisible)

@@ -765,8 +765,8 @@ class SnailTrail:
 	SPEED_EPSILON = 0.2
 	
 	def __init__(self, owner, snail):
-		self.LastMinorPos = owner.worldPosition
-		self.LastMajorPos = self.LastMinorPos
+		self.LastMinorPos = owner.worldPosition.copy()
+		self.LastMajorPos = self.LastMinorPos.copy()
 		self.Paused = False
 		self.TrailSpots = []
 		self.SpotIndex = 0
@@ -808,7 +808,7 @@ class SnailTrail:
 		
 		distMajor = (pos - self.LastMajorPos).magnitude
 		if distMajor > self.Snail.Owner['TrailSpacingMajor']:
-			self.LastMajorPos = pos
+			self.LastMajorPos = pos.copy()
 			self.Paused = not self.Paused
 		
 		if self.Paused:
@@ -816,7 +816,7 @@ class SnailTrail:
 		
 		distMinor = (pos - self.LastMinorPos).magnitude
 		if distMinor > self.Snail.Owner['TrailSpacingMinor']:
-			self.LastMinorPos = pos
+			self.LastMinorPos = pos.copy()
 			speedStyle = SnailTrail.S_NORMAL
 			if speedMultiplier > (1.0 + SnailTrail.SPEED_EPSILON):
 				speedStyle = SnailTrail.S_FAST

@@ -33,7 +33,7 @@ import GameLogic
 
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
-DEBUG = True
+DEBUG = False
 
 # FIXME: This is used for Euler bone transforms - but we should be able to
 # transform the bones using a matrix. See ActionActuator.setChannel
@@ -67,6 +67,7 @@ S_ARM_EXIT       = 18
 
 
 ZAXIS  = mathutils.Vector([0.0, 0.0, 1.0])
+XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
 ORIGIN = mathutils.Vector([0.0, 0.0, 0.0])
 EPSILON = 0.000001
 MINVECTOR = mathutils.Vector([0.0, 0.0, EPSILON])
@@ -107,7 +108,7 @@ class SnailSegment:
 
 	def orient(self, parentOrnMat):
 		if (self.Parent):
-			right = self.Parent.Owner.getAxisVect([1.0, 0.0, 0.0])
+			right = self.Parent.Owner.getAxisVect(XAXIS)
 			self.Owner.alignAxisToVect(right, 0)
 		
 		_, p1 = self.Parent.Rays['Right'].getHitPosition()
@@ -115,7 +116,7 @@ class SnailSegment:
 		p3 = self.Parent.Fulcrum.worldPosition
 		normal = geometry.TriangleNormal(p1, p2, p3)
 		
-		if normal.dot(ZAXIS * parentOrnMat) > 0.0:
+		if normal.dot(self.Parent.Owner.getAxisVect(ZAXIS)) > 0.0:
 			#
 			# Normal is within 90 degrees of parent's normal -> segment not
 			# doubling back on itself.
@@ -132,17 +133,16 @@ class SnailSegment:
 		# Make orientation available to armature. Use the inverse of the
 		# parent's orientation to find the local orientation.
 		#
-		ornMat = self.Owner.worldOrientation
 		parentInverse = parentOrnMat.copy()
 		parentInverse.invert()
-		localOrnMat = parentInverse * ornMat
+		localOrnMat = parentInverse * self.Owner.worldOrientation
 		euler = localOrnMat.to_euler()
 		self.Owner['Heading'] = radToDegrees(euler.x)
 		self.Owner['Pitch'] = radToDegrees(euler.y)
 		self.Owner['Roll'] = radToDegrees(euler.z)
 		
 		if (self.Child):
-			self.Child.orient(ornMat)
+			self.Child.orient(self.Owner.worldOrientation)
 	
 	def setBendAngle(self, angle):
 		if self.Child:

@@ -281,17 +281,19 @@ class Snail(SnailSegment, Actor.Actor):
 		scene. Objects with a LookAt priority of less than zero will be ignored.
 		'''
 		def getAngleIndices(vec):
+			MULT = 100.0
+			vec = vec.copy()
 			vec.normalize()
 			angZIndex = 0.0
 			if vec.y >= 0:
-				angZIndex = vec.x * 100.0
+				angZIndex = vec.x * MULT
 			else:
 				if vec.x >= 0:
-					angZIndex = ((1.0 - vec.x) * 100.0) + 100.0
+					angZIndex = ((1.0 - vec.x) * MULT) + MULT
 				else:
-					angZIndex = ((-1.0 - vec.x) * 100.0) - 100.0
+					angZIndex = ((-1.0 - vec.x) * MULT) - MULT
 			angZIndex = Utilities._clamp(-150, 150, angZIndex)
-			angXIndex = p.z * 100
+			angXIndex = p.z * MULT
 			return angXIndex, angZIndex
 		
 		def setEyeRot(ob, XL, ZL, XR, ZR, fac):
@@ -321,8 +323,13 @@ class Snail(SnailSegment, Actor.Actor):
 		# Normally we would need to find cos(x) to get the angle on the Z-axis.
 		# But here, x drives an IPO curve with the cosine wave baked into it.
 		#
+#		print("Eye    ", self.EyeLocL.worldPosition)
+#		print("Nearest", nearest.worldPosition)
 		p = Utilities._toLocal(self.EyeLocL, nearest.worldPosition)
+#		print("local  ", p)
 		angXIndexL, angZIndexL = getAngleIndices(p)
+		print(angXIndexL, angZIndexL)
+#		print("local  ", p)
 		
 		p = Utilities._toLocal(self.EyeLocR, nearest.worldPosition)
 		angXIndexR, angZIndexR = getAngleIndices(p)
@@ -620,7 +627,7 @@ class Snail(SnailSegment, Actor.Actor):
 		# Rotate the snail.
 		#
 		o['Rot'] = Utilities._lerp(o['Rot'], targetRot, o['RotFactor'])
-		oRot = mathutils.RotationMatrix(o['Rot'], 3, ZAXIS)
+		oRot = mathutils.Matrix.Rotation(o['Rot'], 3, ZAXIS)
 		o.localOrientation = o.localOrientation * oRot
 		
 		#

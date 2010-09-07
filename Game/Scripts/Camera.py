@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import Utilities
-from . import Actor
+import Utilities
+import Actor
 import GameTypes
 
 class CameraObserver:
@@ -72,7 +72,7 @@ class _AutoCamera:
 		self.DefaultGoal = CameraGoal(goal, factor, False)
 		self.StackModified = True
 	
-	def OnRender(self):
+	def onRender(self):
 		'''
 		Update the location of the camera. Observers will be notified. The
 		camera should have a controller set up to call this once per frame.
@@ -114,7 +114,7 @@ class _AutoCamera:
 		'''
 		Give the camera a new goal, and remember the last one. Call RemoveGoal 
 		to restore the previous relationship. The camera position isn't changed
-		until OnRender is called.
+		until onRender is called.
 		
 		Paremeters:
 		goal:       The new goal (KX_GameObject).
@@ -135,7 +135,7 @@ class _AutoCamera:
 		'''
 		Remove a goal from the stack. If it was currently in use, the camera
 		will switch to follow the next one on the stack. The transform isn't
-		changed until OnRender is called.
+		changed until onRender is called.
 		'''
 		if len(self.Q) == 0:
 			return
@@ -171,7 +171,10 @@ class _AutoCamera:
 
 AutoCamera = _AutoCamera()
 
-def SetCamera(c):
+def onRender(c):
+	AutoCamera.onRender()
+
+def setCamera(c):
 	camera = c.owner
 	AutoCamera.SetCamera(camera)
 

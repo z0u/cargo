@@ -276,7 +276,7 @@ class Snail(SnailSegment, Actor.Actor):
 	def lookAt(self, targetList):
 		'''
 		Turn the eyes to face the nearest object in targetList. Objects with a
-		higher priority will always be prefered. In practice, the targetList
+		higher priority will always be preferred. In practice, the targetList
 		is provided by a Near sensor, so it won't include every object in the
 		scene. Objects with a LookAt priority of less than zero will be ignored.
 		'''
@@ -293,7 +293,7 @@ class Snail(SnailSegment, Actor.Actor):
 				else:
 					angZIndex = ((-1.0 - vec.x) * MULT) - MULT
 			angZIndex = Utilities._clamp(-150, 150, angZIndex)
-			angXIndex = p.z * MULT
+			angXIndex = vec.z * MULT
 			return angXIndex, angZIndex
 		
 		def setEyeRot(ob, XL, ZL, XR, ZR, fac):
@@ -323,13 +323,8 @@ class Snail(SnailSegment, Actor.Actor):
 		# Normally we would need to find cos(x) to get the angle on the Z-axis.
 		# But here, x drives an IPO curve with the cosine wave baked into it.
 		#
-#		print("Eye    ", self.EyeLocL.worldPosition)
-#		print("Nearest", nearest.worldPosition)
 		p = Utilities._toLocal(self.EyeLocL, nearest.worldPosition)
-#		print("local  ", p)
 		angXIndexL, angZIndexL = getAngleIndices(p)
-		print(angXIndexL, angZIndexL)
-#		print("local  ", p)
 		
 		p = Utilities._toLocal(self.EyeLocR, nearest.worldPosition)
 		angXIndexR, angZIndexR = getAngleIndices(p)

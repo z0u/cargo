@@ -202,7 +202,7 @@ def _toLocal(referential, point):
 	'''
 	refP = referential.worldPosition
 	refOMat = referential.worldOrientation.copy()
-	refOMat.invert()
+#	refOMat.invert()
 	return (point - refP) * refOMat
 
 def _toWorld(referential, point):
@@ -216,7 +216,8 @@ def _toWorld(referential, point):
 	point:       The point, in local space, to transform. (mathutils.Vector)
 	'''
 	refP = referential.worldPosition
-	refOMat = referential.worldOrientation
+	refOMat = referential.worldOrientation.copy()
+	refOMat.invert()
 	return (point * refOMat) + refP
 
 def _toWorldVec(referential, dir):

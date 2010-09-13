@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import mathutils
 from . import Utilities
 from . import Sound
 from .Story import *

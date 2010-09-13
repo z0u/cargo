@@ -645,7 +645,8 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Head.setBendAngle(o['BendAngleFore'])
 		self.Tail.setBendAngle(o['BendAngleAft'])
 		
-		self.Trail.onSnailMoved(self.Owner['SpeedMultiplier'])
+		if (fwd or back):
+			self.Trail.onSnailMoved(self.Owner['SpeedMultiplier'])
 	
 	def OnButton1(self, positive, triggered):
 		if positive and triggered:

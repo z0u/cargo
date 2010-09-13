@@ -76,8 +76,8 @@ class Water(Actor.ActorListener):
 		Utilities.SceneManager.Unsubscribe(self)
 	
 	def SpawnSurfaceDecal(self, template, position):
-		pos = position
-		pos[2] = self.Owner.worldPosition[2]
+		pos = position.copy()
+		pos.z = self.Owner.worldPosition.z
 		
 		#
 		# Transform template.
@@ -105,13 +105,13 @@ class Water(Actor.ActorListener):
 		# Transform template.
 		#
 		vec = actor.Owner.getLinearVelocity(False)
-		if vec.magnitude == 0.0:
-			vec = mathutils.Vector(0.0, 0.0, -1.0)
+		if vec.magnitude <= 0.1:
+			vec = mathutils.Vector((0.0, 0.0, -1.0))
 		else:
 			vec.normalize()
-		vec *= (actor.Owner['FloatRadius'] + BUBBLE_BIAS)
+		vec = vec * (actor.Owner['FloatRadius'] + BUBBLE_BIAS)
 		pos = actor.Owner.worldPosition.copy()
-		pos -= vec
+		pos = pos - vec
 		template.worldPosition = pos
 		
 		#
@@ -160,7 +160,7 @@ class Water(Actor.ActorListener):
 				# Hit was from inside.
 				inside = True
 		
-		depth = hitPoint[2] - origin.z
+		depth = hitPoint.z - origin.z
 		submergedFactor = depth / (actor.Owner['FloatRadius'] * 2.0)
 		submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
 		
@@ -215,7 +215,7 @@ class Water(Actor.ActorListener):
 		else:
 			actor.setOxygen(1.0)
 		
-		if submergedFactor <= 0.1:
+		if submergedFactor <= 0.1 and not self.isBubble(actor):
 			# Object has emerged.
 			body['CurrentBuoyancy'] = body['Buoyancy']
 			return False
@@ -332,7 +332,7 @@ class Water(Actor.ActorListener):
 		actor.removeListener(self)
 	
 	def isBubble(self, actor):
-		return 'Bubble' in actor.Owner
+		return 'Bubble' in actor.Owner.name
 
 class Honey(Water):
 	def __init__(self, owner):
@@ -355,6 +355,7 @@ class Bubble(Actor.Actor):
 	
 	def RestoreLocation(self, reason = None):
 		'''Bubbles aren't important enough to respawn. Just destroy them.'''
+		print("Bubble popped")
 		self.Destroy()
 
 def CreateWater(c):

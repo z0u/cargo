@@ -196,7 +196,7 @@ class Bucket(Actor.Actor):
         self.updateCamera()
     
     def frameChanged(self):
-        frame = self.Owner['Frame']
+        frame = self.owner['Frame']
         if frame < 170:
             self.setDirection(Bucket.DIR_UP)
         else:

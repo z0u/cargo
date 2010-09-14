@@ -50,19 +50,19 @@ class Timer(Actor.Actor):
 	def Start(self):
 		'''The the timer running for the duration specified by the owner.'''
 		self.Tics = 0.0
-		self.TargetTics = self.Owner['Duration'] * GameLogic.getLogicTicRate()
+		self.TargetTics = self.owner['Duration'] * GameLogic.getLogicTicRate()
 		if self.TargetTics < 1.0:
 			self.TargetTics = 1.0
-		Utilities.addState(self.Owner, self.S_RUNNING)
+		Utilities.addState(self.owner, self.S_RUNNING)
 		self.Pulse()
 
 	def Stop(self):
 		'''Cancel the timer. The gauge will be hidden. No message will be sent.
 		'''
-		Utilities.remState(self.Owner, self.S_RUNNING)
+		Utilities.remState(self.owner, self.S_RUNNING)
 		
-		if 'Style' in self.Owner:
-			gauge = UI.HUD.GetGauge(self.Owner['Style'])
+		if 'Style' in self.owner:
+			gauge = UI.HUD.GetGauge(self.owner['Style'])
 			if gauge:
 				gauge.Hide()
 
@@ -72,19 +72,19 @@ class Timer(Actor.Actor):
 		if self.Suspended:
 			return
 		
-		if 'Paused' in self.Owner:
-			if self.Owner['Paused'] == 'Temporary':
+		if 'Paused' in self.owner:
+			if self.owner['Paused'] == 'Temporary':
 				# Pause this frame, but resume on the next.
-				self.Owner['Paused'] = 'No'
+				self.owner['Paused'] = 'No'
 				return
-			elif self.Owner['Paused'] == 'Yes':
+			elif self.owner['Paused'] == 'Yes':
 				return
 		
 		self.Tics = self.Tics + 1.0
 		fraction = self.Tics / self.TargetTics
 		
-		if 'Style' in self.Owner:
-			gauge = UI.HUD.GetGauge(self.Owner['Style'])
+		if 'Style' in self.owner:
+			gauge = UI.HUD.GetGauge(self.owner['Style'])
 			if gauge:
 				gauge.SetFraction(1.0 - fraction)
 				gauge.Show()
@@ -97,7 +97,7 @@ class Timer(Actor.Actor):
 		'''Called when the timer has finished normally. This usually sends the
 		message specified by the 'Message' property. Override to change this
 		functionality.'''
-		GameLogic.sendMessage(self.Owner['Message'])
+		GameLogic.sendMessage(self.owner['Message'])
 
 def CreateTimer(c):
 	'''Create a new timer from this controller's owner.'''

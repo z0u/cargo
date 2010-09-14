@@ -61,7 +61,7 @@ class _LODManager:
 	def Activate(self):
 		boundsList = []
 		for c in self.Colliders:
-			boundsList.append(Cube(c.Owner.worldPosition, c.Owner['LODRadius']))
+			boundsList.append(Cube(c.owner.worldPosition, c.owner['LODRadius']))
 		for t in self.Trees:
 			t.ActivateRange(boundsList)
 

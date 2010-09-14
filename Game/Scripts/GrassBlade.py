@@ -46,16 +46,16 @@ class SBParticle:
 
 class GrassBlade:
 	def __init__(self, owner):
-		self.Owner = owner
-		self.Owner['GrassBlade'] = self
+		self.owner = owner
+		self.owner['GrassBlade'] = self
 		
-		ry = self.Owner['GrassRadY']
-		rz = self.Owner['GrassRadZ']
+		ry = self.owner['GrassRadY']
+		rz = self.owner['GrassRadZ']
 		self.BBox = Utilities.Box2D(0.0 - ry, 0.0 - rz, ry, rz)
 		
 		self.Segments = []
-		for i in range(0, self.Owner['nSegments']):
-			p = SBParticle(self.Owner['Spring'], self.Owner['Damping'], i)
+		for i in range(0, self.owner['nSegments']):
+			p = SBParticle(self.owner['Spring'], self.owner['Damping'], i)
 			self.Segments.append(p)
 		
 		self.LastBaseFrame = ZERO2.copy()
@@ -63,15 +63,15 @@ class GrassBlade:
 		Utilities.SceneManager.Subscribe(self)
 	
 	def OnSceneEnd(self):
-		self.Owner['GrassBlade'] = None
-		self.Owner = None
+		self.owner['GrassBlade'] = None
+		self.owner = None
 		Utilities.SceneManager.Unsubscribe(self)
 
 	def GetCollisionForce(self, collider):
 		#
 		# Transform collider into blade's coordinate system.
 		#
-		cPos = Utilities._toLocal(self.Owner, collider.worldPosition)
+		cPos = Utilities._toLocal(self.owner, collider.worldPosition)
 		
 		#
 		# The blades are rotated 90 degrees to work better as Blender particles.
@@ -112,8 +112,8 @@ class GrassBlade:
 		vec = ZERO2.copy()
 		for col in colliders:
 			vec = vec + self.GetCollisionForce(col)
-		self.Owner['BladeXBase'] = vec.x
-		self.Owner['BladeYBase'] = vec.x
+		self.owner['BladeXBase'] = vec.x
+		self.owner['BladeYBase'] = vec.x
 		
 		linkDisplacement = vec - self.LastBaseFrame
 		self.LastBaseFrame = vec
@@ -121,7 +121,7 @@ class GrassBlade:
 		#
 		# Provide input to other logic paths (a sensor might watch this).
 		#
-		self.Owner['Acceleration'] = linkDisplacement.magnitude
+		self.owner['Acceleration'] = linkDisplacement.magnitude
 		
 		#
 		# Move each link in the opposite direction to the preceding link.
@@ -129,8 +129,8 @@ class GrassBlade:
 		for s in self.Segments:
 			s.Frame = s.Frame - linkDisplacement
 			s.UpdateDynamics()
-			self.Owner[s.XProp] = s.Frame.x
-			self.Owner[s.YProp] = s.Frame.y
+			self.owner[s.XProp] = s.Frame.x
+			self.owner[s.YProp] = s.Frame.y
 			linkDisplacement = s.Velocity
 
 def CreateGrassBlade(c):

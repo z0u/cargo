@@ -65,20 +65,13 @@ S_ARM_POP        = 16
 S_ARM_ENTER      = 17
 S_ARM_EXIT       = 18
 
-
-ZAXIS  = mathutils.Vector([0.0, 0.0, 1.0])
-XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
-ORIGIN = mathutils.Vector([0.0, 0.0, 0.0])
-EPSILON = 0.000001
-MINVECTOR = mathutils.Vector([0.0, 0.0, EPSILON])
-
 class SnailSegment:
 	def __init__(self, owner, parent):
 		self.Parent  = parent # SnailSegment or None
 		self.Child   = None   # SnailSegment or None
 		self.Fulcrum = None   # KX_GameObject
 		self.Rays    = {}     # Dictionary of SnailRays
-		self.Owner = owner
+		self.owner = owner
 		Utilities.parseChildren(self, owner)
 
 	def parseChild(self, child, type):
@@ -90,17 +83,17 @@ class SnailSegment:
 			return True
 		elif (type == "SnailSegment"):
 			if (self.Child):
-				print("Segment %s already has a child." % self.Owner.name)
+				print("Segment %s already has a child." % self.owner.name)
 			self.Child = SnailSegment(child, self)
 			return True
 		elif (type == "SegmentChildPivot"):
 			if (self.Child):
-				print("Segment %s already has a child." % self.Owner.name)
+				print("Segment %s already has a child." % self.owner.name)
 			self.Child = SegmentChildPivot(child)
 			return True
 		elif (type == "Fulcrum"):
 			if (self.Fulcrum):
-				print("Segment %s already has a fulcrum." % self.Owner.name)
+				print("Segment %s already has a fulcrum." % self.owner.name)
 			self.Fulcrum = child
 			return True
 		else:
@@ -108,15 +101,15 @@ class SnailSegment:
 
 	def orient(self, parentOrnMat):
 		if (self.Parent):
-			right = self.Parent.Owner.getAxisVect(XAXIS)
-			self.Owner.alignAxisToVect(right, 0)
+			right = self.Parent.owner.getAxisVect(Utilities.XAXIS)
+			self.owner.alignAxisToVect(right, 0)
 		
 		_, p1 = self.Parent.Rays['Right'].getHitPosition()
 		_, p2 = self.Parent.Rays['Left'].getHitPosition()
 		p3 = self.Parent.Fulcrum.worldPosition
 		normal = geometry.TriangleNormal(p1, p2, p3)
 		
-		if normal.dot(self.Parent.Owner.getAxisVect(ZAXIS)) > 0.0:
+		if normal.dot(self.Parent.owner.getAxisVect(Utilities.ZAXIS)) > 0.0:
 			#
 			# Normal is within 90 degrees of parent's normal -> segment not
 			# doubling back on itself.
@@ -125,9 +118,9 @@ class SnailSegment:
 			# Don't use a factor of 0.5: potential for normal to average out
 			# to be (0,0,0)
 			#
-			orientation = self.Owner.getAxisVect(ZAXIS)
+			orientation = self.owner.getAxisVect(Utilities.ZAXIS)
 			orientation = Utilities._lerp(normal, orientation, 0.4)
-			self.Owner.alignAxisToVect(orientation, 2)
+			self.owner.alignAxisToVect(orientation, 2)
 		
 		#
 		# Make orientation available to armature. Use the inverse of the
@@ -135,14 +128,14 @@ class SnailSegment:
 		#
 		parentInverse = parentOrnMat.copy()
 		parentInverse.invert()
-		localOrnMat = parentInverse * self.Owner.worldOrientation
+		localOrnMat = parentInverse * self.owner.worldOrientation
 		euler = localOrnMat.to_euler()
-		self.Owner['Heading'] = radToDegrees(euler.x)
-		self.Owner['Pitch'] = radToDegrees(euler.y)
-		self.Owner['Roll'] = radToDegrees(euler.z)
+		self.owner['Heading'] = radToDegrees(euler.x)
+		self.owner['Pitch'] = radToDegrees(euler.y)
+		self.owner['Roll'] = radToDegrees(euler.z)
 		
 		if (self.Child):
-			self.Child.orient(self.Owner.worldOrientation)
+			self.Child.orient(self.owner.worldOrientation)
 	
 	def setBendAngle(self, angle):
 		if self.Child:
@@ -153,7 +146,7 @@ class AppendageRoot(SnailSegment):
 		SnailSegment.__init__(self, owner, None)
 		
 	def orient(self):
-		self.Child.orient(self.Owner.worldOrientation)
+		self.Child.orient(self.owner.worldOrientation)
 
 class SegmentChildPivot(SnailSegment):
 	def __init__(self, owner):
@@ -163,7 +156,7 @@ class SegmentChildPivot(SnailSegment):
 		self.Child.orient(parentOrnMat)
 	
 	def setBendAngle(self, angle):
-		self.Owner['BendAngle'] = angle
+		self.owner['BendAngle'] = angle
 		self.Child.setBendAngle(angle)
 
 class Snail(SnailSegment, Actor.Actor):
@@ -196,8 +189,8 @@ class Snail(SnailSegment, Actor.Actor):
 		global DEBUG
 		if DEBUG:
 			scene = GameLogic.getCurrentScene()
-			marker = scene.addObject("SnailMarker", self.Owner)
-			marker.setParent(self.Owner)
+			marker = scene.addObject("SnailMarker", self.owner)
+			marker.setParent(self.owner)
 	
 	def parseChild(self, child, type):
 		if type == "AppendageRoot":
@@ -253,22 +246,22 @@ class Snail(SnailSegment, Actor.Actor):
 		#
 		if counter.mode:
 			angV = counter.mode.getAngularVelocity()
-			if angV.magnitude < EPSILON:
-				angV = MINVECTOR
-			self.Owner.setAngularVelocity(angV)
+			if angV.magnitude < Utilities.EPSILON:
+				angV = Utilities.MINVECTOR
+			self.owner.setAngularVelocity(angV)
 		self.TouchedObject = counter.mode
 		
 		#
 		# Set property on object so it knows whether it's falling. This is used
 		# to detect when to transition from S_FALLING to S_CRAWLING.
 		#
-		self.Owner['nHit'] = counter.n
+		self.owner['nHit'] = counter.n
 		
 		#
 		# Derive normal from hit points and update orientation.
 		#
 		orientation = geometry.QuadNormal(p0, p1, p2, p3)
-		self.Owner.alignAxisToVect(orientation, 2)
+		self.owner.alignAxisToVect(orientation, 2)
 		
 		self.Head.orient()
 		self.Tail.orient()
@@ -308,7 +301,7 @@ class Snail(SnailSegment, Actor.Actor):
 		for target in targetList:
 			if target['LookAt'] < maxPriority:
 				continue
-			dist = self.Owner.getDistanceTo(target)
+			dist = self.owner.getDistanceTo(target)
 			if nearest == None or dist < minDist:
 				nearest = target
 				minDist = dist
@@ -316,7 +309,7 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		if not nearest:
 			setEyeRot(self.Armature, 0.0, 0.0, 0.0, 0.0, 
-			          self.Owner['EyeRotFac'])
+			          self.owner['EyeRotFac'])
 			return
 		
 		#
@@ -330,15 +323,15 @@ class Snail(SnailSegment, Actor.Actor):
 		angXIndexR, angZIndexR = getAngleIndices(p)
 		
 		setEyeRot(self.Armature, angXIndexL, angZIndexL, angXIndexR, angZIndexR,
-		          self.Owner['EyeRotFac'])
+		          self.owner['EyeRotFac'])
 	
 	def _stowShell(self, shell):
 		referential = shell.CargoHook
 		
-		Utilities.setRelOrn(shell.Owner,
+		Utilities.setRelOrn(shell.owner,
 						    self.getAttachPoints()['CargoHold'],
 						    referential)
-		Utilities.setRelPos(shell.Owner,
+		Utilities.setRelPos(shell.owner,
 						    self.getAttachPoints()['CargoHold'],
 						    referential)
 		self.AddChild(shell, 'CargoHold', compound = False)
@@ -355,18 +348,18 @@ class Snail(SnailSegment, Actor.Actor):
 		Adding the shell as a child prevents collision with the
 		parent. The shell's inactive state will also be set.
 		'''
-		Utilities.remState(self.Owner, S_NOSHELL)
-		Utilities.addState(self.Owner, S_HASSHELL)
+		Utilities.remState(self.owner, S_NOSHELL)
+		Utilities.addState(self.owner, S_HASSHELL)
 		
 		self._stowShell(shell)
 		
 		self.Shell = shell
-		self.Owner['HasShell'] = 1
-		self.Owner['DynamicMass'] = self.Owner['DynamicMass'] + self.Shell.Owner['DynamicMass']
+		self.owner['HasShell'] = 1
+		self.owner['DynamicMass'] = self.owner['DynamicMass'] + self.Shell.owner['DynamicMass']
 		self.Shell.OnPickedUp(self, animate)
 		if animate:
-			self.Shockwave.worldPosition = self.Shell.Owner.worldPosition
-			self.Shockwave.worldOrientation = self.Shell.Owner.worldOrientation
+			self.Shockwave.worldPosition = self.Shell.owner.worldPosition
+			self.Shockwave.worldOrientation = self.Shell.owner.worldOrientation
 			Utilities.setState(self.Shockwave, 2)
 	
 	def dropShell(self, animate):
@@ -374,28 +367,28 @@ class Snail(SnailSegment, Actor.Actor):
 		if self.Suspended:
 			return
 		
-		if not Utilities.hasState(self.Owner, S_HASSHELL):
+		if not Utilities.hasState(self.owner, S_HASSHELL):
 			return
 		
-		Utilities.remState(self.Owner, S_HASSHELL)
-		Utilities.addState(self.Owner, S_POPPING)
+		Utilities.remState(self.owner, S_HASSHELL)
+		Utilities.addState(self.owner, S_POPPING)
 		Utilities.addState(self.Armature, S_ARM_POP)
 		self.Armature['NoTransition'] = not animate
 	
 	def onDropShell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
-		if not Utilities.hasState(self.Owner, S_POPPING):
+		if not Utilities.hasState(self.owner, S_POPPING):
 			return
 		
-		Utilities.remState(self.Owner, S_POPPING)
-		Utilities.addState(self.Owner, S_NOSHELL)
+		Utilities.remState(self.owner, S_POPPING)
+		Utilities.addState(self.owner, S_NOSHELL)
 		
 		self.RemoveChild(self.Shell)
-		velocity = self.Owner.getAxisVect(ZAXIS)
-		velocity = velocity * self.Owner['ShellPopForce']
-		self.Shell.Owner.applyImpulse(self.Shell.Owner.worldPosition, velocity)
-		self.Owner['HasShell'] = 0
-		self.Owner['DynamicMass'] = self.Owner['DynamicMass'] - self.Shell.Owner['DynamicMass']
+		velocity = self.owner.getAxisVect(Utilities.ZAXIS)
+		velocity = velocity * self.owner['ShellPopForce']
+		self.Shell.owner.applyImpulse(self.Shell.owner.worldPosition, velocity)
+		self.owner['HasShell'] = 0
+		self.owner['DynamicMass'] = self.owner['DynamicMass'] - self.Shell.owner['DynamicMass']
 		self.Shell.OnDropped()
 		self.Shell = None
 	
@@ -408,11 +401,11 @@ class Snail(SnailSegment, Actor.Actor):
 		if self.Suspended:
 			return
 		
-		if not Utilities.hasState(self.Owner, S_HASSHELL):
+		if not Utilities.hasState(self.owner, S_HASSHELL):
 			return
 		
-		Utilities.remState(self.Owner, S_HASSHELL)
-		Utilities.addState(self.Owner, S_ENTERING)
+		Utilities.remState(self.owner, S_HASSHELL)
+		Utilities.addState(self.owner, S_ENTERING)
 		Utilities.remState(self.Armature, S_ARM_CRAWL)
 		Utilities.remState(self.Armature, S_ARM_LOCOMOTION)
 		Utilities.addState(self.Armature, S_ARM_ENTER)
@@ -422,32 +415,32 @@ class Snail(SnailSegment, Actor.Actor):
 	def onEnterShell(self):
 		'''Transfers control of the character to the shell. The snail must have
 		a shell.'''
-		if not Utilities.hasState(self.Owner, S_ENTERING):
+		if not Utilities.hasState(self.owner, S_ENTERING):
 			return
 		
-		Utilities.remState(self.Owner, S_CRAWLING)
-		Utilities.remState(self.Owner, S_ENTERING)
-		Utilities.addState(self.Owner, S_INSHELL)
+		Utilities.remState(self.owner, S_CRAWLING)
+		Utilities.remState(self.owner, S_ENTERING)
+		Utilities.addState(self.owner, S_INSHELL)
 		
-		linV = self.Owner.getLinearVelocity()
-		angV = self.Owner.getAngularVelocity()
+		linV = self.owner.getLinearVelocity()
+		angV = self.owner.getAngularVelocity()
 		
 		self.RemoveChild(self.Shell)
-		self.Owner.setVisible(0, 1)
-		self.Owner.localScale = (0.01, 0.01, 0.01)
+		self.owner.setVisible(0, 1)
+		self.owner.localScale = (0.01, 0.01, 0.01)
 		self.Shell.AddChild(self)
 		
-		self.Shell.Owner.setLinearVelocity(linV)
-		self.Shell.Owner.setAngularVelocity(angV)
+		self.Shell.owner.setLinearVelocity(linV)
+		self.Shell.owner.setAngularVelocity(angV)
 	
 		#
 		# Swap mass with shell so the shell can influence bendy leaves properly
 		#
-		dm = self.Shell.Owner['DynamicMass']
-		self.Shell.Owner['DynamicMass'] = self.Owner['DynamicMass']
-		self.Owner['DynamicMass'] = dm
+		dm = self.Shell.owner['DynamicMass']
+		self.Shell.owner['DynamicMass'] = self.owner['DynamicMass']
+		self.owner['DynamicMass'] = dm
 		
-		self.Owner['InShell'] = 1
+		self.owner['InShell'] = 1
 		self.Shell.OnEntered()
 		Actor.Director.setMainCharacter(self.Shell)
 	
@@ -459,37 +452,37 @@ class Snail(SnailSegment, Actor.Actor):
 		if self.Suspended:
 			return
 		
-		if not Utilities.hasState(self.Owner, S_INSHELL):
+		if not Utilities.hasState(self.owner, S_INSHELL):
 			return
 		
-		Utilities.remState(self.Owner, S_INSHELL)
-		Utilities.addState(self.Owner, S_EXITING)
-		Utilities.addState(self.Owner, S_FALLING)
+		Utilities.remState(self.owner, S_INSHELL)
+		Utilities.addState(self.owner, S_EXITING)
+		Utilities.addState(self.owner, S_FALLING)
 		Utilities.addState(self.Armature, S_ARM_EXIT)
 		Utilities.addState(self.Armature, S_ARM_CRAWL)
 		Utilities.addState(self.Armature, S_ARM_LOCOMOTION)
 		self.Armature['NoTransition'] = not animate
 		
-		linV = self.Shell.Owner.getLinearVelocity()
-		angV = self.Shell.Owner.getAngularVelocity()
+		linV = self.Shell.owner.getLinearVelocity()
+		angV = self.Shell.owner.getAngularVelocity()
 		
 		self.Shell.RemoveChild(self)
-		self.Owner.localScale = (1.0, 1.0, 1.0)
-		self.Owner.worldPosition = self.Shell.Owner.worldPosition
-		self.Owner.setVisible(1, 1)
+		self.owner.localScale = (1.0, 1.0, 1.0)
+		self.owner.worldPosition = self.Shell.owner.worldPosition
+		self.owner.setVisible(1, 1)
 		self._stowShell(self.Shell)
 		
-		self.Owner.setLinearVelocity(linV)
-		self.Owner.setAngularVelocity(angV)
+		self.owner.setLinearVelocity(linV)
+		self.owner.setAngularVelocity(angV)
 	
 		#
 		# Swap mass with shell so the body can influence bendy leaves properly
 		#
-		dm = self.Shell.Owner['DynamicMass']
-		self.Shell.Owner['DynamicMass'] = self.Owner['DynamicMass']
-		self.Owner['DynamicMass'] = dm
+		dm = self.Shell.owner['DynamicMass']
+		self.Shell.owner['DynamicMass'] = self.owner['DynamicMass']
+		self.owner['DynamicMass'] = dm
 		
-		self.Owner['InShell'] = 0
+		self.owner['InShell'] = 0
 		self.Shell.OnExited()
 		Actor.Director.setMainCharacter(self)
 	
@@ -497,11 +490,11 @@ class Snail(SnailSegment, Actor.Actor):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
 		transferred).'''
-		if not Utilities.hasState(self.Owner, S_EXITING):
+		if not Utilities.hasState(self.owner, S_EXITING):
 			return
 		
-		Utilities.remState(self.Owner, S_EXITING)
-		Utilities.addState(self.Owner, S_HASSHELL)
+		Utilities.remState(self.owner, S_EXITING)
+		Utilities.addState(self.owner, S_HASSHELL)
 		self.Shell.OnPostExit()
 	
 	def onStartCrawling(self):
@@ -509,15 +502,15 @@ class Snail(SnailSegment, Actor.Actor):
 		#
 		# Don't set it quite to zero: zero vectors are ignored!
 		#
-		self.Owner.setAngularVelocity([0.0, 0.0, 0.0001], 0)
-		self.Owner.setLinearVelocity([0.0, 0.0, 0.0001], 0)
+		self.owner.setAngularVelocity([0.0, 0.0, 0.0001], 0)
+		self.owner.setLinearVelocity([0.0, 0.0, 0.0001], 0)
 	
 	def setSpeedMultiplier(self, mult):
-		self.Owner['SpeedMultiplier'] = max(min(mult, MAX_SPEED), MIN_SPEED)
+		self.owner['SpeedMultiplier'] = max(min(mult, MAX_SPEED), MIN_SPEED)
 
 	def decaySpeed(self):
 		'''Bring the speed of the snail one step closer to normal speed.'''
-		o = self.Owner
+		o = self.owner
 		dr = o['SpeedDecayRate']
 		mult = o['SpeedMultiplier']
 		
@@ -529,21 +522,21 @@ class Snail(SnailSegment, Actor.Actor):
 			o['SpeedMultiplier'] = min(mult + dr, 1.0)
 	
 	def crawling(self):
-		return Utilities.hasState(self.Owner, S_CRAWLING)
+		return Utilities.hasState(self.owner, S_CRAWLING)
 	
 	def Drown(self):
-		if not Utilities.hasState(self.Owner, S_INSHELL):
+		if not Utilities.hasState(self.owner, S_INSHELL):
 			return Actor.Actor.Drown(self)
 		else:
 			return False
 	
 	def damage(self, amount, shock):
-		if (Utilities.hasState(self.Owner, S_ENTERING) or
-		    Utilities.hasState(self.Owner, S_EXITING)):
+		if (Utilities.hasState(self.owner, S_ENTERING) or
+		    Utilities.hasState(self.owner, S_EXITING)):
 			return
 		Actor.Actor.damage(self, amount, shock)
 		if amount > 0.0:
-			if shock and Utilities.hasState(self.Owner, S_HASSHELL):
+			if shock and Utilities.hasState(self.owner, S_HASSHELL):
 				self.enterShell(True)
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
@@ -554,7 +547,7 @@ class Snail(SnailSegment, Actor.Actor):
 		if not self.crawling() or self.Suspended:
 			return
 		
-		o = self.Owner
+		o = self.owner
 		
 		#
 		# Decide which direction to move in on the Y-axis.
@@ -592,7 +585,7 @@ class Snail(SnailSegment, Actor.Actor):
 			targetBendAngleFore = targetBendAngleFore + o['MaxBendAngle']
 			targetRot = targetRot - o['MaxRot']
 		
-		locomotionStep = self.Owner['SpeedMultiplier'] * 0.4
+		locomotionStep = self.owner['SpeedMultiplier'] * 0.4
 		if fwdSign > 0:
 			#
 			# Moving forward.
@@ -622,7 +615,7 @@ class Snail(SnailSegment, Actor.Actor):
 		# Rotate the snail.
 		#
 		o['Rot'] = Utilities._lerp(o['Rot'], targetRot, o['RotFactor'])
-		oRot = mathutils.Matrix.Rotation(o['Rot'], 3, ZAXIS)
+		oRot = mathutils.Matrix.Rotation(o['Rot'], 3, Utilities.ZAXIS)
 		o.localOrientation = o.localOrientation * oRot
 		
 		#
@@ -646,21 +639,21 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Tail.setBendAngle(o['BendAngleAft'])
 		
 		if (fwd or back):
-			self.Trail.onSnailMoved(self.Owner['SpeedMultiplier'])
+			self.Trail.onSnailMoved(self.owner['SpeedMultiplier'])
 	
 	def OnButton1(self, positive, triggered):
 		if positive and triggered:
-			if Utilities.hasState(self.Owner, S_INSHELL):
+			if Utilities.hasState(self.owner, S_INSHELL):
 				self.exitShell(animate = True)
-			elif Utilities.hasState(self.Owner, S_HASSHELL):
+			elif Utilities.hasState(self.owner, S_HASSHELL):
 				self.enterShell(animate = True)
-			elif Utilities.hasState(self.Owner, S_NOSHELL):
+			elif Utilities.hasState(self.owner, S_NOSHELL):
 				if self.NearestShell:
 					self.setShell(self.NearestShell, animate = True)
 	
 	def OnButton2(self, positive, triggered):
 		if positive and triggered:
-			if Utilities.hasState(self.Owner, S_HASSHELL):
+			if Utilities.hasState(self.owner, S_HASSHELL):
 				self.dropShell(animate = True)
 
 class SnailRayCluster:
@@ -671,19 +664,19 @@ class SnailRayCluster:
 	def __init__(self, owner):
 		self.Rays = []
 		self.Marker = None
-		self.Owner = owner
+		self.owner = owner
 		self.DebugMesh = None
 		Utilities.parseChildren(self, owner)
 		if (len(self.Rays) <= 0):
-			raise Exception("Ray cluster %s has no ray children." % self.Owner.name)
-		self.Rays.sort(key=lambda ray: ray.Owner['Priority'])
-		self.LastHitPoint = ORIGIN
+			raise Exception("Ray cluster %s has no ray children." % self.owner.name)
+		self.Rays.sort(key=lambda ray: ray.owner['Priority'])
+		self.LastHitPoint = Utilities.ORIGIN.copy()
 		
 		global DEBUG
 		if DEBUG:
 			self.DebugMesh.setVisible(True, True)
 			scene = GameLogic.getCurrentScene()
-			self.Marker = scene.addObject("RayMarker", self.Owner)
+			self.Marker = scene.addObject("PointMarker", self.owner)
 		else:
 			self.DebugMesh.endObject()
 	
@@ -710,10 +703,10 @@ class SnailRayCluster:
 		for ray in self.Rays:
 			ob, p = ray.getHitPosition()
 			if ob:
-				self.LastHitPoint = Utilities._toLocal(self.Owner, p)
+				self.LastHitPoint = Utilities._toLocal(self.owner, p)
 				break
 		
-		wp = Utilities._toWorld(self.Owner, self.LastHitPoint)
+		wp = Utilities._toWorld(self.owner, self.LastHitPoint)
 		if (self.Marker):
 			self.Marker.worldPosition = wp
 			
@@ -724,9 +717,9 @@ class SnailRay:
 
 	def __init__(self, owner):
 		self.Marker = None
-		self.Owner = owner
+		self.owner = owner
 		Utilities.parseChildren(self, owner)
-		self.LastPoint = self.Owner.worldPosition
+		self.LastPoint = self.owner.worldPosition
 	
 	def parseChild(self, child, type):
 		if (type == "Marker"):
@@ -735,13 +728,13 @@ class SnailRay:
 			return True
 
 	def getHitPosition(self):
-		origin = self.Owner.worldPosition
-		vec = self.Owner.getAxisVect(ZAXIS)
+		origin = self.owner.worldPosition
+		vec = self.owner.getAxisVect(Utilities.ZAXIS)
 		through = origin + vec
-		ob, hitPoint, normal = self.Owner.rayCast(
+		ob, hitPoint, normal = self.owner.rayCast(
 			through,            # to
 			origin,             # from
-			self.Owner['Length'],  # dist
+			self.owner['Length'],  # dist
 			'Ground',           # prop
 			1,                  # face
 			1                   # xray
@@ -765,7 +758,6 @@ class SnailTrail:
 	S_NORMAL = 2
 	S_SLOW = 3
 	S_FAST = 4
-	SPEED_EPSILON = 0.2
 	
 	def __init__(self, owner, snail):
 		self.LastMinorPos = owner.worldPosition.copy()
@@ -774,7 +766,7 @@ class SnailTrail:
 		self.TrailSpots = []
 		self.SpotIndex = 0
 		self.Snail = snail
-		self.Owner = owner
+		self.owner = owner
 		Utilities.parseChildren(self, owner)
 	
 	def parseChild(self, child, type):
@@ -796,7 +788,7 @@ class SnailTrail:
 		
 		scene = GameLogic.getCurrentScene()
 		spot = self.TrailSpots[self.SpotIndex]
-		spotI = scene.addObject(spot, self.Owner)
+		spotI = scene.addObject(spot, self.owner)
 		
 		#
 		# Attach the spot to the object that the snail is crawling on.
@@ -807,10 +799,10 @@ class SnailTrail:
 		Utilities.setState(spotI, speedStyle)
 	
 	def onSnailMoved(self, speedMultiplier):
-		pos = self.Owner.worldPosition
+		pos = self.owner.worldPosition
 		
 		distMajor = (pos - self.LastMajorPos).magnitude
-		if distMajor > self.Snail.Owner['TrailSpacingMajor']:
+		if distMajor > self.Snail.owner['TrailSpacingMajor']:
 			self.LastMajorPos = pos.copy()
 			self.Paused = not self.Paused
 		
@@ -818,12 +810,12 @@ class SnailTrail:
 			return
 		
 		distMinor = (pos - self.LastMinorPos).magnitude
-		if distMinor > self.Snail.Owner['TrailSpacingMinor']:
+		if distMinor > self.Snail.owner['TrailSpacingMinor']:
 			self.LastMinorPos = pos.copy()
 			speedStyle = SnailTrail.S_NORMAL
-			if speedMultiplier > (1.0 + SnailTrail.SPEED_EPSILON):
+			if speedMultiplier > (1.0 + Utilities.EPSILON):
 				speedStyle = SnailTrail.S_FAST
-			elif speedMultiplier < (1.0 - SnailTrail.SPEED_EPSILON):
+			elif speedMultiplier < (1.0 - Utilities.EPSILON):
 				speedStyle = SnailTrail.S_SLOW
 			self.AddSpot(speedStyle)
 

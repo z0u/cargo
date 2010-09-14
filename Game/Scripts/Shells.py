@@ -47,14 +47,14 @@ class ShellBase(Actor.Actor):
 		#
 		if not self.CargoHook:
 			raise Utilities.SemanticException(
-				"Warning: Shell %s has no cargo hook." % self.Owner.name)
+				"Warning: Shell %s has no cargo hook." % self.owner.name)
 		
 		if self.Occupier:
 			self.Occupier.state = 1<<0 # state 1
 		
 		self.LookAt = -1
-		Utilities.setState(self.Owner, S_IDLE)
-		Utilities.addState(self.Owner, S_ALWAYS)
+		Utilities.setState(self.owner, S_IDLE)
+		Utilities.addState(self.owner, S_ALWAYS)
 	
 	def parseChild(self, child, t):
 		if t == 'CargoHook':
@@ -71,9 +71,9 @@ class ShellBase(Actor.Actor):
 		No attached snail -> Dynamic.
 		Being carried by snail -> Not dynamic.
 		Occupied by snail -> Dynamic.'''
-		if self.Owner['Carried']:
+		if self.owner['Carried']:
 			return False
-		elif self.Owner['Occupied']:
+		elif self.owner['Occupied']:
 			return True
 		else:
 			return True
@@ -81,25 +81,25 @@ class ShellBase(Actor.Actor):
 	def OnPickedUp(self, snail, animate):
 		'''Called when a snail picks up this shell.'''
 		self.Snail = snail
-		self.Owner['Carried'] = True
-		Utilities.setState(self.Owner, S_CARRIED)
-		Utilities.addState(self.Owner, S_ALWAYS)
-		self.Owner['NoPickupAnim'] = not animate
+		self.owner['Carried'] = True
+		Utilities.setState(self.owner, S_CARRIED)
+		Utilities.addState(self.owner, S_ALWAYS)
+		self.owner['NoPickupAnim'] = not animate
 		
 		try:
-			self.LookAt = self.Owner['LookAt']
-			self.Owner['LookAt'] = -1
+			self.LookAt = self.owner['LookAt']
+			self.owner['LookAt'] = -1
 		except KeyError:
-			self.Owner['LookAt'] = -1
+			self.owner['LookAt'] = -1
 	
 	def OnDropped(self):
 		'''Called when a snail drops this shell.'''
 		self.Snail = None
-		self.Owner['Carried'] = False
-		Utilities.setState(self.Owner, S_IDLE)
-		Utilities.addState(self.Owner, S_ALWAYS)
+		self.owner['Carried'] = False
+		Utilities.setState(self.owner, S_IDLE)
+		Utilities.addState(self.owner, S_ALWAYS)
 		
-		self.Owner['LookAt'] = self.LookAt
+		self.owner['LookAt'] = self.LookAt
 	
 	def OnPreEnter(self):
 		'''Called when the snail starts to enter this shell. This may happen
@@ -123,15 +123,15 @@ class ShellBase(Actor.Actor):
 	def OnEntered(self):
 		'''Called when a snail enters this shell (just after
 		control is transferred).'''
-		Utilities.setState(self.Owner, S_OCCUPIED)
-		Utilities.addState(self.Owner, S_ALWAYS)
+		Utilities.setState(self.owner, S_OCCUPIED)
+		Utilities.addState(self.owner, S_ALWAYS)
 	
 	def OnExited(self):
 		'''Called when a snail exits this shell (just after
 		control is transferred).'''
-		Utilities.setState(self.Owner, S_CARRIED)
-		Utilities.addState(self.Owner, S_ALWAYS)
-		self.Owner['CurrentBuoyancy'] = self.Owner['Buoyancy']
+		Utilities.setState(self.owner, S_CARRIED)
+		Utilities.addState(self.owner, S_ALWAYS)
+		self.owner['CurrentBuoyancy'] = self.owner['Buoyancy']
 		self.CameraGoal.state = 1<<0 # state 1
 		if self.Occupier:
 			self.Occupier.state = 1<<0 # state 1
@@ -142,10 +142,10 @@ class ShellBase(Actor.Actor):
 		Camera.AutoCamera.RemoveGoal(self.CameraGoal)
 	
 	def IsCarried(self):
-		return self.Owner['Carried']
+		return self.owner['Carried']
 	
 	def OnButton1(self, positive, triggered):
-		if not Utilities.hasState(self.Owner, S_OCCUPIED):
+		if not Utilities.hasState(self.owner, S_OCCUPIED):
 			return
 		
 		if positive and triggered:
@@ -153,19 +153,19 @@ class ShellBase(Actor.Actor):
 		
 	def RestoreLocation(self, reason = None):
 		Actor.Actor.RestoreLocation(self, reason)
-		if Utilities.hasState(self.Owner, S_OCCUPIED):
+		if Utilities.hasState(self.owner, S_OCCUPIED):
 			self.Snail.exitShell(False)
 	
 	def getHealth(self):
-		if (Utilities.hasState(self.Owner, S_CARRIED) or
-		    Utilities.hasState(self.Owner, S_OCCUPIED)):
+		if (Utilities.hasState(self.owner, S_CARRIED) or
+		    Utilities.hasState(self.owner, S_OCCUPIED)):
 			return self.Snail.getHealth()
 		else:
 			return Actor.Actor.getHealth(self)
 	
 	def setHealth(self, value):
-		if (Utilities.hasState(self.Owner, S_CARRIED) or
-		    Utilities.hasState(self.Owner, S_OCCUPIED)):
+		if (Utilities.hasState(self.owner, S_CARRIED) or
+		    Utilities.hasState(self.owner, S_OCCUPIED)):
 			return self.Snail.setHealth(value)
 		else:
 			return Actor.Actor.setHealth(self, value)
@@ -174,7 +174,7 @@ class ShellBase(Actor.Actor):
 class Shell(ShellBase):
 	def OnMovementImpulse(self, fwd, back, left, right):
 		'''Make the shell roll around based on user input.'''
-		if not self.Owner['OnGround']:
+		if not self.owner['OnGround']:
 			return
 		
 		#
@@ -196,7 +196,7 @@ class Shell(ShellBase):
 		#
 		cam = Camera.AutoCamera.Camera
 		p1 = cam.worldPosition
-		p2 = self.Owner.worldPosition
+		p2 = self.owner.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.normalize()
 		leftVec = ZAXIS.cross(fwdVec)
@@ -206,12 +206,12 @@ class Shell(ShellBase):
 		#
 		fwdVec = fwdVec * fwdMagnitude
 		leftVec = leftVec * leftMagnitude
-		finalVec = (fwdVec + leftVec) * self.Owner['Power']
+		finalVec = (fwdVec + leftVec) * self.owner['Power']
 		
 		#
 		# Apply the force.
 		#
-		self.Owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
+		self.owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
 class Wheel(ShellBase):
 	def __init__(self, owner, cameraGoal):
@@ -220,10 +220,10 @@ class Wheel(ShellBase):
 	
 	def Orient(self):
 		'''Try to make the wheel sit upright.'''
-		vec = self.Owner.getAxisVect(ZAXIS)
+		vec = self.owner.getAxisVect(ZAXIS)
 		vec.z = 0.0
 		vec.normalize
-		self.Owner.alignAxisToVect(vec, 2, self.Owner['OrnFac'])
+		self.owner.alignAxisToVect(vec, 2, self.owner['OrnFac'])
 	
 	def _ResetSpeed(self):
 		self.CurrentRotSpeed = 0.0
@@ -250,24 +250,24 @@ class Wheel(ShellBase):
 		#
 		self.CurrentTurnSpeed = Utilities._lerp(
 			self.CurrentTurnSpeed,
-			self.Owner['TurnSpeed'] * leftMagnitude,
-			self.Owner['SpeedFac'])
-		self.Owner.applyRotation(
+			self.owner['TurnSpeed'] * leftMagnitude,
+			self.owner['SpeedFac'])
+		self.owner.applyRotation(
 			ZAXIS * self.CurrentTurnSpeed, False)
 		
 		#
 		# Apply acceleration. The speed will be influenced by the rate that
 		# the wheel is being steered at (above).
 		#
-		turnStrength = abs(self.CurrentTurnSpeed) / self.Owner['TurnSpeed']
-		targetRotSpeed = self.Owner['RotSpeed'] * Utilities._safeInvert(
-			turnStrength, self.Owner['TurnInfluence'])
+		turnStrength = abs(self.CurrentTurnSpeed) / self.owner['TurnSpeed']
+		targetRotSpeed = self.owner['RotSpeed'] * Utilities._safeInvert(
+			turnStrength, self.owner['TurnInfluence'])
 		
 		self.CurrentRotSpeed = Utilities._lerp(
 			self.CurrentRotSpeed,
 			targetRotSpeed,
-			self.Owner['SpeedFac'])
-		self.Owner.setAngularVelocity(ZAXIS * self.CurrentRotSpeed, True)
+			self.owner['SpeedFac'])
+		self.owner.setAngularVelocity(ZAXIS * self.CurrentRotSpeed, True)
 
 class Nut(ShellBase):
 	pass
@@ -277,13 +277,13 @@ class BottleCap(ShellBase):
 		'''Try to make the cap sit upright, and face the direction of travel.'''
 		vec = ZAXIS.copy()
 		vec.negate()
-		self.Owner.alignAxisToVect(vec, 2, self.Owner['OrnFac'])
+		self.owner.alignAxisToVect(vec, 2, self.owner['OrnFac'])
 		
-		facing = self.Owner.getLinearVelocity(False)
+		facing = self.owner.getLinearVelocity(False)
 		facing.z = 0.0
 		if facing.magnitude > EPSILON:
-			self.Owner.alignAxisToVect(
-				facing, 1, self.Owner['TurnFac'] * facing.magnitude)
+			self.owner.alignAxisToVect(
+				facing, 1, self.owner['TurnFac'] * facing.magnitude)
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
 		'''Make the cap jump around around based on user input.'''
@@ -292,7 +292,7 @@ class BottleCap(ShellBase):
 		if not self.Occupier['JumpReady']:
 			return
 		
-		if not self.Owner['OnGround']:
+		if not self.owner['OnGround']:
 			return
 		
 		if fwd or back or left or right:
@@ -320,7 +320,7 @@ class BottleCap(ShellBase):
 		#
 		cam = Camera.AutoCamera.Camera
 		p1 = cam.worldPosition
-		p2 = self.Owner.worldPosition
+		p2 = self.owner.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.z = 0.0
 		fwdVec.normalize()
@@ -332,14 +332,14 @@ class BottleCap(ShellBase):
 		fwdVec = fwdVec * fwdMagnitude
 		leftVec = leftVec * leftMagnitude
 		finalVec = fwdVec + leftVec
-		finalVec.z = self.Owner['Lift']
+		finalVec.z = self.owner['Lift']
 		finalVec.normalize()
-		finalVec = finalVec * self.Owner['Power']
+		finalVec = finalVec * self.owner['Power']
 		
 		#
 		# Apply the force.
 		#
-		self.Owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
+		self.owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
 		self.Occupier['JumpNow'] = False
 	
 	def OnExited(self):

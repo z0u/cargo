@@ -39,8 +39,8 @@ class ActorListener:
 		'''
 		Called just before the logical parent is set for the actor. The
 		actual game object hierarchy may not exactly reflect this assignment.
-		actor.Owner will have a new parent, but it will not necessarily be
-		newParent.Owner: it may be any game object controlled by newParent.  
+		actor.owner will have a new parent, but it will not necessarily be
+		newParent.owner: it may be any game object controlled by newParent.  
 		
 		Parameters:
 		actor: The actor being made the child of another.
@@ -78,7 +78,7 @@ class Actor:
 	s_LocationIndex = 0
 	
 	def __init__(self, owner):
-		self.Owner = owner
+		self.owner = owner
 		self.name = owner.name
 		self.invalid = False
 		
@@ -102,19 +102,19 @@ class Actor:
 		if 'LODRadius' in owner:
 			LODTree.LODManager.AddCollider(self)
 		
-		Utilities.SetDefaultProp(self.Owner, 'Health', 1.0)
+		Utilities.SetDefaultProp(self.owner, 'Health', 1.0)
 		
 		#
 		# Prepare the actor for floatation. This is used by Water.Water.Float.
 		#
-		Utilities.SetDefaultProp(self.Owner, 'Oxygen', 1.0)
-		Utilities.SetDefaultProp(self.Owner, 'OxygenDepletionRate', 0.005)
-		Utilities.SetDefaultProp(self.Owner, 'Buoyancy', 1)
+		Utilities.SetDefaultProp(self.owner, 'Oxygen', 1.0)
+		Utilities.SetDefaultProp(self.owner, 'OxygenDepletionRate', 0.005)
+		Utilities.SetDefaultProp(self.owner, 'Buoyancy', 1)
 		Utilities.SetDefaultProp(
-			self.Owner, 'CurrentBuoyancy', self.Owner['Buoyancy'])
-		Utilities.SetDefaultProp(self.Owner, 'FloatRadius', 1.1)
-		Utilities.SetDefaultProp(self.Owner, 'SinkFactor', 0.02)
-		Utilities.SetDefaultProp(self.Owner, 'MinRippleSpeed', 1.0)
+			self.owner, 'CurrentBuoyancy', self.owner['Buoyancy'])
+		Utilities.SetDefaultProp(self.owner, 'FloatRadius', 1.1)
+		Utilities.SetDefaultProp(self.owner, 'SinkFactor', 0.02)
+		Utilities.SetDefaultProp(self.owner, 'MinRippleSpeed', 1.0)
 		
 		self.SaveLocation()
 		
@@ -140,10 +140,10 @@ class Actor:
 		children.add(child)
 		child.Parent = self
 		
-		attachObject = self.Owner
+		attachObject = self.owner
 		if attachPoint != None:
 			attachObject = self.getAttachPoints()[attachPoint]
-		child.Owner.setParent(attachObject, compound, ghost)
+		child.owner.setParent(attachObject, compound, ghost)
 		for l in child.getListeners().copy():
 			l.actorAttachedToParent(child, self)
 	
@@ -163,13 +163,13 @@ class Actor:
 		
 		children.discard(child)
 		child.Parent = None
-		child.Owner.removeParent()
+		child.owner.removeParent()
 		for l in self.getListeners().copy():
 			l.actorChildDetached(self, child)
 	
 	def OnSceneEnd(self):
-		self.Owner['Actor'] = None
-		self.Owner = None
+		self.owner['Actor'] = None
+		self.owner = None
 		Utilities.SceneManager.Unsubscribe(self)
 	
 	def getChildren(self):
@@ -199,7 +199,7 @@ class Actor:
 		KX_GameObject too. All listeners will be notified by the actorDestroyed
 		callback.
 		
-		Even after the game object (self.Owner) has been destroyed, it hangs
+		Even after the game object (self.owner) has been destroyed, it hangs
 		around for the rest of the frame. It may be passed in to other scripts
 		via Near and Collision sensors. It is NOT safe to store an actor whose
 		owner has been destroyed. Therefore, Actor.invalid should be checked
@@ -214,9 +214,9 @@ class Actor:
 		self.getListeners().clear()
 		
 		Director.RemoveActor(self)
-		if 'LODRadius' in self.Owner:
+		if 'LODRadius' in self.owner:
 			LODTree.LODManager.RemoveCollider(self)
-		self.Owner.endObject()
+		self.owner.endObject()
 		self.invalid = True
 	
 	def CanSuspend(self):
@@ -231,15 +231,15 @@ class Actor:
 	
 	def _Suspend(self):
 		if self.CanSuspend() and not self.Suspended:
-			if not self.Owner.parent:
-				self.Owner.suspendDynamics()
+			if not self.owner.parent:
+				self.owner.suspendDynamics()
 			self.OnSuspend()
 			self.Suspended = True
 	
 	def _Resume(self):
 		if self.CanSuspend() and self.Suspended:
-			if not self.Owner.parent:
-				self.Owner.restoreDynamics()
+			if not self.owner.parent:
+				self.owner.restoreDynamics()
 			self.OnResume()
 			self.Suspended = False
 	
@@ -285,16 +285,16 @@ class Actor:
 	def SaveLocation(self):
 		'''Save the location of the owner for later. This may happen when the
 		object touches a safe point.'''
-		self.Pos = self.Owner.worldPosition
-		self.Orn = self.Owner.worldOrientation
+		self.Pos = self.owner.worldPosition
+		self.Orn = self.owner.worldOrientation
 		for child in self.getChildren():
 			child.SaveLocation()
 	
 	def RestoreLocation(self, reason = None):
-		self.Owner.worldPosition = self.Pos
-		self.Owner.worldOrientation = self.Orn
-		self.Owner.setLinearVelocity(Utilities.ALMOST_ZERO)
-		self.Owner.setAngularVelocity(Utilities.ALMOST_ZERO)
+		self.owner.worldPosition = self.Pos
+		self.owner.worldOrientation = self.Orn
+		self.owner.setLinearVelocity(Utilities.MINVECTOR)
+		self.owner.setAngularVelocity(Utilities.MINVECTOR)
 		
 		for l in self.getListeners().copy():
 			l.actorRespawned(self, reason)
@@ -303,7 +303,7 @@ class Actor:
 		'''Store the velocity of this object for one frame. See
 		GetLastLinearVelocity.'''
 		self.Velocity2 = self.Velocity1
-		self.Velocity1 = self.Owner.getLinearVelocity()
+		self.Velocity1 = self.owner.getLinearVelocity()
 	
 	def GetLastLinearVelocity(self):
 		'''Get the second-last velocity of this actor. This is useful in touch
@@ -312,22 +312,22 @@ class Actor:
 		return self.Velocity2
 	
 	def getHealth(self):
-		return self.Owner['Health']
+		return self.owner['Health']
 	
 	def setHealth(self, value):
-		self.Owner['Health'] = value
+		self.owner['Health'] = value
 		for l in self.getListeners().copy():
 			l.actorHealthChanged(self)
-		print(self.Owner['Health'])
+		print(self.owner['Health'])
 	
 	def damage(self, amount, shock):
 		self.setHealth(self.getHealth() - amount)
 	
 	def getOxygen(self):
-		return self.Owner['Oxygen']
+		return self.owner['Oxygen']
 	
 	def setOxygen(self, value):
-		self.Owner['Oxygen'] = value
+		self.owner['Oxygen'] = value
 		for l in self.getListeners().copy():
 			l.actorOxygenChanged(self)
 	
@@ -347,7 +347,7 @@ class Actor:
 		Returns True if the object seems to be inside the world; False
 		otherwise.
 		'''
-		if self.Parent != None or self.Owner.parent != None:
+		if self.Parent != None or self.owner.parent != None:
 			# Responsibility delegated to parent.
 			return True
 		
@@ -355,10 +355,10 @@ class Actor:
 		outsideGround = True
 		
 		# First, look up.
-		origin = mathutils.Vector(self.Owner.worldPosition)
-		vec = mathutils.Vector((0.0, 0.0, 1.0))
+		origin = mathutils.Vector(self.owner.worldPosition)
+		vec = Utilities.ZAXIS.copy()
 		through = origin + vec
-		ob, _, normal = self.Owner.rayCast(
+		ob, _, normal = self.owner.rayCast(
 			through,             # to
 			origin,              # from
 			SANITY_RAY_LENGTH,   # dist
@@ -377,9 +377,10 @@ class Actor:
 					outsideGround = False
 		
 		# Now look down.
-		vec = mathutils.Vector((0.0, 0.0, -1.0))
+		vec = Utilities.ZAXIS.copy()
+		vec.negate()
 		through = origin + vec
-		ob, _, normal = self.Owner.rayCast(
+		ob, _, normal = self.owner.rayCast(
 			through,             # to
 			origin,              # from
 			SANITY_RAY_LENGTH,   # dist
@@ -432,11 +433,11 @@ class StatefulActor(Actor):
 		self.State = None
 	
 	def OnSuspend(self):
-		self.State = self.Owner.state
-		Utilities.setState(self.Owner, 10)
+		self.State = self.owner.state
+		Utilities.setState(self.owner, 10)
 	
 	def OnResume(self):
-		self.Owner.state = self.State
+		self.owner.state = self.State
 
 def CreateStatefulActor(c):
 	StatefulActor(c.owner)

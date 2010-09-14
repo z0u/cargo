@@ -26,14 +26,14 @@ class Button:
 	
 	def __init__(self, owner):
 		'''Create a new button and attach it to 'owner'.'''
-		self.Owner = owner
+		self.owner = owner
 		owner['Button'] = self
 		self.Down = False
 		Utilities.SceneManager.Subscribe(self)
 	
 	def OnSceneEnd(self):
-		self.Owner['Button'] = None
-		self.Owner = None
+		self.owner['Button'] = None
+		self.owner = None
 		Utilities.SceneManager.Unsubscribe(self)
 
 	def Accept(self, ob):
@@ -71,13 +71,13 @@ class Button:
 	def OnDown(self):
 		'''Called when at least one object has triggered this button. Sends a
 		message to the scene with the subject 'ButtonDown'.'''
-		GameLogic.sendMessage('ButtonDown', '', '', self.Owner.name)
+		GameLogic.sendMessage('ButtonDown', '', '', self.owner.name)
 	
 	def OnUp(self):
 		'''Called when no objects are triggering the button. Sends a message to
 		the scene with the subject 'ButtonUp'. This only happens after OnDown is
 		called.'''
-		GameLogic.sendMessage('ButtonUp', '', '', self.Owner.name)
+		GameLogic.sendMessage('ButtonUp', '', '', self.owner.name)
 
 class ToughButton(Button):
 	'''A button that filters objects by their speed: only fast objects will
@@ -89,7 +89,7 @@ class ToughButton(Button):
 		
 		actor = ob['Actor']
 		vel = mathutils.Vector(actor.GetLastLinearVelocity())
-		return vel.magnitude >= self.Owner['MinSpeed']
+		return vel.magnitude >= self.owner['MinSpeed']
 
 def CreateButton(c):
 	'''Create a new generic button.'''

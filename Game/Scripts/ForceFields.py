@@ -44,27 +44,27 @@ class ForceField(Actor.Actor):
     
     def getMagnitude(self, distance):
         effect = 0.0
-        if distance < self.Owner['FFDist1']:
-            effect = self.modulate(distance, self.Owner['FFDist1'])
+        if distance < self.owner['FFDist1']:
+            effect = self.modulate(distance, self.owner['FFDist1'])
         else:
-            effect = 1.0 - self.modulate(distance - self.Owner['FFDist1'],
-                                         self.Owner['FFDist2'])
+            effect = 1.0 - self.modulate(distance - self.owner['FFDist1'],
+                                         self.owner['FFDist2'])
         if effect > 1.0:
             effect = 1.0
         if effect < 0.0:
             effect = 0.0
-        return self.Owner['FFMagnitude'] * effect
+        return self.owner['FFMagnitude'] * effect
     
     def touched(self, actor, factor = 1.0):
         '''Called when an object is inside the force field.'''
-        pos = mathutils.Vector(actor.Owner.worldPosition)
+        pos = mathutils.Vector(actor.owner.worldPosition)
         
-        if (Utilities._manhattanDist(pos, self.Owner.worldPosition) >
-            self.Owner['FFDist2']):
+        if (Utilities._manhattanDist(pos, self.owner.worldPosition) >
+            self.owner['FFDist2']):
             return
         
-        pos = Utilities._toLocal(self.Owner, pos)
-        if 'FFZCut' in self.Owner and self.Owner['FFZCut'] and (pos.z > 0.0):
+        pos = Utilities._toLocal(self.owner, pos)
+        if 'FFZCut' in self.owner and self.owner['FFZCut'] and (pos.z > 0.0):
             return
         
         dir = self.getForceDirection(pos)
@@ -73,11 +73,11 @@ class ForceField(Actor.Actor):
             dir.normalize()
         magnitude = self.getMagnitude(dist)
         dir *= magnitude * factor
-        dir = Utilities._toWorldVec(self.Owner, dir)
+        dir = Utilities._toWorldVec(self.owner, dir)
         
-        linV = mathutils.Vector(actor.Owner.getLinearVelocity(False))
+        linV = mathutils.Vector(actor.owner.getLinearVelocity(False))
         linV += dir
-        actor.Owner.setLinearVelocity(linV, False)
+        actor.owner.setLinearVelocity(linV, False)
         
     def getForceDirection(self, localPos):
         '''Returns the Vector along which the acceleration will be applied, in

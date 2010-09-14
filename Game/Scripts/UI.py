@@ -246,15 +246,15 @@ class Filter(Actor.Actor):
 		Actor.Actor.__init__(self, owner)
 	
 	def hide(self):
-		Utilities.setState(self.Owner, Filter.S_HIDE)
+		Utilities.setState(self.owner, Filter.S_HIDE)
 	
 	def show(self, colour):
 		key = colour.hue * Filter.HUE_WIDTH
 		key += (colour.value % Filter.VALUE_STEP) * Filter.HUE_WIDTH
 		key += (colour.alpha % Filter.ALPHA_STEP) * Filter.VALUE_WIDTH
 		key += 1.0
-		self.Owner['Frame'] = key
-		Utilities.setState(self.Owner, Filter.S_SHOW)
+		self.owner['Frame'] = key
+		Utilities.setState(self.owner, Filter.S_SHOW)
 
 class Gauge(Actor.Actor):
 	'''
@@ -285,12 +285,12 @@ class Gauge(Actor.Actor):
 		def __init__(self, owner):
 			self.Fraction = 0.0
 			self.TargetFraction = 0.0
-			self.Owner = owner
+			self.owner = owner
 		
 		def update(self):
 			self.Fraction = Utilities._lerp(self.Fraction, self.TargetFraction,
-				self.Owner['Speed'])
-			self.Owner['Frame'] = self.Fraction * 100.0
+				self.owner['Speed'])
+			self.owner['Frame'] = self.Fraction * 100.0
 
 	def __init__(self, owner):
 		Actor.Actor.__init__(self, owner)
@@ -308,14 +308,14 @@ class Gauge(Actor.Actor):
 	
 	def OnSceneEnd(self):
 		for i in list(self.Indicators.values()):
-			i.Owner = None
+			i.owner = None
 		Actor.Actor.OnSceneEnd(self)
 	
 	def Show(self):
-		Utilities.setState(self.Owner, self.S_VISIBLE)
+		Utilities.setState(self.owner, self.S_VISIBLE)
 	
 	def Hide(self):
-		Utilities.setState(self.Owner, self.S_HIDING)
+		Utilities.setState(self.owner, self.S_HIDING)
 	
 	def SetFraction(self, fraction, name = None):
 		self.Indicators[name].TargetFraction = fraction
@@ -350,9 +350,9 @@ class Font:
 	len = len
 	
 	def __init__(self, owner):
-		self.Owner = owner
+		self.owner = owner
 		self.GlyphDict = {}
-		for child in self.Owner.children:
+		for child in self.owner.children:
 			charWidth = child['Width']
 			self.GlyphDict[child['char']] = (child, charWidth)
 		self.LineHeight = owner['LineHeight']

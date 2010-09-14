@@ -109,7 +109,7 @@ class ActShowMessage:
 class ActSetCamera:
 	def __init__(self, camName, fac = None, instantCut = False):
 		self.CamName = camName
-		self.InstantCut = instantCut
+		self.instantCut = instantCut
 		self.Fac = fac
 	
 	def Execute(self, c):
@@ -119,7 +119,7 @@ class ActSetCamera:
 			print(("Warning: couldn't find camera %s. Not adding." %
 				self.CamName))
 			return
-		Camera.AutoCamera.AddGoal(cam, True, self.Fac, self.InstantCut)
+		Camera.AutoCamera.AddGoal(cam, True, self.Fac, self.instantCut)
 
 class ActRemoveCamera:
 	def __init__(self, camName):

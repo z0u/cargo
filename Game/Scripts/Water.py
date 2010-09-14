@@ -40,18 +40,18 @@ class Water(Actor.ActorListener):
 		is assumed to be a globally-aligned XY plane that passes through the
 		object's origin.
 		'''
-		self.Owner = owner
+		self.owner = owner
 		owner['Water'] = self
 		
-		Utilities.SetDefaultProp(self.Owner, 'RippleInterval', 20)
-		Utilities.SetDefaultProp(self.Owner, 'DampingFactor', 0.2)
+		Utilities.SetDefaultProp(self.owner, 'RippleInterval', 20)
+		Utilities.SetDefaultProp(self.owner, 'DampingFactor', 0.2)
 		
 		self.InstanceAngle = 0.0
 		self.CurrentFrame = 0
 		
 		scene = GameLogic.getCurrentScene()
-		self.BubbleTemplate = scene.objectsInactive[self.Owner['BubbleTemplate']]
-		self.RippleTemplate = scene.objectsInactive[self.Owner['RippleTemplate']]
+		self.BubbleTemplate = scene.objectsInactive[self.owner['BubbleTemplate']]
+		self.RippleTemplate = scene.objectsInactive[self.owner['RippleTemplate']]
 		
 		self.FloatingActors = set()
 		self.ForceFields = []
@@ -67,8 +67,8 @@ class Water(Actor.ActorListener):
 			return False
 	
 	def OnSceneEnd(self):
-		self.Owner['Water'] = None
-		self.Owner = None
+		self.owner['Water'] = None
+		self.owner = None
 		self.BubbleTemplate = None
 		self.RippleTemplate = None
 		self.FloatingActors = None
@@ -77,7 +77,7 @@ class Water(Actor.ActorListener):
 	
 	def SpawnSurfaceDecal(self, template, position):
 		pos = position.copy()
-		pos.z = self.Owner.worldPosition.z
+		pos.z = self.owner.worldPosition.z
 		
 		#
 		# Transform template.
@@ -98,19 +98,19 @@ class Water(Actor.ActorListener):
 	def spawnBubble(self, actor):
 		global counter
 		template = self.BubbleTemplate
-		if actor.Owner.name == template.name:
+		if actor.owner.name == template.name:
 			return
 		
 		#
 		# Transform template.
 		#
-		vec = actor.Owner.getLinearVelocity(False)
+		vec = actor.owner.getLinearVelocity(False)
 		if vec.magnitude <= 0.1:
 			vec = mathutils.Vector((0.0, 0.0, -1.0))
 		else:
 			vec.normalize()
-		vec = vec * (actor.Owner['FloatRadius'] + BUBBLE_BIAS)
-		pos = actor.Owner.worldPosition.copy()
+		vec = vec * (actor.owner['FloatRadius'] + BUBBLE_BIAS)
+		pos = actor.owner.worldPosition.copy()
 		pos = pos - vec
 		template.worldPosition = pos
 		
@@ -122,7 +122,7 @@ class Water(Actor.ActorListener):
 		bubOb['Bubble'] = True
 		bubble = Bubble(bubOb)
 		self.FloatingActors.add(bubble)
-		Utilities.setState(self.Owner, self.S_FLOATING)
+		Utilities.setState(self.owner, self.S_FLOATING)
 	
 	def getSubmergedFactor(self, actor):
 		'''Determine the fraction of the object that is inside the water. This
@@ -134,14 +134,14 @@ class Water(Actor.ActorListener):
 		# inside, the actor is considered to be fully submerged. Otherwise, it
 		# is fully emerged.
 		
-		origin = actor.Owner.worldPosition.copy()
-		origin.z = origin.z - actor.Owner['FloatRadius']
-		through = self.Owner.worldPosition.copy()
+		origin = actor.owner.worldPosition.copy()
+		origin.z = origin.z - actor.owner['FloatRadius']
+		through = self.owner.worldPosition.copy()
 		# Force ray to be vertical.
 		through.xy = origin.xy
 		through.z += 1.0
 		vec = through - origin
-		ob, hitPoint, normal = actor.Owner.rayCast(
+		ob, hitPoint, normal = actor.owner.rayCast(
 			through,             # to
 			origin,              # from
 			vec.z,               # dist
@@ -161,7 +161,7 @@ class Water(Actor.ActorListener):
 				inside = True
 		
 		depth = hitPoint.z - origin.z
-		submergedFactor = depth / (actor.Owner['FloatRadius'] * 2.0)
+		submergedFactor = depth / (actor.owner['FloatRadius'] * 2.0)
 		submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
 		
 		if not inside:
@@ -174,7 +174,7 @@ class Water(Actor.ActorListener):
 		return submergedFactor
 	
 	def applyDamping(self, linV, submergedFactor):
-		return Utilities._lerp(linV, ZERO, self.Owner['DampingFactor'] * submergedFactor)
+		return Utilities._lerp(linV, ZERO, self.owner['DampingFactor'] * submergedFactor)
 	
 	def Float(self, actor):
 		'''
@@ -187,7 +187,7 @@ class Water(Actor.ActorListener):
 		# Find the distance to the water from the UPPER END
 		# of the object.
 		#
-		body = actor.Owner
+		body = actor.owner
 		submergedFactor = self.getSubmergedFactor(actor)
 		
 		if submergedFactor > 0.9 and not self.isBubble(actor):
@@ -209,7 +209,7 @@ class Water(Actor.ActorListener):
 			# fully submerged.
 			actor.setOxygen(actor.getOxygen() - body['OxygenDepletionRate'])
 			if actor.getOxygen() <= 0.0:
-				self.SpawnSurfaceDecal(self.RippleTemplate, actor.Owner.worldPosition)
+				self.SpawnSurfaceDecal(self.RippleTemplate, actor.owner.worldPosition)
 				actor.Destroy()
 		
 		else:
@@ -254,7 +254,7 @@ class Water(Actor.ActorListener):
 		if self.isBubble(actor):
 			return
 		
-		ob = actor.Owner
+		ob = actor.owner
 		
 		if not force and 'Water_LastFrame' in ob:
 			# This is at least the first time the object has touched the water.
@@ -299,15 +299,15 @@ class Water(Actor.ActorListener):
 				actor.removeListener(self)
 		
 		if len(self.FloatingActors) > 0:
-			Utilities.setState(self.Owner, self.S_FLOATING)
+			Utilities.setState(self.owner, self.S_FLOATING)
 		else:
-			Utilities.setState(self.Owner, self.S_IDLE)
+			Utilities.setState(self.owner, self.S_IDLE)
 		
 		#
 		# Increase the frame counter.
 		#
 		self.CurrentFrame = ((self.CurrentFrame + 1) %
-			self.Owner['RippleInterval'])
+			self.owner['RippleInterval'])
 	
 	def actorDestroyed(self, actor):
 		self.FloatingActors.discard(actor)
@@ -317,7 +317,7 @@ class Water(Actor.ActorListener):
 		and inherit the current buoyancy of its old parent.'''
 		
 		if actor in self.FloatingActors:
-			oldChild.Owner['CurrentBuoyancy'] = actor.Owner['CurrentBuoyancy']
+			oldChild.owner['CurrentBuoyancy'] = actor.owner['CurrentBuoyancy']
 			oldChild.setOxygen(actor.getOxygen())
 			self.FloatingActors.add(oldChild)
 			oldChild.addListener(self)
@@ -326,20 +326,20 @@ class Water(Actor.ActorListener):
 		'''Actor has become attached to another. Re-set its buoyancy in case it
 		emerges from the water while still attached to its new parent.'''
 		
-		actor.Owner['CurrentBuoyancy'] = actor.Owner['Buoyancy']
+		actor.owner['CurrentBuoyancy'] = actor.owner['Buoyancy']
 		actor.setOxygen(1.0)
 		self.FloatingActors.discard(actor)
 		actor.removeListener(self)
 	
 	def isBubble(self, actor):
-		return 'Bubble' in actor.Owner.name
+		return 'Bubble' in actor.owner.name
 
 class Honey(Water):
 	def __init__(self, owner):
 		Water.__init__(self, owner)
 	
 	def applyDamping(self, linV, submergedFactor):
-		return Utilities._lerp(linV, ZERO, self.Owner['DampingFactor'])
+		return Utilities._lerp(linV, ZERO, self.owner['DampingFactor'])
 	
 	def spawnBubble(self, actor):
 		'''No bubbles in honey.'''

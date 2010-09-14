@@ -19,7 +19,12 @@ import mathutils
 import GameLogic
 import Rasterizer
 
-ALMOST_ZERO = mathutils.Vector((0.0, 0.0, 0.001))
+XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
+YAXIS  = mathutils.Vector([0.0, 1.0, 0.0])
+ZAXIS  = mathutils.Vector([0.0, 0.0, 1.0])
+ORIGIN = mathutils.Vector([0.0, 0.0, 0.0])
+EPSILON = 0.000001
+MINVECTOR = mathutils.Vector([0.0, 0.0, EPSILON])
 
 class _SceneManager:
 	def __init__(self):
@@ -31,6 +36,8 @@ class _SceneManager:
 		self.NewScene = False
 	
 	def Subscribe(self, observer):
+		'''Subscribe to the set of listeners. It is OK to call this function
+		twice for the same observer.'''
 		if self.NewScene:
 			self.OnNewScene()
 		self.Observers.add(observer)

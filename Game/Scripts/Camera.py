@@ -18,6 +18,7 @@
 import Utilities
 import Actor
 import GameTypes
+import GameLogic
 
 class CameraObserver:
 	'''
@@ -49,7 +50,7 @@ class _AutoCamera:
 		
 		self.Q = Utilities.PriorityQueue()
 		self.StackModified = False
-		self.InstantCut = False
+		self.instantCut = False
 		
 		self.Observers = []
 		
@@ -62,14 +63,15 @@ class _AutoCamera:
 		'''Bind to a camera.'''
 		self.Camera = camera
 		self.DefaultLens = camera.lens
+		GameLogic.getCurrentScene().active_camera = camera
 	
-	def SetDefaultGoal(self, goal, factor):
+	def SetDefaultGoal(self, goal):
 		'''
 		Set the default goal. If there is already a goal on the GoalStack, it
 		will be used instead of this default one - until it is popped off the
 		stack.
 		'''
-		self.DefaultGoal = CameraGoal(goal, factor, False)
+		self.DefaultGoal = goal
 		self.StackModified = True
 	
 	def onRender(self):
@@ -86,25 +88,25 @@ class _AutoCamera:
 			if len(self.Q) > 0:
 				self.CurrentGoal = self.Q.top()
 			
-			if self.InstantCut:
-				self.Camera.worldPosition = self.CurrentGoal.Goal.worldPosition
-				self.Camera.worldOrientation = self.CurrentGoal.Goal.worldOrientation
+			if self.instantCut:
+				self.Camera.worldPosition = self.CurrentGoal.owner.worldPosition
+				self.Camera.worldOrientation = self.CurrentGoal.owner.worldOrientation
 				targetLens = self.DefaultLens
-				if hasattr(self.CurrentGoal.Goal, 'lens'):
-					targetLens = self.CurrentGoal.Goal.lens
+				if hasattr(self.CurrentGoal.owner, 'lens'):
+					targetLens = self.CurrentGoal.owner.lens
 				self.Camera.lens = targetLens
-				self.InstantCut = False
+				self.instantCut = False
 			self.StackModified = False
 		
-		fac = self.DefaultGoal.Factor
-		if self.CurrentGoal.Factor != None:
-			fac = self.CurrentGoal.Factor
-		Utilities._SlowCopyLoc(self.Camera, self.CurrentGoal.Goal, fac)
-		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.Goal, fac)
+		fac = self.DefaultGoal.factor
+		if self.CurrentGoal.factor != None:
+			fac = self.CurrentGoal.factor
+		Utilities._SlowCopyLoc(self.Camera, self.CurrentGoal.owner, fac)
+		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.owner, fac)
 		
 		targetLens = self.DefaultLens
-		if hasattr(self.CurrentGoal.Goal, 'lens'):
-			targetLens = self.CurrentGoal.Goal.lens
+		if hasattr(self.CurrentGoal.owner, 'lens'):
+			targetLens = self.CurrentGoal.owner.lens
 		self.Camera.lens = Utilities._lerp(self.Camera.lens, targetLens, fac)
 		
 		for o in self.Observers:
@@ -129,7 +131,7 @@ class _AutoCamera:
 		self.Q.push(goal, CameraGoal(goal, fac, instantCut), priority)
 		self.StackModified = True
 		if instantCut:
-			self.InstantCut = True
+			self.instantCut = True
 	
 	def RemoveGoal(self, goalOb):
 		'''
@@ -140,14 +142,14 @@ class _AutoCamera:
 		if len(self.Q) == 0:
 			return
 		
-		if self.Q.top().Goal == goalOb:
+		if self.Q.top().owner == goalOb:
 			#
 			# Goal is on top of the stack: it's in use!
 			#
 			oldGoal = self.Q.pop()
 			self.StackModified = True
-			if oldGoal.InstantCut:
-				self.InstantCut = True
+			if oldGoal.instantCut:
+				self.instantCut = True
 		else:
 			#
 			# Remove the goal from the rest of the stack.
@@ -159,8 +161,8 @@ class _AutoCamera:
 		relationship stack.'''
 		while len(self.Q) > 0:
 			g = self.Q.pop()
-			if g.InstantCut:
-				self.InstantCut = True
+			if g.instantCut:
+				self.instantCut = True
 		self.StackModified = True
 	
 	def AddObserver(self, camObserver):
@@ -177,10 +179,6 @@ def onRender(c):
 def setCamera(c):
 	camera = c.owner
 	AutoCamera.SetCamera(camera)
-
-def SetDefaultGoal(c):
-	goal = c.owner
-	AutoCamera.SetDefaultGoal(goal, goal['SlowFac'])
 
 def addGoalOb(goal):
 	pri = False
@@ -232,10 +230,115 @@ def removeGoalOb(goal):
 	AutoCamera.RemoveGoal(goal)
 
 class CameraGoal:
-	def __init__(self, goal, factor = None, instantCut = False):
-		self.Goal = goal
-		self.Factor = factor
-		self.InstantCut = instantCut
+	'''An object that acts as a camera that can be switched to. It defines a
+	point in space, an orientation, and (optionally) a focal length. The
+	AutoCamera copies its location, interpolating as need be.'''
+	def __init__(self, owner, factor = None, instantCut = False):
+		# The object defining the location. If it's a camera, the focal length
+		# (lens value) will be used too.
+		self.owner = owner
+		# How quickly the camera moves to this goal (0.01 = slow, 0.1 = fast).
+		self.factor = factor
+		# Whether to interpolate to this goal. If false, the AutoCamera will
+		# switch instantly to the new values.
+		self.instantCut = instantCut
+
+#
+# Camera for following the player
+#
+
+class CameraPath(CameraGoal):
+	'''A camera goal that follows the active player.'''
+	
+	# The maximum number of nodes to track. Once this number is reached, the
+	# oldest nodes will be removed.
+	MAX_NODES = 200
+	# The minimum distance to leave between nodes. 
+	# A new node will be created if the actor has travelled at least MIN_DIST
+	# and the dot product is at most MAX_DOT.
+	MIN_DIST = 5.0
+	# The maxium difference in angle between two path segments, specified as a
+	# dot product between the vectors (1.0 = 0 degrees, 0.0 = 90 degrees,
+	# -1.0 = 180 degrees).
+	MAX_DOT = 0.5
+	
+	ACCELERATION = 0.01
+	REST_DISTANCE = 10.0
+	
+	def __init__(self, owner, factor, instantCut):
+		CameraGoal.__init__(self, owner, factor, instantCut)
+		# A list of CameraNodes.
+		self.path = []
+		Utilities.SceneManager.Subscribe(self)
+	
+	def onRender(self):
+		self.advanceGoal()
+		self.updateWayPoints()
+	
+	def OnSceneEnd(self):
+		for n in self.path:
+			n.destroy()
+		self.goal = None
+		Utilities.SceneManager.Unsubscribe(self)
+	
+	def advanceGoal(self):
+		'''Move the camera to follow the main character. This will either follow
+		the path or the character, depending on which is closest. Don't worry
+		about interpolation; the AutoCamera will smooth out the motion later.'''
+		target = Actor.Director.getMainCharacter()
+		if target == None:
+			return
+		
+		#
+		# Get the vector from the camera to the target.
+		#
+		dir = target.owner.worldPosition - self.owner.worldPosition
+		dist = dir.magnitude
+		dir.normalize()
+		
+		#
+		# Keep the camera a constant distance from the target.
+		#
+		dir = dir * self.REST_DISTANCE
+		self.owner.worldPosition = target.owner.worldPosition - dir
+		
+		#
+		# Align the camera's Y-axis with the global Z, and align
+		# its Z-axis with the direction to the target.
+		#
+		dir.negate()
+		self.owner.alignAxisToVect(Utilities.ZAXIS, 1)
+		self.owner.alignAxisToVect(dir, 2)
+		
+	def updateWayPoints(self):
+		actor = Actor.Director.getMainCharacter()
+		if actor == None:
+			return
+
+def createCameraPath(c):
+	owner = c.owner
+	path = CameraPath(owner, owner['SlowFac'], owner['InstantCut'])
+	owner['CameraPath'] = path
+	AutoCamera.SetDefaultGoal(path)
+
+def updatePath(c):
+	c.owner['CameraPath'].onRender()
+
+class CameraNode:
+	'''A single point in a path used by the CameraPathGoal. These act as
+	way points for the camera to follow.'''
+	def __init__(self):
+		# Defines the location of the way point. Using a way point allows the
+		# node to parented to an object.
+		scene = GameLogic.getCurrentScene()
+		self.owner = scene.addObject('PointMarker', 'Cursor', 0)
+
+	def destroy(self):
+		self.owner.endObject()
+
+#
+# Camera for viewing the background scene
+#
 
 class BackgroundCamera(CameraObserver):
 	'''Links a second camera to the main 3D camera. This second, background
@@ -243,17 +346,17 @@ class BackgroundCamera(CameraObserver):
 	guaranteed to update after the main one.'''
 	
 	def __init__(self, owner):
-		self.Owner = owner
+		self.owner = owner
 		AutoCamera.AddObserver(self)
 		Utilities.SceneManager.Subscribe(self)
 	
 	def OnSceneEnd(self):
-		self.Owner = None
+		self.owner = None
 		AutoCamera.RemoveObserver(self)
 	
 	def OnCameraMoved(self, autoCamera):
-		self.Owner.worldOrientation = autoCamera.Camera.worldOrientation
-		self.Owner.lens = autoCamera.Camera.lens
+		self.owner.worldOrientation = autoCamera.Camera.worldOrientation
+		self.owner.lens = autoCamera.Camera.lens
 
 def createBackgroundCamera(c):
 	BackgroundCamera(c.owner)

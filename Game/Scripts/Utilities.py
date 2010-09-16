@@ -23,6 +23,7 @@ XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
 YAXIS  = mathutils.Vector([0.0, 1.0, 0.0])
 ZAXIS  = mathutils.Vector([0.0, 0.0, 1.0])
 ORIGIN = mathutils.Vector([0.0, 0.0, 0.0])
+ZEROVEC = ORIGIN
 EPSILON = 0.000001
 MINVECTOR = mathutils.Vector([0.0, 0.0, EPSILON])
 
@@ -352,62 +353,13 @@ def RayFollow(c):
 	
 	o.worldPosition = pos
 
-def OrbitFollow(c):
-	'''
-	Make an object follow another from a certain distance. Used to make a camera
-	follow the player around without always sticking behind their back.
-	'''
-	
-	target = c.sensors['sTarget'].owner
-	o = c.owner
-	
-	#
-	# Get the vector from the camera to the target.
-	#
-	tPos = target.worldPosition
-	pos = o.worldPosition
-	vec = pos - tPos
-	
-	#
-	# Remove the z-component (position camera on XY plane).
-	#
-	vec.z = 0.0
-	vec.normalize()
-	
-	#
-	# Align the camera's Y-axis with the global Z, and align
-	# its Z-axis with the direction to the target.
-	#
-	o.alignAxisToVect([0.0, 0.0, 1.0], 1)
-	o.alignAxisToVect(vec, 2)
-	
-	#
-	# Keep the camera a constant distance from the target.
-	# Note that camera.MaxDist = sqrt(camera.XYDist^2 + camera.ZDist^2)
-	#
-	vec = vec * o['XYDist']
-	vec.z = o['ZDist']
-	pos = tPos + vec
-	hitOb, hitPoint, _ = o.rayCast(
-		pos,          # to,
-		tPos,         # from,
-		o['MaxDist'], # dist,
-		'Ray',        # prop,
-		1,            # face,
-		1,            # xray,
-		0             # poly
-	)
-	if hitOb:
-		vec = hitPoint - tPos
-		vec = vec * o['DistBias']
-		if vec.magnitude < o['MinDist']:
-			#
-			# Camera would be too close, so don't move it.
-			# It has already tracked, though.
-			#
-			return
-		pos = tPos + vec
-	o.worldPosition = pos
+def getCursor():
+	return GameLogic.getCurrentScene().objects['Cursor']
+
+def setCursorTransform(other):
+	cursor = getCursor()
+	cursor.worldPosition = other.worldPosition
+	cursor.worldOrientation = other.worldOrientation
 
 def SprayParticle(c):
 	'''

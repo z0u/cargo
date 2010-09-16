@@ -252,23 +252,27 @@ class CameraPath(CameraGoal):
 	
 	# The maximum number of nodes to track. Once this number is reached, the
 	# oldest nodes will be removed.
-	MAX_NODES = 200
+	MAX_NODES = 100
 	# The minimum distance to leave between nodes. 
 	# A new node will be created if the actor has travelled at least MIN_DIST
 	# and the dot product is at most MAX_DOT.
-	MIN_DIST = 5.0
+	MIN_DIST = 1.0
 	# The maxium difference in angle between two path segments, specified as a
 	# dot product between the vectors (1.0 = 0 degrees, 0.0 = 90 degrees,
 	# -1.0 = 180 degrees).
 	MAX_DOT = 0.5
 	
 	ACCELERATION = 0.01
+	DAMPING = 0.1
 	REST_DISTANCE = 10.0
+	ZOFFSET = 5.0
+	THRESHOLD = 2.0
 	
 	def __init__(self, owner, factor, instantCut):
 		CameraGoal.__init__(self, owner, factor, instantCut)
 		# A list of CameraNodes.
 		self.path = []
+		self.linV = Utilities.ZEROVEC.copy()
 		Utilities.SceneManager.Subscribe(self)
 	
 	def onRender(self):
@@ -285,35 +289,87 @@ class CameraPath(CameraGoal):
 		'''Move the camera to follow the main character. This will either follow
 		the path or the character, depending on which is closest. Don't worry
 		about interpolation; the AutoCamera will smooth out the motion later.'''
-		target = Actor.Director.getMainCharacter()
-		if target == None:
-			return
-		
 		#
 		# Get the vector from the camera to the target.
 		#
-		dir = target.owner.worldPosition - self.owner.worldPosition
-		dist = dir.magnitude
-		dir.normalize()
+		actor = Actor.Director.getMainCharacter()
+		if actor == None:
+			return
+		dirAct = actor.owner.worldPosition - self.owner.worldPosition
+		distAct = dirAct.magnitude
 		
 		#
-		# Keep the camera a constant distance from the target.
+		# Get the vector from the camera to the next way point.
 		#
-		dir = dir * self.REST_DISTANCE
-		self.owner.worldPosition = target.owner.worldPosition - dir
+		wayPoint = self._getNextWayPoint()
+		dirWay = wayPoint - self.owner.worldPosition
+		distWay = dirWay.magnitude
+		dirWay.normalize()
+		
+		#
+		# Accelerate the camera towards or away from the next way point. 
+		#
+		acceleration = (distAct - self.REST_DISTANCE) * self.ACCELERATION
+		self.linV = self.linV + (dirWay * acceleration)
+		self.linV = self.linV * (1.0 - self.DAMPING)
+		self.owner.worldPosition = self.owner.worldPosition + self.linV
 		
 		#
 		# Align the camera's Y-axis with the global Z, and align
 		# its Z-axis with the direction to the target.
 		#
-		dir.negate()
+		dirAct.negate()
 		self.owner.alignAxisToVect(Utilities.ZAXIS, 1)
-		self.owner.alignAxisToVect(dir, 2)
+		self.owner.alignAxisToVect(dirAct, 2)
+	
+	def _getNextWayPoint(self):
+		actor = Actor.Director.getMainCharacter()
+		closestPoint = self._getPos(actor.owner)
 		
+		shortestDistance = (closestPoint -
+						self.owner.worldPosition).magnitude
+		
+		for node in self.path:
+			if node.hit:
+				break
+			
+			nextPoint = self._getPos(node.owner)
+			dist = (nextPoint - self.owner.worldPosition).magnitude
+			if dist < shortestDistance:
+				if dist < self.THRESHOLD:
+					node.hit = True
+					break
+				closestPoint = nextPoint
+				shortestDistance = dist
+		
+		return closestPoint
+	
+	def _getPos(self, ob):
+		targetPos = Utilities.ZAXIS.copy()
+		targetPos *= self.ZOFFSET
+		targetPos = Utilities._toWorld(ob, targetPos)
+		return targetPos
+	
 	def updateWayPoints(self):
 		actor = Actor.Director.getMainCharacter()
 		if actor == None:
 			return
+		
+		if len(self.path) == 0:
+			Utilities.setCursorTransform(actor.owner)
+			self.path.insert(0, CameraNode())
+			return
+		
+		currentPos = actor.owner.worldPosition
+		dir = currentPos - self.path[0].owner.worldPosition
+		if dir.magnitude > self.MIN_DIST:
+			# Add a new node to the end.
+			Utilities.setCursorTransform(actor.owner)
+			self.path.insert(0, CameraNode())
+			
+			if len(self.path) > self.MAX_NODES:
+				# Delete the oldest node.
+				self.path.pop().destroy()
 
 def createCameraPath(c):
 	owner = c.owner
@@ -331,7 +387,8 @@ class CameraNode:
 		# Defines the location of the way point. Using a way point allows the
 		# node to parented to an object.
 		scene = GameLogic.getCurrentScene()
-		self.owner = scene.addObject('PointMarker', 'Cursor', 0)
+		self.owner = scene.addObject('PointMarker', Utilities.getCursor(), 0)
+		self.hit = False
 
 	def destroy(self):
 		self.owner.endObject()

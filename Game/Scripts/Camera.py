@@ -268,16 +268,15 @@ class CameraPath(CameraGoal):
 	# oldest nodes will be removed.
 	MAX_NODES = 50
 	# The minimum distance to leave between nodes. 
-	MIN_DIST = 1.0
+	MIN_DIST = 2.0
 	
 	ACCELERATION = 0.01
 	DAMPING = 0.1
-	REST_DISTANCE_NEAR = 10.0
+	REST_DISTANCE_NEAR = 5.0
 	REST_DISTANCE_FAR = 20.0
 	
-	ZOFFSET = 5.0
+	ZOFFSET = 15.0
 	CEILING_AVOIDANCE_BIAS = 0.5
-	THRESHOLD = 2.0
 	# The number of consecutive nodes that must be seen before being accepted.
 	# If this is too low, the camera will clip through sharp corners. 
 	NODE_DELAY = 2
@@ -317,7 +316,7 @@ class CameraPath(CameraGoal):
 		#
 		# Get the vector from the camera to the next way point.
 		#
-		wayObject, wayTarget, pathLength = self._getNextWayPoint()
+		wayObject, wayTarget, pathLength, ceilingHeight = self._getNextWayPoint()
 		if DEBUG:
 			self.debugReticule.worldPosition = wayTarget
 		dirWay = wayTarget - self.owner.worldPosition
@@ -327,12 +326,17 @@ class CameraPath(CameraGoal):
 		#
 		# Accelerate the camera towards or away from the next way point. 
 		#
+		radiusMultiplier = ceilingHeight / self.ZOFFSET
+		radiusMultiplier = min(radiusMultiplier, 1.0)
+		restNear = self.REST_DISTANCE_NEAR
+		restFar = Utilities._lerp(restNear, self.REST_DISTANCE_FAR, radiusMultiplier)
+		
 		dist = self.owner.getDistanceTo(wayObject) + pathLength
 		acceleration = 0.0
-		if dist < self.REST_DISTANCE_NEAR:
-			acceleration = (dist - self.REST_DISTANCE_NEAR) * self.ACCELERATION
-		elif dist > self.REST_DISTANCE_FAR:
-			acceleration = (dist - self.REST_DISTANCE_FAR) * self.ACCELERATION
+		if dist < restNear:
+			acceleration = (dist - restNear) * self.ACCELERATION
+		elif dist > restFar:
+			acceleration = (dist - restFar) * self.ACCELERATION
 		
 		self.linV = self.linV + (dirWay * acceleration)
 		self.linV = self.linV * (1.0 - self.DAMPING)
@@ -348,15 +352,15 @@ class CameraPath(CameraGoal):
 		self.owner.alignAxisToVect(look, 2)
 	
 	def _getNextWayPoint(self):
+		'''Find the next point that the camera should advance towards.'''
 		actor = Actor.Director.getMainCharacter()
 		object = actor.owner
-		target = self._getPos(actor.owner)
+		target, offset = self._getPos(actor.owner)
 		
 		nFound = 0
 		if (hasLineOfSight(self.owner, actor.owner) and
 			hasLineOfSight(self.owner, target)):
-			# Direct line of sight to actor's preferred viewpoint.
-			nFound = 1
+			return object, target, 0.0, offset
 		
 		nSearched = 0
 		for node in self.path:
@@ -364,11 +368,8 @@ class CameraPath(CameraGoal):
 			if node.hit:
 				break
 			
-			nextPoint = self._getPos(node.owner)
-			dist = (nextPoint - self.owner.worldPosition).magnitude
-			if dist < self.THRESHOLD:
-				node.setHit()
-				break
+			nextPoint, nextOffset = self._getPos(node.owner)
+			offset += nextOffset
 			
 			if (not hasLineOfSight(self.owner, node.owner) or
 				not hasLineOfSight(self.owner, nextPoint)):
@@ -382,9 +383,10 @@ class CameraPath(CameraGoal):
 				break
 		
 		distance = nSearched * self.MIN_DIST
+		offset /= nSearched + 1
 		if len(self.path) > 0:
 			distance += actor.owner.getDistanceTo(self.path[0].owner)
-		return object, target, distance
+		return object, target, distance, offset
 	
 	def _getPos(self, ob):
 		targetPos = Utilities.ZAXIS.copy()
@@ -398,11 +400,13 @@ class CameraPath(CameraGoal):
 				1, # face
 				1, # xray (ignore other objects)
 				0) # poly (don't care about polygon)
+		ceilingHeight = self.ZOFFSET
 		if hitOb:
 			vec = hitPoint - ob.worldPosition
+			ceilingHeight = vec.magnitude
 			vec = vec * self.CEILING_AVOIDANCE_BIAS
 			targetPos = ob.worldPosition + vec
-		return targetPos
+		return targetPos, ceilingHeight
 	
 	def updateWayPoints(self):
 		actor = Actor.Director.getMainCharacter()

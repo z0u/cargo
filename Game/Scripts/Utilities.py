@@ -361,6 +361,10 @@ def setCursorTransform(other):
 	cursor.worldPosition = other.worldPosition
 	cursor.worldOrientation = other.worldOrientation
 
+def addObject(name, time = 0):
+	scene = GameLogic.getCurrentScene()
+	return scene.addObject(name, getCursor(), time)
+
 def SprayParticle(c):
 	'''
 	Instance one particle, and decrement the particle counter. The particle will
@@ -395,6 +399,11 @@ def SprayParticle(c):
 	c.actuators['aEmit'].linearVelocity = (0.0, 0.0, speed)
 	c.activate('aEmit')
 	c.activate('aRot')
+
+def billboard(c):
+	o = c.owner
+	_, vec, _ = o.getVectTo(GameLogic.getCurrentScene().active_camera)
+	o.alignAxisToVect(vec, 2)
 
 def timeOffsetChildren(c):
 	'''Copy the 'Frame' property to all children, incrementally adding an offset

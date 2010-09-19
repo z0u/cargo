@@ -20,6 +20,20 @@ import Actor
 import GameTypes
 import GameLogic
 
+DEBUG = True
+
+def hasLineOfSight(ob, other):
+	hitOb, _, _ = ob.rayCast(
+			other, # objto
+			None, # objfrom
+			0, # dist (go only as far as 'other'
+			'Ray', # prop (look only for Ray objects)
+			1, # face
+			1, # xray (ignore other objects)
+			0) # poly (don't care about polygon)
+	
+	return hitOb == None
+	
 class CameraObserver:
 	'''
 	An observer of AutoCameras. One use for this is cameras in other scenes.
@@ -252,27 +266,29 @@ class CameraPath(CameraGoal):
 	
 	# The maximum number of nodes to track. Once this number is reached, the
 	# oldest nodes will be removed.
-	MAX_NODES = 100
+	MAX_NODES = 50
 	# The minimum distance to leave between nodes. 
-	# A new node will be created if the actor has travelled at least MIN_DIST
-	# and the dot product is at most MAX_DOT.
 	MIN_DIST = 1.0
-	# The maxium difference in angle between two path segments, specified as a
-	# dot product between the vectors (1.0 = 0 degrees, 0.0 = 90 degrees,
-	# -1.0 = 180 degrees).
-	MAX_DOT = 0.5
 	
 	ACCELERATION = 0.01
 	DAMPING = 0.1
-	REST_DISTANCE = 10.0
+	REST_DISTANCE_NEAR = 10.0
+	REST_DISTANCE_FAR = 20.0
+	
 	ZOFFSET = 5.0
+	CEILING_AVOIDANCE_BIAS = 0.5
 	THRESHOLD = 2.0
+	# The number of consecutive nodes that must be seen before being accepted.
+	# If this is too low, the camera will clip through sharp corners. 
+	NODE_DELAY = 2
 	
 	def __init__(self, owner, factor, instantCut):
 		CameraGoal.__init__(self, owner, factor, instantCut)
 		# A list of CameraNodes.
 		self.path = []
 		self.linV = Utilities.ZEROVEC.copy()
+		if DEBUG:
+			self.debugReticule = Utilities.addObject('DebugReticule')
 		Utilities.SceneManager.Subscribe(self)
 	
 	def onRender(self):
@@ -301,15 +317,23 @@ class CameraPath(CameraGoal):
 		#
 		# Get the vector from the camera to the next way point.
 		#
-		wayPoint = self._getNextWayPoint()
-		dirWay = wayPoint - self.owner.worldPosition
+		wayObject, wayTarget, pathLength = self._getNextWayPoint()
+		if DEBUG:
+			self.debugReticule.worldPosition = wayTarget
+		dirWay = wayTarget - self.owner.worldPosition
 		distWay = dirWay.magnitude
 		dirWay.normalize()
 		
 		#
 		# Accelerate the camera towards or away from the next way point. 
 		#
-		acceleration = (distAct - self.REST_DISTANCE) * self.ACCELERATION
+		dist = self.owner.getDistanceTo(wayObject) + pathLength
+		acceleration = 0.0
+		if dist < self.REST_DISTANCE_NEAR:
+			acceleration = (dist - self.REST_DISTANCE_NEAR) * self.ACCELERATION
+		elif dist > self.REST_DISTANCE_FAR:
+			acceleration = (dist - self.REST_DISTANCE_FAR) * self.ACCELERATION
+		
 		self.linV = self.linV + (dirWay * acceleration)
 		self.linV = self.linV * (1.0 - self.DAMPING)
 		self.owner.worldPosition = self.owner.worldPosition + self.linV
@@ -318,36 +342,66 @@ class CameraPath(CameraGoal):
 		# Align the camera's Y-axis with the global Z, and align
 		# its Z-axis with the direction to the target.
 		#
-		dirAct.negate()
+		look = dirAct.copy()
+		look.negate()
 		self.owner.alignAxisToVect(Utilities.ZAXIS, 1)
-		self.owner.alignAxisToVect(dirAct, 2)
+		self.owner.alignAxisToVect(look, 2)
 	
 	def _getNextWayPoint(self):
 		actor = Actor.Director.getMainCharacter()
-		closestPoint = self._getPos(actor.owner)
+		object = actor.owner
+		target = self._getPos(actor.owner)
 		
-		shortestDistance = (closestPoint -
-						self.owner.worldPosition).magnitude
+		nFound = 0
+		if (hasLineOfSight(self.owner, actor.owner) and
+			hasLineOfSight(self.owner, target)):
+			# Direct line of sight to actor's preferred viewpoint.
+			nFound = 1
 		
+		nSearched = 0
 		for node in self.path:
+			nSearched += 1
 			if node.hit:
 				break
 			
 			nextPoint = self._getPos(node.owner)
 			dist = (nextPoint - self.owner.worldPosition).magnitude
-			if dist < shortestDistance:
-				if dist < self.THRESHOLD:
-					node.hit = True
-					break
-				closestPoint = nextPoint
-				shortestDistance = dist
+			if dist < self.THRESHOLD:
+				node.setHit()
+				break
+			
+			if (not hasLineOfSight(self.owner, node.owner) or
+				not hasLineOfSight(self.owner, nextPoint)):
+				nFound = 0
+				continue
+			
+			nFound += 1
+			if nFound >= self.NODE_DELAY:
+				object = node.owner
+				target = nextPoint
+				break
 		
-		return closestPoint
+		distance = nSearched * self.MIN_DIST
+		if len(self.path) > 0:
+			distance += actor.owner.getDistanceTo(self.path[0].owner)
+		return object, target, distance
 	
 	def _getPos(self, ob):
 		targetPos = Utilities.ZAXIS.copy()
 		targetPos *= self.ZOFFSET
 		targetPos = Utilities._toWorld(ob, targetPos)
+		hitOb, hitPoint, hitNorm = ob.rayCast(
+				targetPos, # objto
+				None, # objfrom
+				0, # dist (go only as far as 'targetPos'
+				'Ray', # prop (look only for Ray objects)
+				1, # face
+				1, # xray (ignore other objects)
+				0) # poly (don't care about polygon)
+		if hitOb:
+			vec = hitPoint - ob.worldPosition
+			vec = vec * self.CEILING_AVOIDANCE_BIAS
+			targetPos = ob.worldPosition + vec
 		return targetPos
 	
 	def updateWayPoints(self):
@@ -386,12 +440,17 @@ class CameraNode:
 	def __init__(self):
 		# Defines the location of the way point. Using a way point allows the
 		# node to parented to an object.
-		scene = GameLogic.getCurrentScene()
-		self.owner = scene.addObject('PointMarker', Utilities.getCursor(), 0)
+		self.owner = Utilities.addObject('PointMarker')
+		if not DEBUG:
+			self.owner.visible = False
 		self.hit = False
 
 	def destroy(self):
 		self.owner.endObject()
+		
+	def setHit(self):
+		self.hit = True
+		self.owner.color = [0.0, 0.0, 0.0, 1.0]
 
 #
 # Camera for viewing the background scene

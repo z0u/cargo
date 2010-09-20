@@ -192,6 +192,9 @@ class Snail(SnailSegment, Actor.Actor):
 			marker = scene.addObject("SnailMarker", self.owner)
 			marker.setParent(self.owner)
 	
+	def getTouchedObject(self):
+		return self.TouchedObject
+	
 	def parseChild(self, child, type):
 		if type == "AppendageRoot":
 			if child['Location'] == 'Fore':
@@ -793,8 +796,8 @@ class SnailTrail:
 		#
 		# Attach the spot to the object that the snail is crawling on.
 		#
-		if self.Snail.TouchedObject:
-			spotI.setParent(self.Snail.TouchedObject)
+		if self.Snail.getTouchedObject() != None:
+			spotI.setParent(self.Snail.getTouchedObject())
 		
 		Utilities.setState(spotI, speedStyle)
 	

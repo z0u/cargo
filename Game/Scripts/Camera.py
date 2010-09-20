@@ -310,6 +310,7 @@ class CameraPath(CameraGoal):
 		actor = Actor.Director.getMainCharacter()
 		if actor == None:
 			return
+		
 		dirAct = actor.owner.worldPosition - self.owner.worldPosition
 		distAct = dirAct.magnitude
 		
@@ -341,7 +342,7 @@ class CameraPath(CameraGoal):
 		self.linV = self.linV + (dirWay * acceleration)
 		self.linV = self.linV * (1.0 - self.DAMPING)
 		self.owner.worldPosition = self.owner.worldPosition + self.linV
-		
+
 		#
 		# Align the camera's Y-axis with the global Z, and align
 		# its Z-axis with the direction to the target.
@@ -423,7 +424,10 @@ class CameraPath(CameraGoal):
 		if dir.magnitude > self.MIN_DIST:
 			# Add a new node to the end.
 			Utilities.setCursorTransform(actor.owner)
-			self.path.insert(0, CameraNode())
+			node = CameraNode()
+			self.path.insert(0, node)
+			if actor.getTouchedObject() != None:
+				node.owner.setParent(actor.getTouchedObject(), False)
 			
 			if len(self.path) > self.MAX_NODES:
 				# Delete the oldest node.

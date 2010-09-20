@@ -210,7 +210,6 @@ def _toLocal(referential, point):
 	'''
 	refP = referential.worldPosition
 	refOMat = referential.worldOrientation.copy()
-#	refOMat.invert()
 	return (point - refP) * refOMat
 
 def _toWorld(referential, point):
@@ -238,9 +237,12 @@ def _toWorldVec(referential, dir):
 	             (KX_GameObject)
 	point:       The point, in local space, to transform. (mathutils.Vector)
 	'''
-	refOMat = referential.worldOrientation
-	refOMat = mathutils.Matrix(refOMat[0], refOMat[1], refOMat[2])
-	refOMat.transpose()
+	refOMat = referential.worldOrientation.copy()
+	refOMat.invert()
+	return dir * refOMat
+
+def _toLocalVec(referential, dir):
+	refOMat = referential.worldOrientation.copy()
 	return dir * refOMat
 
 def _SlowCopyRot(o, goal, factor):

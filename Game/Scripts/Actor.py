@@ -399,6 +399,9 @@ class Actor:
 					outsideGround = False
 		
 		return foundGround and outsideGround
+	
+	def getTouchedObject(self):
+		return None
 
 def CreateActor(c):
 	c.owner['Actor'] = Actor(c.owner)

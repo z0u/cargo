@@ -27,6 +27,12 @@ ZEROVEC = ORIGIN
 EPSILON = 0.000001
 MINVECTOR = mathutils.Vector([0.0, 0.0, EPSILON])
 
+RED = mathutils.Vector([1.0, 0.0, 0.0, 1.0])
+GREEN = mathutils.Vector([0.0, 1.0, 0.0, 1.0])
+BLUE = mathutils.Vector([0.0, 0.0, 1.0, 1.0])
+WHITE = mathutils.Vector([1.0, 1.0, 1.0, 1.0])
+BLACK = mathutils.Vector([0.0, 0.0, 0.0, 1.0])
+
 class _SceneManager:
 	def __init__(self):
 		self.Observers = set()
@@ -244,6 +250,16 @@ def _toWorldVec(referential, dir):
 def _toLocalVec(referential, dir):
 	refOMat = referential.worldOrientation.copy()
 	return dir * refOMat
+
+def _copyTransform(source, target):
+	target.worldPosition = source.worldPosition
+	target.worldOrientation = source.worldOrientation
+
+def _rayCastP2P(objto, objfrom, dist = 0, prop = None):
+	face = 1
+	xray = 1
+	poly = 0
+	return getCursor().rayCast(objto, objfrom, dist, prop, face, xray, poly)
 
 def _SlowCopyRot(o, goal, factor):
 	'''

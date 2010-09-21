@@ -268,31 +268,34 @@ class CameraPath(CameraGoal):
 	# oldest nodes will be removed.
 	MAX_NODES = 50
 	# The minimum distance to leave between nodes. 
-	MIN_DIST = 2.0
+	MIN_DIST = 1.0
 	
 	ACCELERATION = 0.01
 	DAMPING = 0.1
 	REST_DISTANCE_NEAR = 5.0
-	REST_DISTANCE_FAR = 20.0
+	REST_DISTANCE_FAR = 15.0
 	
-	ZOFFSET = 15.0
-	CEILING_AVOIDANCE_BIAS = 0.5
+	ZOFFSET_INCREMENT = MIN_DIST * 0.5
+	CURVE_LENGTH = 5
 	# The number of consecutive nodes that must be seen before being accepted.
 	# If this is too low, the camera will clip through sharp corners. 
 	NODE_DELAY = 2
+	THRESHOLD = 1.0
 	
 	def __init__(self, owner, factor, instantCut):
 		CameraGoal.__init__(self, owner, factor, instantCut)
 		# A list of CameraNodes.
 		self.path = []
+		self.pathHead = CameraNode()
 		self.linV = Utilities.ZEROVEC.copy()
 		if DEBUG:
 			self.debugReticule = Utilities.addObject('DebugReticule')
+			self.debugReticule2 = Utilities.addObject('DebugReticule')
 		Utilities.SceneManager.Subscribe(self)
 	
 	def onRender(self):
-		self.advanceGoal()
 		self.updateWayPoints()
+		self.advanceGoal()
 	
 	def OnSceneEnd(self):
 		for n in self.path:
@@ -327,11 +330,13 @@ class CameraPath(CameraGoal):
 		#
 		# Accelerate the camera towards or away from the next way point. 
 		#
-		radiusMultiplier = ceilingHeight / self.ZOFFSET
+		radiusMultiplier = ceilingHeight / CameraNode.ZOFFSET
 		radiusMultiplier = min(radiusMultiplier, 1.0)
+		if self._canSeeFuture():
+			radiusMultiplier *= 2.0
 		restNear = self.REST_DISTANCE_NEAR
 		restFar = Utilities._lerp(restNear, self.REST_DISTANCE_FAR, radiusMultiplier)
-		
+
 		dist = self.owner.getDistanceTo(wayObject) + pathLength
 		acceleration = 0.0
 		if dist < restNear:
@@ -352,86 +357,169 @@ class CameraPath(CameraGoal):
 		self.owner.alignAxisToVect(Utilities.ZAXIS, 1)
 		self.owner.alignAxisToVect(look, 2)
 	
+	def _canSeeFuture(self):		
+		actor = Actor.Director.getMainCharacter()
+		actorPos = actor.owner.worldPosition
+		
+		if len(self.path) <= 0:
+			# Can't determine direction. Return True if actor is visible.
+			return hasLineOfSight(self.owner, actorPos)
+		
+		# First try a point just ahead of the actor.
+		direction = actorPos - self.path[0].owner.worldPosition
+		direction.normalize()
+		projectedPoint = actorPos + (direction * self.MIN_DIST)
+		if DEBUG: self.debugReticule2.worldPosition = projectedPoint
+		if hasLineOfSight(self.owner, projectedPoint):
+			if DEBUG: self.debugReticule2.color = Utilities.RED
+			return True
+
+		if len(self.path) < 3:
+			if DEBUG: self.debugReticule2.color = Utilities.BLACK
+			return False
+		
+		# Get the curvature, sampled over a few points.
+		offsetFromLinear = 0.0
+		for A, B, C in zip(self.path[0:self.CURVE_LENGTH],
+							self.path[1:self.CURVE_LENGTH],
+							self.path[2:self.CURVE_LENGTH]):
+			direction = B.owner.worldPosition - C.owner.worldPosition
+			projectedPoint = B.owner.worldPosition + direction
+			direction = A.owner.worldPosition - projectedPoint
+			offsetFromLinear += direction.magnitude
+		
+		# Project a point further out, using the curvature determined above.
+		A, B, C = self.path[0], self.path[1], self.path[2]
+		direction = B.owner.worldPosition - C.owner.worldPosition
+		projectedPoint = B.owner.worldPosition + direction
+		direction = A.owner.worldPosition - projectedPoint
+		direction.normalize()
+		projectedPoint = A.owner.worldPosition + (direction * 10.0)
+		
+		if DEBUG: self.debugReticule2.worldPosition = projectedPoint
+		if hasLineOfSight(self.owner, projectedPoint):
+			if DEBUG: self.debugReticule2.color = Utilities.RED
+			return True
+		
+		if DEBUG: self.debugReticule2.color = Utilities.BLACK
+		return False
+	
 	def _getNextWayPoint(self):
 		'''Find the next point that the camera should advance towards.'''
-		actor = Actor.Director.getMainCharacter()
-		object = actor.owner
-		target, offset = self._getPos(actor.owner)
+		def colourNodes(node):
+			found = False
+			
+			if node == self.pathHead:
+				found = True
+				node.owner.color = Utilities.RED
+			else:
+				node.owner.color = Utilities.WHITE
+			
+			for n in self.path:
+				if node == n:
+					n.owner.color = Utilities.RED
+					found = True
+				elif found:
+					n.owner.color = Utilities.BLACK
+				else:
+					n.owner.color = Utilities.WHITE
 		
+		# Try to go straight to the actor.
 		nFound = 0
-		if (hasLineOfSight(self.owner, actor.owner) and
+		node = self.pathHead
+		target = node.getTarget()
+		if (hasLineOfSight(self.owner, node.owner) and
 			hasLineOfSight(self.owner, target)):
-			return object, target, 0.0, offset
+			if DEBUG: colourNodes(node)
+			return node.owner, target, 0.0, node.ceilingHeight
 		
+		# Actor is obscured; find a good way point.
 		nSearched = 0
-		for node in self.path:
+		cumulativeHeight = self.pathHead.ceilingHeight
+		for currentNode in self.path:
 			nSearched += 1
-			if node.hit:
+			
+			currentTarget = currentNode.getTarget()
+			cumulativeHeight += currentNode.ceilingHeight
+			
+			if currentNode.hit:
 				break
 			
-			nextPoint, nextOffset = self._getPos(node.owner)
-			offset += nextOffset
-			
-			if (not hasLineOfSight(self.owner, node.owner) or
-				not hasLineOfSight(self.owner, nextPoint)):
+			if (not hasLineOfSight(self.owner, currentNode.owner) or
+				not hasLineOfSight(self.owner, currentTarget)):
 				nFound = 0
 				continue
 			
 			nFound += 1
 			if nFound >= self.NODE_DELAY:
-				object = node.owner
-				target = nextPoint
+				node = currentNode
+				target = currentTarget
+				
+				dist = self.owner.getDistanceTo(node.owner)
+#				if dist < self.THRESHOLD:
+#					currentNode.setHit()
+				
 				break
 		
+		if DEBUG: colourNodes(node)
+		
 		distance = nSearched * self.MIN_DIST
-		offset /= nSearched + 1
+		offset = cumulativeHeight / (nSearched + 1)
 		if len(self.path) > 0:
-			distance += actor.owner.getDistanceTo(self.path[0].owner)
-		return object, target, distance, offset
-	
-	def _getPos(self, ob):
-		targetPos = Utilities.ZAXIS.copy()
-		targetPos *= self.ZOFFSET
-		targetPos = Utilities._toWorld(ob, targetPos)
-		hitOb, hitPoint, hitNorm = ob.rayCast(
-				targetPos, # objto
-				None, # objfrom
-				0, # dist (go only as far as 'targetPos'
-				'Ray', # prop (look only for Ray objects)
-				1, # face
-				1, # xray (ignore other objects)
-				0) # poly (don't care about polygon)
-		ceilingHeight = self.ZOFFSET
-		if hitOb:
-			vec = hitPoint - ob.worldPosition
-			ceilingHeight = vec.magnitude
-			vec = vec * self.CEILING_AVOIDANCE_BIAS
-			targetPos = ob.worldPosition + vec
-		return targetPos, ceilingHeight
+			distance += self.pathHead.owner.getDistanceTo(self.path[0].owner)
+		return node.owner, target, distance, offset
 	
 	def updateWayPoints(self):
 		actor = Actor.Director.getMainCharacter()
 		if actor == None:
 			return
 		
-		if len(self.path) == 0:
-			Utilities.setCursorTransform(actor.owner)
-			self.path.insert(0, CameraNode())
-			return
+		Utilities._copyTransform(actor.owner, self.pathHead.owner)
 		
-		currentPos = actor.owner.worldPosition
-		dir = currentPos - self.path[0].owner.worldPosition
-		if dir.magnitude > self.MIN_DIST:
-			# Add a new node to the end.
+		# Add a new node if the actor has moved far enough.
+		addNew = False
+		if len(self.path) == 0:
+			addNew = True
+		else:
+			currentPos = actor.owner.worldPosition
+			vec = currentPos - self.path[0].owner.worldPosition
+			if vec.magnitude > self.MIN_DIST:
+				addNew = True
+		
+		if addNew:
 			Utilities.setCursorTransform(actor.owner)
 			node = CameraNode()
 			self.path.insert(0, node)
 			if actor.getTouchedObject() != None:
 				node.owner.setParent(actor.getTouchedObject(), False)
-			
 			if len(self.path) > self.MAX_NODES:
 				# Delete the oldest node.
 				self.path.pop().destroy()
+		
+		# Update the ceiling height for each node, ensuring a smooth transition
+		# between consecutive z-offsets.
+		self.pathHead.update()
+		for node in self.path:
+			node.update()
+		
+		def pingPong(iterable):
+			# pingPong('ABC') --> A B C C B A
+			for element in iterable:
+				yield element
+			for element in reversed(iterable):
+				yield element
+
+		def marginMin(current, next, margin):
+			return min(current + margin, next)
+		
+		currentOffset = self.pathHead.ceilingHeight
+		for node in pingPong(self.path):
+			node.setCeilingHeight(marginMin(currentOffset, node.ceilingHeight,
+								self.ZOFFSET_INCREMENT))
+			currentOffset = node.ceilingHeight
+		self.pathHead.setCeilingHeight(marginMin(currentOffset,
+										self.pathHead.ceilingHeight,
+										self.ZOFFSET_INCREMENT))
 
 def createCameraPath(c):
 	owner = c.owner
@@ -445,20 +533,56 @@ def updatePath(c):
 class CameraNode:
 	'''A single point in a path used by the CameraPathGoal. These act as
 	way points for the camera to follow.'''
+	
+	ZOFFSET = 20.0
+	CEILING_AVOIDANCE_BIAS = 0.5
+	
 	def __init__(self):
 		# Defines the location of the way point. Using a way point allows the
 		# node to parented to an object.
 		self.owner = Utilities.addObject('PointMarker')
 		if not DEBUG:
 			self.owner.visible = False
+		else:
+			scene = GameLogic.getCurrentScene()
+			self.marker = Utilities.addObject("PointMarker")
+			self.marker.color = Utilities.BLUE
 		self.hit = False
+		
+		# It is an error to access these next two before calling update().
+		self.ceilingHeight = None
+		self.target = None
+
+	def update(self):
+		self.target = Utilities.ZAXIS.copy()
+		self.target *= self.ZOFFSET
+		self.target = Utilities._toWorld(self.owner, self.target)
+		hitOb, hitPoint, hitNorm = Utilities._rayCastP2P(
+				self.target, # objto
+				self.owner.worldPosition, # objfrom
+				prop = 'Ray')
+		
+		if hitOb:
+			vec = hitPoint - self.owner.worldPosition
+			self.setCeilingHeight(vec.magnitude)
+		else:
+			self.setCeilingHeight(CameraNode.ZOFFSET)
+	
+	def getTarget(self):
+		bias = self.ceilingHeight / CameraNode.ZOFFSET
+		bias *= CameraNode.CEILING_AVOIDANCE_BIAS
+		return Utilities._lerp(self.owner.worldPosition, self.target, bias)
 
 	def destroy(self):
 		self.owner.endObject()
+		if DEBUG: self.marker.endObject()
 		
 	def setHit(self):
 		self.hit = True
-		self.owner.color = [0.0, 0.0, 0.0, 1.0]
+	
+	def setCeilingHeight(self, height):
+		self.ceilingHeight = height
+		if DEBUG: self.marker.worldPosition = self.getTarget()
 
 #
 # Camera for viewing the background scene

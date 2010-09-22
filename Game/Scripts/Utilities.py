@@ -27,9 +27,9 @@ ZEROVEC = ORIGIN
 EPSILON = 0.000001
 MINVECTOR = mathutils.Vector([0.0, 0.0, EPSILON])
 
-RED = mathutils.Vector([1.0, 0.0, 0.0, 1.0])
+RED   = mathutils.Vector([1.0, 0.0, 0.0, 1.0])
 GREEN = mathutils.Vector([0.0, 1.0, 0.0, 1.0])
-BLUE = mathutils.Vector([0.0, 0.0, 1.0, 1.0])
+BLUE  = mathutils.Vector([0.0, 0.0, 1.0, 1.0])
 WHITE = mathutils.Vector([1.0, 1.0, 1.0, 1.0])
 BLACK = mathutils.Vector([0.0, 0.0, 0.0, 1.0])
 

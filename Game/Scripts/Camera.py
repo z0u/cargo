@@ -276,7 +276,6 @@ class CameraPath(CameraGoal):
 	REST_DISTANCE_FAR = 15.0
 	
 	ZOFFSET_INCREMENT = MIN_DIST * 0.5
-	CURVE_LENGTH = 5
 	# The number of consecutive nodes that must be seen before being accepted.
 	# If this is too low, the camera will clip through sharp corners. 
 	NODE_DELAY = 2
@@ -321,8 +320,7 @@ class CameraPath(CameraGoal):
 		# Get the vector from the camera to the next way point.
 		#
 		wayObject, wayTarget, pathLength, ceilingHeight = self._getNextWayPoint()
-		if DEBUG:
-			self.debugReticule.worldPosition = wayTarget
+		if DEBUG: self.debugReticule.worldPosition = wayTarget
 		dirWay = wayTarget - self.owner.worldPosition
 		distWay = dirWay.magnitude
 		dirWay.normalize()
@@ -354,21 +352,20 @@ class CameraPath(CameraGoal):
 		#
 		look = dirAct.copy()
 		look.negate()
-		self.owner.alignAxisToVect(Utilities.ZAXIS, 1)
-		self.owner.alignAxisToVect(look, 2)
+		axis = wayObject.getAxisVect(Utilities.ZAXIS)
+		self.owner.alignAxisToVect(axis, 1, 0.05)
+		self.owner.alignAxisToVect(look, 2, 0.5)
 	
-	def _canSeeFuture(self):		
-		actor = Actor.Director.getMainCharacter()
-		actorPos = actor.owner.worldPosition
-		
-		if len(self.path) <= 0:
+	def _canSeeFuture(self):
+		if len(self.path) < 2:
 			# Can't determine direction. Return True if actor is visible.
-			return hasLineOfSight(self.owner, actorPos)
+			return hasLineOfSight(self.owner, self.pathHead.owner)
 		
 		# First try a point just ahead of the actor.
-		direction = actorPos - self.path[0].owner.worldPosition
-		direction.normalize()
-		projectedPoint = actorPos + (direction * self.MIN_DIST)
+		A, B = self.path[0], self.path[1]
+		offset = A.owner.worldPosition - B.owner.worldPosition
+		projectedPoint = A.owner.worldPosition + (offset * 2.0)
+
 		if DEBUG: self.debugReticule2.worldPosition = projectedPoint
 		if hasLineOfSight(self.owner, projectedPoint):
 			if DEBUG: self.debugReticule2.color = Utilities.RED
@@ -377,16 +374,6 @@ class CameraPath(CameraGoal):
 		if len(self.path) < 3:
 			if DEBUG: self.debugReticule2.color = Utilities.BLACK
 			return False
-		
-		# Get the curvature, sampled over a few points.
-		offsetFromLinear = 0.0
-		for A, B, C in zip(self.path[0:self.CURVE_LENGTH],
-							self.path[1:self.CURVE_LENGTH],
-							self.path[2:self.CURVE_LENGTH]):
-			direction = B.owner.worldPosition - C.owner.worldPosition
-			projectedPoint = B.owner.worldPosition + direction
-			direction = A.owner.worldPosition - projectedPoint
-			offsetFromLinear += direction.magnitude
 		
 		# Project a point further out, using the curvature determined above.
 		A, B, C = self.path[0], self.path[1], self.path[2]
@@ -442,9 +429,6 @@ class CameraPath(CameraGoal):
 			currentTarget = currentNode.getTarget()
 			cumulativeHeight += currentNode.ceilingHeight
 			
-			if currentNode.hit:
-				break
-			
 			if (not hasLineOfSight(self.owner, currentNode.owner) or
 				not hasLineOfSight(self.owner, currentTarget)):
 				nFound = 0
@@ -456,8 +440,6 @@ class CameraPath(CameraGoal):
 				target = currentTarget
 				
 				dist = self.owner.getDistanceTo(node.owner)
-#				if dist < self.THRESHOLD:
-#					currentNode.setHit()
 				
 				break
 		
@@ -547,7 +529,6 @@ class CameraNode:
 			scene = GameLogic.getCurrentScene()
 			self.marker = Utilities.addObject("PointMarker")
 			self.marker.color = Utilities.BLUE
-		self.hit = False
 		
 		# It is an error to access these next two before calling update().
 		self.ceilingHeight = None
@@ -576,9 +557,6 @@ class CameraNode:
 	def destroy(self):
 		self.owner.endObject()
 		if DEBUG: self.marker.endObject()
-		
-	def setHit(self):
-		self.hit = True
 	
 	def setCeilingHeight(self, height):
 		self.ceilingHeight = height

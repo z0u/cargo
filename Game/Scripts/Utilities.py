@@ -255,7 +255,7 @@ def _copyTransform(source, target):
 	target.worldPosition = source.worldPosition
 	target.worldOrientation = source.worldOrientation
 
-def _rayCastP2P(objto, objfrom, dist = 0, prop = None):
+def _rayCastP2P(objto, objfrom, dist = 0.0, prop = ''):
 	face = 1
 	xray = 1
 	poly = 0

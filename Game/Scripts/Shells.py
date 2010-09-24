@@ -33,12 +33,11 @@ S_OCCUPIED = 4
 S_ALWAYS   = 16
 
 class ShellBase(Actor.Actor):
-	def __init__(self, owner, cameraGoal):
+	def __init__(self, owner):
 		Actor.Actor.__init__(self, owner)
 		
 		self.Snail = None
 		self.CargoHook = None
-		self.CameraGoal = cameraGoal
 		
 		Utilities.parseChildren(self, owner)
 		
@@ -104,19 +103,6 @@ class ShellBase(Actor.Actor):
 	def OnPreEnter(self):
 		'''Called when the snail starts to enter this shell. This may happen
 		seveal frames before control is passed, but may be on the same frame.'''
-		#
-		# Set a new goal for the camera, initialised to the
-		# current camera position.
-		#
-		activeCam = Camera.AutoCamera.Camera
-		self.CameraGoal.worldPosition = activeCam.worldPosition
-		self.CameraGoal.worldOrientation = activeCam.worldOrientation
-		Camera.AutoCamera.AddGoal(
-			self.CameraGoal,
-			self.CameraGoal['Priority'],
-			self.CameraGoal['SlowFac'],
-			False)
-		self.CameraGoal.state = 1<<1 # state 2
 		if self.Occupier:
 			self.Occupier.state = 1<<1 # state 2
 	
@@ -132,14 +118,13 @@ class ShellBase(Actor.Actor):
 		Utilities.setState(self.owner, S_CARRIED)
 		Utilities.addState(self.owner, S_ALWAYS)
 		self.owner['CurrentBuoyancy'] = self.owner['Buoyancy']
-		self.CameraGoal.state = 1<<0 # state 1
 		if self.Occupier:
 			self.Occupier.state = 1<<0 # state 1
 	
 	def OnPostExit(self):
 		'''Called when the snail has finished its exit shell
 		animation.'''
-		Camera.AutoCamera.RemoveGoal(self.CameraGoal)
+		pass
 	
 	def IsCarried(self):
 		return self.owner['Carried']
@@ -214,8 +199,8 @@ class Shell(ShellBase):
 		self.owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
 class Wheel(ShellBase):
-	def __init__(self, owner, cameraGoal):
-		ShellBase.__init__(self, owner, cameraGoal)
+	def __init__(self, owner):
+		ShellBase.__init__(self, owner)
 		self._ResetSpeed()
 	
 	def Orient(self):
@@ -350,17 +335,13 @@ class BottleCap(ShellBase):
 		self.Occupier['JumpFrame'] = 0
 
 def CreateShell(c):
-	cameraGoal = c.sensors['sCameraGoal'].owner
-	Shell(c.owner, cameraGoal)
+	Shell(c.owner)
 
 def CreateNut(c):
-	cameraGoal = c.sensors['sCameraGoal'].owner
-	Nut(c.owner, cameraGoal)
+	Nut(c.owner)
 
 def CreateWheel(c):
-	cameraGoal = c.sensors['sCameraGoal'].owner
-	Wheel(c.owner, cameraGoal)
+	Wheel(c.owner)
 
 def CreateBottleCap(c):
-	cameraGoal = c.sensors['sCameraGoal'].owner
-	BottleCap(c.owner, cameraGoal)
+	BottleCap(c.owner)

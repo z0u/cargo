@@ -389,8 +389,11 @@ class CameraPath(CameraGoal):
 		# its Z-axis with the direction to the target.
 		look = actor.owner.worldPosition - self.owner.worldPosition
 		look.negate()
-		axis = node.owner.getAxisVect(Utilities.ZAXIS)
-		self.owner.alignAxisToVect(axis, 1, CameraPath.ALIGN_Y_SPEED)
+		if actor.useLocalCoordinates():
+			axis = node.owner.getAxisVect(Utilities.ZAXIS)
+			self.owner.alignAxisToVect(axis, 1, CameraPath.ALIGN_Y_SPEED)
+		else:
+			self.owner.alignAxisToVect(Utilities.ZAXIS, 1, 0.5)
 		self.owner.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
 		
 		if DEBUG: self.targetVis.worldPosition = target
@@ -421,7 +424,9 @@ class CameraPath(CameraGoal):
 		hitOb, hitPoint, _ = Utilities._rayCastP2P(
 				projectedPoint, a.owner, prop = 'Ray')
 		if hitOb != None:
-			projectedPoint = hitPoint
+			vect = hitPoint - a.owner.worldPosition
+			vect.magnitude = vect.magnitude * 0.9
+			projectedPoint = a.owner.worldPosition + vect
 		
 		# Check the difference in direction of consecutive line segments.
 		dot = 1.0
@@ -444,7 +449,9 @@ class CameraPath(CameraGoal):
 			hitOb, hitPoint, _ = Utilities._rayCastP2P(
 					pp2, projectedPoint, prop = 'Ray')
 			if hitOb != None:
-				pp2 = hitPoint
+				vect = hitPoint - projectedPoint
+				vect.magnitude = vect.magnitude * 0.9
+				pp2 = projectedPoint + vect
 			projectedPoint = pp2
 			
 		if hasLineOfSight(self.owner, projectedPoint):
@@ -513,7 +520,11 @@ class CameraPath(CameraGoal):
 		if actor == None:
 			return
 		
-		Utilities._copyTransform(actor.owner, self.pathHead.owner)
+		if actor.useLocalCoordinates():
+			Utilities._copyTransform(actor.owner, self.pathHead.owner)
+		else:
+			self.pathHead.owner.worldPosition = actor.owner.worldPosition
+			Utilities._resetOrientation(self.pathHead.owner)
 		
 		# Add a new node if the actor has moved far enough.
 		addNew = False
@@ -526,8 +537,11 @@ class CameraPath(CameraGoal):
 				addNew = True
 		
 		if addNew:
-			Utilities.setCursorTransform(actor.owner)
 			node = CameraNode()
+			if actor.useLocalCoordinates():
+				Utilities._copyTransform(actor.owner, node.owner)
+			else:
+				node.owner.worldPosition = actor.owner.worldPosition
 			self.path.insert(0, node)
 			if actor.getTouchedObject() != None:
 				node.owner.setParent(actor.getTouchedObject(), False)

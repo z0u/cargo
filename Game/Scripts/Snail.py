@@ -658,6 +658,9 @@ class Snail(SnailSegment, Actor.Actor):
 		if positive and triggered:
 			if Utilities.hasState(self.owner, S_HASSHELL):
 				self.dropShell(animate = True)
+	
+	def useLocalCoordinates(self):
+		return True
 
 class SnailRayCluster:
 	'''A collection of SnailRays. These will cast a ray once per frame in the

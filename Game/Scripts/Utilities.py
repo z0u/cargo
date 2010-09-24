@@ -255,6 +255,11 @@ def _copyTransform(source, target):
 	target.worldPosition = source.worldPosition
 	target.worldOrientation = source.worldOrientation
 
+def _resetOrientation(ob):
+	orn = mathutils.Quaternion()
+	orn.identity()
+	ob.worldOrientation = orn
+
 def _rayCastP2P(objto, objfrom, dist = 0.0, prop = ''):
 	face = 1
 	xray = 1

@@ -402,6 +402,11 @@ class Actor:
 	
 	def getTouchedObject(self):
 		return None
+	
+	def useLocalCoordinates(self):
+		'''True if the actor's local coordinates are meaningful to other systems
+		such as the camera.'''
+		return False
 
 def CreateActor(c):
 	c.owner['Actor'] = Actor(c.owner)

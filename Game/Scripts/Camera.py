@@ -269,6 +269,13 @@ class CameraPath(CameraGoal):
 	# Note that this mill change depending on the situation; e.g. it becomes
 	# lower when the ceiling is low.
 	REST_DISTANCE = 5.0
+	# The amount to expand the radius when it is safe to do so.
+	EXPAND_FACTOR = 4.0
+	# The amount to expand the radius when no other factors are at play. Ideally
+	# REST_DISTANCE would just be increased, but in practice the contraction
+	# factor is never below about 1.5 - so a similar value is used for
+	# continuity.
+	REST_FACTOR = 1.5
 	
 	# The distance above the actor that the camera should aim for. Actually, the
 	# camera will aim for a point ZOFFSET * CEILING_AVOIDANCE_BIAS away from the
@@ -282,6 +289,18 @@ class CameraPath(CameraGoal):
 	# The number of consecutive nodes that must be seen before being accepted.
 	# If this is too low, the camera will clip through sharp corners. 
 	NODE_DELAY = 2
+	# The number of frames to wait before deciding that the predictive node is
+	# obscured.
+	EXPAND_ON_WAIT = 20
+	EXPAND_OFF_WAIT = 15
+	# Responsiveness of the radius adjustment.
+	RADIUS_SPEED = 0.1
+	# Responsiveness of the camera orientation.
+	ALIGN_Y_SPEED = 0.01
+	ALIGN_Z_SPEED = 0.5
+	# Distance to project predictive node.
+	PREDICT_FWD = 20.0
+	PREDICT_UP = 50.0
 	
 	def __init__(self, owner, factor, instantCut):
 		CameraGoal.__init__(self, owner, factor, instantCut)
@@ -289,7 +308,11 @@ class CameraPath(CameraGoal):
 		self.path = []
 		self.pathHead = CameraNode()
 		self.linV = Utilities.ZEROVEC.copy()
+		
 		self.radMult = 1.0
+		self.expand = Utilities.FuzzySwitch(CameraPath.EXPAND_ON_WAIT,
+										CameraPath.EXPAND_OFF_WAIT, True)
+		
 		if DEBUG:
 			self.targetVis = Utilities.addObject('DebugReticule')
 			self.predictVis = Utilities.addObject('DebugReticule')
@@ -326,17 +349,28 @@ class CameraPath(CameraGoal):
 		dirWay.normalize()
 		
 		# Adjust preferred distance from actor based on current conditions.
-		radMult = 1.0
+		contract = False
 		if node.ceilingHeight < CameraPath.ZOFFSET:
 			# Bring the camera closer when under a low ceiling or in a tunnel.
-			radMult = 1.0 + (node.ceilingHeight / CameraPath.ZOFFSET)
-		elif self._canSeeFuture():
+			contract = True
+		
+		if self._canSeeFuture():
 			# Otherwise, relax the camera if the predicted point is visible.
-			radMult = 5.0
-		self.radMult = Utilities._lerp(self.radMult, radMult, 0.1)
+			self.expand.turnOn()
+		else:
+			self.expand.turnOff()
+		
+		radMult = 1.0
+		if contract:
+			radMult = 1.0 + (node.ceilingHeight / CameraPath.ZOFFSET)
+		elif self.expand.isOn():
+			radMult = CameraPath.EXPAND_FACTOR
+		else:
+			radMult = CameraPath.REST_FACTOR
+		self.radMult = Utilities._lerp(self.radMult, radMult,
+									CameraPath.RADIUS_SPEED)
 		restNear = self.REST_DISTANCE
 		restFar = self.REST_DISTANCE * self.radMult
-		print("%.1f" % restFar)
 		
 		# Determine the acceleration, based on the distance from the actor.
 		dist = self.owner.getDistanceTo(node.owner) + pathLength
@@ -356,8 +390,8 @@ class CameraPath(CameraGoal):
 		look = actor.owner.worldPosition - self.owner.worldPosition
 		look.negate()
 		axis = node.owner.getAxisVect(Utilities.ZAXIS)
-		self.owner.alignAxisToVect(axis, 1, 0.05)
-		self.owner.alignAxisToVect(look, 2, 0.5)
+		self.owner.alignAxisToVect(axis, 1, CameraPath.ALIGN_Y_SPEED)
+		self.owner.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
 		
 		if DEBUG: self.targetVis.worldPosition = target
 	
@@ -377,44 +411,41 @@ class CameraPath(CameraGoal):
 			projectedPoint = self.pathHead.owner.worldPosition
 			return hasLineOfSight(self.owner, projectedPoint), projectedPoint
 		
-		# First try a point just ahead of the actor.
+		# Try a point ahead of the actor. If the path is curving, project the
+		# point 'down' in anticipation of the motion.
 		a, b = self.path[0], self.path[1]
-		offset = a.owner.worldPosition - b.owner.worldPosition
-		projectedPoint = a.owner.worldPosition + (offset * 2.0)
-
-		if hasLineOfSight(self.owner, projectedPoint):
-			return True, projectedPoint
-
-		if len(self.path) < 3:
-			return False, projectedPoint
-		
-		# Now try a point further out. If the path is curving, project the point
-		# 'up' in anticipation of the motion.
-		a, b, c = self.path[0], self.path[1], self.path[2]
-		cb = b.owner.worldPosition - c.owner.worldPosition
 		ba = a.owner.worldPosition - b.owner.worldPosition
-		cb.normalize()
 		ba.normalize()
-		projectedPoint = a.owner.worldPosition + (ba * 20.0)
+		projectedPoint = a.owner.worldPosition + (ba * CameraPath.PREDICT_FWD)
 		
 		hitOb, hitPoint, _ = Utilities._rayCastP2P(
 				projectedPoint, a.owner, prop = 'Ray')
 		if hitOb != None:
 			projectedPoint = hitPoint
-			
-		if hasLineOfSight(self.owner, projectedPoint):
-			return True, projectedPoint
 		
-		dot = ba.dot(cb)
-		if dot < 0.9999:
+		# Check the difference in direction of consecutive line segments.
+		dot = 1.0
+		cb = ba.copy()
+		for c in self.path[2:7]:
+			cb = b.owner.worldPosition - c.owner.worldPosition
+			cb.normalize()
+			
+			dot = ba.dot(cb)
+			if dot < 0.999:
+				break
+		
+		if dot < 0.999:
+			# The path is bent; project the point in the direction of the
+			# curvature. The cross product gives us the axis of rotation.
 			rotAxis = ba.cross(cb)
 			upAxis = rotAxis.cross(ba)
-			projectedPoint = projectedPoint - (upAxis * 50.0)
+			pp2 = projectedPoint - (upAxis * CameraPath.PREDICT_FWD)
 		
-		hitOb, hitPoint, _ = Utilities._rayCastP2P(
-				projectedPoint, a.owner, prop = 'Ray')
-		if hitOb != None:
-			projectedPoint = hitPoint
+			hitOb, hitPoint, _ = Utilities._rayCastP2P(
+					pp2, projectedPoint, prop = 'Ray')
+			if hitOb != None:
+				pp2 = hitPoint
+			projectedPoint = pp2
 			
 		if hasLineOfSight(self.owner, projectedPoint):
 			return True, projectedPoint

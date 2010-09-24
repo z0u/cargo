@@ -561,6 +561,39 @@ class _Random:
 
 Random = _Random()
 
+class FuzzySwitch:
+	'''A boolean that only switches state after a number of consistent impulses.
+	'''
+	def __init__(self, delayOn, delayOff, startOn):
+		self.delayOn = delayOn
+		self.delayOff = 0 - delayOff
+		self.on = startOn
+		if startOn:
+			self.current = self.delayOn
+		else:
+			self.current = self.delayOff
+	
+	def turnOn(self):
+		self.current = max(0, self.current)
+		if self.on:
+			return
+		
+		self.current += 1
+		if self.current == self.delayOn:
+			self.on = True
+		
+	def turnOff(self):
+		self.current = min(0, self.current)
+		if not self.on:
+			return
+		
+		self.current -= 1
+		if self.current == self.delayOff:
+			self.on = False
+	
+	def isOn(self):
+		return self.on
+
 class PriorityQueueItem:
 	def __init__(self, key, item, priority):
 		self.key = key

@@ -156,7 +156,7 @@ class SegmentChildPivot(SnailSegment):
 		self.Child.setBendAngle(angle)
 
 class Snail(SnailSegment, Actor.Actor):
-	def __init__(self, owner, cargoHold, eyeLocL, eyeLocR):
+	def __init__(self, owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR):
 		# FIXME: This derives from two classes, and both set the Owner property.
 		Actor.Actor.__init__(self, owner)
 		Actor.Director.setMainCharacter(self)
@@ -165,6 +165,8 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Tail = None
 		self.CargoHold = cargoHold
 		self.getAttachPoints()['CargoHold'] = cargoHold
+		self.EyeRayL = eyeRayL
+		self.EyeRayR = eyeRayR
 		self.EyeLocL = eyeLocL
 		self.EyeLocR = eyeLocR
 		self.NearestShell = None
@@ -221,6 +223,11 @@ class Snail(SnailSegment, Actor.Actor):
 		else:
 			return SnailSegment.parseChild(self, child, type)
 	
+	def update(self):
+		self.orient()
+		self.updateEyeLength()
+		self.Armature.update()
+	
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
 		counter = Utilities.Counter()
@@ -264,6 +271,34 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.Head.orient(self.Armature)
 		self.Tail.orient(self.Armature)
+	
+	def _updateEyeLength(self, eyeRayOb):
+		restLength = self.owner['EyeRestLen']
+		channel = self.Armature.channels[eyeRayOb['channel']]
+		
+		vect = eyeRayOb.getAxisVect(Utilities.ZAXIS) * restLength
+		through = eyeRayOb.worldPosition + vect
+		hitOb, hitPos, _ = Utilities._rayCastP2P(through, eyeRayOb,
+				prop = 'Ground')
+		
+		targetLength = vect.magnitude
+		if hitOb:
+			targetLength = (hitPos - eyeRayOb.worldPosition).magnitude
+			targetLength *= 0.9
+		targetProportion = (targetLength / restLength)
+		
+		currentProportion = channel.scale.y
+		if (currentProportion >= targetProportion):
+			targetProportion *= 0.5
+		else:
+			targetProportion = Utilities._lerp(currentProportion,
+					targetProportion, self.owner['EyeLenFac'])
+		
+		channel.scale = (1.0, targetProportion, 1.0)
+	
+	def updateEyeLength(self):
+		self._updateEyeLength(self.EyeRayL)
+		self._updateEyeLength(self.EyeRayR)
 		self.Armature.update()
 	
 	def lookAt(self, targetList):
@@ -746,7 +781,7 @@ class SnailTrail:
 			child.removeParent()
 			return True
 	
-	def AddSpot(self, speedStyle):
+	def addSpot(self, speedStyle):
 		'''
 		Add a spot where the snail is now. Actually, this only adds a spot half
 		the time: gaps will be left in the trail, like so:
@@ -788,23 +823,27 @@ class SnailTrail:
 				speedStyle = SnailTrail.S_FAST
 			elif speedMultiplier < (1.0 - Utilities.EPSILON):
 				speedStyle = SnailTrail.S_SLOW
-			self.AddSpot(speedStyle)
+			self.addSpot(speedStyle)
 
 #
 # Module interface functions.
 #
 
-def Init(cont):
+def init(cont):
 	cargoHold = cont.sensors['sCargoHoldHook'].owner
+	eyeRayL = cont.sensors['sEyeRayHook_L'].owner
+	eyeRayR = cont.sensors['sEyeRayHook_R'].owner
 	eyeLocL = cont.sensors['sEyeLocHookL'].owner
 	eyeLocR = cont.sensors['sEyeLocHookR'].owner
-	snail = Snail(cont.owner, cargoHold, eyeLocL, eyeLocR)
+	snail = Snail(cont.owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR)
 	cont.owner['Snail'] = snail
 
-def Orient(c):
-	c.owner['Snail'].orient()
+def update(c):
+	snail = c.owner['Snail']
+	snail.orient()
+	snail.updateEyeLength()
 
-def Look(c):
+def look(c):
 	sLookAt = c.sensors['sLookAt']
 	c.owner['Snail'].lookAt(sLookAt.hitObjectList)
 

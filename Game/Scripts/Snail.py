@@ -34,6 +34,7 @@ import math
 
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
+
 DEBUG = False
 
 # FIXME: This is used for Euler bone transforms - but we should be able to
@@ -189,6 +190,12 @@ class Snail(SnailSegment, Actor.Actor):
 			scene = GameLogic.getCurrentScene()
 			marker = scene.addObject("SnailMarker", self.owner)
 			marker.setParent(self.owner)
+			self.eyeMarkerL = Utilities.addObject('AxisMarker', 0)
+			Utilities._copyTransform(eyeLocL, self.eyeMarkerL)
+			self.eyeMarkerL.setParent(eyeLocL)
+			self.eyeMarkerR = Utilities.addObject('AxisMarker', 0)
+			Utilities._copyTransform(eyeLocR, self.eyeMarkerR)
+			self.eyeMarkerR.setParent(eyeLocR)
 	
 	def getTouchedObject(self):
 		return self.TouchedObject
@@ -226,7 +233,12 @@ class Snail(SnailSegment, Actor.Actor):
 	def update(self):
 		self.orient()
 		self.updateEyeLength()
-		self.Armature.update()
+		
+		# Don't update armature: this must be done last, and it's hard to
+		# predict whether another function will want to modify the pose.
+		# Just assume this will happen due to an action being played through an
+		# actuator.
+		#self.Armature.update()
 	
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
@@ -299,7 +311,6 @@ class Snail(SnailSegment, Actor.Actor):
 	def updateEyeLength(self):
 		self._updateEyeLength(self.EyeRayL)
 		self._updateEyeLength(self.EyeRayR)
-		self.Armature.update()
 	
 	def lookAt(self, targetList):
 		'''
@@ -308,28 +319,23 @@ class Snail(SnailSegment, Actor.Actor):
 		is provided by a Near sensor, so it won't include every object in the
 		scene. Objects with a LookAt priority of less than zero will be ignored.
 		'''
-		def getAngleIndices(vec):
-			MULT = 100.0
-			vec = vec.copy()
-			vec.normalize()
-			angZIndex = 0.0
-			if vec.y >= 0:
-				angZIndex = vec.x * MULT
-			else:
-				if vec.x >= 0:
-					angZIndex = ((1.0 - vec.x) * MULT) + MULT
-				else:
-					angZIndex = ((-1.0 - vec.x) * MULT) - MULT
-			angZIndex = Utilities._clamp(-150, 150, angZIndex)
-			angXIndex = vec.z * MULT
-			return angXIndex, angZIndex
+
+		def look(eye, target):
+			channel = self.Armature.channels[eye['channel']]
+			_, gVec, _ = eye.getVectTo(target)
+			eye.alignAxisToVect(eye.parent.getAxisVect(Utilities.ZAXIS), 2)
+			eye.alignAxisToVect(gVec, 1)
+			orn = eye.localOrientation.to_quat()
+			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
+			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
 		
-		def setEyeRot(ob, XL, ZL, XR, ZR, fac):
-			ob['Eye_X_L'] = Utilities._lerp(ob['Eye_X_L'], XL, fac)
-			ob['Eye_Z_L'] = Utilities._lerp(ob['Eye_Z_L'], ZL, fac)
-			ob['Eye_X_R'] = Utilities._lerp(ob['Eye_X_R'], XR, fac)
-			ob['Eye_Z_R'] = Utilities._lerp(ob['Eye_Z_R'], ZR, fac)
-		
+		def resetOrn(eye):
+			channel = self.Armature.channels[eye['channel']]
+			orn = mathutils.Quaternion()
+			orn.identity()
+			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
+			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
+			
 		nearest = None
 		minDist = None
 		maxPriority = 0
@@ -343,22 +349,12 @@ class Snail(SnailSegment, Actor.Actor):
 				maxPriority = target['LookAt']
 		
 		if not nearest:
-			setEyeRot(self.Armature, 0.0, 0.0, 0.0, 0.0, 
-			          self.owner['EyeRotFac'])
+			resetOrn(self.EyeLocL)
+			resetOrn(self.EyeLocR)
 			return
 		
-		#
-		# Normally we would need to find cos(x) to get the angle on the Z-axis.
-		# But here, x drives an IPO curve with the cosine wave baked into it.
-		#
-		p = Utilities._toLocal(self.EyeLocL, nearest.worldPosition)
-		angXIndexL, angZIndexL = getAngleIndices(p)
-		
-		p = Utilities._toLocal(self.EyeLocR, nearest.worldPosition)
-		angXIndexR, angZIndexR = getAngleIndices(p)
-		
-		setEyeRot(self.Armature, angXIndexL, angZIndexL, angXIndexR, angZIndexR,
-		          self.owner['EyeRotFac'])
+		look(self.EyeLocL, nearest)
+		look(self.EyeLocR, nearest)
 	
 	def _stowShell(self, shell):
 		referential = shell.CargoHook

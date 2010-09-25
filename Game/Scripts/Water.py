@@ -91,7 +91,6 @@ class Water(Actor.ActorListener):
 		decal.worldOrientation = oMat
 	
 	def spawnBubble(self, actor):
-		global counter
 		if self.isBubble(actor):
 			return
 		

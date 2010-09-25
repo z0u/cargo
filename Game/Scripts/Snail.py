@@ -30,6 +30,7 @@ import geometry
 import Utilities
 import Actor
 import GameLogic
+import math
 
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
@@ -75,11 +76,8 @@ class SnailSegment:
 		Utilities.parseChildren(self, owner)
 
 	def parseChild(self, child, type):
-		if (type == "SnailRay"):
-			self.Rays[child.Position] = SnailRay(child)
-			return True
-		elif (type == "SnailRayCluster"):
-			self.Rays[child['Position']] = SnailRayCluster(child)
+		if (type == "ArcRay"):
+			self.Rays[child['Position']] = ArcRay(child)
 			return True
 		elif (type == "SnailSegment"):
 			if (self.Child):
@@ -662,103 +660,48 @@ class Snail(SnailSegment, Actor.Actor):
 	def useLocalCoordinates(self):
 		return True
 
-class SnailRayCluster:
-	'''A collection of SnailRays. These will cast a ray once per frame in the
-	order defined by their Priority property (ascending order). The first one
-	that hits is used.'''
+class ArcRay:
+	'''Like a Ray sensor, but the detection is done along an arc.'''
 	
 	def __init__(self, owner):
-		self.Rays = []
-		self.Marker = None
 		self.owner = owner
-		self.DebugMesh = None
-		Utilities.parseChildren(self, owner)
-		if (len(self.Rays) <= 0):
-			raise Exception("Ray cluster %s has no ray children." % self.owner.name)
-		self.Rays.sort(key=lambda ray: ray.owner['Priority'])
-		self.LastHitPoint = Utilities.ORIGIN.copy()
+		self.path = []
+		self._createPoints()
+		self.lastHitPoint = Utilities.ORIGIN.copy()
 		
-		global DEBUG
 		if DEBUG:
-			self.DebugMesh.setVisible(True, True)
-			scene = GameLogic.getCurrentScene()
-			self.Marker = scene.addObject("PointMarker", self.owner)
-		else:
-			self.DebugMesh.endObject()
+			self.marker = Utilities.addObject('PointMarker', 0)
 	
-	def parseChild(self, child, type):
-		global DEBUG
+	def _createPoints(self):
+		'''Generate an arc of line segments to cast rays along.'''
+		self.owner['NumSegments'] = 3
+		startAngle = math.radians(self.owner['StartAngle'])
+		endAngle = math.radians(self.owner['EndAngle'])
+		increment = (endAngle - startAngle) / self.owner['NumSegments']
 		
-		if (type == "SnailRay"):
-			self.Rays.append(SnailRay(child))
-			return True
-		elif (type == "SnailRayCluster"):
-			self.Rays.append(SnailRayCluster(child))
-			return True
-		elif type == 'Debug':
-			self.DebugMesh = child
-			return True
-		else:
-			return False
+		for i in range(self.owner['NumSegments'] + 1):
+			angle = startAngle + (increment * i)
+			point = mathutils.Vector()
+			point.x = math.sin(angle) * self.owner['Radius']
+			point.z = math.cos(angle) * self.owner['Radius']
+			self.path.append(point)
 
 	def getHitPosition(self):
 		"""Return the hit point of the first child ray that hits.
 		If none hit, the default value of the first ray is returned."""
-		p = None
-		ob = None
-		for ray in self.Rays:
-			ob, p = ray.getHitPosition()
+		for A, B in zip(self.path, self.path[1:]):
+			A = Utilities._toWorld(self.owner, A)
+			B = Utilities._toWorld(self.owner, B)
+			ob, p, _ = Utilities._rayCastP2P(A, B, prop = 'Ground')
 			if ob:
-				self.LastHitPoint = Utilities._toLocal(self.owner, p)
+				self.lastHitPoint = Utilities._toLocal(self.owner, p)
 				break
 		
-		wp = Utilities._toWorld(self.owner, self.LastHitPoint)
-		if (self.Marker):
-			self.Marker.worldPosition = wp
+		wp = Utilities._toWorld(self.owner, self.lastHitPoint)
+		if DEBUG:
+			self.marker.worldPosition = wp
 			
 		return ob, wp
-
-class SnailRay:
-	LastPoint = None
-
-	def __init__(self, owner):
-		self.Marker = None
-		self.owner = owner
-		Utilities.parseChildren(self, owner)
-		self.LastPoint = self.owner.worldPosition
-	
-	def parseChild(self, child, type):
-		if (type == "Marker"):
-			self.Marker = child
-			child.removeParent()
-			return True
-
-	def getHitPosition(self):
-		origin = self.owner.worldPosition
-		vec = self.owner.getAxisVect(Utilities.ZAXIS)
-		through = origin + vec
-		ob, hitPoint, normal = self.owner.rayCast(
-			through,            # to
-			origin,             # from
-			self.owner['Length'],  # dist
-			'Ground',           # prop
-			1,                  # face
-			1                   # xray
-		)
-		
-		if (ob):
-			#
-			# Ensure the hit was not from inside an object.
-			#
-			if normal.dot(vec) > 0.0:
-				ob = None
-			else:
-				self.LastPoint = hitPoint
-		
-		if (self.Marker):
-			self.Marker.worldPosition = self.LastPoint
-		
-		return ob, self.LastPoint
 
 class SnailTrail:
 	S_NORMAL = 2

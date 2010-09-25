@@ -26,8 +26,8 @@ import ForceFields
 ANGLE_INCREMENT = 81.0
 # Extra spacing to bubble spawn points, in Blender units.
 BUBBLE_BIAS = 0.4
-ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
-ZERO = mathutils.Vector((0.0, 0.0, 0.0))
+
+DEBUG = False
 
 class Water(Actor.ActorListener):
 	S_INIT = 1
@@ -42,6 +42,7 @@ class Water(Actor.ActorListener):
 		'''
 		self.owner = owner
 		owner['Water'] = self
+		owner['IsWater'] = True
 		
 		Utilities.SetDefaultProp(self.owner, 'RippleInterval', 20)
 		Utilities.SetDefaultProp(self.owner, 'DampingFactor', 0.2)
@@ -49,15 +50,15 @@ class Water(Actor.ActorListener):
 		self.InstanceAngle = 0.0
 		self.CurrentFrame = 0
 		
-		scene = GameLogic.getCurrentScene()
-		self.BubbleTemplate = scene.objectsInactive[self.owner['BubbleTemplate']]
-		self.RippleTemplate = scene.objectsInactive[self.owner['RippleTemplate']]
+		if DEBUG:
+			self.floatMarker = Utilities.addObject('VectorMarker', 0)
 		
 		self.FloatingActors = set()
 		self.ForceFields = []
 		
 		Utilities.parseChildren(self, owner)
 		Utilities.SceneManager.Subscribe(self)
+		Utilities.setState(self.owner, self.S_IDLE)
 	
 	def parseChild(self, child, t):
 		if t == 'ForceField':
@@ -69,13 +70,11 @@ class Water(Actor.ActorListener):
 	def OnSceneEnd(self):
 		self.owner['Water'] = None
 		self.owner = None
-		self.BubbleTemplate = None
-		self.RippleTemplate = None
 		self.FloatingActors = None
 		self.ForceFields = None
 		Utilities.SceneManager.Unsubscribe(self)
 	
-	def SpawnSurfaceDecal(self, template, position):
+	def SpawnSurfaceDecal(self, name, position):
 		pos = position.copy()
 		pos.z = self.owner.worldPosition.z
 		
@@ -86,19 +85,14 @@ class Water(Actor.ActorListener):
 		elr.z = self.InstanceAngle
 		self.InstanceAngle = self.InstanceAngle + ANGLE_INCREMENT
 		oMat = elr.to_matrix()
-		template.worldOrientation = oMat
-		template.worldPosition = pos
 		
-		#
-		# Create object.
-		#
-		scene = GameLogic.getCurrentScene()
-		scene.addObject(template, template)
+		decal = Utilities.addObject(name, 0)
+		decal.worldPosition = pos
+		decal.worldOrientation = oMat
 	
 	def spawnBubble(self, actor):
 		global counter
-		template = self.BubbleTemplate
-		if actor.owner.name == template.name:
+		if self.isBubble(actor):
 			return
 		
 		#
@@ -112,15 +106,11 @@ class Water(Actor.ActorListener):
 		vec = vec * (actor.owner['FloatRadius'] + BUBBLE_BIAS)
 		pos = actor.owner.worldPosition.copy()
 		pos = pos - vec
-		template.worldPosition = pos
 		
 		#
 		# Create object.
 		#
-		scene = GameLogic.getCurrentScene()
-		bubOb = scene.addObject(template, template)
-		bubOb['Bubble'] = True
-		bubble = Bubble(bubOb)
+		bubble = Bubble(pos)
 		self.FloatingActors.add(bubble)
 		Utilities.setState(self.owner, self.S_FLOATING)
 	
@@ -174,7 +164,7 @@ class Water(Actor.ActorListener):
 		return submergedFactor
 	
 	def applyDamping(self, linV, submergedFactor):
-		return Utilities._lerp(linV, ZERO, self.owner['DampingFactor'] * submergedFactor)
+		return Utilities._lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'] * submergedFactor)
 	
 	def Float(self, actor):
 		'''
@@ -209,7 +199,7 @@ class Water(Actor.ActorListener):
 			# fully submerged.
 			actor.setOxygen(actor.getOxygen() - body['OxygenDepletionRate'])
 			if actor.getOxygen() <= 0.0:
-				self.SpawnSurfaceDecal(self.RippleTemplate, actor.owner.worldPosition)
+				self.SpawnSurfaceDecal('Ripple', actor.owner.worldPosition)
 				actor.Destroy()
 		
 		else:
@@ -235,6 +225,10 @@ class Water(Actor.ActorListener):
 		angV = body.getAngularVelocity(False)
 		angV = self.applyDamping(angV, submergedFactor)
 		body.setAngularVelocity(angV, False)
+		
+		if DEBUG:
+			self.floatMarker.worldPosition = body.worldPosition
+			self.floatMarker.localScale = Utilities.ONEVEC * accel
 		
 		#
 		# Update buoyancy (take on water).
@@ -273,9 +267,9 @@ class Water(Actor.ActorListener):
 		
 		ob['Water_LastFrame'] = self.CurrentFrame
 		ob['Water_CanRipple'] = False
-		self.SpawnSurfaceDecal(self.RippleTemplate, ob.worldPosition)
+		self.SpawnSurfaceDecal('Ripple', ob.worldPosition)
 	
-	def OnCollision(self, hitActors):
+	def onCollision(self, hitActors):
 		'''
 		Called when an object collides with the water. Creates ripples and
 		causes objects to float or sink. Should only be called once per frame.
@@ -332,14 +326,14 @@ class Water(Actor.ActorListener):
 		actor.removeListener(self)
 	
 	def isBubble(self, actor):
-		return 'Bubble' in actor.owner.name
+		return actor.owner.name == 'Bubble'
 
 class Honey(Water):
 	def __init__(self, owner):
 		Water.__init__(self, owner)
 	
 	def applyDamping(self, linV, submergedFactor):
-		return Utilities._lerp(linV, ZERO, self.owner['DampingFactor'])
+		return Utilities._lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'])
 	
 	def spawnBubble(self, actor):
 		'''No bubbles in honey.'''
@@ -350,12 +344,14 @@ class Honey(Water):
 		pass
 
 class Bubble(Actor.Actor):
-	def __init__(self, owner):
+	def __init__(self, pos):
+		owner = Utilities.addObject('Bubble', 0)
+		owner.worldPosition = pos
+		owner['Bubble'] = True
 		Actor.Actor.__init__(self, owner)
 	
 	def RestoreLocation(self, reason = None):
 		'''Bubbles aren't important enough to respawn. Just destroy them.'''
-		print("Bubble popped")
 		self.Destroy()
 
 def CreateWater(c):
@@ -364,10 +360,6 @@ def CreateWater(c):
 	verices at z = 0 (localspace). Make sure the object is a Ghost.
 	
 	Controller properties:
-	RippleTemplate: The object to spawn as a ripple on collision. Must be on a
-	                hidden layer.
-	BubbleTemplate: The object to spawn as bubbles when another object drowns.
-	                Must be on a hidden layer.
 	MinDist:        The distance an object has to move before it spawn a ripple.
 	'''
 	
@@ -381,14 +373,10 @@ def CreateHoney(c):
 	 - Have a child outside the volume, with the property Type=ExternalTarget.
 	 - Be a ghost.
 	 - Detect collisions (e.g. Static mesh type).
-	
-	Controller properties:
-	BubbleTemplate: The object to spawn as bubbles when another object drowns.
-	                Must be on a hidden layer.
 	'''
 	Honey(c.owner)
 
-def OnCollision(c):
+def onCollision(c):
 	'''
 	Respond to collisions with Actors. Ripples will be created, and 
 	
@@ -415,7 +403,7 @@ def OnCollision(c):
 			actors.add(ob['Actor'])
 	
 	#
-	# Call Water.OnCollision regardless of collisions: this allows for one more
+	# Call Water.onCollision regardless of collisions: this allows for one more
 	# frame of processing to sink submerged objects.
 	#
-	water.OnCollision(actors)
+	water.onCollision(actors)

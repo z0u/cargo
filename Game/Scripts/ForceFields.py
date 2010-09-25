@@ -27,9 +27,14 @@ import GameTypes
 
 YAXIS = (0.0, 1.0, 0.0)
 
+DEBUG = False
+
 class ForceField(Actor.Actor):
     def __init__(self, owner):
         Actor.Actor.__init__(self, owner)
+        if DEBUG:
+            self.forceMarker = Utilities.addObject('VectorMarker', 0)
+            self.forceMarker.color = Utilities.YELLOW
         
     def isInsideWorld(self):
         return True
@@ -74,6 +79,10 @@ class ForceField(Actor.Actor):
         magnitude = self.getMagnitude(dist)
         dir *= magnitude * factor
         dir = Utilities._toWorldVec(self.owner, dir)
+        
+        if DEBUG:
+            self.forceMarker.worldPosition = actor.owner.worldPosition
+            self.forceMarker.alignAxisToVect(dir, 2)
         
         linV = mathutils.Vector(actor.owner.getLinearVelocity(False))
         linV += dir
@@ -177,10 +186,10 @@ def create(obOrController):
     Other properties, as required by the force field type (see class
         documentation).'''
     o = None
-    if obOrController.isA(GameTypes.KX_GameObject):
-        o = obOrController
-    elif obOrController.isA(GameTypes.SCA_IController):
+    if hasattr(obOrController, 'owner'):
         o = obOrController.owner
+    else:
+        o = obOrController
     
     ffClass = globals()[o['FFType']]
     ffInstance = ffClass(o)

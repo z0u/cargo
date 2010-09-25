@@ -24,12 +24,16 @@ YAXIS  = mathutils.Vector([0.0, 1.0, 0.0])
 ZAXIS  = mathutils.Vector([0.0, 0.0, 1.0])
 ORIGIN = mathutils.Vector([0.0, 0.0, 0.0])
 ZEROVEC = ORIGIN
+ONEVEC = mathutils.Vector([1.0, 1.0, 1.0])
 EPSILON = 0.000001
 MINVECTOR = mathutils.Vector([0.0, 0.0, EPSILON])
 
 RED   = mathutils.Vector([1.0, 0.0, 0.0, 1.0])
 GREEN = mathutils.Vector([0.0, 1.0, 0.0, 1.0])
 BLUE  = mathutils.Vector([0.0, 0.0, 1.0, 1.0])
+YELLOW = RED + GREEN
+CYAN  = GREEN + BLUE
+MAGENTA = RED + BLUE
 WHITE = mathutils.Vector([1.0, 1.0, 1.0, 1.0])
 BLACK = mathutils.Vector([0.0, 0.0, 0.0, 1.0])
 

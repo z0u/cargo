@@ -97,7 +97,7 @@ class SnailSegment:
 		else:
 			return False
 
-	def orient(self, parentOrnMat):
+	def orient(self, parentOrnMat, armature):
 		if (self.Parent):
 			right = self.Parent.owner.getAxisVect(Utilities.XAXIS)
 			self.owner.alignAxisToVect(right, 0)
@@ -127,13 +127,11 @@ class SnailSegment:
 		parentInverse = parentOrnMat.copy()
 		parentInverse.invert()
 		localOrnMat = parentInverse * self.owner.worldOrientation
-		euler = localOrnMat.to_euler()
-		self.owner['Heading'] = radToDegrees(euler.x)
-		self.owner['Pitch'] = radToDegrees(euler.y)
-		self.owner['Roll'] = radToDegrees(euler.z)
+		channel = armature.channels[self.owner['Channel']]
+		channel.rotation_quaternion = localOrnMat.to_quat()
 		
 		if (self.Child):
-			self.Child.orient(self.owner.worldOrientation)
+			self.Child.orient(self.owner.worldOrientation, armature)
 	
 	def setBendAngle(self, angle):
 		if self.Child:
@@ -143,15 +141,15 @@ class AppendageRoot(SnailSegment):
 	def __init__(self, owner):
 		SnailSegment.__init__(self, owner, None)
 		
-	def orient(self):
-		self.Child.orient(self.owner.worldOrientation)
+	def orient(self, armature):
+		self.Child.orient(self.owner.worldOrientation, armature)
 
 class SegmentChildPivot(SnailSegment):
 	def __init__(self, owner):
 		SnailSegment.__init__(self, owner, None)
 		
-	def orient(self, parentOrnMat):
-		self.Child.orient(parentOrnMat)
+	def orient(self, parentOrnMat, armature):
+		self.Child.orient(parentOrnMat, armature)
 	
 	def setBendAngle(self, angle):
 		self.owner['BendAngle'] = angle
@@ -264,8 +262,9 @@ class Snail(SnailSegment, Actor.Actor):
 		orientation = geometry.QuadNormal(p0, p1, p2, p3)
 		self.owner.alignAxisToVect(orientation, 2)
 		
-		self.Head.orient()
-		self.Tail.orient()
+		self.Head.orient(self.Armature)
+		self.Tail.orient(self.Armature)
+		self.Armature.update()
 	
 	def lookAt(self, targetList):
 		'''
@@ -661,29 +660,52 @@ class Snail(SnailSegment, Actor.Actor):
 		return True
 
 class ArcRay:
-	'''Like a Ray sensor, but the detection is done along an arc.'''
+	'''Like a Ray sensor, but the detection is done along an arc. The arc
+	rotates around the y-axis, starting from the positive z-axis and sweeping
+	around to the positive x-axis.'''
+	
+	RADIUS = 2.0
+	ANGLE = 180.0
+	RESOLUTION = 6
+	PROP = 'Ground'
 	
 	def __init__(self, owner):
 		self.owner = owner
-		self.path = []
 		self._createPoints()
 		self.lastHitPoint = Utilities.ORIGIN.copy()
+		self.prop = ArcRay.PROP
+		if hasattr(owner, 'prop'):
+			self.prop = owner['prop']
 		
 		if DEBUG:
 			self.marker = Utilities.addObject('PointMarker', 0)
 	
 	def _createPoints(self):
 		'''Generate an arc of line segments to cast rays along.'''
-		self.owner['NumSegments'] = 3
-		startAngle = math.radians(self.owner['StartAngle'])
-		endAngle = math.radians(self.owner['EndAngle'])
-		increment = (endAngle - startAngle) / self.owner['NumSegments']
+		self.path = []
 		
-		for i in range(self.owner['NumSegments'] + 1):
-			angle = startAngle + (increment * i)
+		endAngle = ArcRay.ANGLE
+		if hasattr(self.owner, 'angle'):
+			endAngle = self.owner['angle']
+		revolutions = endAngle / 360.0
+		endAngle = math.radians(endAngle)
+		
+		res = ArcRay.RESOLUTION
+		if hasattr(self.owner, 'resolution'):
+			res = self.owner['resolution']
+		numSegments = int(math.ceil(revolutions * res))
+		
+		increment = endAngle / numSegments
+		
+		radius = ArcRay.RADIUS
+		if hasattr(self.owner, 'radius'):
+			radius = self.owner['radius']
+		
+		for i in range(numSegments + 1):
+			angle = increment * i
 			point = mathutils.Vector()
-			point.x = math.sin(angle) * self.owner['Radius']
-			point.z = math.cos(angle) * self.owner['Radius']
+			point.x = math.sin(angle) * radius
+			point.z = math.cos(angle) * radius
 			self.path.append(point)
 
 	def getHitPosition(self):
@@ -692,7 +714,7 @@ class ArcRay:
 		for A, B in zip(self.path, self.path[1:]):
 			A = Utilities._toWorld(self.owner, A)
 			B = Utilities._toWorld(self.owner, B)
-			ob, p, _ = Utilities._rayCastP2P(A, B, prop = 'Ground')
+			ob, p, _ = Utilities._rayCastP2P(A, B, prop = self.prop)
 			if ob:
 				self.lastHitPoint = Utilities._toLocal(self.owner, p)
 				break
@@ -895,33 +917,3 @@ def EyeLength(c):
 	
 	c.activate(aActionL)
 	c.activate(aActionR)
-
-def CopyRotToArmature(c):
-	'''
-	Copies the orientation of each snail segment to attributes in its
-	corresponding bone in the armature. To be called by the armature. The
-	controller must have sensors ('hooks', below) attached to the segments.
-	'''
-	o = c.owner
-	
-	h1 = c.sensors['sHook_H1'].owner
-	h2 = c.sensors['sHook_H2'].owner
-	t1 = c.sensors['sHook_T1'].owner
-	t2 = c.sensors['sHook_T2'].owner
-	
-	o['Heading_H1'] = h1['Heading']
-	o['Pitch_H1'] = h1['Pitch']
-	o['Roll_H1'] = h1['Roll']
-	
-	o['Heading_H2'] = h2['Heading']
-	o['Pitch_H2'] = h2['Pitch']
-	o['Roll_H2'] = h2['Roll']
-	
-	o['Heading_T1'] = t1['Heading']
-	o['Pitch_T1'] = t1['Pitch']
-	o['Roll_T1'] = t1['Roll']
-	
-	o['Heading_T2'] = t2['Heading']
-	o['Pitch_T2'] = t2['Pitch']
-	o['Roll_T2'] = t2['Roll']
-

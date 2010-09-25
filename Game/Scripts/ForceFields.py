@@ -25,8 +25,6 @@ import Actor
 import mathutils
 import GameTypes
 
-YAXIS = (0.0, 1.0, 0.0)
-
 DEBUG = False
 
 class ForceField(Actor.Actor):
@@ -72,20 +70,24 @@ class ForceField(Actor.Actor):
         if 'FFZCut' in self.owner and self.owner['FFZCut'] and (pos.z > 0.0):
             return
         
-        dir = self.getForceDirection(pos)
-        dist = dir.magnitude
+        vec = self.getForceDirection(pos)
+        dist = vec.magnitude
         if dist != 0.0:
-            dir.normalize()
+            vec.normalize()
         magnitude = self.getMagnitude(dist)
-        dir *= magnitude * factor
-        dir = Utilities._toWorldVec(self.owner, dir)
+        vec *= magnitude * factor
+        vec = Utilities._toWorldVec(self.owner, vec)
         
         if DEBUG:
             self.forceMarker.worldPosition = actor.owner.worldPosition
-            self.forceMarker.alignAxisToVect(dir, 2)
+            if vec.magnitude > Utilities.EPSILON:
+                self.forceMarker.alignAxisToVect(vec, 2)
+                self.forceMarker.color = Utilities.YELLOW
+            else:
+                self.forceMarker.color = Utilities.BLACK
         
         linV = mathutils.Vector(actor.owner.getLinearVelocity(False))
-        linV += dir
+        linV += vec
         actor.owner.setLinearVelocity(linV, False)
         
     def getForceDirection(self, localPos):
@@ -96,10 +98,12 @@ class ForceField(Actor.Actor):
 class Linear(ForceField):
     def __init__(self, owner):
         ForceField.__init__(self, owner)
-        self.direction = mathutils.Vector(YAXIS)
     
     def getForceDirection(self, posLocal):
-        return self.direction
+        vec = posLocal.copy()
+        vec.x = 0.0
+        vec.z = 0.0
+        return vec
     
     def modulate(self, distance, limit):
         '''
@@ -145,9 +149,9 @@ class Repeller2D(ForceField):
         ForceField.__init__(self, owner)
     
     def getForceDirection(self, posLocal):
-        dir = mathutils.Vector(posLocal)
-        dir.z = 0.0
-        return dir
+        vec = mathutils.Vector(posLocal)
+        vec.z = 0.0
+        return vec
 
 class Vortex2D(ForceField):
     '''

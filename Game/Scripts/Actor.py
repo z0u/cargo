@@ -132,7 +132,7 @@ class Actor:
 				this actor's owner.
 		compound: Whether the child's bounds will be added to the attach point's
 				bounds (for physics).
-		ghost: Whether the child should physically react to collisions.
+		ghost: False if the child should physically react to collisions.
 		'''
 		children = self.getChildren()
 		if child in children:

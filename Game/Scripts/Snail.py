@@ -499,7 +499,8 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.Shell.RemoveChild(self)
 		self.owner.localScale = (1.0, 1.0, 1.0)
-		self.owner.worldPosition = self.Shell.owner.worldPosition
+		if self.Shell.owner['ExitCentre']:
+			self.owner.worldPosition = self.Shell.owner.worldPosition
 		self.owner.setVisible(1, 1)
 		self._stowShell(self.Shell)
 		

@@ -21,7 +21,26 @@ import mathutils
 from .Story import *
 
 class Blinkenlights:
+	'''A series of blinking lights, like you find outside take away joints.'''
+	
 	def __init__(self, owner):
+		'''Create a new Blinkenlights object.
+		
+		Parameters:
+		owner: The 'string' holding up the lights. This object should have the
+			following children:
+			 - One lamp.
+			 - Any number of mesh objects. These must have a keyed object
+			   colour.
+		The mesh children will have their luminance cycled. The lamp will be
+		given the colour of the lights that are on.
+		
+		Owner properties:
+		cycleLen: The number of lights in a pattern. E.g. with a cycle length of
+			3, lights will have the pattern [on, off, off, etc.]
+		frames: The number of impulses to wait before moving stepping to the
+			next state.'''
+		
 		self.owner = owner
 		self.step = 0
 		
@@ -36,23 +55,31 @@ class Blinkenlights:
 				self.lamp = ob
 			else:
 				self.lights.append(ob)
+		self.lights.sort(key=distKey)
+		
 		self.cols = list(map(lambda x: x.color.copy(), self.lights))
+		self.targetCols = list(self.cols)
+		self.targetLampCol = Utilities.BLACK.copy()
 	
 	def blink(self):
-		stringLen = self.owner['stringLen']
-		self.step = (self.step + 1) % (stringLen * self.owner['frames'])
-		step = int(self.step / self.owner['frames'])
-		lampCol = Utilities.BLACK.copy()
-		for i, (light, col) in enumerate(zip(self.lights, self.cols)):
+		stringLen = self.owner['cycleLen']
+		self.step = (self.step + 1) % stringLen
+		self.targetLampCol = Utilities.BLACK.copy()
+		for i, col in enumerate(self.cols):
 			target = None
-			if i % stringLen == step:
+			if (i % stringLen) == self.step:
 				target = col * 1.2
-				lampCol += col
+				self.targetLampCol += col
 			else:
 				target = col * 0.3
-			light.color = Utilities._lerp(light.color, target, 0.1)
+			self.targetCols[i] = target
+	
+	def update(self):
+		for light, targetCol in zip(self.lights, self.targetCols):
+			light.color = Utilities._lerp(light.color, targetCol, 0.1)
 		
 		currentLampCol = mathutils.Vector(self.lamp.color)
+		lampCol = self.targetLampCol.copy()
 		lampCol.resize3D()
 		self.lamp.color =  Utilities._lerp(currentLampCol, lampCol, 0.1)
 
@@ -62,6 +89,10 @@ def createBlinkenlights(c):
 def blinkBlinkenlights(c):
 	bl = c.owner['Actor']
 	bl.blink()
+
+def updateBlinkenlights(c):
+	bl = c.owner['Actor']
+	bl.update()
 
 class Worm(Character):
 	def __init__(self, owner):

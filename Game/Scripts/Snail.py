@@ -35,7 +35,7 @@ import math
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
 
-DEBUG = True
+DEBUG = False
 
 # FIXME: This is used for Euler bone transforms - but we should be able to
 # transform the bones using a matrix. See ActionActuator.setChannel

@@ -15,9 +15,53 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import Utilities
-from . import Sound
+import Utilities
+import Sound
+import mathutils
 from .Story import *
+
+class Blinkenlights:
+	def __init__(self, owner):
+		self.owner = owner
+		self.step = 0
+		
+		def distKey(x): return x.getDistanceTo(owner)
+		def isLamp(x): return hasattr(x, 'energy')
+		
+		# Sort lights by distance from cord origin.
+		self.lights = []
+		self.lamp = None
+		for ob in self.owner.children:
+			if isLamp(ob):
+				self.lamp = ob
+			else:
+				self.lights.append(ob)
+		self.cols = list(map(lambda x: x.color.copy(), self.lights))
+	
+	def blink(self):
+		stringLen = self.owner['stringLen']
+		self.step = (self.step + 1) % (stringLen * self.owner['frames'])
+		step = int(self.step / self.owner['frames'])
+		lampCol = Utilities.BLACK.copy()
+		for i, (light, col) in enumerate(zip(self.lights, self.cols)):
+			target = None
+			if i % stringLen == step:
+				target = col * 1.2
+				lampCol += col
+			else:
+				target = col * 0.3
+			light.color = Utilities._lerp(light.color, target, 0.1)
+		
+		currentLampCol = mathutils.Vector(self.lamp.color)
+		lampCol.resize3D()
+		self.lamp.color =  Utilities._lerp(currentLampCol, lampCol, 0.1)
+
+def createBlinkenlights(c):
+	c.owner['Actor'] = Blinkenlights(c.owner)
+
+def blinkBlinkenlights(c):
+	bl = c.owner['Actor']
+	bl.blink()
 
 class Worm(Character):
 	def __init__(self, owner):

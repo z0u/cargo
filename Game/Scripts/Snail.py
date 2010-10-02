@@ -35,7 +35,7 @@ import math
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
 
-DEBUG = False
+DEBUG = True
 
 # FIXME: This is used for Euler bone transforms - but we should be able to
 # transform the bones using a matrix. See ActionActuator.setChannel
@@ -103,8 +103,8 @@ class SnailSegment:
 			right = self.Parent.owner.getAxisVect(Utilities.XAXIS)
 			self.owner.alignAxisToVect(right, 0)
 		
-		_, p1 = self.Parent.Rays['Right'].getHitPosition()
-		_, p2 = self.Parent.Rays['Left'].getHitPosition()
+		_, p1, _ = self.Parent.Rays['Right'].getHitPosition()
+		_, p2, _ = self.Parent.Rays['Left'].getHitPosition()
 		p3 = self.Parent.Fulcrum.worldPosition
 		normal = geometry.TriangleNormal(p1, p2, p3)
 		
@@ -185,11 +185,7 @@ class Snail(SnailSegment, Actor.Actor):
 			raise Exception("No Shockwave defined.")
 		self.setHealth(7.0)
 		
-		global DEBUG
 		if DEBUG:
-			scene = GameLogic.getCurrentScene()
-			marker = scene.addObject("SnailMarker", self.owner)
-			marker.setParent(self.owner)
 			self.eyeMarkerL = Utilities.addObject('AxisMarker', 0)
 			Utilities._copyTransform(eyeLocL, self.eyeMarkerL)
 			self.eyeMarkerL.setParent(eyeLocL)
@@ -243,18 +239,23 @@ class Snail(SnailSegment, Actor.Actor):
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
 		counter = Utilities.Counter()
-		ob0, p0 = self.Rays['0'].getHitPosition()
+		avNormal = Utilities.ZEROVEC
+		ob0, p0, n0 = self.Rays['0'].getHitPosition()
 		if ob0:
 			counter.add(ob0)
-		ob1, p1 = self.Rays['1'].getHitPosition()
+			avNormal += n0
+		ob1, p1, n1 = self.Rays['1'].getHitPosition()
 		if ob1:
 			counter.add(ob1)
-		ob2, p2 = self.Rays['2'].getHitPosition()
+			avNormal += n1
+		ob2, p2, n2 = self.Rays['2'].getHitPosition()
 		if ob2:
 			counter.add(ob2)
-		ob3, p3 = self.Rays['3'].getHitPosition()
+			avNormal += n2
+		ob3, p3, n3 = self.Rays['3'].getHitPosition()
 		if ob3:
 			counter.add(ob3)
+			avNormal += n3
 		
 		#
 		# Inherit the angular velocity of a nearby surface. The object that was
@@ -276,7 +277,9 @@ class Snail(SnailSegment, Actor.Actor):
 		self.owner['nHit'] = counter.n
 		
 		#
-		# Derive normal from hit points and update orientation.
+		# Derive normal from hit points and update orientation. Using QuadNormal
+		# gives a smoother transition than just averaging the normals returned
+		# by the rays.
 		#
 		orientation = geometry.QuadNormal(p0, p1, p2, p3)
 		self.owner.alignAxisToVect(orientation, 2)
@@ -743,10 +746,12 @@ class ArcRay:
 	def getHitPosition(self):
 		"""Return the hit point of the first child ray that hits.
 		If none hit, the default value of the first ray is returned."""
+		ob = None
+		norm = None
 		for A, B in zip(self.path, self.path[1:]):
 			A = Utilities._toWorld(self.owner, A)
 			B = Utilities._toWorld(self.owner, B)
-			ob, p, _ = Utilities._rayCastP2P(A, B, prop = self.prop)
+			ob, p, norm = Utilities._rayCastP2P(B, A, prop = self.prop)
 			if ob:
 				self.lastHitPoint = Utilities._toLocal(self.owner, p)
 				break
@@ -755,7 +760,7 @@ class ArcRay:
 		if DEBUG:
 			self.marker.worldPosition = wp
 			
-		return ob, wp
+		return ob, wp, norm
 
 class SnailTrail:
 	S_NORMAL = 2

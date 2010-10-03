@@ -280,7 +280,7 @@ class CameraPath(CameraGoal):
 	# The distance above the actor that the camera should aim for. Actually, the
 	# camera will aim for a point ZOFFSET * CEILING_AVOIDANCE_BIAS away from the
 	# actor.
-	ZOFFSET = 20.0
+	ZOFFSET = 10.0
 	CEILING_AVOIDANCE_BIAS = 0.5
 	# The maximum height difference between two consecutive targets. This
 	# smoothes off the path as the actor goes under a ceiling.
@@ -296,8 +296,8 @@ class CameraPath(CameraGoal):
 	# Responsiveness of the radius adjustment.
 	RADIUS_SPEED = 0.1
 	# Responsiveness of the camera orientation.
-	ALIGN_Y_SPEED = 0.01
-	ALIGN_Z_SPEED = 0.5
+	ALIGN_Y_SPEED = 0.05
+	ALIGN_Z_SPEED = 1.0
 	# Distance to project predictive node.
 	PREDICT_FWD = 20.0
 	PREDICT_UP = 50.0

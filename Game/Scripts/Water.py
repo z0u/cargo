@@ -133,7 +133,7 @@ class Water(Actor.ActorListener):
 		ob, hitPoint, normal = actor.owner.rayCast(
 			through,             # to
 			origin,              # from
-			vec.z,               # dist
+			0.0,                 # dist
 			'IsWater',           # prop
 			1,                   # face
 			1                    # xray
@@ -353,7 +353,7 @@ class Bubble(Actor.Actor):
 		'''Bubbles aren't important enough to respawn. Just destroy them.'''
 		self.Destroy()
 
-def CreateWater(c):
+def createWater(c):
 	'''
 	Create a new Water object. The object should be perfectly flat, with all
 	verices at z = 0 (localspace). Make sure the object is a Ghost.
@@ -364,7 +364,7 @@ def CreateWater(c):
 	
 	Water(c.owner)
 
-def CreateHoney(c):
+def createHoney(c):
 	'''
 	Create a new Honey object. The object does not have to be flat, but it has
 	the following constraints. The object must:

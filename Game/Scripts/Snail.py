@@ -239,7 +239,7 @@ class Snail(SnailSegment, Actor.Actor):
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
 		counter = Utilities.Counter()
-		avNormal = Utilities.ZEROVEC
+		avNormal = Utilities.ZEROVEC.copy()
 		ob0, p0, n0 = self.Rays['0'].getHitPosition()
 		if ob0:
 			counter.add(ob0)

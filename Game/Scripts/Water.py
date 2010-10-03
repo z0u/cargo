@@ -89,6 +89,7 @@ class Water(Actor.ActorListener):
 		decal = Utilities.addObject(name, 0)
 		decal.worldPosition = pos
 		decal.worldOrientation = oMat
+		decal.setParent(self.owner)
 	
 	def spawnBubble(self, actor):
 		if self.isBubble(actor):

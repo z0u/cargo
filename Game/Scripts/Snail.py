@@ -157,7 +157,7 @@ class SegmentChildPivot(SnailSegment):
 		self.Child.setBendAngle(angle)
 
 class Snail(SnailSegment, Actor.Actor):
-	def __init__(self, owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR):
+	def __init__(self, owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR, camera):
 		# FIXME: This derives from two classes, and both set the Owner property.
 		Actor.Actor.__init__(self, owner)
 		Actor.Director.setMainCharacter(self)
@@ -176,6 +176,7 @@ class Snail(SnailSegment, Actor.Actor):
 		self.Trail = None
 		self.Armature = None
 		self.TouchedObject = None
+		self.camera = camera
 		SnailSegment.__init__(self, owner, None)
 		if not self.Head:
 			raise Exception("No head defined.")
@@ -693,6 +694,9 @@ class Snail(SnailSegment, Actor.Actor):
 	
 	def useLocalCoordinates(self):
 		return True
+	
+	def getCloseCamera(self):
+		return self.camera
 
 class ArcRay:
 	'''Like a Ray sensor, but the detection is done along an arc. The arc
@@ -837,7 +841,8 @@ def init(cont):
 	eyeRayR = cont.sensors['sEyeRayHook_R'].owner
 	eyeLocL = cont.sensors['sEyeLocHookL'].owner
 	eyeLocR = cont.sensors['sEyeLocHookR'].owner
-	snail = Snail(cont.owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR)
+	camera = cont.sensors['sCameraHook'].owner
+	snail = Snail(cont.owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR, camera)
 	cont.owner['Snail'] = snail
 
 def update(c):

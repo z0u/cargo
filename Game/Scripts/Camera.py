@@ -139,6 +139,21 @@ class _AutoCamera:
 		if instantCut:
 			self.instantCut = True
 	
+	def addGoalOb(self, goal):
+		pri = False
+		if 'Priority' in goal:
+			pri = goal['Priority']
+		
+		fac = None
+		if 'SlowFac' in goal:
+			fac = goal['SlowFac']
+			
+		instant = False
+		if 'InstantCut' in goal:
+			instant = goal['InstantCut']
+		
+		self.AddGoal(goal, pri, fac, instant)
+	
 	def RemoveGoal(self, goalOb):
 		'''
 		Remove a goal from the stack. If it was currently in use, the camera
@@ -187,25 +202,13 @@ def setCamera(c):
 	AutoCamera.SetCamera(camera)
 
 def addGoalOb(goal):
-	pri = False
-	if 'Priority' in goal:
-		pri = goal['Priority']
-	
-	fac = None
-	if 'SlowFac' in goal:
-		fac = goal['SlowFac']
-		
-	instant = False
-	if 'InstantCut' in goal:
-		instant = goal['InstantCut']
-	
-	AutoCamera.AddGoal(goal, pri, fac, instant)
+	AutoCamera.addGoalOb(goal)
 
 def AddGoal(c):
 	if not Utilities.allSensorsPositive(c):
 		return
 	goal = c.owner
-	addGoalOb(goal)
+	AutoCamera.addGoalOb(goal)
 
 def RemoveGoal(c):
 	if not Utilities.allSensorsPositive(c):
@@ -248,6 +251,42 @@ class CameraGoal:
 		# Whether to interpolate to this goal. If false, the AutoCamera will
 		# switch instantly to the new values.
 		self.instantCut = instantCut
+
+class _CloseCameraManager(Actor.DirectorListener):
+	def __init__(self):
+		Actor.Director.addListener(self)
+		self.active = False
+		
+	def directorMainCharacterChanged(self, oldActor, newActor):
+		if oldActor == None:
+			return
+		
+		closeCam = oldActor.getCloseCamera()
+		if closeCam != None:
+			AutoCamera.RemoveGoal(closeCam)
+			self.active = False
+	
+	def toggleCloseMode(self):
+		actor = Actor.Director.getMainCharacter()
+		closeCam = actor.getCloseCamera()
+		if closeCam == None:
+			return
+		
+		if self.active:
+			AutoCamera.RemoveGoal(closeCam)
+			self.active = False
+		else:
+			AutoCamera.addGoalOb(closeCam)
+			self.active = True
+	
+	def setActive(self, active):
+		if active != self.active:
+			self.toggleCloseMode()
+
+CloseCameraManager = _CloseCameraManager()
+
+def setCloseMode(c):
+	CloseCameraManager.setActive(Utilities.allSensorsPositive(c))
 
 #
 # Camera for following the player

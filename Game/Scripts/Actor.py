@@ -407,6 +407,11 @@ class Actor:
 		'''True if the actor's local coordinates are meaningful to other systems
 		such as the camera.'''
 		return False
+	
+	def getCloseCamera(self):
+		'''Returns the camera that should be used in 'close' mode, or None if
+		the actor doesn't define one.'''
+		return None
 
 def CreateActor(c):
 	c.owner['Actor'] = Actor(c.owner)

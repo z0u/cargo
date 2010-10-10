@@ -486,9 +486,6 @@ def _parseColour(hexString):
 	colour /= 255.0
 	return colour
 
-def _colourToHex(colour):
-	return "".join(map(lambda x: "%02x" % x, colour * 255.0))
-
 def addState(ob, state):
 	'''Add a set of states to this object's state.'''
 	stateBitmask = 1 << (state - 1)

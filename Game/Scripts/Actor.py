@@ -589,7 +589,7 @@ def _hitMainCharacter(c):
 	@return: True if the main character is hit; False otherwise.
 	'''
 	for s in c.sensors:
-		if not s.isA(GameTypes.KX_TouchSensor):
+		if not hasattr(s, 'hitObjectList'):
 			continue
 		for o in s.hitObjectList:
 			if 'Actor' in o:

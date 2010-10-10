@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import GameLogic
 import mathutils
 import Utilities
 import Actor
@@ -46,6 +45,9 @@ class Water(Actor.ActorListener):
 		
 		Utilities.SetDefaultProp(self.owner, 'RippleInterval', 20)
 		Utilities.SetDefaultProp(self.owner, 'DampingFactor', 0.2)
+		# Colour to use as filter when camera is under water
+		# (see Camera.CameraCollider)
+		Utilities.SetDefaultProp(self.owner, 'VolumeCol', '22448880')
 		
 		self.InstanceAngle = 0.0
 		self.CurrentFrame = 0
@@ -328,7 +330,9 @@ class Water(Actor.ActorListener):
 	def isBubble(self, actor):
 		return actor.owner.name == 'Bubble'
 
-class Honey(Water):
+class ShapedWater(Water):
+	'''Special water that does not need to be flat.'''
+	
 	def __init__(self, owner):
 		Water.__init__(self, owner)
 	
@@ -336,11 +340,11 @@ class Honey(Water):
 		return Utilities._lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'])
 	
 	def spawnBubble(self, actor):
-		'''No bubbles in honey.'''
+		'''No bubbles in shaped water.'''
 		pass
 	
 	def SpawnRipples(self, actor, force = False):
-		'''No ripples on honey: too hard to find surface.'''
+		'''No ripples in shaped water: too hard to find surface.'''
 		pass
 
 class Bubble(Actor.Actor):
@@ -365,16 +369,16 @@ def createWater(c):
 	
 	Water(c.owner)
 
-def createHoney(c):
+def createShapedWater(c):
 	'''
-	Create a new Honey object. The object does not have to be flat, but it has
-	the following constraints. The object must:
+	Create a new ShapedWater object. The object does not have to be flat, but it
+	has the following constraints. The object must:
 	 - Have a manifold mesh with normals pointing out.
 	 - Have a child outside the volume, with the property Type=ExternalTarget.
 	 - Be a ghost.
 	 - Detect collisions (e.g. Static mesh type).
 	'''
-	Honey(c.owner)
+	ShapedWater(c.owner)
 
 def onCollision(c):
 	'''

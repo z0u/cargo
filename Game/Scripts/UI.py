@@ -37,8 +37,8 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 		self.LoadingScreenCallers = set()
 		
 		self.Gauges = {}
-		self.Filter = None
-		self.FilterColour = None
+		self.filter = None
+		self.filterColour = None
 		
 		Utilities.SceneManager.Subscribe(self)
 		Actor.Director.addListener(self)
@@ -92,10 +92,10 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 			self.Gauges[name] = Gauge(child)
 			return True
 		elif type == 'Filter':
-			if self.Filter:
+			if self.filter:
 				print("Warning: HUD already has a filter.")
 				return False
-			self.Filter = Filter(child)
+			self.filter = Filter(child)
 			return True
 		return False
 	
@@ -205,15 +205,19 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 			self.showMessage(reason)
 	
 	def _updateFilter(self):
-		if self.Filter == None:
+		if self.filter == None:
 			return
-		if self.FilterColour == None:
-			self.Filter.hide()
+		if self.filterColour == None:
+			self.filter.hide()
 		else:
-			self.Filter.show(self.FilterColour)
+			self.filter.show(self.filterColour)
 	
-	def showFilter(self, hue, value, alpha):
-		self.FilterColour = Filter.Colour(hue, value, alpha)
+	def showFilter(self, colour):
+		self.filterColour = colour
+		self._updateFilter()
+	
+	def hideFilter(self):
+		self.filterColour = None
 		self._updateFilter()
 
 HUD = _HUD()
@@ -228,33 +232,18 @@ def HideLoadingScreen(c):
 	HUD.HideLoadingScreen(c.owner)
 
 class Filter(Actor.Actor):
-	ALPHA_STEP = 0.1
-	VALUE_WIDTH = 660.0
-	VALUE_STEP = 0.2
-	HUE_WIDTH = 60.0
-	
 	S_HIDE = 1
 	S_SHOW = 2
-	
-	class Colour:
-		def __init__(self, hue, value, alpha):
-			self.hue = hue
-			self.value = value
-			self.alpha = alpha
 	
 	def __init__(self, owner):
 		Actor.Actor.__init__(self, owner)
 	
 	def hide(self):
-		Utilities.setState(self.owner, Filter.S_HIDE)
+		self.owner.visible = False
 	
 	def show(self, colour):
-		key = colour.hue * Filter.HUE_WIDTH
-		key += (colour.value % Filter.VALUE_STEP) * Filter.HUE_WIDTH
-		key += (colour.alpha % Filter.ALPHA_STEP) * Filter.VALUE_WIDTH
-		key += 1.0
-		self.owner['Frame'] = key
-		Utilities.setState(self.owner, Filter.S_SHOW)
+		self.owner.color = colour
+		self.owner.visible = True
 
 class Gauge(Actor.Actor):
 	'''

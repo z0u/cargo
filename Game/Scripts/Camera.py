@@ -19,6 +19,7 @@ import Utilities
 import Actor
 import GameTypes
 import GameLogic
+import UI
 
 DEBUG = False
 
@@ -668,6 +669,51 @@ class CameraNode:
 	def setCeilingHeight(self, height):
 		self.ceilingHeight = height
 		if DEBUG: self.marker.worldPosition = self.getTarget()
+
+#
+# Helper for sensing when camera is inside something.
+#
+
+class CameraCollider(CameraObserver):
+	'''Helper for sensing when camera is inside something. This senses when the
+	camera touches a volumetric object, and then tracks to see when the camera
+	enters and leaves that object, adjusting the screen filter appropriately.'''
+	
+	MAX_DIST = 1000.0
+	
+	def __init__(self, owner):
+		self.owner = owner
+		AutoCamera.AddObserver(self)
+		Utilities.SceneManager.Subscribe(self)
+	
+	def OnSceneEnd(self):
+		self.owner = None
+		AutoCamera.RemoveObserver(self)
+	
+	def OnCameraMoved(self, autoCamera):
+		self.owner.worldPosition = autoCamera.Camera.worldPosition
+		pos = autoCamera.Camera.worldPosition.copy()
+		through = pos.copy()
+		through.z += CameraCollider.MAX_DIST
+		vec = through - pos
+		
+		ob, _, normal = Utilities._rayCastP2P(through, pos, prop='VolumeCol')
+		
+		inside = False
+		if ob != None:
+			if normal.dot(vec) > 0.0:
+				inside = True
+		
+		
+		if inside:
+			if not '_VolColCache' in ob:
+				ob['_VolColCache'] = Utilities._parseColour(ob['VolumeCol'])
+			UI.HUD.showFilter(ob['_VolColCache'])
+		else:
+			UI.HUD.hideFilter()
+
+def createCamCollider(c):
+	c.owner['CamCollider'] = CameraCollider(c.owner)
 
 #
 # Camera for viewing the background scene

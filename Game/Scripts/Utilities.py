@@ -464,6 +464,31 @@ def SetDefaultProp(ob, propName, value):
 	if propName not in ob:
 		ob[propName] = value
 
+def _parseColour(hexString):
+	'''Parse a colour from a hexadecimal number; either "rrggbb" or
+	"rrggbbaa". If no alpha is specified, a value of 1.0 will be used.
+	
+	Returns:
+	A 4D vector compatible with object colour.
+	'''
+	if len(hexString) != 6 and len(hexString) != 8:
+		raise ValueError('Hex colours need to be 6 or 8 characters long.')
+	
+	colour = BLACK.copy()
+	
+	components = [(x + y) for x,y in zip(hexString[0::2], hexString[1::2])]
+	colour.x = int(components[0], 16)
+	colour.y = int(components[1], 16)
+	colour.z = int(components[2], 16)
+	if len(components) == 4:
+		colour.w = int(components[3], 16)
+	
+	colour /= 255.0
+	return colour
+
+def _colourToHex(colour):
+	return "".join(map(lambda x: "%02x" % x, colour * 255.0))
+
 def addState(ob, state):
 	'''Add a set of states to this object's state.'''
 	stateBitmask = 1 << (state - 1)

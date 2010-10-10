@@ -423,9 +423,11 @@ class Snail(SnailSegment, Actor.Actor):
 		Utilities.addState(self.owner, S_NOSHELL)
 		
 		self.RemoveChild(self.Shell)
-		velocity = self.owner.getAxisVect(Utilities.ZAXIS)
-		velocity = velocity * self.owner['ShellPopForce']
-		self.Shell.owner.applyImpulse(self.Shell.owner.worldPosition, velocity)
+		velocity = Utilities.ZAXIS.copy()
+		velocity.x += 0.5 - next(Utilities.Random)
+		velocity = self.owner.getAxisVect(velocity)
+		velocity *= self.owner['ShellPopForce']
+		self.Shell.owner.setLinearVelocity(velocity)
 		self.owner['HasShell'] = 0
 		self.owner['DynamicMass'] = self.owner['DynamicMass'] - self.Shell.owner['DynamicMass']
 		self.Shell.OnDropped()

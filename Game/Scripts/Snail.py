@@ -866,24 +866,13 @@ def look(c):
 	c.owner['Snail'].lookAt(sLookAt.hitObjectList)
 
 def _GetNearestShell(snailOb, shellObs):
-	nearest = None
-	dist = None
-	for shellOb in shellObs:
+	def distKey(x): return x.getDistanceTo(snailOb)
+	for shellOb in sorted(shellObs, key=distKey):
 		shell = shellOb['Actor']
-		if shell.IsCarried():
-			continue
-		if not nearest:
-			nearest = shellOb
-			continue
-		d = shellOb.getDistanceTo(snailOb)
-		if not nearest or d < dist:
-			nearest = shellOb
-			dist = d
+		if not shell.IsCarried():
+			return shell
 	
-	if not nearest:
-		return None
-	else:
-		return nearest['Actor']
+	return None
 
 def SetShellImmediate(c):
 	if not Utilities.allSensorsPositive(c):

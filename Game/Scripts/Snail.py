@@ -242,21 +242,23 @@ class Snail(SnailSegment, Actor.Actor):
 		counter = Utilities.Counter()
 		avNormal = Utilities.ZEROVEC.copy()
 		ob0, p0, n0 = self.Rays['0'].getHitPosition()
+		avNormal += n0
 		if ob0:
 			counter.add(ob0)
-			avNormal += n0
 		ob1, p1, n1 = self.Rays['1'].getHitPosition()
+		avNormal += n1
 		if ob1:
 			counter.add(ob1)
-			avNormal += n1
 		ob2, p2, n2 = self.Rays['2'].getHitPosition()
+		avNormal += n2
 		if ob2:
 			counter.add(ob2)
-			avNormal += n2
 		ob3, p3, n3 = self.Rays['3'].getHitPosition()
+		avNormal += n3
 		if ob3:
 			counter.add(ob3)
-			avNormal += n3
+		
+		avNormal /= 4.0
 		
 		#
 		# Inherit the angular velocity of a nearby surface. The object that was
@@ -264,12 +266,12 @@ class Snail(SnailSegment, Actor.Actor):
 		# TODO: The linear velocity should probably be set, too: fast-moving
 		# objects can be problematic.
 		#
-		if counter.mode:
+		self.TouchedObject = counter.mode
+		if self.TouchedObject != None:
 			angV = counter.mode.getAngularVelocity()
 			if angV.magnitude < Utilities.EPSILON:
 				angV = Utilities.MINVECTOR
 			self.owner.setAngularVelocity(angV)
-		self.TouchedObject = counter.mode
 		
 		#
 		# Set property on object so it knows whether it's falling. This is used
@@ -283,6 +285,8 @@ class Snail(SnailSegment, Actor.Actor):
 		# by the rays.
 		#
 		orientation = geometry.QuadNormal(p0, p1, p2, p3)
+		if orientation.dot(avNormal) < 0.0:
+			orientation.negate()
 		self.owner.alignAxisToVect(orientation, 2)
 		
 		self.Head.orient(self.Armature)
@@ -693,7 +697,9 @@ class Snail(SnailSegment, Actor.Actor):
 				self.dropShell(animate = True)
 	
 	def useLocalCoordinates(self):
-		return True
+		# As the snail exits a shell, it might be upside down, which would
+		# cause the camera to think it is in a very small tunnel.
+		return not Utilities.hasState(self.owner, S_INSHELL)
 	
 	def getCloseCamera(self):
 		return self.camera
@@ -712,6 +718,7 @@ class ArcRay:
 		self.owner = owner
 		self._createPoints()
 		self.lastHitPoint = Utilities.ORIGIN.copy()
+		self.lastHitNorm = Utilities.ZAXIS.copy()
 		self.prop = ArcRay.PROP
 		if hasattr(owner, 'prop'):
 			self.prop = owner['prop']
@@ -758,13 +765,15 @@ class ArcRay:
 			ob, p, norm = Utilities._rayCastP2P(B, A, prop = self.prop)
 			if ob:
 				self.lastHitPoint = Utilities._toLocal(self.owner, p)
+				self.lastHitNorm = Utilities._toLocalVec(self.owner, norm)
 				break
 		
 		wp = Utilities._toWorld(self.owner, self.lastHitPoint)
+		wn = Utilities._toWorldVec(self.owner, self.lastHitNorm)
 		if DEBUG:
 			self.marker.worldPosition = wp
 			
-		return ob, wp, norm
+		return ob, wp, wn
 
 class SnailTrail:
 	S_NORMAL = 2

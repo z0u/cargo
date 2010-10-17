@@ -428,6 +428,8 @@ def SprayParticle(c):
 	c.activate('aRot')
 
 def billboard(c):
+	'''Track the camera - the Z-axis of the current object will be point towards
+	the camera.'''
 	o = c.owner
 	_, vec, _ = o.getVectTo(GameLogic.getCurrentScene().active_camera)
 	o.alignAxisToVect(vec, 2)
@@ -558,6 +560,24 @@ class Counter:
 			self.max = count
 			self.mode = ob
 		self.n = self.n + 1
+
+class DistanceKey:
+	'''A key function for sorting lists of objects based on their distance from
+	some reference point.'''
+	def __init__(self, referencePoint):
+		self.referencePoint = referencePoint
+	
+	def __call__(self, ob):
+		return ob.getDistanceTo(self.referencePoint)
+
+class ZKey:
+	'''Sorts lists ob objects into ascending z-order.'''
+	def __call__(self, ob):
+		return ob.worldPosition.z
+
+class ZKeyActor:
+	def __call__(self, actor):
+		return actor.owner.worldPosition.z
 
 class _Random:
 	#

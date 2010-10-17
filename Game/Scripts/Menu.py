@@ -17,11 +17,51 @@
 
 import Utilities
 from bge import render
+from bge import logic
 
 class Controller:
-    def __init__(self):
+    def __init__(self, owner):
+        owner['Controller'] = self
+        self.owner = owner
         self.widgets = []
-        self.current = -1
+        self.current = None
+        self.savedGames = []
+        
+        Utilities.parseChildren(self, owner)
+        self.initSaveButtons()
+    
+    def parseChild(self, child, type):
+        scene = logic.getCurrentScene()
+        if type == 'SaveButton':
+            button = SaveButton(child)
+            self.savedGames.append(button)
+            button.owner.setParent(self.owner)
+            child.endObject()
+            return True
+        else:
+            return False
+    
+    def initSaveButtons(self):
+        self.savedGames.sort(key=Utilities.ZKeyActor())
+        self.savedGames.reverse()
+        for i, button in enumerate(self.savedGames):
+            button.setId(i + 1)
+    
+    def mouseOver(self, mOver):
+        newFocus = mOver.hitObject
+        
+        # Bubble up to ancestor if need be
+        while newFocus != None:
+            if 'Widget' in newFocus:
+                break
+            newFocus = newFocus.parent
+        
+        if newFocus != self.current:
+            if self.current != None and not self.current.invalid:
+                self.current['Widget'].focus(False)
+            if newFocus != None:
+                newFocus['Widget'].focus(True)
+        self.current = newFocus
 
     def focusNext(self):
         pass
@@ -35,47 +75,31 @@ class Controller:
         pass
     def focusDown(self):
         pass
-    
-controller = Controller()
 
 def controllerInit(c):
     render.showMouse(True)
     mOver = c.sensors['sMouseOver']
     mOver.usePulseFocus = True
+    Controller(c.owner)
 
 def focusNext(c):
-    controller.focusNext()
+    c.owner['Controller'].focusNext()
 def focusPrevious(c):
-    controller.focusPrevious()
+    c.owner['Controller'].focusPrevious()
 def focusLeft(c):
-    controller.focusLeft()
+    c.owner['Controller'].focusLeft()
 def focusRight(c):
-    controller.focusRight()
+    c.owner['Controller'].focusRight()
 def focusUp(c):
-    controller.focusUp()
+    c.owner['Controller'].focusUp()
 def focusDown(c):
-    controller.focusDown()
+    c.owner['Controller'].focusDown()
 
-currentFocus = None
 def mouseMove(c):
-    global currentFocus
-    
     mOver = c.sensors['sMouseOver']
-    newFocus = mOver.hitObject
-    while newFocus != None:
-        if 'Widget' in newFocus:
-            break
-        newFocus = newFocus.parent
-    
-    if newFocus != currentFocus:
-        if currentFocus != None:
-            currentFocus['Widget'].focus(False)
-        if newFocus != None:
-            newFocus['Widget'].focus(True)
-    currentFocus = newFocus
+    c.owner['Controller'].mouseOver(mOver)
 
 class Widget:
-    S_INIT = 1
     S_FOCUS = 2
     S_FOCUS_LOST = 3
     
@@ -86,8 +110,6 @@ class Widget:
         self.owner['Widget'] = self
         
         Utilities.parseChildren(self, owner)
-        print('creating widget')
-#        Utilities.remState(self.owner, Widget.S_INIT)
     
     def focus(self, hasFocus):
         if hasFocus:
@@ -101,8 +123,13 @@ class Widget:
         pass
 
 class SaveButton(Widget):
-    def __init__(self, owner):
-        Widget.__init__(self, owner)
+    def __init__(self, referential):
+        self.owner = logic.getCurrentScene().addObject('SaveButton_T', referential)
+        Widget.__init__(self, self.owner)
+        
+        self.postMark.visible = False
+        self.stamp = None
+        self.id = None
     
     def parseChild(self, child, type):
         if type == 'StampHook':
@@ -116,6 +143,13 @@ class SaveButton(Widget):
             return True
         else:
             return False
+    
+    def setId(self, id):
+        if self.id != None:
+            self.id.endObject()
+        scene = logic.getCurrentScene()
+        self.id = scene.addObject('SG_ID_%d' % id, self.idHook)
+        self.id.setParent(self.owner)
 
 def createSaveButton(c):
     SaveButton(c.owner)

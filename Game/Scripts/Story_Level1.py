@@ -44,7 +44,6 @@ class Blinkenlights:
 		self.owner = owner
 		self.step = 0
 		
-		def distKey(x): return x.getDistanceTo(owner)
 		def isLamp(x): return hasattr(x, 'energy')
 		
 		# Sort lights by distance from cord origin.
@@ -55,7 +54,7 @@ class Blinkenlights:
 				self.lamp = ob
 			else:
 				self.lights.append(ob)
-		self.lights.sort(key=distKey)
+		self.lights.sort(key=Utilities.DistanceKey(owner))
 		
 		self.cols = list(map(lambda x: x.color.copy(), self.lights))
 		self.targetCols = list(self.cols)

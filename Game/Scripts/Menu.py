@@ -26,6 +26,7 @@ class EventListener:
 class _EventBus:
     def __init__(self):
         self.listeners = set()
+        self.eventCache = {}
 
     def addListener(self, listener):
         self.listeners.add(listener)
@@ -34,9 +35,14 @@ class _EventBus:
         self.listeners.remove(listener)
     
     def notify(self, sender, message, body):
-        print('Event "%s" from "%s": %s' % (message, sender, body))
         for listener in self.listeners:
             listener.onEvent(sender, message, body)
+        self.eventCache[message] = (sender, body)
+    
+    def replayLast(self, target, message):
+        if message in self.eventCache:
+            sender, body = self.eventCache[message]
+            target.onEvent(sender, message, body)
 
 eventBus = _EventBus()
 
@@ -190,6 +196,10 @@ class Container(UIObject):
     
     def addChild(self, uiObject):
         self.children.append(uiObject)
+        if self.visible:
+            uiObject.show()
+        else:
+            uiObject.hide()
     
     def show(self):
         super(Container, self).show()
@@ -241,6 +251,39 @@ class CreditsScreen(Screen):
 LoadingScreen()
 OptionsScreen()
 CreditsScreen()
+eventBus.notify(None, 'showScreen', 'LoadingScreen')
+
+class Camera(EventListener):
+    FRAME_MAP = {'OptionsScreen': 1.0,
+                 'LoadingScreen': 9.0,
+                 'CreditsScreen': 17.0}
+        
+    FRAME_RATE = 25.0 / logic.getLogicTicRate()
+    
+    def __init__(self, owner):
+        self.owner = owner
+        self.owner['Camera'] = self
+        eventBus.addListener(self)
+        eventBus.replayLast(self, 'showScreen')
+    
+    def onEvent(self, sender, message, body):
+        if message == 'showScreen':
+            self.owner['targetFrame'] = Camera.FRAME_MAP[body]
+    
+    def update(self):
+        targetFrame = self.owner['targetFrame']
+        frame = self.owner['frame']
+        if frame < targetFrame:
+            frame = min(frame + Camera.FRAME_RATE, targetFrame)
+        else:
+            frame = max(frame - Camera.FRAME_RATE, targetFrame)
+        self.owner['frame'] = frame
+
+def createCamera(c):
+    Camera(c.owner)
+
+def updateCamera(c):
+    c.owner['Camera'].update()
 
 class Widget(UIObject):
     S_HIDDEN = 2
@@ -374,6 +417,9 @@ class SaveButton(Widget):
     def updateVisibility(self, visible):
         # Should do something special with the post mark, stamp and canvas.
         Widget.updateVisibility(self, visible)
+        #self.postMark.visible = visible
+        #self.stamp.visible = visible
+        self.idCanvas.setVisible(visible, True)
 
 def createSaveButton(c):
     button = SaveButton(c.owner)
@@ -384,6 +430,7 @@ class Subtitle(EventListener):
     def __init__(self, owner):
         self.owner = owner
         eventBus.addListener(self)
+        eventBus.replayLast(self, 'screenShown')
     
     def onEvent(self, sender, message, body):
         if message == 'screenShown':

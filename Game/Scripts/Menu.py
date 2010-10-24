@@ -20,7 +20,7 @@ from bge import render
 from bge import logic
 
 class EventListener:
-    def onEvent(self, sender, message, body = None):
+    def onEvent(self, sender, message, body):
         pass
 
 class _EventBus:
@@ -161,38 +161,86 @@ class _AsyncAdoptionHelper:
                 self.waitingList[parentName] = []
             self.waitingList[parentName].append(child)
     
-    def registerAdopter(self, parent, parentName):
-        self.containers[parentName] = parent
+    def registerAdopter(self, parent):
+        self.containers[parent.name] = parent
         
         # Assign all children waiting on this container.
-        if parentName in self.waitingList:
-            for child in self.waitingList[parentName]:
+        if parent.name in self.waitingList:
+            for child in self.waitingList[parent.name]:
                 parent.addChild(child)
-            del self.waitingList[parentName]
+            del self.waitingList[parent.name]
 
 asyncAdoptionHelper = _AsyncAdoptionHelper()
 
 class UIObject:
+    def __init__(self):
+        self.show()
+    
     def show(self):
-        pass
+        self.visible = True
     
     def hide(self):
-        pass
+        self.visible = False
 
 class Container(UIObject):
-    def __init__(self):
+    def __init__(self, name):
         self.children = []
+        self.name = name
+        asyncAdoptionHelper.registerAdopter(self)
     
     def addChild(self, uiObject):
         self.children.append(uiObject)
     
     def show(self):
+        super(Container, self).show()
         for child in self.children:
             child.show()
     
     def hide(self):
+        super(Container, self).hide()
         for child in self.children:
             child.hide()
+
+class Screen(Container, EventListener):
+    def __init__(self, name):
+        Container.__init__(self, name)
+        eventBus.addListener(self)
+    
+    def onEvent(self, sender, message, body):
+        if message == 'showScreen':
+            if body == self.name:
+                self.show()
+                eventBus.notify(self, 'screenShown', self.getTitle())
+            else:
+                self.hide()
+    
+    def getTitle(self):
+        return ''
+
+class LoadingScreen(Screen):
+    def __init__(self):
+        Screen.__init__(self, 'LoadingScreen')
+    
+    def getTitle(self):
+        return 'Load'
+
+class OptionsScreen(Screen):
+    def __init__(self):
+        Screen.__init__(self, 'OptionsScreen')
+    
+    def getTitle(self):
+        return 'Options'
+
+class CreditsScreen(Screen):
+    def __init__(self):
+        Screen.__init__(self, 'CreditsScreen')
+    
+    def getTitle(self):
+        return 'Credits'
+        
+LoadingScreen()
+OptionsScreen()
+CreditsScreen()
 
 class Widget(UIObject):
     S_HIDDEN = 2
@@ -218,6 +266,15 @@ class Widget(UIObject):
         self.state = Widget.S_HIDDEN
         
         Utilities.parseChildren(self, owner)
+        
+        if 'parentName' in self.owner:
+            asyncAdoptionHelper.requestAdoption(self, self.owner['parentName'])
+        
+    def parseChild(self, child, type):
+        # No children of basic widgets. Note: this is about object hierarchies
+        # the Blender scene, which is different to the Container-UIObject
+        # relationship.
+        return False
     
     def enter(self):
         Utilities.addState(self.owner, Widget.S_FOCUS)
@@ -319,7 +376,9 @@ class SaveButton(Widget):
         Widget.updateVisibility(self, visible)
 
 def createSaveButton(c):
-    inputHandler.addWidget(SaveButton(c.owner))
+    button = SaveButton(c.owner)
+    inputHandler.addWidget(button)
+    asyncAdoptionHelper.requestAdoption(button, 'LoadingScreen')
 
 class Subtitle(EventListener):
     def __init__(self, owner):
@@ -327,7 +386,7 @@ class Subtitle(EventListener):
         eventBus.addListener(self)
     
     def onEvent(self, sender, message, body):
-        if message == 'showScreen':
+        if message == 'screenShown':
             self.owner['Content'] = body
 
 def createSubtitle(c):

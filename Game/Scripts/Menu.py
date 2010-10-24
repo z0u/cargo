@@ -164,54 +164,79 @@ def mouseButton(c):
     else:
         inputHandler.mouseUp()
 
-class Widget:
-    S_FOCUS = 2
-    S_FOCUS_LOST = 3
+class UIObject:
+    def __init__(self):
+        self.children = []
+    
+    def addChild(self, uiObject):
+        self.children.append(uiObject)
+    
+    def show(self):
+        pass
+    
+    def hide(self):
+        pass
+
+class Widget(UIObject):
+    S_HIDDEN = 2
+    S_FOCUS = 3
     S_ACTIVE = 4
-    S_INACTIVE = 5
     
     FRAME_RATE = 25.0 / logic.getLogicTicRate()
+    HIDDEN_FRAME = 1.0
+    IDLE_FRAME = 5.0
+    FOCUS_FRAME = 9.0
+    ACTIVE_FRAME = 12.0
     
     def __init__(self, owner):
         self.owner = owner
         self.sensitive = True
         self.active = False
         self.owner['Widget'] = self
+        self.state = Widget.S_HIDDEN
         
         Utilities.parseChildren(self, owner)
     
     def enter(self):
         Utilities.addState(self.owner, Widget.S_FOCUS)
-        Utilities.remState(self.owner, Widget.S_FOCUS_LOST)
         self.updateTargetFrame()
     
     def exit(self):
-        Utilities.addState(self.owner, Widget.S_FOCUS_LOST)
         Utilities.remState(self.owner, Widget.S_FOCUS)
         self.updateTargetFrame()
     
     def down(self):
         Utilities.addState(self.owner, Widget.S_ACTIVE)
-        Utilities.remState(self.owner, Widget.S_INACTIVE)
         self.updateTargetFrame()
     
     def up(self):
-        Utilities.addState(self.owner, Widget.S_INACTIVE)
         Utilities.remState(self.owner, Widget.S_ACTIVE)
         self.updateTargetFrame()
     
     def click(self):
         eventBus.notify(self.owner['onClickMsg'], self.owner['onClickBody'])
     
+    def hide(self):
+        Utilities.addState(self.owner, Widget.S_HIDDEN)
+        Utilities.remState(self.owner, Widget.S_ACTIVE)
+        Utilities.remState(self.owner, Widget.S_FOCUS)
+        self.updateTargetFrame()
+    
+    def show(self):
+        Utilities.remState(self.owner, Widget.S_HIDDEN)
+        self.updateTargetFrame()
+    
     def updateTargetFrame(self):
-        targetFrame = 5.0
-        if Utilities.hasState(self.owner, Widget.S_FOCUS):
+        targetFrame = Widget.IDLE_FRAME
+        if Utilities.hasState(self.owner, Widget.S_HIDDEN):
+            targetFrame = Widget.HIDDEN_FRAME
+        elif Utilities.hasState(self.owner, Widget.S_FOCUS):
             if Utilities.hasState(self.owner, Widget.S_ACTIVE):
-                targetFrame = 12.0
+                targetFrame = Widget.ACTIVE_FRAME
             else:
-                targetFrame = 9.0
+                targetFrame = Widget.FOCUS_FRAME
         else:
-            targetFrame = 5.0
+            targetFrame = Widget.IDLE_FRAME
         self.owner['targetFrame'] = targetFrame
     
     def update(self):
@@ -225,15 +250,12 @@ class Widget:
         self.owner['frame'] = frame
         
         if frame == 1.0:
-            self.hide()
+            self.updateVisibility(False)
         elif oldFrame == 1.0:
-            self.show()
+            self.updateVisibility(True)
     
-    def hide(self):
-        self.owner.visible = False
-    
-    def show(self):
-        self.owner.visible = True
+    def updateVisibility(self, visible):
+        self.owner.visible = visible
 
 class SaveButton(Widget):
     def __init__(self, owner):

@@ -112,6 +112,10 @@ class _InputHandler:
 inputHandler = _InputHandler()
 
 class Screen:
+    def __init__(self):
+        self.widgets = []
+        self.savedGames = []
+        
     def show(self):
         pass
     def hide(self):
@@ -123,6 +127,12 @@ class LoadGameScreen(Screen):
     
     def show(self):
         pass
+
+class OptionsScreen(Screen):
+    pass
+
+class CreditsScreen(Screen):
+    pass
 
 def controllerInit(c):
     render.showMouse(True)
@@ -207,11 +217,23 @@ class Widget:
     def update(self):
         targetFrame = self.owner['targetFrame']
         frame = self.owner['frame']
+        oldFrame = frame
         if frame < targetFrame:
             frame = min(frame + Widget.FRAME_RATE, targetFrame)
         else:
             frame = max(frame - Widget.FRAME_RATE, targetFrame)
         self.owner['frame'] = frame
+        
+        if frame == 1.0:
+            self.hide()
+        elif oldFrame == 1.0:
+            self.show()
+    
+    def hide(self):
+        self.owner.visible = False
+    
+    def show(self):
+        self.owner.visible = True
 
 class SaveButton(Widget):
     def __init__(self, owner):

@@ -19,7 +19,28 @@ import Utilities
 from bge import render
 from bge import logic
 
-class _Model:
+class EventListener:
+    def onEvent(self, message, body):
+        pass
+
+class _EventBus:
+    def __init__(self):
+        self.listeners = set()
+
+    def addListener(self, listener):
+        self.listeners.add(listener)
+    
+    def remListener(self, listener):
+        self.listeners.remove(listener)
+    
+    def notify(self, message, body):
+        print('Event "%s": %s' % (message, body))
+        for listener in self.listeners:
+            listener.onEvent(message, body)
+
+eventBus = _EventBus()
+
+class _InputHandler:
     def __init__(self):
         self.widgets = []
         self.current = None
@@ -37,8 +58,9 @@ class _Model:
     def initSaveButtons(self):
         self.savedGames.sort(key=Utilities.ZKeyActor())
         self.savedGames.reverse()
-        for i, button in enumerate(self.savedGames):
-            button.setId(i + 1)
+        #for i, button in enumerate(self.savedGames):
+        for i, button in zip([1, 'new', 'new'], self.savedGames):
+            button.setId(i)
     
     def mouseOver(self, mOver):
         newFocus = mOver.hitObject
@@ -87,7 +109,7 @@ class _Model:
     def focusDown(self):
         pass
 
-model = _Model()
+inputHandler = _InputHandler()
 
 class Screen:
     def show(self):
@@ -108,29 +130,29 @@ def controllerInit(c):
     mOver.usePulseFocus = True
 
 def focusNext(c):
-    model.focusNext()
+    inputHandler.focusNext()
 def focusPrevious(c):
-    model.focusPrevious()
+    inputHandler.focusPrevious()
 def focusLeft(c):
-    model.focusLeft()
+    inputHandler.focusLeft()
 def focusRight(c):
-    model.focusRight()
+    inputHandler.focusRight()
 def focusUp(c):
-    model.focusUp()
+    inputHandler.focusUp()
 def focusDown(c):
-    model.focusDown()
+    inputHandler.focusDown()
 
 def mouseMove(c):
     if not Utilities.allSensorsPositive(c):
         return
     mOver = c.sensors['sMouseOver']
-    model.mouseOver(mOver)
+    inputHandler.mouseOver(mOver)
 
 def mouseButton(c):
     if Utilities.someSensorPositive(c):
-        model.mouseDown()
+        inputHandler.mouseDown()
     else:
-        model.mouseUp()
+        inputHandler.mouseUp()
 
 class Widget:
     S_FOCUS = 2
@@ -169,7 +191,7 @@ class Widget:
         self.updateTargetFrame()
     
     def click(self):
-        print('Click')
+        eventBus.notify(self.owner['onClickMsg'], self.owner['onClickBody'])
     
     def updateTargetFrame(self):
         targetFrame = 5.0
@@ -197,14 +219,13 @@ class SaveButton(Widget):
         
         self.postMark.visible = False
         self.stamp = None
-        self.id = None
     
     def parseChild(self, child, type):
         if type == 'StampHook':
             self.stampHook = child
             return True
-        elif type == 'IDHook':
-            self.idHook = child
+        elif type == 'IDCanvas':
+            self.idCanvas = child
             return True
         elif type == 'Postmark':
             self.postMark = child
@@ -213,19 +234,26 @@ class SaveButton(Widget):
             return False
     
     def setId(self, id):
-        if self.id != None:
-            self.id.endObject()
-        scene = logic.getCurrentScene()
-        self.id = scene.addObject('SG_ID_%d' % id, self.idHook)
-        self.id.localScale = self.owner.localScale
-        self.id.setParent(self.owner)
+        self.idCanvas['Content'] = str(id)
 
 def createSaveButton(c):
-    model.addWidget(SaveButton(c.owner))
+    inputHandler.addWidget(SaveButton(c.owner))
 
 def createButton(c):
-    model.addWidget(Widget(c.owner))
+    inputHandler.addWidget(Widget(c.owner))
 
 def updateWidget(c):
     c.owner['Widget'].update()
     c.activate(c.actuators[0])
+
+class Subtitle(EventListener):
+    def __init__(self, owner):
+        self.owner = owner
+        eventBus.addListener(self)
+    
+    def onEvent(self, message, body):
+        if message == 'showScreen':
+            self.owner['Content'] = body
+
+def createSubtitle(c):
+    Subtitle(c.owner)

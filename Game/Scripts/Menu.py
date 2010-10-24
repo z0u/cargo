@@ -20,7 +20,7 @@ from bge import render
 from bge import logic
 
 class EventListener:
-    def onEvent(self, message, body):
+    def onEvent(self, sender, message, body = None):
         pass
 
 class _EventBus:
@@ -33,10 +33,10 @@ class _EventBus:
     def remListener(self, listener):
         self.listeners.remove(listener)
     
-    def notify(self, message, body):
-        print('Event "%s": %s' % (message, body))
+    def notify(self, sender, message, body):
+        print('Event "%s" from "%s": %s' % (message, sender, body))
         for listener in self.listeners:
-            listener.onEvent(message, body)
+            listener.onEvent(sender, message, body)
 
 eventBus = _EventBus()
 
@@ -97,42 +97,25 @@ class _InputHandler:
         self.downCurrent = None
 
     def focusNext(self):
+        # TODO
         pass
     def focusPrevious(self):
+        # TODO
         pass
     def focusLeft(self):
+        # TODO
         pass
     def focusRight(self):
+        # TODO
         pass
     def focusUp(self):
+        # TODO
         pass
     def focusDown(self):
+        # TODO
         pass
 
 inputHandler = _InputHandler()
-
-class Screen:
-    def __init__(self):
-        self.widgets = []
-        self.savedGames = []
-        
-    def show(self):
-        pass
-    def hide(self):
-        pass
-
-class LoadGameScreen(Screen):
-    def __init__(self, savedGameButtons):
-        self.savedGameButtons = savedGameButtons
-    
-    def show(self):
-        pass
-
-class OptionsScreen(Screen):
-    pass
-
-class CreditsScreen(Screen):
-    pass
 
 def controllerInit(c):
     render.showMouse(True)
@@ -164,7 +147,39 @@ def mouseButton(c):
     else:
         inputHandler.mouseUp()
 
+class _AsyncAdoptionHelper:
+    def __init__(self):
+        self.waitingList = {}
+        self.containers = {}
+    
+    def requestAdoption(self, child, parentName):
+        if parentName in self.containers:
+            container = self.containers[parentName]
+            container.addChild(child)
+        else:
+            if not parentName in self.waitingList:
+                self.waitingList[parentName] = []
+            self.waitingList[parentName].append(child)
+    
+    def registerAdopter(self, parent, parentName):
+        self.containers[parentName] = parent
+        
+        # Assign all children waiting on this container.
+        if parentName in self.waitingList:
+            for child in self.waitingList[parentName]:
+                parent.addChild(child)
+            del self.waitingList[parentName]
+
+asyncAdoptionHelper = _AsyncAdoptionHelper()
+
 class UIObject:
+    def show(self):
+        pass
+    
+    def hide(self):
+        pass
+
+class Container(UIObject):
     def __init__(self):
         self.children = []
     
@@ -172,10 +187,12 @@ class UIObject:
         self.children.append(uiObject)
     
     def show(self):
-        pass
+        for child in self.children:
+            child.show()
     
     def hide(self):
-        pass
+        for child in self.children:
+            child.hide()
 
 class Widget(UIObject):
     S_HIDDEN = 2
@@ -183,6 +200,11 @@ class Widget(UIObject):
     S_ACTIVE = 4
     
     FRAME_RATE = 25.0 / logic.getLogicTicRate()
+    
+    # These should be matched to the FCurve or action of the object associated
+    # with this widget. The animation is not actually driven by this script; it
+    # just sets the object's 'frame' property, which should be observed by an
+    # actuator.
     HIDDEN_FRAME = 1.0
     IDLE_FRAME = 5.0
     FOCUS_FRAME = 9.0
@@ -214,7 +236,12 @@ class Widget(UIObject):
         self.updateTargetFrame()
     
     def click(self):
-        eventBus.notify(self.owner['onClickMsg'], self.owner['onClickBody'])
+        if 'onClickMsg' in self.owner:
+            msg = self.owner['onClickMsg']
+            body = ''
+            if 'onClickBody' in self.owner:
+                body = self.owner['onClickBody']
+            eventBus.notify(self, msg, body)
     
     def hide(self):
         Utilities.addState(self.owner, Widget.S_HIDDEN)
@@ -257,6 +284,13 @@ class Widget(UIObject):
     def updateVisibility(self, visible):
         self.owner.visible = visible
 
+def updateWidget(c):
+    c.owner['Widget'].update()
+    c.activate(c.actuators[0])
+
+def createButton(c):
+    inputHandler.addWidget(Widget(c.owner))
+
 class SaveButton(Widget):
     def __init__(self, owner):
         Widget.__init__(self, owner)
@@ -279,23 +313,20 @@ class SaveButton(Widget):
     
     def setId(self, id):
         self.idCanvas['Content'] = str(id)
+    
+    def updateVisibility(self, visible):
+        # Should do something special with the post mark, stamp and canvas.
+        Widget.updateVisibility(self, visible)
 
 def createSaveButton(c):
     inputHandler.addWidget(SaveButton(c.owner))
-
-def createButton(c):
-    inputHandler.addWidget(Widget(c.owner))
-
-def updateWidget(c):
-    c.owner['Widget'].update()
-    c.activate(c.actuators[0])
 
 class Subtitle(EventListener):
     def __init__(self, owner):
         self.owner = owner
         eventBus.addListener(self)
     
-    def onEvent(self, message, body):
+    def onEvent(self, sender, message, body):
         if message == 'showScreen':
             self.owner['Content'] = body
 

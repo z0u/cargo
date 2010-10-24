@@ -19,28 +19,20 @@ import Utilities
 from bge import render
 from bge import logic
 
-class Controller:
-    def __init__(self, owner):
-        owner['Controller'] = self
-        self.owner = owner
+class _Model:
+    def __init__(self):
         self.widgets = []
         self.current = None
         self.downCurrent = None
         self.savedGames = []
-        
-        Utilities.parseChildren(self, owner)
-        self.initSaveButtons()
     
-    def parseChild(self, child, type):
-        scene = logic.getCurrentScene()
-        if type == 'SaveButton':
-            button = SaveButton(child)
-            self.savedGames.append(button)
-            button.owner.setParent(self.owner)
-            child.endObject()
-            return True
-        else:
-            return False
+    def addWidget(self, widget):
+        self.widgets.append(widget)
+        
+        if 'Type' in widget.owner and widget.owner['Type'] == 'SaveButton':
+            self.savedGames.append(widget)
+            if len(self.savedGames) == 3:
+                self.initSaveButtons()
     
     def initSaveButtons(self):
         self.savedGames.sort(key=Utilities.ZKeyActor())
@@ -68,7 +60,6 @@ class Controller:
     
     def mouseDown(self):
         '''Send a mouse down event to the widget under the cursor.'''
-        print('down')
         if self.current != None:
             self.current['Widget'].down()
             self.downCurrent = self.current
@@ -77,7 +68,6 @@ class Controller:
         '''Send a mouse up event to the widget under the cursor. If that widget
         also received the last mouse down event, it will be sent a click event
         in addition to the up event.'''
-        print('up')
         if self.downCurrent != None:
             self.downCurrent['Widget'].up()
             if self.current == self.downCurrent:
@@ -97,6 +87,8 @@ class Controller:
     def focusDown(self):
         pass
 
+model = _Model()
+
 class Screen:
     def show(self):
         pass
@@ -114,32 +106,31 @@ def controllerInit(c):
     render.showMouse(True)
     mOver = c.sensors['sMouseOver']
     mOver.usePulseFocus = True
-    Controller(c.owner)
 
 def focusNext(c):
-    c.owner['Controller'].focusNext()
+    model.focusNext()
 def focusPrevious(c):
-    c.owner['Controller'].focusPrevious()
+    model.focusPrevious()
 def focusLeft(c):
-    c.owner['Controller'].focusLeft()
+    model.focusLeft()
 def focusRight(c):
-    c.owner['Controller'].focusRight()
+    model.focusRight()
 def focusUp(c):
-    c.owner['Controller'].focusUp()
+    model.focusUp()
 def focusDown(c):
-    c.owner['Controller'].focusDown()
+    model.focusDown()
 
 def mouseMove(c):
     if not Utilities.allSensorsPositive(c):
         return
     mOver = c.sensors['sMouseOver']
-    c.owner['Controller'].mouseOver(mOver)
+    model.mouseOver(mOver)
 
 def mouseButton(c):
     if Utilities.someSensorPositive(c):
-        c.owner['Controller'].mouseDown()
+        model.mouseDown()
     else:
-        c.owner['Controller'].mouseUp()
+        model.mouseUp()
 
 class Widget:
     S_FOCUS = 2
@@ -178,7 +169,7 @@ class Widget:
         self.updateTargetFrame()
     
     def click(self):
-        pass
+        print('Click')
     
     def updateTargetFrame(self):
         targetFrame = 5.0
@@ -201,9 +192,8 @@ class Widget:
         self.owner['frame'] = frame
 
 class SaveButton(Widget):
-    def __init__(self, referential):
-        self.owner = logic.getCurrentScene().addObject('SaveButton_T', referential)
-        Widget.__init__(self, self.owner)
+    def __init__(self, owner):
+        Widget.__init__(self, owner)
         
         self.postMark.visible = False
         self.stamp = None
@@ -231,7 +221,10 @@ class SaveButton(Widget):
         self.id.setParent(self.owner)
 
 def createSaveButton(c):
-    SaveButton(c.owner)
+    model.addWidget(SaveButton(c.owner))
+
+def createButton(c):
+    model.addWidget(Widget(c.owner))
 
 def updateWidget(c):
     c.owner['Widget'].update()

@@ -25,6 +25,7 @@ class Controller:
         self.owner = owner
         self.widgets = []
         self.current = None
+        self.downCurrent = None
         self.savedGames = []
         
         Utilities.parseChildren(self, owner)
@@ -56,12 +57,32 @@ class Controller:
                 break
             newFocus = newFocus.parent
         
-        if newFocus != self.current:
-            if self.current != None and not self.current.invalid:
-                self.current['Widget'].focus(False)
-            if newFocus != None:
-                newFocus['Widget'].focus(True)
+        if newFocus == self.current:
+            return
+        
+        if self.current != None and not self.current.invalid:
+            self.current['Widget'].exit()
+        if newFocus != None:
+            newFocus['Widget'].enter()
         self.current = newFocus
+    
+    def mouseDown(self):
+        '''Send a mouse down event to the widget under the cursor.'''
+        print('down')
+        if self.current != None:
+            self.current['Widget'].down()
+            self.downCurrent = self.current
+    
+    def mouseUp(self):
+        '''Send a mouse up event to the widget under the cursor. If that widget
+        also received the last mouse down event, it will be sent a click event
+        in addition to the up event.'''
+        print('up')
+        if self.downCurrent != None:
+            self.downCurrent['Widget'].up()
+            if self.current == self.downCurrent:
+                self.downCurrent['Widget'].click()
+        self.downCurrent = None
 
     def focusNext(self):
         pass
@@ -74,6 +95,19 @@ class Controller:
     def focusUp(self):
         pass
     def focusDown(self):
+        pass
+
+class Screen:
+    def show(self):
+        pass
+    def hide(self):
+        pass
+
+class LoadGameScreen(Screen):
+    def __init__(self, savedGameButtons):
+        self.savedGameButtons = savedGameButtons
+    
+    def show(self):
         pass
 
 def controllerInit(c):
@@ -96,12 +130,24 @@ def focusDown(c):
     c.owner['Controller'].focusDown()
 
 def mouseMove(c):
+    if not Utilities.allSensorsPositive(c):
+        return
     mOver = c.sensors['sMouseOver']
     c.owner['Controller'].mouseOver(mOver)
+
+def mouseButton(c):
+    if Utilities.someSensorPositive(c):
+        c.owner['Controller'].mouseDown()
+    else:
+        c.owner['Controller'].mouseUp()
 
 class Widget:
     S_FOCUS = 2
     S_FOCUS_LOST = 3
+    S_ACTIVE = 4
+    S_INACTIVE = 5
+    
+    FRAME_RATE = 25.0 / logic.getLogicTicRate()
     
     def __init__(self, owner):
         self.owner = owner
@@ -111,16 +157,48 @@ class Widget:
         
         Utilities.parseChildren(self, owner)
     
-    def focus(self, hasFocus):
-        if hasFocus:
-            Utilities.addState(self.owner, Widget.S_FOCUS)
-            Utilities.remState(self.owner, Widget.S_FOCUS_LOST)
-        else:
-            Utilities.addState(self.owner, Widget.S_FOCUS_LOST)
-            Utilities.remState(self.owner, Widget.S_FOCUS)
+    def enter(self):
+        Utilities.addState(self.owner, Widget.S_FOCUS)
+        Utilities.remState(self.owner, Widget.S_FOCUS_LOST)
+        self.updateTargetFrame()
     
-    def activated(self):
+    def exit(self):
+        Utilities.addState(self.owner, Widget.S_FOCUS_LOST)
+        Utilities.remState(self.owner, Widget.S_FOCUS)
+        self.updateTargetFrame()
+    
+    def down(self):
+        Utilities.addState(self.owner, Widget.S_ACTIVE)
+        Utilities.remState(self.owner, Widget.S_INACTIVE)
+        self.updateTargetFrame()
+    
+    def up(self):
+        Utilities.addState(self.owner, Widget.S_INACTIVE)
+        Utilities.remState(self.owner, Widget.S_ACTIVE)
+        self.updateTargetFrame()
+    
+    def click(self):
         pass
+    
+    def updateTargetFrame(self):
+        targetFrame = 5.0
+        if Utilities.hasState(self.owner, Widget.S_FOCUS):
+            if Utilities.hasState(self.owner, Widget.S_ACTIVE):
+                targetFrame = 12.0
+            else:
+                targetFrame = 9.0
+        else:
+            targetFrame = 5.0
+        self.owner['targetFrame'] = targetFrame
+    
+    def update(self):
+        targetFrame = self.owner['targetFrame']
+        frame = self.owner['frame']
+        if frame < targetFrame:
+            frame = min(frame + Widget.FRAME_RATE, targetFrame)
+        else:
+            frame = max(frame - Widget.FRAME_RATE, targetFrame)
+        self.owner['frame'] = frame
 
 class SaveButton(Widget):
     def __init__(self, referential):
@@ -149,7 +227,12 @@ class SaveButton(Widget):
             self.id.endObject()
         scene = logic.getCurrentScene()
         self.id = scene.addObject('SG_ID_%d' % id, self.idHook)
+        self.id.localScale = self.owner.localScale
         self.id.setParent(self.owner)
 
 def createSaveButton(c):
     SaveButton(c.owner)
+
+def updateWidget(c):
+    c.owner['Widget'].update()
+    c.activate(c.actuators[0])

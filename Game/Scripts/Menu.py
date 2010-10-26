@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Utilities
+from . import Utilities
 from bge import render
 from bge import logic
 

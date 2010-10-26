@@ -27,8 +27,8 @@ dictionary.
 
 import mathutils
 import geometry
-import Utilities
-import Actor
+from . import Utilities
+from . import Actor
 import GameLogic
 import math
 

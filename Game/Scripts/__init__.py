@@ -15,20 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Snail
-import Utilities
-import Actor
-import Shells
-import BendyLeaf
-import UI
-import LODTree
-import GrassBlade
-import Camera
-import Water
-import Sound
-import Story
-import Story_Level1
-import Story_Beehive
-import Button
-import Timer
-import ForceFields
+from . import Snail
+from . import Utilities
+from . import Actor
+from . import Shells
+from . import BendyLeaf
+from . import UI
+from . import LODTree
+from . import GrassBlade
+from . import Camera
+from . import Water
+from . import Sound
+from . import Story
+from . import Story_Level1
+from . import Story_Beehive
+from . import Button
+from . import Timer
+from . import ForceFields

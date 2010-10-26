@@ -20,8 +20,8 @@ Created on 13/02/2010
 @author: alex
 '''
 
-import Utilities
-import Actor
+from . import Utilities
+from . import Actor
 import mathutils
 import GameTypes
 

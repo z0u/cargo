@@ -1,1 +1,1 @@
-import BlendKDTree
+from . import BlendKDTree

@@ -16,9 +16,9 @@
 #
 
 import mathutils
-import Utilities
-import Actor
-import ForceFields
+from . import Utilities
+from . import Actor
+from . import ForceFields
 
 # The angle to rotate successive ripples by (giving them a random appearance),
 # in degrees.

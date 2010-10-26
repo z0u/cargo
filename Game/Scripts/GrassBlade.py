@@ -16,7 +16,7 @@
 #
 
 import mathutils
-import Utilities
+from . import Utilities
 
 ZERO2 = mathutils.Vector((0.0, 0.0))
 

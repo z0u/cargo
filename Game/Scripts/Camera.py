@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Utilities
-import Actor
+from . import Utilities
+from . import Actor
 import GameTypes
 import GameLogic
-import UI
+from . import UI
 
 DEBUG = False
 

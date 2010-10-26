@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import Actor
-import Camera
+from . import Actor
+from . import Camera
 import mathutils
-import Utilities
+from . import Utilities
 
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001

@@ -46,26 +46,29 @@ class _EventBus:
 
 eventBus = _EventBus()
 
+class SessionManager(EventListener):
+    def onEvent(self, sender, message, body):
+        if message == 'optFoliageChanged':
+            checkbox = sender
+            Store.set(Store.P_OPTS + 'foliage', checkbox.checked)
+        
+        elif message == 'loadGame':
+            Store.setCurrent(body)
+        
+        elif message == 'quit':
+            bge.logic.endGame()
+
+sessionManager = SessionManager()
+eventBus.addListener(sessionManager)
+
 class _InputHandler:
     def __init__(self):
         self.widgets = []
         self.current = None
         self.downCurrent = None
-        self.savedGames = []
     
     def addWidget(self, widget):
         self.widgets.append(widget)
-        
-        if 'Type' in widget.owner and widget.owner['Type'] == 'SaveButton':
-            self.savedGames.append(widget)
-            if len(self.savedGames) == 3:
-                self.initSaveButtons()
-    
-    def initSaveButtons(self):
-        self.savedGames.sort(key=Utilities.ZKeyActor())
-        self.savedGames.reverse()
-        for i, button in enumerate(self.savedGames):
-            button.setId(i)
     
     def mouseOver(self, mOver):
         newFocus = mOver.hitObject
@@ -412,16 +415,6 @@ class SaveButton(Widget):
             return True
         else:
             return False
-    
-    def click(self):
-        # Set the current saved game, so that the next file that loads knows
-        # which session is active.
-        Store.setCurrent(self.id)
-    
-    def setId(self, id):
-        self.id = id
-        self.idCanvas['Content'] = Store.get(Store.getGameP(self.id) + 'name',
-                                             'new')
         
     def updateVisibility(self, visible):
         # Should do something special with the post mark, stamp and canvas.
@@ -458,6 +451,7 @@ class Checkbox(Widget):
     def click(self):
         self.checked = not self.checked
         self.updateCheckFace()
+        super(Checkbox, self).click()
     
     def updateVisibility(self, visible):
         super(Checkbox, self).updateVisibility(visible)

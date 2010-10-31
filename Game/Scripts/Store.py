@@ -16,6 +16,7 @@
 #
 
 import bge
+from . import Utilities
 
 class Path:
     '''A helper class for '''
@@ -64,13 +65,34 @@ def get(path, defaultValue = None):
         bge.logic.globalDict[str(path)] = defaultValue
         return defaultValue
 
+dirty = False
 def set(path, value):
-    '''Set a value in persistent storage. This doesn't actually save the data to
-    a file; use load() for that.'''
-    bge.logic.globalDict[str(path)] = value
+    '''Set a value in persistent storage. The data will be saved to file the
+    next time save() is called.'''
+    global dirty
+    
+    if not bge.logic.globalDict[str(path)] == value:
+        bge.logic.globalDict[str(path)] = value
+        dirty = True
 
-def save():
+def _save():
+    global dirty
+    
     bge.logic.saveGlobalDict()
+    print('saved')
+    dirty = False
 
-def load():
+def _load():
     bge.logic.loadGlobalDict()
+    dirty = False
+
+# Load once on initialisation.
+_load()
+
+def save(c):
+    '''Save the data to a file. This should be called periodically.'''
+    if not Utilities.allSensorsPositive(c):
+        return
+    
+    if dirty:
+        _save()

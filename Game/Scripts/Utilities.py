@@ -392,6 +392,14 @@ def addObject(name, time = 0):
 	scene = GameLogic.getCurrentScene()
 	return scene.addObject(name, getCursor(), time)
 
+def replaceObject(name, original, time = 0):
+	scene = GameLogic.getCurrentScene()
+	newObj = scene.addObject(name, original, time)
+	for prop in original.getPropertyNames():
+		newObj[prop] = original[prop]
+	original.endObject()
+	return newObj
+
 def SprayParticle(c):
 	'''
 	Instance one particle, and decrement the particle counter. The particle will

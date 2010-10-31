@@ -16,8 +16,8 @@
 #
 
 from . import Utilities
-from bge import render
-from bge import logic
+import bge
+from . import Store
 
 class EventListener:
     def onEvent(self, sender, message, body):
@@ -64,8 +64,7 @@ class _InputHandler:
     def initSaveButtons(self):
         self.savedGames.sort(key=Utilities.ZKeyActor())
         self.savedGames.reverse()
-        #for i, button in enumerate(self.savedGames):
-        for i, button in zip([1, 'new', 'new'], self.savedGames):
+        for i, button in enumerate(self.savedGames):
             button.setId(i)
     
     def mouseOver(self, mOver):
@@ -124,7 +123,7 @@ class _InputHandler:
 inputHandler = _InputHandler()
 
 def controllerInit(c):
-    render.showMouse(True)
+    bge.render.showMouse(True)
     mOver = c.sensors['sMouseOver']
     mOver.usePulseFocus = True
 
@@ -258,7 +257,7 @@ class Camera(EventListener):
                  'LoadingScreen': 9.0,
                  'CreditsScreen': 17.0}
         
-    FRAME_RATE = 25.0 / logic.getLogicTicRate()
+    FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
     
     def __init__(self, owner):
         self.owner = owner
@@ -290,7 +289,7 @@ class Widget(UIObject):
     S_FOCUS = 3
     S_ACTIVE = 4
     
-    FRAME_RATE = 25.0 / logic.getLogicTicRate()
+    FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
     
     # These should be matched to the FCurve or action of the object associated
     # with this widget. The animation is not actually driven by this script; it
@@ -344,12 +343,14 @@ class Widget(UIObject):
             eventBus.notify(self, msg, body)
     
     def hide(self):
+        super(Widget, self).hide()
         Utilities.addState(self.owner, Widget.S_HIDDEN)
         Utilities.remState(self.owner, Widget.S_ACTIVE)
         Utilities.remState(self.owner, Widget.S_FOCUS)
         self.updateTargetFrame()
     
     def show(self):
+        super(Widget, self).show()
         Utilities.remState(self.owner, Widget.S_HIDDEN)
         self.updateTargetFrame()
     
@@ -397,6 +398,7 @@ class SaveButton(Widget):
         
         self.postMark.visible = False
         self.stamp = None
+        self.id = 0
     
     def parseChild(self, child, type):
         if type == 'StampHook':
@@ -411,12 +413,19 @@ class SaveButton(Widget):
         else:
             return False
     
-    def setId(self, id):
-        self.idCanvas['Content'] = str(id)
+    def click(self):
+        # Set the current saved game, so that the next file that loads knows
+        # which session is active.
+        Store.setCurrent(self.id)
     
+    def setId(self, id):
+        self.id = id
+        self.idCanvas['Content'] = Store.get(Store.getGameP(self.id) + 'name',
+                                             'new')
+        
     def updateVisibility(self, visible):
         # Should do something special with the post mark, stamp and canvas.
-        Widget.updateVisibility(self, visible)
+        super(SaveButton, self).updateVisibility(visible)
         #self.postMark.visible = visible
         #self.stamp.visible = visible
         self.idCanvas.setVisible(visible, True)
@@ -424,7 +433,53 @@ class SaveButton(Widget):
 def createSaveButton(c):
     button = SaveButton(c.owner)
     inputHandler.addWidget(button)
-    asyncAdoptionHelper.requestAdoption(button, 'LoadingScreen')
+
+class Checkbox(Widget):
+    def __init__(self, owner):
+        Widget.__init__(self, owner)
+        self.checked = False
+        self.updateCheckFace()
+    
+    def parseChild(self, child, type):
+        if type == 'CheckOff':
+            self.checkOff = child
+            return True
+        elif type == 'CheckOn':
+            self.checkOn = child
+            return True
+        elif type == 'Canvas':
+            self.label = child
+            self.caret = child.children[0]
+            return True
+        else:
+            return False
+    
+    def click(self):
+        self.checked = not self.checked
+        self.updateCheckFace()
+    
+    def updateVisibility(self, visible):
+        super(Checkbox, self).updateVisibility(visible)
+        self.label.setVisible(visible, True)
+        self.updateCheckFace()
+    
+    def updateCheckFace(self):
+        if self.visible:
+            self.checkOff.setVisible(not self.checked, True)
+            self.checkOn.setVisible(self.checked, True)
+        else:
+            self.checkOff.setVisible(False, True)
+            self.checkOn.setVisible(False, True)
+    
+    def update(self):
+        super(Checkbox, self).update()
+        self.checkOff['frame'] = self.owner['frame']
+        self.checkOn['frame'] = self.owner['frame']
+
+def createCheckbox(c):
+    obj = Utilities.replaceObject('CheckBox', c.owner)
+    button = Checkbox(obj)
+    inputHandler.addWidget(button)
 
 class Subtitle(EventListener):
     def __init__(self, owner):

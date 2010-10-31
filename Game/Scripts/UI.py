@@ -363,6 +363,9 @@ class Font:
 		if text[start + 1] == '\\':
 			key = '\\'
 			seqLen = 2
+		elif text[start + 1] == 'n':
+			key = 'newline'
+			seqLen = 2
 		elif text[start + 1] == '[':
 			try:
 				end = text.index(']', start + 2)
@@ -494,7 +497,7 @@ class TextRenderer:
 		for i in range(start, len(glyphString)):
 			(glyph, width) = glyphString[i]
 			totalWidth = totalWidth + width
-			if totalWidth > lineWidth:
+			if totalWidth > lineWidth or glyph['char'] == 'newline':
 				return i
 		#
 		# No break required: string is not long enough.
@@ -504,8 +507,8 @@ class TextRenderer:
 	def IsWhitespace(self, char):
 		"""Check whether a character is whitespace. Special characters
 		(like icons) are not considered to be whitespace."""
-		if len(char) > 1:
-			return False
+		if char == 'newline':
+			return True
 		elif char == ' ':
 			return True
 		else:
@@ -536,6 +539,7 @@ class TextRenderer:
 	
 		(glyph, width) = self.glyphString[self.currentChar]
 		
+		
 		if self.currentChar == self.softBreakPoint:
 			#
 			# This glyph can have a line break before it. If the next
@@ -545,8 +549,7 @@ class TextRenderer:
 				self.currentChar + 1)
 			if self.softBreakPoint > self.hardBreakPoint:
 				self.newLine = True
-		
-		if self.currentChar == self.hardBreakPoint:
+		elif self.currentChar == self.hardBreakPoint:
 			#
 			# This glyph is beyond the end of the line. Break now.
 			#

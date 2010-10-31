@@ -420,45 +420,30 @@ def CreateFont(c):
 class TextRenderer:
 	'''
 	A TextRenderer is used to render glyphs from a Font. The object nominated as
-	the owner acts as the caret (like the head of a typewriter). It must be the
-	only child of the text canvas. The canvas can be any KX_GameObject: the
-	caret will draw glyphs onto the canvas' XY-plane. In short, the hierarchy
-	should look like this:
-	
-	  |- Canvas
-	  |  |- Caret
+	the owner is the canvas. The canvas can be any KX_GameObject: the glyphs
+	will be drawn onto the canvas' XY-plane.
 	
 	Canvas properties:
 	str   Content:   The text to draw.
 	str   Font:      The name of the font to use.
 	float LineWidth  The width of the canvas in Blender units.
 	
-	Caret properties:
-	(none)
-	
 	Call RenderText to draw the Content to the screen. Set Content to "" before
 	rendering to clear the canvas.
 	'''
 	
-	def __init__(self, caret):
-		self.caret = caret
-		self.canvas = caret.parent
-		if self.canvas == None or (len(self.canvas.children) != 1):
-			raise Exception("Error: Text renderer must be the only child of " +
-				"another object.")
+	def __init__(self, canvas):
+		self.canvas = canvas
 		self.Clear()
 		
 		Utilities.SceneManager.Subscribe(self)
 	
 	def OnSceneEnd(self):
-		self.caret = None
 		self.canvas = None
 		Utilities.SceneManager.Unsubscribe(self)
 	
 	def Clear(self):
 		for child in self.canvas.children:
-			if child == self.caret:
-				continue
 			child.endObject()
 		
 		self.caretX = 0.0
@@ -567,11 +552,12 @@ class TextRenderer:
 				#
 				return
 		
-		self.caret.position = [self.caretX + glyph['xOffset'],
-			self.caretY + glyph['yOffset'], 0.0]
 		glyphInstance = GameLogic.getCurrentScene().addObject(glyph,
-			self.caret, 0)
+			self.canvas, 0)
 		glyphInstance.setParent(self.canvas)
+		glyphInstance.localPosition = [self.caretX + glyph['xOffset'],
+			self.caretY + glyph['yOffset'], 0.0]
+		
 		if self.canvas['Instant']:
 			Utilities.setState(glyphInstance, 4)
 		else:

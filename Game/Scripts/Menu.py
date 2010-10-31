@@ -431,7 +431,8 @@ class SaveButton(Widget):
         self.idCanvas.setVisible(visible, True)
 
 def createSaveButton(c):
-    button = SaveButton(c.owner)
+    obj = Utilities.replaceObject('SaveButton_T', c.owner)
+    button = SaveButton(obj)
     inputHandler.addWidget(button)
 
 class Checkbox(Widget):
@@ -439,6 +440,7 @@ class Checkbox(Widget):
         Widget.__init__(self, owner)
         self.checked = False
         self.updateCheckFace()
+        self.label['Content'] = self.owner['label']
     
     def parseChild(self, child, type):
         if type == 'CheckOff':
@@ -449,7 +451,6 @@ class Checkbox(Widget):
             return True
         elif type == 'Canvas':
             self.label = child
-            self.caret = child.children[0]
             return True
         else:
             return False
@@ -477,7 +478,7 @@ class Checkbox(Widget):
         self.checkOn['frame'] = self.owner['frame']
 
 def createCheckbox(c):
-    obj = Utilities.replaceObject('CheckBox', c.owner)
+    obj = Utilities.replaceObject('CheckBox_T', c.owner)
     button = Checkbox(obj)
     inputHandler.addWidget(button)
 

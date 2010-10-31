@@ -63,7 +63,6 @@ def set(path, value):
     
     p = resolve(path)
     if (not p in bge.logic.globalDict) or (not bge.logic.globalDict[p] == value):
-        print(p, value)
         bge.logic.globalDict[p] = value
         dirty = True
 
@@ -71,7 +70,6 @@ def _save():
     global dirty
     
     bge.logic.saveGlobalDict()
-    print('saved')
     dirty = False
 
 def _load():

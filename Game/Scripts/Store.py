@@ -18,40 +18,29 @@
 import bge
 from . import Utilities
 
-class Path:
-    '''A helper class for '''
-    def __init__(self, path):
-        self.path = str(path)
-    
-    def __add__(self, subPath):
-        return Path(self.path + '/' + str(subPath))
-    
-    def __str__(self):
-        return self.path
-    
-    def __repr__(self):
-        return 'Path(%s)' % self.path
-
-P_SAVES = Path('sg')
-
-'''Global options, e.g. options/musicVolume'''
-P_OPTS = Path('options')
-
-def getGameP(id):
-    return P_SAVES + id
-
 current = 0
-def getCurrentP():
-    '''Get the base path of the current saved game.'''
-    return getGameP(current)
+def getSessionId():
+    '''Get the ID of the current session.'''
+    return current
 
-def setCurrent(id):
+def setSessionId(id):
+    '''Set the ID of the current session.'''
     global current
     current = id
 
+def resolve(path):
+    return str(path).replace('/game', '/savedGames/' + str(getSessionId()), 1)
+
 def get(path, defaultValue = None):
     '''
-    Get a value from persistent storage.
+    Get a value from persistent storage. By convention, there are three well-
+    known base paths:
+     - /opt: Global options.
+     - /savedGames/N: Data specific to saved game 'N'.
+     - /game: Data specific to the current game, as determined by getSessionId.
+              E.g. if the current session is game 0, /game == /savedGames/0.
+    These conventions will not change, so you can use them in scripts or bind
+    them to Blender objects.
     
     Parameters:
     defaultValue: The value to return if 'path' can't be found. Remember that
@@ -59,10 +48,11 @@ def get(path, defaultValue = None):
         other things evaluate as True.
     '''
     
+    p = resolve(path)
     try:
-        return bge.logic.globalDict[str(path)]
+        return bge.logic.globalDict[p]
     except KeyError:
-        bge.logic.globalDict[str(path)] = defaultValue
+        set(path, defaultValue)
         return defaultValue
 
 dirty = False
@@ -71,8 +61,10 @@ def set(path, value):
     next time save() is called.'''
     global dirty
     
-    if not bge.logic.globalDict[str(path)] == value:
-        bge.logic.globalDict[str(path)] = value
+    p = resolve(path)
+    if (not p in bge.logic.globalDict) or (not bge.logic.globalDict[p] == value):
+        print(p, value)
+        bge.logic.globalDict[p] = value
         dirty = True
 
 def _save():
@@ -83,6 +75,8 @@ def _save():
     dirty = False
 
 def _load():
+    global dirty
+    
     bge.logic.loadGlobalDict()
     dirty = False
 

@@ -48,12 +48,8 @@ eventBus = _EventBus()
 
 class SessionManager(EventListener):
     def onEvent(self, sender, message, body):
-        if message == 'optFoliageChanged':
-            checkbox = sender
-            Store.set(Store.P_OPTS + 'foliage', checkbox.checked)
-        
-        elif message == 'loadGame':
-            Store.setCurrent(body)
+        if message == 'loadGame':
+            Store.setSessionId(body)
         
         elif message == 'quit':
             bge.logic.endGame()
@@ -432,6 +428,8 @@ class Checkbox(Widget):
     def __init__(self, owner):
         Widget.__init__(self, owner)
         self.checked = False
+        if 'dataBinding' in self.owner:
+            self.checked = Store.get(self.owner['dataBinding'], self.owner['dataDefault'])
         self.updateCheckFace()
         self.label['Content'] = self.owner['label']
     
@@ -451,6 +449,8 @@ class Checkbox(Widget):
     def click(self):
         self.checked = not self.checked
         self.updateCheckFace()
+        if 'dataBinding' in self.owner:
+            Store.set(self.owner['dataBinding'], self.checked)
         super(Checkbox, self).click()
     
     def updateVisibility(self, visible):

@@ -314,6 +314,11 @@ def SlowCopyLoc(c):
 	goal = c.sensors['sGoal'].owner
 	_SlowCopyLoc(o, goal, o['SlowFac'])
 
+def CopyTrans(c):
+	'''Copy the transform from a linked sensor's object to this object.'''
+	if allSensorsPositive(c):
+		_copyTransform(c.sensors[0].owner, c.owner)
+
 def setRelOrn(ob, target, ref):
 	'''
 	Sets the orientation of 'ob' to match that of 'target' using 'ref' as the

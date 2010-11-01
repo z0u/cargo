@@ -17,6 +17,7 @@
 
 from . import Utilities
 import bge
+import mathutils
 from . import Store
 
 class EventListener:
@@ -488,3 +489,54 @@ class Subtitle(EventListener):
 
 def createSubtitle(c):
     Subtitle(c.owner)
+
+class MenuSnail:
+    def __init__(self, owner):
+        self.owner = owner
+        self.armature = self.owner.children['SnailArm_Min']
+        self.EyeLocL = self.armature.children['Eyeref_L']
+        self.EyeLocR = self.armature.children['Eyeref_R']
+        self.HeadLoc = self.armature.children['HeadLoc']
+        self.HeadLoc_rest = mathutils.Quaternion(self.armature.channels[
+                self.HeadLoc['channel']].rotation_quaternion)#.to_quat()
+    
+    def update(self):
+        target = None
+        if inputHandler.current:
+            target = inputHandler.current
+        else:
+            target = bge.logic.getCurrentScene().objects['Camera']
+        self.lookAt(target)
+    
+    def lookAt(self, target):
+        '''
+        Turn the eyes to face the nearest object in targetList. Objects with a
+        higher priority will always be preferred. In practice, the targetList
+        is provided by a Near sensor, so it won't include every object in the
+        scene. Objects with a LookAt priority of less than zero will be ignored.
+        '''
+
+        def look(bone, target, restOrn = None):
+            channel = self.armature.channels[bone['channel']]
+            _, gVec, _ = bone.getVectTo(target)
+            bone.alignAxisToVect(bone.parent.getAxisVect(Utilities.ZAXIS), 2)
+            bone.alignAxisToVect(gVec, 1)
+            orn = bone.localOrientation.to_quat()
+            
+            if restOrn:
+                orn = orn.slerp(restOrn, 0.6)
+            
+            oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
+            channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
+        
+        look(self.EyeLocL, target)
+        look(self.EyeLocR, target)
+        look(self.HeadLoc, target, self.HeadLoc_rest)
+        
+        self.armature.update()
+
+def createSnail(c):
+    c.owner['MenuSnail'] = MenuSnail(c.owner)
+
+def updateSnail(c):
+    c.owner['MenuSnail'].update()

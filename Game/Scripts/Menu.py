@@ -497,8 +497,11 @@ class MenuSnail:
         self.EyeLocL = self.armature.children['Eyeref_L']
         self.EyeLocR = self.armature.children['Eyeref_R']
         self.HeadLoc = self.armature.children['HeadLoc']
+        # Store the current orientation of the head bone. This is used to
+        # reduce the movement of the head, so that the eyes do most of the
+        # turning.
         self.HeadLoc_rest = mathutils.Quaternion(self.armature.channels[
-                self.HeadLoc['channel']].rotation_quaternion)#.to_quat()
+                self.HeadLoc['channel']].rotation_quaternion)
     
     def update(self):
         target = None
@@ -509,12 +512,9 @@ class MenuSnail:
         self.lookAt(target)
     
     def lookAt(self, target):
-        '''
-        Turn the eyes to face the nearest object in targetList. Objects with a
-        higher priority will always be preferred. In practice, the targetList
-        is provided by a Near sensor, so it won't include every object in the
-        scene. Objects with a LookAt priority of less than zero will be ignored.
-        '''
+        '''Turn the eyes to face the target.'''
+        # This code is similar to Snail.Snail.lookAt. But there's probably not
+        # much scope for reuse.
 
         def look(bone, target, restOrn = None):
             channel = self.armature.channels[bone['channel']]

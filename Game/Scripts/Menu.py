@@ -233,6 +233,13 @@ class LoadingScreen(Screen):
     def getTitle(self):
         return 'Load'
 
+class LoadDetailsScreen(Screen):
+    def __init__(self):
+        Screen.__init__(self, 'LoadDetailsScreen')
+    
+    def getTitle(self):
+        return ''
+
 class OptionsScreen(Screen):
     def __init__(self):
         Screen.__init__(self, 'OptionsScreen')
@@ -248,6 +255,7 @@ class CreditsScreen(Screen):
         return 'Credits'
         
 LoadingScreen()
+LoadDetailsScreen()
 OptionsScreen()
 CreditsScreen()
 eventBus.notify(None, 'showScreen', 'LoadingScreen')
@@ -266,7 +274,7 @@ class Camera(EventListener):
         eventBus.replayLast(self, 'showScreen')
     
     def onEvent(self, sender, message, body):
-        if message == 'showScreen':
+        if message == 'showScreen' and body in Camera.FRAME_MAP:
             self.owner['targetFrame'] = Camera.FRAME_MAP[body]
     
     def update(self):

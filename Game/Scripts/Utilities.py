@@ -16,8 +16,7 @@
 #
 
 import mathutils
-import GameLogic
-import Rasterizer
+import bge
 
 XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
 YAXIS  = mathutils.Vector([0.0, 1.0, 0.0])
@@ -32,10 +31,17 @@ RED   = mathutils.Vector([1.0, 0.0, 0.0, 1.0])
 GREEN = mathutils.Vector([0.0, 1.0, 0.0, 1.0])
 BLUE  = mathutils.Vector([0.0, 0.0, 1.0, 1.0])
 YELLOW = RED + GREEN
+YELLOW.w = 1.0
+ORANGE = RED + (GREEN * 0.5)
+ORANGE.w = 1.0
 CYAN  = GREEN + BLUE
+CYAN.w = 1.0
 MAGENTA = RED + BLUE
+MAGENTA.w = 1.0
 WHITE = mathutils.Vector([1.0, 1.0, 1.0, 1.0])
 BLACK = mathutils.Vector([0.0, 0.0, 0.0, 1.0])
+
+DEBUG = False
 
 class _SceneManager:
 	def __init__(self):
@@ -43,7 +49,7 @@ class _SceneManager:
 		self.NewScene = True
 	
 	def OnNewScene(self):
-		GameLogic.setGravity([0.0, 0.0, -75.0])
+		bge.logic.setGravity([0.0, 0.0, -75.0])
 		self.NewScene = False
 	
 	def Subscribe(self, observer):
@@ -386,7 +392,7 @@ def RayFollow(c):
 	o.worldPosition = pos
 
 def getCursor():
-	return GameLogic.getCurrentScene().objects['Cursor']
+	return bge.logic.getCurrentScene().objects['Cursor']
 
 def setCursorTransform(other):
 	cursor = getCursor()
@@ -394,16 +400,53 @@ def setCursorTransform(other):
 	cursor.worldOrientation = other.worldOrientation
 
 def addObject(name, time = 0):
-	scene = GameLogic.getCurrentScene()
+	scene = bge.logic.getCurrentScene()
 	return scene.addObject(name, getCursor(), time)
 
 def replaceObject(name, original, time = 0):
-	scene = GameLogic.getCurrentScene()
+	scene = bge.logic.getCurrentScene()
 	newObj = scene.addObject(name, original, time)
 	for prop in original.getPropertyNames():
 		newObj[prop] = original[prop]
 	original.endObject()
 	return newObj
+
+def drawPolyline(points, colour, cyclic=False):
+	'''Like bge.render.drawLine, but operates on any number of points.'''
+	for (a, b) in zip(points, points[1:]):
+		bge.render.drawLine(a, b, colour[0:3])
+	if cyclic and len(points) > 2:
+		bge.render.drawLine(points[0], points[-1], colour[0:3])
+
+def quadNormal(p0, p1, p2, p3):
+	'''Find the normal of a 4-sided face.'''
+	# Use the diagonals of the face, rather than any of the sides. This ensures
+	# all vertices are accounted for, and doesn't require averaging.
+	va = p0 - p2
+	vb = p1 - p3
+	normal = va.cross(vb)
+	normal.normalize()
+	
+	if DEBUG:
+		centre = (p0 + p1 + p2 + p3) / 4.0
+		bge.render.drawLine(centre, centre + normal, RED.xyz)
+		drawPolyline([p0, p1, p2, p3], GREEN, cyclic=True)
+	
+	return normal
+
+def triangleNormal(p0, p1, p2):
+	'''Find the normal of a 3-sided face.'''
+	va = p1 - p0
+	vb = p2 - p0
+	normal = va.cross(vb)
+	normal.normalize()
+	
+	if DEBUG:
+		centre = (p0 + p1 + p2) / 3.0
+		bge.render.drawLine(centre, centre + normal, RED.xyz)
+		drawPolyline([p0, p1, p2], GREEN, cyclic=True)
+	
+	return normal
 
 def SprayParticle(c):
 	'''
@@ -444,7 +487,7 @@ def billboard(c):
 	'''Track the camera - the Z-axis of the current object will be point towards
 	the camera.'''
 	o = c.owner
-	_, vec, _ = o.getVectTo(GameLogic.getCurrentScene().active_camera)
+	_, vec, _ = o.getVectTo(bge.logic.getCurrentScene().active_camera)
 	o.alignAxisToVect(vec, 2)
 
 def timeOffsetChildren(c):
@@ -552,7 +595,7 @@ def someSensorPositive(c):
 
 def makeScreenshot(c):
 	if allSensorsPositive(c):
-		Rasterizer.makeScreenshot('//Screenshot#.jpg')
+		bge.render.makeScreenshot('//Screenshot#.jpg')
 
 class Counter:
 	'''Counts the frequency of objects.'''

@@ -17,8 +17,7 @@
 
 from . import Utilities
 from . import Actor
-import GameTypes
-import GameLogic
+import bge
 from . import UI
 
 DEBUG = False
@@ -70,7 +69,7 @@ class _AutoCamera:
 		'''Bind to a camera.'''
 		self.Camera = camera
 		self.DefaultLens = camera.lens
-		GameLogic.getCurrentScene().active_camera = camera
+		bge.logic.getCurrentScene().active_camera = camera
 	
 	def SetDefaultGoal(self, goal):
 		'''
@@ -634,7 +633,6 @@ class CameraNode:
 		if not DEBUG:
 			self.owner.visible = False
 		else:
-			scene = GameLogic.getCurrentScene()
 			self.marker = Utilities.addObject("PointMarker")
 			self.marker.color = Utilities.BLUE
 		

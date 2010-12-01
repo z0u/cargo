@@ -19,29 +19,18 @@
 Create the structure required to control a snail. Python objects
 will be created to match the types of Blender objects in the
 hierarchy, with the owner as the root.
-
-Call this script once. The rest of the processing should be done
-by fetching the resulting object from the GameLogic.Snails
-dictionary.
 '''
 
 import mathutils
-import geometry
 from . import Utilities
 from . import Actor
-import GameLogic
+import bge
 import math
 
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
 
 DEBUG = False
-
-# FIXME: This is used for Euler bone transforms - but we should be able to
-# transform the bones using a matrix. See ActionActuator.setChannel
-PI = 3.14159
-def radToDegrees(angle):
-	return (angle / PI) * 180
 
 #
 # States for main snail object. The commented-out ones aren't currently used
@@ -106,7 +95,7 @@ class SnailSegment:
 		_, p1, _ = self.Parent.Rays['Right'].getHitPosition()
 		_, p2, _ = self.Parent.Rays['Left'].getHitPosition()
 		p3 = self.Parent.Fulcrum.worldPosition
-		normal = geometry.TriangleNormal(p1, p2, p3)
+		normal = Utilities.triangleNormal(p1, p2, p3)
 		
 		if normal.dot(self.Parent.owner.getAxisVect(Utilities.ZAXIS)) > 0.0:
 			#
@@ -280,14 +269,14 @@ class Snail(SnailSegment, Actor.Actor):
 		self.owner['nHit'] = counter.n
 		
 		#
-		# Derive normal from hit points and update orientation. Using QuadNormal
-		# gives a smoother transition than just averaging the normals returned
-		# by the rays.
+		# Derive normal from hit points and update orientation. This gives a
+		# smoother transition than just averaging the normals returned by the
+		# rays.
 		#
-		orientation = geometry.QuadNormal(p0, p1, p2, p3)
-		if orientation.dot(avNormal) < 0.0:
-			orientation.negate()
-		self.owner.alignAxisToVect(orientation, 2)
+		normal = Utilities.quadNormal(p0, p1, p2, p3)
+		if normal.dot(avNormal) < 0.0:
+			normal.negate()
+		self.owner.alignAxisToVect(normal, 2)
 		
 		self.Head.orient(self.Armature)
 		self.Tail.orient(self.Armature)
@@ -768,7 +757,12 @@ class ArcRay:
 			if ob:
 				self.lastHitPoint = Utilities._toLocal(self.owner, p)
 				self.lastHitNorm = Utilities._toLocalVec(self.owner, norm)
+				if DEBUG:
+					bge.render.drawLine(A, p, Utilities.ORANGE.xyz)
 				break
+			else:
+				if DEBUG:
+					bge.render.drawLine(A, B, Utilities.YELLOW.xyz)
 		
 		wp = Utilities._toWorld(self.owner, self.lastHitPoint)
 		wn = Utilities._toWorldVec(self.owner, self.lastHitNorm)
@@ -809,7 +803,7 @@ class SnailTrail:
 		'''
 		self.SpotIndex = (self.SpotIndex + 1) % len(self.TrailSpots)
 		
-		scene = GameLogic.getCurrentScene()
+		scene = bge.logic.getCurrentScene()
 		spot = self.TrailSpots[self.SpotIndex]
 		spotI = scene.addObject(spot, self.owner)
 		

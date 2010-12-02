@@ -49,8 +49,9 @@ eventBus = _EventBus()
 
 class SessionManager(EventListener):
     def onEvent(self, sender, message, body):
-        if message == 'loadGame':
+        if message == 'showSavedGameDetails':
             Store.setSessionId(body)
+            eventBus.notify(self, 'showScreen', 'LoadDetailsScreen')
         
         elif message == 'quit':
             bge.logic.endGame()
@@ -58,7 +59,7 @@ class SessionManager(EventListener):
 sessionManager = SessionManager()
 eventBus.addListener(sessionManager)
 
-class _InputHandler:
+class _InputHandler(EventListener):
     def __init__(self):
         self.widgets = []
         self.current = None
@@ -100,6 +101,12 @@ class _InputHandler:
             if self.current == self.downCurrent:
                 self.downCurrent['Widget'].click()
         self.downCurrent = None
+    
+    def onEvent(self, sender, message, body):
+        if message == 'sensitivityChanged':
+            # Not implemented. Eventually, this should update the visual state
+            # of the current button.
+            pass
 
     def focusNext(self):
         # TODO
@@ -261,6 +268,9 @@ CreditsScreen()
 eventBus.notify(None, 'showScreen', 'LoadingScreen')
 
 class Camera(EventListener):
+    '''A camera that adjusts its position depending on which screen is visible.
+    '''
+    
     FRAME_MAP = {'OptionsScreen': 1.0,
                  'LoadingScreen': 9.0,
                  'CreditsScreen': 17.0}
@@ -327,6 +337,8 @@ class Widget(UIObject):
         return False
     
     def enter(self):
+        if not self.sensitive:
+            return
         Utilities.addState(self.owner, Widget.S_FOCUS)
         self.updateTargetFrame()
     
@@ -335,6 +347,8 @@ class Widget(UIObject):
         self.updateTargetFrame()
     
     def down(self):
+        if not self.sensitive:
+            return
         Utilities.addState(self.owner, Widget.S_ACTIVE)
         self.updateTargetFrame()
     
@@ -343,6 +357,8 @@ class Widget(UIObject):
         self.updateTargetFrame()
     
     def click(self):
+        if not self.sensitive:
+            return
         if 'onClickMsg' in self.owner:
             msg = self.owner['onClickMsg']
             body = ''
@@ -392,6 +408,12 @@ class Widget(UIObject):
     
     def updateVisibility(self, visible):
         self.owner.visible = visible
+    
+    def setSensitive(self, sensitive):
+        oldv = self.sensitive
+        self.sensitive = sensitive
+        if oldv != sensitive:
+            eventBus.notify(self, 'sensitivityChanged', self.sensitive)
 
 def updateWidget(c):
     c.owner['Widget'].update()
@@ -484,6 +506,21 @@ def createCheckbox(c):
     obj = Utilities.replaceObject('CheckBox_T', c.owner)
     button = Checkbox(obj)
     inputHandler.addWidget(button)
+
+class BackgroundFrame(Widget):
+    '''A dumb widget that can show and hide itself, but doesn't respond to
+    mouse events.'''
+    def __init__(self, owner):
+        Widget.__init__(self, owner)
+        self.setSensitive(False)
+    
+    def updateVisibility(self, visible):
+        super(BackgroundFrame, self).updateVisibility(visible)
+        for child in self.owner.children:
+            child.setVisible(visible, True)
+
+def createBackgroundFrame(c):
+    BackgroundFrame(c.owner)
 
 class Subtitle(EventListener):
     def __init__(self, owner):

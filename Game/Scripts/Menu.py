@@ -508,20 +508,34 @@ def createCheckbox(c):
     button = Checkbox(obj)
     inputHandler.addWidget(button)
 
-class BackgroundFrame(Widget):
+class GameDetailsPage(Widget):
     '''A dumb widget that can show and hide itself, but doesn't respond to
     mouse events.'''
     def __init__(self, owner):
         Widget.__init__(self, owner)
         self.setSensitive(False)
     
+    def parseChild(self, child, type):
+        if type == 'Title':
+            self.title = child
+            return True
+        elif type == 'StoryDetails':
+            self.storyDetails = child
+            return True
+        else:
+            return False
+    
     def updateVisibility(self, visible):
-        super(BackgroundFrame, self).updateVisibility(visible)
+        super(GameDetailsPage, self).updateVisibility(visible)
         for child in self.owner.children:
             child.setVisible(visible, True)
+        
+        if visible:
+            self.title['Content'] = Store.get('/game/title', 'Game %d' % (Store.getSessionId() + 1))
+            self.storyDetails['Content'] = Store.get('/game/storySummary', 'Start a new game.')
 
-def createBackgroundFrame(c):
-    BackgroundFrame(c.owner)
+def createGameDetailsPage(c):
+    GameDetailsPage(c.owner)
 
 class Subtitle(EventListener):
     def __init__(self, owner):

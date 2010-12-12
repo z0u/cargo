@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import GameLogic
+from bge import logic
 from . import Utilities
 from . import Actor
 from . import UI
@@ -50,7 +50,7 @@ class Timer(Actor.Actor):
 	def Start(self):
 		'''The the timer running for the duration specified by the owner.'''
 		self.Tics = 0.0
-		self.TargetTics = self.owner['Duration'] * GameLogic.getLogicTicRate()
+		self.TargetTics = self.owner['Duration'] * logic.getLogicTicRate()
 		if self.TargetTics < 1.0:
 			self.TargetTics = 1.0
 		Utilities.addState(self.owner, self.S_RUNNING)
@@ -97,7 +97,7 @@ class Timer(Actor.Actor):
 		'''Called when the timer has finished normally. This usually sends the
 		message specified by the 'Message' property. Override to change this
 		functionality.'''
-		GameLogic.sendMessage(self.owner['Message'])
+		logic.sendMessage(self.owner['Message'])
 
 def CreateTimer(c):
 	'''Create a new timer from this controller's owner.'''

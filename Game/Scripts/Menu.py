@@ -16,7 +16,8 @@
 #
 
 from . import Utilities
-import bge
+from bge import logic
+from bge import render
 import mathutils
 from . import Store
 
@@ -54,7 +55,7 @@ class SessionManager(EventListener):
             eventBus.notify(self, 'showScreen', 'LoadDetailsScreen')
         
         elif message == 'quit':
-            bge.logic.endGame()
+            logic.endGame()
 
 sessionManager = SessionManager()
 eventBus.addListener(sessionManager)
@@ -130,7 +131,7 @@ class _InputHandler(EventListener):
 inputHandler = _InputHandler()
 
 def controllerInit(c):
-    bge.render.showMouse(True)
+    render.showMouse(True)
     mOver = c.sensors['sMouseOver']
     mOver.usePulseFocus = True
 
@@ -275,7 +276,7 @@ class Camera(EventListener):
                  'LoadingScreen': 9.0,
                  'CreditsScreen': 17.0}
         
-    FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
+    FRAME_RATE = 25.0 / logic.getLogicTicRate()
     
     def __init__(self, owner):
         self.owner = owner
@@ -307,7 +308,7 @@ class Widget(UIObject):
     S_FOCUS = 3
     S_ACTIVE = 4
     
-    FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
+    FRAME_RATE = 25.0 / logic.getLogicTicRate()
     
     # These should be matched to the FCurve or action of the object associated
     # with this widget. The animation is not actually driven by this script; it
@@ -553,7 +554,7 @@ class MenuSnail:
         if inputHandler.current:
             target = inputHandler.current
         else:
-            target = bge.logic.getCurrentScene().objects['Camera']
+            target = logic.getCurrentScene().objects['Camera']
         self.lookAt(target)
     
     def lookAt(self, target):

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import GameLogic
+from bge import logic
 from . import Utilities
 from . import Actor
 
@@ -552,7 +552,7 @@ class TextRenderer:
 				#
 				return
 		
-		glyphInstance = GameLogic.getCurrentScene().addObject(glyph,
+		glyphInstance = logic.getCurrentScene().addObject(glyph,
 			self.canvas, 0)
 		glyphInstance.setParent(self.canvas)
 		glyphInstance.localPosition = [self.caretX + glyph['xOffset'],

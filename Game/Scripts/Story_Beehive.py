@@ -16,7 +16,7 @@
 #
 
 from . import UI
-import GameLogic
+from bge import logic
 from . import Actor
 from . import Utilities
 from . import Camera
@@ -149,7 +149,7 @@ class Bucket(Actor.Actor):
     def __init__(self, owner, camTop, camBottom):
         Actor.Actor.__init__(self, owner)
         
-        scene = GameLogic.getCurrentScene()
+        scene = logic.getCurrentScene()
         self.water = None
         self.waterBallTemplate = scene.objectsInactive[owner['WaterBallTemplate']]
         self.camTop = camTop
@@ -169,7 +169,7 @@ class Bucket(Actor.Actor):
         return False
     
     def spawnWaterBall(self):
-        scene = GameLogic.getCurrentScene()
+        scene = logic.getCurrentScene()
         waterBall = scene.addObject(self.waterBallTemplate, self.water)
         waterBall.setLinearVelocity(self.water.getAxisVect(Bucket.PROJECTION))
     

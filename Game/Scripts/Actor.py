@@ -24,7 +24,6 @@ directly.'''
 
 from . import LODTree
 from . import Utilities
-import GameTypes
 import mathutils
 
 SANITY_RAY_LENGTH = 10000

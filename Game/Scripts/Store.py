@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bge
+from bge import logic
 from . import Utilities
 
 current = 0
@@ -50,7 +50,7 @@ def get(path, defaultValue = None):
     
     p = resolve(path)
     try:
-        return bge.logic.globalDict[p]
+        return logic.globalDict[p]
     except KeyError:
         set(path, defaultValue)
         return defaultValue
@@ -62,20 +62,20 @@ def set(path, value):
     global dirty
     
     p = resolve(path)
-    if (not p in bge.logic.globalDict) or (not bge.logic.globalDict[p] == value):
-        bge.logic.globalDict[p] = value
+    if (not p in logic.globalDict) or (not logic.globalDict[p] == value):
+        logic.globalDict[p] = value
         dirty = True
 
 def _save():
     global dirty
     
-    bge.logic.saveGlobalDict()
+    logic.saveGlobalDict()
     dirty = False
 
 def _load():
     global dirty
     
-    bge.logic.loadGlobalDict()
+    logic.loadGlobalDict()
     dirty = False
 
 # Load once on initialisation.

@@ -17,8 +17,8 @@
 
 from . import Utilities
 from . import Actor
-import bge
 from . import UI
+from bge import logic
 
 DEBUG = False
 
@@ -69,7 +69,7 @@ class _AutoCamera:
 		'''Bind to a camera.'''
 		self.Camera = camera
 		self.DefaultLens = camera.lens
-		bge.logic.getCurrentScene().active_camera = camera
+		logic.getCurrentScene().active_camera = camera
 	
 	def SetDefaultGoal(self, goal):
 		'''

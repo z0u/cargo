@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import GameLogic
+from bge import logic
 import mathutils
 from . import Utilities
 
@@ -71,13 +71,13 @@ class Button:
 	def OnDown(self):
 		'''Called when at least one object has triggered this button. Sends a
 		message to the scene with the subject 'ButtonDown'.'''
-		GameLogic.sendMessage('ButtonDown', '', '', self.owner.name)
+		logic.sendMessage('ButtonDown', '', '', self.owner.name)
 	
 	def OnUp(self):
 		'''Called when no objects are triggering the button. Sends a message to
 		the scene with the subject 'ButtonUp'. This only happens after OnDown is
 		called.'''
-		GameLogic.sendMessage('ButtonUp', '', '', self.owner.name)
+		logic.sendMessage('ButtonUp', '', '', self.owner.name)
 
 class ToughButton(Button):
 	'''A button that filters objects by their speed: only fast objects will

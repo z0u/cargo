@@ -24,7 +24,8 @@ hierarchy, with the owner as the root.
 import mathutils
 from . import Utilities
 from . import Actor
-import bge
+from bge import render
+from bge import logic
 import math
 
 MAX_SPEED = 3.0
@@ -758,11 +759,11 @@ class ArcRay:
 				self.lastHitPoint = Utilities._toLocal(self.owner, p)
 				self.lastHitNorm = Utilities._toLocalVec(self.owner, norm)
 				if DEBUG:
-					bge.render.drawLine(A, p, Utilities.ORANGE.xyz)
+					render.drawLine(A, p, Utilities.ORANGE.xyz)
 				break
 			else:
 				if DEBUG:
-					bge.render.drawLine(A, B, Utilities.YELLOW.xyz)
+					render.drawLine(A, B, Utilities.YELLOW.xyz)
 		
 		wp = Utilities._toWorld(self.owner, self.lastHitPoint)
 		wn = Utilities._toWorldVec(self.owner, self.lastHitNorm)
@@ -803,7 +804,7 @@ class SnailTrail:
 		'''
 		self.SpotIndex = (self.SpotIndex + 1) % len(self.TrailSpots)
 		
-		scene = bge.logic.getCurrentScene()
+		scene = logic.getCurrentScene()
 		spot = self.TrailSpots[self.SpotIndex]
 		spotI = scene.addObject(spot, self.owner)
 		

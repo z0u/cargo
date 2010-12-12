@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import GameLogic
+from bge import logic
 from . import Utilities
 
 ACTIVATION_TIMEOUT = 120
@@ -199,7 +199,7 @@ class LODBranch(LODNode):
 		
 		LODNode.__init__(self)
 		
-		self.Object = GameLogic.getCurrentScene().objectsInactive[obName]
+		self.Object = logic.getCurrentScene().objectsInactive[obName]
 		#
 		# Parents just cause problems with visibility.
 		#
@@ -313,7 +313,7 @@ class LODBranch(LODNode):
 		'''Apply any changes that have been made to this node.'''
 		if self.Visibility == NS_IMPLICIT:
 			if not self.ObjectInstance:
-				self.ObjectInstance = GameLogic.getCurrentScene().addObject(self.Object, self.Object)
+				self.ObjectInstance = logic.getCurrentScene().addObject(self.Object, self.Object)
 		else:
 			if self.ObjectInstance:
 				self.ObjectInstance.endObject()
@@ -363,7 +363,7 @@ class LODLeaf(LODNode):
 		#
 		self.ObjectPairs = []
 		self.Name = str(obNames)
-		sceneObs = GameLogic.getCurrentScene().objectsInactive
+		sceneObs = logic.getCurrentScene().objectsInactive
 		for name in obNames:
 			oPos = sceneObs[name]
 			oMesh = oPos
@@ -412,7 +412,7 @@ class LODLeaf(LODNode):
 		'''Apply any changes that have been made to this node.'''
 		if self.Visibility:
 			if len(self.ObjectInstances) == 0:
-				scene = GameLogic.getCurrentScene()
+				scene = logic.getCurrentScene()
 				for (oPos, oMesh) in self.ObjectPairs:
 					self.ObjectInstances.append(scene.addObject(oMesh, oPos))
 		else:

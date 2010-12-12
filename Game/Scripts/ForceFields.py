@@ -23,7 +23,6 @@ Created on 13/02/2010
 from . import Utilities
 from . import Actor
 import mathutils
-import GameTypes
 
 DEBUG = False
 

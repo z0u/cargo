@@ -17,7 +17,7 @@
 
 from . import Actor
 from . import UI
-import GameLogic
+from bge import logic
 from . import Camera
 from . import Utilities
 
@@ -81,9 +81,9 @@ class ActActionPair:
 		aArm.frame = aMesh.frame = self.Start
 		
 		if self.Loop:
-			aArm.mode = aMesh.mode = GameLogic.KX_ACTIONACT_LOOPEND
+			aArm.mode = aMesh.mode = logic.KX_ACTIONACT_LOOPEND
 		else:
-			aArm.mode = aMesh.mode = GameLogic.KX_ACTIONACT_PLAY
+			aArm.mode = aMesh.mode = logic.KX_ACTIONACT_PLAY
 		
 		c.activate(aArm)
 		c.activate(aMesh)
@@ -114,7 +114,7 @@ class ActSetCamera:
 	
 	def Execute(self, c):
 		try:
-			cam = GameLogic.getCurrentScene().objects[self.CamName]
+			cam = logic.getCurrentScene().objects[self.CamName]
 		except KeyError:
 			print(("Warning: couldn't find camera %s. Not adding." %
 				self.CamName))
@@ -127,7 +127,7 @@ class ActRemoveCamera:
 	
 	def Execute(self, c):
 		try:
-			cam = GameLogic.getCurrentScene().objects[self.CamName]
+			cam = logic.getCurrentScene().objects[self.CamName]
 		except KeyError:
 			print(("Warning: couldn't find camera %s. Not removing." %
 				self.CamName))

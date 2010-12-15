@@ -426,29 +426,17 @@ def createButton(c):
 class SaveButton(Widget):
     def __init__(self, owner):
         Widget.__init__(self, owner)
-        
-        self.postMark.visible = False
-        self.stamp = None
         self.id = 0
     
     def parseChild(self, child, type):
-        if type == 'StampHook':
-            self.stampHook = child
-            return True
-        elif type == 'IDCanvas':
+        if type == 'IDCanvas':
             self.idCanvas = child
-            return True
-        elif type == 'Postmark':
-            self.postMark = child
             return True
         else:
             return False
         
     def updateVisibility(self, visible):
-        # Should do something special with the post mark, stamp and canvas.
         super(SaveButton, self).updateVisibility(visible)
-        #self.postMark.visible = visible
-        #self.stamp.visible = visible
         self.idCanvas.setVisible(visible, True)
 
 def createSaveButton(c):

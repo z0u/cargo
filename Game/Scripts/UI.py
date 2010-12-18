@@ -467,7 +467,7 @@ class TextRenderer:
 	def FindNextBreakableChar(self, glyphString, start):
 		for i in range(start, len(glyphString)):
 			(glyph, width) = glyphString[i]
-			if self.IsWhitespace(glyph['char']) or self.IsPunctuation(glyph['char']):
+			if self.IsWhitespace(glyph['char']):
 				return i
 		#
 		# No more breakable characters.
@@ -495,16 +495,6 @@ class TextRenderer:
 		if char == 'newline':
 			return True
 		elif char == ' ':
-			return True
-		else:
-			return False
-	
-	def IsPunctuation(self, char):
-		"""Check whether a character is punctuation. Special characters
-		(like icons) are considered to be punctuation."""
-		if len(char) > 1:
-			return True
-		elif char in '.,!:;\'"&()[]<>*$#%~^_':
 			return True
 		else:
 			return False

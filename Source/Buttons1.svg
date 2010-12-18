@@ -33,12 +33,12 @@
      pagecolor="#000000"
      id="base"
      showgrid="false"
-     inkscape:zoom="1"
-     inkscape:cx="388.76228"
-     inkscape:cy="202.95305"
+     inkscape:zoom="2"
+     inkscape:cx="375.5145"
+     inkscape:cy="361.9423"
      inkscape:window-x="0"
      inkscape:window-y="25"
-     inkscape:current-layer="layer3"
+     inkscape:current-layer="g5911"
      inkscape:snap-grids="true"
      inkscape:window-maximized="1"
      showguides="false"
@@ -68,7 +68,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -2733,9 +2733,8 @@
          transform="translate(-190,0)" />
       <path
          style="opacity:0.7854251;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-         d="M 425,549 409.9375,564.125 395,549 385,559 400.0625,574.0625 385,589 l 10,10 15,-15 15,15 10,-10 L 419.9375,574.0625 435,559 425,549 z"
-         id="path5944"
-         sodipodi:nodetypes="ccccccccccccc" />
+         d="m 411.34375,565.53125 c -3.98839,2.61681 -7.99378,-7.07165 -11.98322,-9.245 -3.01955,-8.11407 -10.19314,-0.29524 -10.84092,3.42086 4.80048,4.78014 9.56029,9.60141 14.38664,14.35539 -5.0495,4.96063 -10.05937,9.96152 -15.09375,14.9375 4.28145,5.58925 8.5629,9.38966 12.84435,1.53065 3.82995,-1.78622 7.66875,-12.22005 11.45651,-7.22979 4.29554,4.29554 8.59109,8.59109 12.88664,12.88664 5.59225,-4.28446 9.39155,-8.56481 1.5047,-12.81829 -1.80162,-3.81453 -12.26418,-7.62464 -7.26634,-11.42007 4.31638,-4.31638 8.63276,-8.63276 12.94914,-12.94914 -4.28295,-5.59074 -8.56385,-9.3906 -12.83142,-1.51775 -2.67078,2.683 -5.34155,5.366 -8.01233,8.049 z"
+         id="path5944" />
       <path
          style="opacity:0.25;fill:#ffffff;fill-opacity:1;stroke:none;display:inline"
          d="m 364.57134,560.38126 c 13.52309,5.2408 77.22742,5.2408 90.87835,0.2408 13.65093,-5 4.55031,-40 4.55031,-40 l -100.10681,0 c 0,0 -8.90194,33.93588 4.67815,39.7592 z"

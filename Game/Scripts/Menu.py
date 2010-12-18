@@ -21,6 +21,14 @@ from bge import render
 import mathutils
 from . import Store
 
+CREDITS = [
+    ("Most Things", "Alex Fraser"),
+    ("Story", "Alex Fraser, Lara Micocki"),
+    ("Music", "Robert Leigh"),
+    ("Sound Effects", "Alex Fraser, freesound.org users: anamorphosis, tigersound, HerbertBoland, MeltyMcFace, kijjaz, arnaud, FreqMan"),
+    ("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
+    ("Made With", "Blender, Bullet, The GIMP and Inkscape")]
+
 class EventListener:
     def onEvent(self, sender, message, body):
         pass
@@ -304,9 +312,12 @@ def updateCamera(c):
     c.owner['Camera'].update()
 
 class Widget(UIObject):
-    S_HIDDEN = 2
-    S_FOCUS = 3
-    S_ACTIVE = 4
+    S_FOCUS = 2
+    S_DEFOCUS = 3
+    S_DOWN = 4
+    S_UP = 5
+    S_HIDDEN = 6
+    S_VISIBLE = 7
     
     FRAME_RATE = 25.0 / logic.getLogicTicRate()
     
@@ -341,20 +352,24 @@ class Widget(UIObject):
         if not self.sensitive:
             return
         Utilities.addState(self.owner, Widget.S_FOCUS)
+        Utilities.remState(self.owner, Widget.S_DEFOCUS)
         self.updateTargetFrame()
     
     def exit(self):
         Utilities.remState(self.owner, Widget.S_FOCUS)
+        Utilities.addState(self.owner, Widget.S_DEFOCUS)
         self.updateTargetFrame()
     
     def down(self):
         if not self.sensitive:
             return
-        Utilities.addState(self.owner, Widget.S_ACTIVE)
+        Utilities.addState(self.owner, Widget.S_DOWN)
+        Utilities.remState(self.owner, Widget.S_UP)
         self.updateTargetFrame()
     
     def up(self):
-        Utilities.remState(self.owner, Widget.S_ACTIVE)
+        Utilities.remState(self.owner, Widget.S_DOWN)
+        Utilities.addState(self.owner, Widget.S_UP)
         self.updateTargetFrame()
     
     def click(self):
@@ -370,13 +385,15 @@ class Widget(UIObject):
     def hide(self):
         super(Widget, self).hide()
         Utilities.addState(self.owner, Widget.S_HIDDEN)
-        Utilities.remState(self.owner, Widget.S_ACTIVE)
+        Utilities.remState(self.owner, Widget.S_VISIBLE)
+        Utilities.remState(self.owner, Widget.S_DOWN)
         Utilities.remState(self.owner, Widget.S_FOCUS)
         self.updateTargetFrame()
     
     def show(self):
         super(Widget, self).show()
         Utilities.remState(self.owner, Widget.S_HIDDEN)
+        Utilities.addState(self.owner, Widget.S_VISIBLE)
         self.updateTargetFrame()
     
     def updateTargetFrame(self):
@@ -384,7 +401,7 @@ class Widget(UIObject):
         if Utilities.hasState(self.owner, Widget.S_HIDDEN):
             targetFrame = Widget.HIDDEN_FRAME
         elif Utilities.hasState(self.owner, Widget.S_FOCUS):
-            if Utilities.hasState(self.owner, Widget.S_ACTIVE):
+            if Utilities.hasState(self.owner, Widget.S_DOWN):
                 targetFrame = Widget.ACTIVE_FRAME
             else:
                 targetFrame = Widget.FOCUS_FRAME
@@ -524,6 +541,60 @@ class GameDetailsPage(Widget):
 
 def createGameDetailsPage(c):
     GameDetailsPage(c.owner)
+
+class CreditsPage(Widget):
+    '''A dumb widget that can show and hide itself, but doesn't respond to
+    mouse events.'''
+    DELAY = 180
+    
+    def __init__(self, owner):
+        Widget.__init__(self, owner)
+        self.setSensitive(False)
+        self.index = 0
+        self.delayTimer = 0
+    
+    def parseChild(self, child, type):
+        if type == 'Role':
+            self.title = child
+            return True
+        if type == 'People':
+            self.people = child
+            return True
+        else:
+            return False
+    
+    def updateVisibility(self, visible):
+        super(CreditsPage, self).updateVisibility(visible)
+        for child in self.owner.children:
+            child.setVisible(visible, True)
+        
+        if not visible:
+            self.title['Content'] = ""
+            self.people['Content'] = ""
+            self.index = 0
+            self.delayTimer = 0
+    
+    def drawNext(self):
+        role, people = CREDITS[self.index]
+        self.title['Content'] = role
+        self.people['Content'] = people
+        self.index += 1
+        self.index %= len(CREDITS)
+    
+    def draw(self):
+        if self.people['Rendering'] or self.title['Rendering']:
+            self.delayTimer = CreditsPage.DELAY
+        else:
+            self.delayTimer -= 1
+            if self.delayTimer <= 0:
+                self.drawNext()
+
+def createCreditsPage(c):
+    CreditsPage(c.owner)
+
+def creditsUpdate(c):
+    creditsPage = c.owner['Widget']
+    creditsPage.draw()
 
 class Subtitle(EventListener):
     def __init__(self, owner):

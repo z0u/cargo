@@ -523,24 +523,45 @@ def SetDefaultProp(ob, propName, value):
 	if propName not in ob:
 		ob[propName] = value
 
-def _parseColour(hexString):
+_NAMED_COLOURS = {
+	'red'   : '#ff0000',
+	'green' : '#00ff00',
+	'blue'  : '#0000ff',
+	'black' : '#000000',
+	'white' : '#ffffff',
+	'darkred'   : '#331111',
+	'darkgreen' : '#113311',
+	'darkblue' : '#080833',
+	
+	'cargo' : '#36365a',
+}
+
+def _parseColour(colstr):
 	'''Parse a colour from a hexadecimal number; either "rrggbb" or
 	"rrggbbaa". If no alpha is specified, a value of 1.0 will be used.
 	
 	Returns:
 	A 4D vector compatible with object colour.
 	'''
-	if len(hexString) != 6 and len(hexString) != 8:
+	if colstr[0] != '#':
+		colstr = _NAMED_COLOURS[colstr]
+	
+	if colstr[0] != '#':
+		raise ValueError('Hex colours need to start with a #')
+	colstr = colstr[1:]
+	if len(colstr) != 6 and len(colstr) != 8:
 		raise ValueError('Hex colours need to be 6 or 8 characters long.')
 	
 	colour = BLACK.copy()
 	
-	components = [(x + y) for x,y in zip(hexString[0::2], hexString[1::2])]
+	components = [(x + y) for x,y in zip(colstr[0::2], colstr[1::2])]
 	colour.x = int(components[0], 16)
 	colour.y = int(components[1], 16)
 	colour.z = int(components[2], 16)
 	if len(components) == 4:
 		colour.w = int(components[3], 16)
+	else:
+		colour.w = 255.0
 	
 	colour /= 255.0
 	return colour

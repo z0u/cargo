@@ -69,7 +69,6 @@ class SessionManager(EventListener):
         elif message == 'deleteGame':
             # Remove all stored items that match the current path.
             for key in Store.list('/game'):
-                print("Deleting", key)
                 Store.unset(key)
             eventBus.notify(self, 'showScreen', 'LoadingScreen')
         
@@ -454,6 +453,7 @@ class Checkbox(Widget):
             self.checked = Store.get(self.owner['dataBinding'], self.owner['dataDefault'])
         self.updateCheckFace()
         self.label['Content'] = self.owner['label']
+        self.label['colour'] = self.owner['colour']
     
     def parseChild(self, child, type):
         if type == 'CheckOff':
@@ -525,7 +525,6 @@ class ConfirmationPage(Widget, EventListener):
             if self.currentScreen != body:
                 self.lastScreen = self.currentScreen
                 self.currentScreen = body
-                print(self.lastScreen, self.currentScreen)
         
         elif message == 'confirmation':
             text, self.onConfirm, self.onConfirmBody = body.split('::')

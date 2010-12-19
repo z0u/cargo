@@ -434,6 +434,7 @@ class TextRenderer:
 	
 	def __init__(self, canvas):
 		self.canvas = canvas
+		Utilities.SetDefaultProp(canvas, 'colour', 'black')
 		self.Clear()
 		
 		Utilities.SceneManager.Subscribe(self)
@@ -545,6 +546,7 @@ class TextRenderer:
 		glyphInstance = logic.getCurrentScene().addObject(glyph,
 			self.canvas, 0)
 		glyphInstance.setParent(self.canvas)
+		glyphInstance.color = Utilities._parseColour(self.canvas['colour'])
 		glyphInstance.localPosition = [self.caretX + glyph['xOffset'],
 			self.caretY + glyph['yOffset'], 0.0]
 		

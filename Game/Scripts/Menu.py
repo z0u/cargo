@@ -62,6 +62,16 @@ class SessionManager(EventListener):
             Store.setSessionId(body)
             eventBus.notify(self, 'showScreen', 'LoadDetailsScreen')
         
+        elif message == 'startGame':
+            # Load the level indicated in the save game.
+            logic.startGame(Store.get('/game/level', 'Outdoors.blend'))
+        
+        elif message == 'deleteGame':
+            # Remove all stored items that match the current path.
+            for key in Store.list('/game'):
+                Store.unset(key)
+            eventBus.notify(self, 'showScreen', 'LoadingScreen')
+        
         elif message == 'quit':
             logic.endGame()
 

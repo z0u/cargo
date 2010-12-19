@@ -55,36 +55,51 @@ def get(path, defaultValue = None):
         set(path, defaultValue)
         return defaultValue
 
-dirty = False
+__dirty = False
 def set(path, value):
     '''Set a value in persistent storage. The data will be saved to file the
     next time save() is called.'''
-    global dirty
+    global __dirty
     
     p = resolve(path)
     if (not p in logic.globalDict) or (not logic.globalDict[p] == value):
         logic.globalDict[p] = value
-        dirty = True
+        __dirty = True
+
+def unset(path):
+    '''Delete a value from persistent storage.'''
+    global __dirty
+    
+    p = resolve(path)
+    if p in logic.globalDict:
+        del(logic.globalDict[p])
+        __dirty = True
+
+def list(path='/'):
+    '''Returns a copy of the store keys for iteration.'''
+    p = resolve(path)
+    return [key for key in logic.globalDict if key.startswith(p)] 
 
 def _save():
-    global dirty
+    global __dirty
     
     logic.saveGlobalDict()
-    dirty = False
+    __dirty = False
 
 def _load():
-    global dirty
+    global __dirty
     
     logic.loadGlobalDict()
-    dirty = False
+    __dirty = False
 
 # Load once on initialisation.
 _load()
 
 def save(c):
-    '''Save the data to a file. This should be called periodically.'''
+    '''Save the data to a file. This should be called periodically - it will
+    only actually write the file if the settings have changed.'''
     if not Utilities.allSensorsPositive(c):
         return
     
-    if dirty:
+    if __dirty:
         _save()

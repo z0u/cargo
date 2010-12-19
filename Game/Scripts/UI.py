@@ -345,6 +345,8 @@ class Font:
 			charWidth = child['Width']
 			self.GlyphDict[child['char']] = (child, charWidth)
 		self.LineHeight = owner['LineHeight']
+		self.baselineOffset = owner['baselineOffset']
+		self.bottomOffset = owner['bottomOffset']
 		self.TypingSpeed = owner['TypingSpeed']
 	
 	def DecodeEscapeSequence(self, text, start):
@@ -435,6 +437,8 @@ class TextRenderer:
 	def __init__(self, canvas):
 		self.canvas = canvas
 		Utilities.SetDefaultProp(canvas, 'colour', 'black')
+		Utilities.SetDefaultProp(canvas, 'valign', 'bottom')
+		self.lastHash = None
 		self.Clear()
 		
 		Utilities.SceneManager.Subscribe(self)
@@ -447,15 +451,11 @@ class TextRenderer:
 		for child in self.canvas.children:
 			child.endObject()
 		
-		self.caretX = 0.0
-		self.caretY = 0.0
-		self.glyphString = None
+		self.glyphString = []
 		self.font = None
-		self.softBreakPoint = 0
-		self.hardBreakPoint = 0
-		self.newLine = True
 		self.delay = 0.0
 		self.currentChar = 0
+		self.lines = 0
 	
 	def GetFont(self, name):
 		try:
@@ -500,6 +500,50 @@ class TextRenderer:
 		else:
 			return False
 	
+	def layOutText(self, glyphString):
+		newLine = True
+		softBreakPoint = self.FindNextBreakableChar(glyphString, 0)
+		hardBreakPoint = 0
+		self.glyphString = []
+		x = 0.0
+		y = 0.0
+		
+		for i, (glyph, width) in enumerate(glyphString):
+			if newLine:
+				hardBreakPoint = self.FindNextBreakPoint(
+					self.canvas['LineWidth'], glyphString, i)
+				newLine = False
+				self.lines += 1
+		
+			if i == softBreakPoint:
+				# This glyph can have a line break before it. If the next
+				# such character is beyond the end of the line, break now.
+				softBreakPoint = self.FindNextBreakableChar(glyphString,
+					i + 1)
+				if softBreakPoint > hardBreakPoint:
+					newLine = True
+			elif i == hardBreakPoint:
+				# This glyph is beyond the end of the line. Break now.
+				newLine = True
+				
+			if newLine:
+				# New line; carriage return.
+				x = 0.0
+				y = y - self.font.LineHeight
+				if self.IsWhitespace(glyph['char']):
+					# Advance to next character.
+					continue
+			
+			gx = x + glyph['xOffset']
+			gy = y + glyph['yOffset']
+			if self.canvas['valign'] == 'baseline':
+				gy += self.font.baselineOffset
+			else:
+				gy += self.font.bottomOffset
+			pos = (gx, gy)
+			self.glyphString.append((glyph, width, pos))
+			x += width
+		
 	def _RenderNextChar(self):
 		if not self.canvas['Rendering']:
 			return
@@ -507,48 +551,14 @@ class TextRenderer:
 		if self.currentChar >= len(self.glyphString):
 			self.canvas['Rendering'] = False
 			return
-		
-		if self.newLine:
-			self.hardBreakPoint = self.FindNextBreakPoint(
-				self.canvas['LineWidth'], self.glyphString, self.currentChar)
-			self.newLine = False
 	
-		(glyph, width) = self.glyphString[self.currentChar]
-		
-		
-		if self.currentChar == self.softBreakPoint:
-			#
-			# This glyph can have a line break before it. If the next
-			# such character is beyond the end of the line, break now.
-			#
-			self.softBreakPoint = self.FindNextBreakableChar(self.glyphString,
-				self.currentChar + 1)
-			if self.softBreakPoint > self.hardBreakPoint:
-				self.newLine = True
-		elif self.currentChar == self.hardBreakPoint:
-			#
-			# This glyph is beyond the end of the line. Break now.
-			#
-			self.newLine = True
-			
-		if self.newLine:
-			#
-			# New line; carriage return.
-			#
-			self.caretX = 0.0
-			self.caretY = self.caretY - self.font.LineHeight
-			if self.IsWhitespace(glyph['char']):
-				#
-				# Advance to next character.
-				#
-				return
+		glyph, width, pos = self.glyphString[self.currentChar]
 		
 		glyphInstance = logic.getCurrentScene().addObject(glyph,
 			self.canvas, 0)
 		glyphInstance.setParent(self.canvas)
 		glyphInstance.color = Utilities._parseColour(self.canvas['colour'])
-		glyphInstance.localPosition = [self.caretX + glyph['xOffset'],
-			self.caretY + glyph['yOffset'], 0.0]
+		glyphInstance.localPosition = [pos[0], pos[1], 0.0]
 		
 		if self.canvas['Instant']:
 			Utilities.setState(glyphInstance, 4)
@@ -556,8 +566,6 @@ class TextRenderer:
 			self.delay = (self.font.TypingSpeed * width *
 				glyph['DelayMultiplier'])
 			Utilities.setState(glyphInstance, 3)
-		
-		self.caretX = self.caretX + width
 	
 	def RenderNextChar(self):
 		'''
@@ -577,29 +585,35 @@ class TextRenderer:
 		'''
 		Render the content onto the canvas.
 		'''
+		h = hash(str(self.canvas['Content']))
+		if h == self.lastHash:
+			return
+		self.lastHash = h
+		
 		self.Clear()
 		
 		self.GetFont(self.canvas['Font'])
-		self.glyphString = self.font.TextToGlyphTuples(self.canvas['Content'])
-		self.softBreakPoint = self.FindNextBreakableChar(self.glyphString, 0)
+		self.layOutText(self.font.TextToGlyphTuples(self.canvas['Content']))
 		self.canvas['Rendering'] = True
 		
 		if self.canvas['Instant']:
 			while self.canvas['Rendering']:
 				self.RenderNextChar()
 
-def RenderText(c):
+def _getTextRenderer(c):
 	try:
 		tr = c.owner['_TextRenderer']
 	except KeyError:
 		tr = TextRenderer(c.owner)
 		c.owner['_TextRenderer'] = tr
-	tr.RenderText()
+	return tr
+
+def RenderText(c):
+	_getTextRenderer(c).RenderText()
 
 def RenderNextChar(c):
 	if not Utilities.allSensorsPositive(c):
 		return
 	
-	tr = c.owner['_TextRenderer']
-	tr.RenderNextChar()
+	_getTextRenderer(c).RenderNextChar()
 

@@ -69,6 +69,7 @@ class SessionManager(EventListener):
         elif message == 'deleteGame':
             # Remove all stored items that match the current path.
             for key in Store.list('/game'):
+                print("Deleting", key)
                 Store.unset(key)
             eventBus.notify(self, 'showScreen', 'LoadingScreen')
         
@@ -237,9 +238,10 @@ class Container(UIObject):
             child.hide()
 
 class Screen(Container, EventListener):
-    def __init__(self, name):
+    def __init__(self, name, title):
         Container.__init__(self, name)
         eventBus.addListener(self)
+        self.title = title
     
     def onEvent(self, sender, message, body):
         if message == 'showScreen':
@@ -250,40 +252,13 @@ class Screen(Container, EventListener):
                 self.hide()
     
     def getTitle(self):
-        return ''
-
-class LoadingScreen(Screen):
-    def __init__(self):
-        Screen.__init__(self, 'LoadingScreen')
-    
-    def getTitle(self):
-        return 'Load'
-
-class LoadDetailsScreen(Screen):
-    def __init__(self):
-        Screen.__init__(self, 'LoadDetailsScreen')
-    
-    def getTitle(self):
-        return ''
-
-class OptionsScreen(Screen):
-    def __init__(self):
-        Screen.__init__(self, 'OptionsScreen')
-    
-    def getTitle(self):
-        return 'Options'
-
-class CreditsScreen(Screen):
-    def __init__(self):
-        Screen.__init__(self, 'CreditsScreen')
-    
-    def getTitle(self):
-        return 'Credits'
+        return self.title
         
-LoadingScreen()
-LoadDetailsScreen()
-OptionsScreen()
-CreditsScreen()
+Screen('LoadingScreen', 'Load')
+Screen('LoadDetailsScreen', '')
+Screen('OptionsScreen', 'Options')
+Screen('CreditsScreen', 'Credits')
+Screen('ConfirmationDialogue', 'Confirm')
 eventBus.notify(None, 'showScreen', 'LoadingScreen')
 
 class Camera(EventListener):
@@ -523,6 +498,52 @@ def createCheckbox(c):
     button = Checkbox(obj)
     inputHandler.addWidget(button)
 
+class ConfirmationPage(Widget, EventListener):
+    def __init__(self, owner):
+        Widget.__init__(self, owner)
+        self.setSensitive(False)
+        
+        self.lastScreen = ''
+        self.currentScreen = ''
+        self.onConfirm = ''
+        self.onConfirmBody = ''
+        
+        eventBus.addListener(self)
+        eventBus.replayLast(self, 'showScreen')
+    
+    def parseChild(self, child, type):
+        if type == 'Text':
+            self.text = child
+            return True
+        else:
+            return False
+    
+    def onEvent(self, sender, message, body):
+        super(ConfirmationPage, self).onEvent(sender, message, body)
+        if message == 'showScreen':
+            # Store the last screen name so it can be restored later.
+            if self.currentScreen != body:
+                self.lastScreen = self.currentScreen
+                self.currentScreen = body
+                print(self.lastScreen, self.currentScreen)
+        
+        elif message == 'confirmation':
+            text, self.onConfirm, self.onConfirmBody = body.split('::')
+            self.text['Content'] = text
+            eventBus.notify(self, 'showScreen', 'ConfirmationDialogue')
+            
+        elif message == 'cancel':
+            if self.visible:
+                eventBus.notify(self, 'showScreen', self.lastScreen)
+        
+        elif message == 'confirm':
+            if self.visible:
+                eventBus.notify(self, 'showScreen', self.lastScreen)
+                eventBus.notify(self, self.onConfirm, self.onConfirmBody)
+
+def createConfirmationPage(c):
+    ConfirmationPage(c.owner)
+
 class GameDetailsPage(Widget):
     '''A dumb widget that can show and hide itself, but doesn't respond to
     mouse events.'''
@@ -553,8 +574,7 @@ def createGameDetailsPage(c):
     GameDetailsPage(c.owner)
 
 class CreditsPage(Widget):
-    '''A dumb widget that can show and hide itself, but doesn't respond to
-    mouse events.'''
+    '''Controls the display of credits.'''
     DELAY = 180
     
     def __init__(self, owner):

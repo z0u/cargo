@@ -6,6 +6,9 @@
 .project
 .pydevproject
 
+# Blender backups
+*.blend?
+
 # Game data
 *.bgeconf
 

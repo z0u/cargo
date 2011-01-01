@@ -1,0 +1,11 @@
+# Compiled scripts
+*.pyc
+
+# IDE metadata
+.metadata
+.project
+.pydevproject
+
+# Game data
+*.bgeconf
+

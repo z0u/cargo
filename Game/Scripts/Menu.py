@@ -30,10 +30,13 @@ CREDITS = [
     ("Made With", "Blender, Bullet, The GIMP and Inkscape")]
 
 class EventListener:
+    '''Interface for an object that can receive messages.'''
     def onEvent(self, sender, message, body):
         pass
 
 class _EventBus:
+    '''Delivers messages to listeners. This is a Singleton; use eventBus instance.'''
+    
     def __init__(self):
         self.listeners = set()
         self.eventCache = {}
@@ -45,18 +48,23 @@ class _EventBus:
         self.listeners.remove(listener)
     
     def notify(self, sender, message, body):
+        '''Send a message.'''
         for listener in self.listeners:
             listener.onEvent(sender, message, body)
         self.eventCache[message] = (sender, body)
     
     def replayLast(self, target, message):
+        '''Re-send a message. This should be used by new listeners that missed
+        out on the last message, so they know what state the system is in.'''
+        
         if message in self.eventCache:
             sender, body = self.eventCache[message]
             target.onEvent(sender, message, body)
 
-eventBus = _EventBus()
-
 class SessionManager(EventListener):
+    '''Responds to some high-level messages. Singleton; use sessionManager
+    interface.'''
+    
     def onEvent(self, sender, message, body):
         if message == 'showSavedGameDetails':
             Store.setSessionId(body)
@@ -75,10 +83,9 @@ class SessionManager(EventListener):
         elif message == 'quit':
             logic.endGame()
 
-sessionManager = SessionManager()
-eventBus.addListener(sessionManager)
-
 class _InputHandler(EventListener):
+    '''Manages UI elements: focus and click events.'''
+    
     def __init__(self):
         self.widgets = []
         self.current = None
@@ -114,7 +121,7 @@ class _InputHandler(EventListener):
     def mouseUp(self):
         '''Send a mouse up event to the widget under the cursor. If that widget
         also received the last mouse down event, it will be sent a click event
-        in addition to the up event.'''
+        in addition to (after) the up event.'''
         if self.downCurrent != None:
             self.downCurrent['Widget'].up()
             if self.current == self.downCurrent:
@@ -128,27 +135,80 @@ class _InputHandler(EventListener):
             pass
 
     def focusNext(self):
+        '''Switch to the next widget according to tab-order.'''
         # TODO
         pass
     def focusPrevious(self):
+        '''Switch to the previous widget according to tab-order.'''
         # TODO
         pass
     def focusLeft(self):
+        '''Switch to the widget to the left of current.'''
         # TODO
         pass
     def focusRight(self):
+        '''Switch to the widget to the right of current.'''
         # TODO
         pass
     def focusUp(self):
+        '''Switch to the widget above current.'''
         # TODO
         pass
     def focusDown(self):
+        '''Switch to the widget below current.'''
         # TODO
         pass
 
+class _AsyncAdoptionHelper:
+    '''Creates parent-child relationships between widgets asynchronously. This
+    is required because the order that widgets are created in is undefined.
+    Singleton; use asyncAdoptionHelper instance.'''
+    
+    def __init__(self):
+        self.waitingList = {}
+        self.containers = {}
+    
+    def requestAdoption(self, child, parentName):
+        '''Add a child to the registry. If the child's parent is already
+        registered, the hierarchy will be implemented immediately. Otherwise,
+        the child will be attached later, when the parent registers.'''
+        
+        if parentName in self.containers:
+            container = self.containers[parentName]
+            container.addChild(child)
+        else:
+            if not parentName in self.waitingList:
+                self.waitingList[parentName] = []
+            self.waitingList[parentName].append(child)
+    
+    def registerAdopter(self, parent):
+        '''Add a parent to the registry. Any children waiting for this parent
+        will be attached.'''
+        
+        self.containers[parent.name] = parent
+        
+        # Assign all children waiting on this container.
+        if parent.name in self.waitingList:
+            for child in self.waitingList[parent.name]:
+                parent.addChild(child)
+            del self.waitingList[parent.name]
+
+#########################
+# Singleton instantiation
+#########################
+
+eventBus = _EventBus()
+sessionManager = SessionManager()
+eventBus.addListener(sessionManager)
 inputHandler = _InputHandler()
+asyncAdoptionHelper = _AsyncAdoptionHelper()
+
+################
+# Global sensors
+################
 
 def controllerInit(c):
+    '''Initialise the menu'''
     render.showMouse(True)
     mOver = c.sensors['sMouseOver']
     mOver.usePulseFocus = True
@@ -178,32 +238,13 @@ def mouseButton(c):
     else:
         inputHandler.mouseUp()
 
-class _AsyncAdoptionHelper:
-    def __init__(self):
-        self.waitingList = {}
-        self.containers = {}
-    
-    def requestAdoption(self, child, parentName):
-        if parentName in self.containers:
-            container = self.containers[parentName]
-            container.addChild(child)
-        else:
-            if not parentName in self.waitingList:
-                self.waitingList[parentName] = []
-            self.waitingList[parentName].append(child)
-    
-    def registerAdopter(self, parent):
-        self.containers[parent.name] = parent
-        
-        # Assign all children waiting on this container.
-        if parent.name in self.waitingList:
-            for child in self.waitingList[parent.name]:
-                parent.addChild(child)
-            del self.waitingList[parent.name]
-
-asyncAdoptionHelper = _AsyncAdoptionHelper()
+################
+# Widget classes
+################
 
 class UIObject:
+    '''A visual object that has some dynamic properties.'''
+    
     def __init__(self):
         self.show()
     
@@ -214,12 +255,16 @@ class UIObject:
         self.visible = False
 
 class Container(UIObject):
+    '''Contains other UIObjects.'''
+    
     def __init__(self, name):
         self.children = []
         self.name = name
         asyncAdoptionHelper.registerAdopter(self)
     
     def addChild(self, uiObject):
+        '''Adds a child to this container. Usually you should use the
+        asyncAdoptionHandler instead of calling this directly.'''
         self.children.append(uiObject)
         if self.visible:
             uiObject.show()
@@ -237,6 +282,9 @@ class Container(UIObject):
             child.hide()
 
 class Screen(Container, EventListener):
+    '''A collection of UIObjects. Only one screen can be visible at a time. To
+    display a Screen, send a showScreen message on the eventBus.'''
+    
     def __init__(self, name, title):
         Container.__init__(self, name)
         eventBus.addListener(self)
@@ -261,12 +309,15 @@ Screen('ConfirmationDialogue', 'Confirm')
 eventBus.notify(None, 'showScreen', 'LoadingScreen')
 
 class Camera(EventListener):
-    '''A camera that adjusts its position depending on which screen is visible.
-    '''
+    '''A camera that adjusts its position depending on which screen is
+    visible.'''
     
     FRAME_MAP = {'OptionsScreen': 1.0,
                  'LoadingScreen': 9.0,
                  'CreditsScreen': 17.0}
+    '''A simple mapping is used here. The camera will interpolate between the
+    nominated frame numbers when the screen changes. Set the animation using
+    an f-curve.'''
         
     FRAME_RATE = 25.0 / logic.getLogicTicRate()
     
@@ -281,6 +332,9 @@ class Camera(EventListener):
             self.owner['targetFrame'] = Camera.FRAME_MAP[body]
     
     def update(self):
+        '''Update the camera animation frame. Should be called once per frame
+        when targetFrame != frame.'''
+        
         targetFrame = self.owner['targetFrame']
         frame = self.owner['frame']
         if frame < targetFrame:
@@ -296,6 +350,10 @@ def updateCamera(c):
     c.owner['Camera'].update()
 
 class Widget(UIObject):
+    '''An interactive UIObject. Has various states (e.g. focused, up, down) to
+    facilitate interaction. Some of the states map to a frame to allow a
+    visual progression.'''
+    
     S_FOCUS = 2
     S_DEFOCUS = 3
     S_DOWN = 4
@@ -409,7 +467,7 @@ class Widget(UIObject):
             self.updateVisibility(True)
     
     def updateVisibility(self, visible):
-        self.owner.visible = visible
+        self.owner.setVisible(visible, True)
     
     def setSensitive(self, sensitive):
         oldv = self.sensitive
@@ -421,12 +479,17 @@ def updateWidget(c):
     c.owner['Widget'].update()
     c.activate(c.actuators[0])
 
-def createButton(c):
-    inputHandler.addWidget(Widget(c.owner))
-
-class SaveButton(Widget):
+class Button(Widget):
+    # A Widget has everything needed for a simple button.
     def __init__(self, owner):
         Widget.__init__(self, owner)
+
+def createButton(c):
+    inputHandler.addWidget(Button(c.owner))
+
+class SaveButton(Button):
+    def __init__(self, owner):
+        Button.__init__(self, owner)
         self.id = 0
     
     def parseChild(self, child, type):
@@ -445,9 +508,9 @@ def createSaveButton(c):
     button = SaveButton(obj)
     inputHandler.addWidget(button)
 
-class Checkbox(Widget):
+class Checkbox(Button):
     def __init__(self, owner):
-        Widget.__init__(self, owner)
+        Button.__init__(self, owner)
         self.checked = False
         if 'dataBinding' in self.owner:
             self.checked = Store.get(self.owner['dataBinding'], self.owner['dataDefault'])
@@ -534,11 +597,13 @@ class ConfirmationPage(Widget, EventListener):
         elif message == 'cancel':
             if self.visible:
                 eventBus.notify(self, 'showScreen', self.lastScreen)
+                self.text['Content'] = ""
         
         elif message == 'confirm':
             if self.visible:
                 eventBus.notify(self, 'showScreen', self.lastScreen)
                 eventBus.notify(self, self.onConfirm, self.onConfirmBody)
+                self.text['Content'] = ""
 
 def createConfirmationPage(c):
     ConfirmationPage(c.owner)

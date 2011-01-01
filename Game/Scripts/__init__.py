@@ -15,21 +15,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import Snail
-from . import Utilities
-from . import Actor
-from . import Shells
-from . import BendyLeaf
-from . import UI
-from . import LODTree
-from . import GrassBlade
-from . import Camera
-from . import Water
-from . import Sound
-from . import Story
-from . import Story_Level1
-from . import Story_Beehive
-from . import Button
-from . import Timer
-from . import ForceFields
-from . import Store
+# No global initialisation.

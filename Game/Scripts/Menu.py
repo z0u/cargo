@@ -529,6 +529,7 @@ def createSaveButton(o):
     button = SaveButton(obj)
     InputHandler().addWidget(button)
 
+@Utilities.gameobject()
 class Checkbox(Button):
     def __init__(self, owner):
         Button.__init__(self, owner)
@@ -538,6 +539,7 @@ class Checkbox(Button):
         self.updateCheckFace()
         self.label['Content'] = self.owner['label']
         self.label['colour'] = self.owner['colour']
+        InputHandler().addWidget(self)
     
     def parseChild(self, child, type):
         if type == 'CheckOff':
@@ -576,12 +578,6 @@ class Checkbox(Button):
         super(Checkbox, self).update()
         self.checkOff['frame'] = self.owner['frame']
         self.checkOn['frame'] = self.owner['frame']
-
-@Utilities.owner
-def createCheckbox(o):
-    obj = Utilities.replaceObject('CheckBox_T', o)
-    button = Checkbox(obj)
-    InputHandler().addWidget(button)
 
 @Utilities.gameobject()
 class ConfirmationPage(Widget, EventListener):

@@ -95,11 +95,9 @@ def _load():
 # Load once on initialisation.
 _load()
 
-def save(c):
+@Utilities.all_sensors_positive
+def save():
     '''Save the data to a file. This should be called periodically - it will
     only actually write the file if the settings have changed.'''
-    if not Utilities.allSensorsPositive(c):
-        return
-    
     if __dirty:
         _save()

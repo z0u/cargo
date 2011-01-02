@@ -59,8 +59,9 @@ class Intro(Character):
         step.AddAction(ActHideDialogue())
         step.AddAction(ActGeneric(Intro.Destroy, self))
 
-def createIntro(c):
-    Intro(c.owner)
+@Utilities.owner
+def createIntro(o):
+    Intro(o)
 
 class Extro(Character):
     S_MUSIC = 3
@@ -134,8 +135,9 @@ class Extro(Character):
         step.AddCondition(CondSensor('sReturn'))
         step.AddAction(ActShowDialogue("Press ESC to exit."))
 
-def createExtro(c):
-    Extro(c.owner)
+@Utilities.owner
+def createExtro(o):
+    Extro(o)
 
 class Bucket(Actor.Actor):
     DIR_UP = 1
@@ -236,11 +238,13 @@ class Bucket(Actor.Actor):
             Actor.Director.ResumeUserInput()
         self.updateCamera()
 
+@Utilities.controller
 def createBucket(c):
     camTop = c.sensors['sCameraTop'].owner
     camBottom = c.sensors['sCameraBottom'].owner
     Bucket(c.owner, camTop, camBottom)
 
+@Utilities.controller
 def updateBucket(c):
     bucket = c.owner['Actor']
     bucket.frameChanged()

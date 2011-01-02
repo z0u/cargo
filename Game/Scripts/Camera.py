@@ -60,7 +60,7 @@ class _AutoCamera:
 		
 		self.Observers = []
 		
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):
 		self.__init__()
@@ -194,28 +194,28 @@ class _AutoCamera:
 
 AutoCamera = _AutoCamera()
 
-def onRender(c):
+def onRender():
 	AutoCamera.onRender()
 
-def setCamera(c):
-	camera = c.owner
+@Utilities.owner
+def setCamera(o):
+	camera = o
 	AutoCamera.SetCamera(camera)
 
 def addGoalOb(goal):
 	AutoCamera.addGoalOb(goal)
 
-def AddGoal(c):
-	if not Utilities.allSensorsPositive(c):
-		return
-	goal = c.owner
-	AutoCamera.addGoalOb(goal)
+@Utilities.all_sensors_positive
+@Utilities.owner
+def AddGoal(o):
+	AutoCamera.addGoalOb(o)
 
-def RemoveGoal(c):
-	if not Utilities.allSensorsPositive(c):
-		return
-	goal = c.owner
-	removeGoalOb(goal)
-	
+@Utilities.all_sensors_positive
+@Utilities.owner
+def RemoveGoal(o):
+	removeGoalOb(o)
+
+@Utilities.controller
 def AddGoalIfMainChar(c):
 	'''
 	Add the owner of this controller as a goal if the main actor has been hit.
@@ -228,6 +228,7 @@ def AddGoalIfMainChar(c):
 	goal = c.owner
 	addGoalOb(goal)
 
+@Utilities.controller
 def RemoveGoalIfNotMainChar(c):
 	if Actor._hitMainCharacter(c):
 		return
@@ -285,8 +286,8 @@ class _CloseCameraManager(Actor.DirectorListener):
 
 CloseCameraManager = _CloseCameraManager()
 
-def setCloseMode(c):
-	CloseCameraManager.setActive(Utilities.allSensorsPositive(c))
+def setCloseMode():
+	CloseCameraManager.setActive(Utilities.allSensorsPositive())
 
 #
 # Camera for following the player
@@ -355,7 +356,7 @@ class CameraPath(CameraGoal):
 		if DEBUG:
 			self.targetVis = Utilities.addObject('DebugReticule')
 			self.predictVis = Utilities.addObject('DebugReticule')
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def onRender(self):
 		self.updateWayPoints()
@@ -368,7 +369,7 @@ class CameraPath(CameraGoal):
 		if DEBUG:
 			self.targetVis = None
 			self.predictVis = None
-		Utilities.SceneManager.Unsubscribe(self)
+		Utilities.SceneManager().Unsubscribe(self)
 	
 	def advanceGoal(self):
 		'''Move the camera to follow the main character. This will either follow
@@ -613,14 +614,15 @@ class CameraPath(CameraGoal):
 										self.pathHead.ceilingHeight,
 										self.ZOFFSET_INCREMENT))
 
-def createCameraPath(c):
-	owner = c.owner
-	path = CameraPath(owner, owner['SlowFac'], owner['InstantCut'])
-	owner['CameraPath'] = path
+@Utilities.owner
+def createCameraPath(o):
+	path = CameraPath(o, o['SlowFac'], o['InstantCut'])
+	o['CameraPath'] = path
 	AutoCamera.SetDefaultGoal(path)
 
-def updatePath(c):
-	c.owner['CameraPath'].onRender()
+@Utilities.owner
+def updatePath(o):
+	o['CameraPath'].onRender()
 
 class CameraNode:
 	'''A single point in a path used by the CameraPathGoal. These act as
@@ -682,7 +684,7 @@ class CameraCollider(CameraObserver):
 	def __init__(self, owner):
 		self.owner = owner
 		AutoCamera.AddObserver(self)
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):
 		self.owner = None
@@ -710,8 +712,9 @@ class CameraCollider(CameraObserver):
 		else:
 			UI.HUD.hideFilter()
 
-def createCamCollider(c):
-	c.owner['CamCollider'] = CameraCollider(c.owner)
+@Utilities.owner
+def createCamCollider(o):
+	o['CamCollider'] = CameraCollider(o)
 
 #
 # Camera for viewing the background scene
@@ -725,7 +728,7 @@ class BackgroundCamera(CameraObserver):
 	def __init__(self, owner):
 		self.owner = owner
 		AutoCamera.AddObserver(self)
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):
 		self.owner = None
@@ -735,5 +738,6 @@ class BackgroundCamera(CameraObserver):
 		self.owner.worldOrientation = autoCamera.Camera.worldOrientation
 		self.owner.lens = autoCamera.Camera.lens
 
-def createBackgroundCamera(c):
-	BackgroundCamera(c.owner)
+@Utilities.owner
+def createBackgroundCamera(o):
+	BackgroundCamera(o)

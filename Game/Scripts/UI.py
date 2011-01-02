@@ -40,7 +40,7 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 		self.filter = None
 		self.filterColour = None
 		
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 		Actor.Director.addListener(self)
 	
 	def Attach(self, owner):
@@ -222,14 +222,17 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 
 HUD = _HUD()
 
-def CreateHUD(c):
-	HUD.Attach(c.owner)
+@Utilities.owner
+def CreateHUD(o):
+	HUD.Attach(o)
 
-def ShowLoadingScreen(c):
-	HUD.ShowLoadingScreen(c.owner)
+@Utilities.owner
+def ShowLoadingScreen(o):
+	HUD.ShowLoadingScreen(o)
 
-def HideLoadingScreen(c):
-	HUD.HideLoadingScreen(c.owner)
+@Utilities.owner
+def HideLoadingScreen(o):
+	HUD.HideLoadingScreen(o)
 
 class Filter(Actor.Actor):
 	S_HIDE = 1
@@ -315,6 +318,7 @@ class Gauge(Actor.Actor):
 		for a in c.actuators:
 			c.activate(a)
 
+@Utilities.controller
 def UpdateGauge(c):
 	'''
 	Update the indicators of a gauge. This sets the Frame property of each
@@ -415,9 +419,11 @@ class Font:
 			return self.GlyphDict['undefined']
 
 _fonts = {}
-def CreateFont(c):
+
+@Utilities.owner
+def CreateFont(o):
 	global _fonts
-	_fonts[c.owner['FontName']] = Font(c.owner)
+	_fonts[o['FontName']] = Font(o)
 
 class TextRenderer:
 	'''
@@ -441,11 +447,11 @@ class TextRenderer:
 		self.lastHash = None
 		self.Clear()
 		
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):
 		self.canvas = None
-		Utilities.SceneManager.Unsubscribe(self)
+		Utilities.SceneManager().Unsubscribe(self)
 	
 	def Clear(self):
 		for child in self.canvas.children:
@@ -600,20 +606,18 @@ class TextRenderer:
 			while self.canvas['Rendering']:
 				self.RenderNextChar()
 
-def _getTextRenderer(c):
+@Utilities.owner
+def _getTextRenderer(o):
 	try:
-		tr = c.owner['_TextRenderer']
+		tr = o['_TextRenderer']
 	except KeyError:
-		tr = TextRenderer(c.owner)
-		c.owner['_TextRenderer'] = tr
+		tr = TextRenderer(o)
+		o['_TextRenderer'] = tr
 	return tr
 
-def RenderText(c):
-	_getTextRenderer(c).RenderText()
+def RenderText():
+	_getTextRenderer().RenderText()
 
-def RenderNextChar(c):
-	if not Utilities.allSensorsPositive(c):
-		return
-	
-	_getTextRenderer(c).RenderNextChar()
-
+@Utilities.all_sensors_positive
+def RenderNextChar():
+	_getTextRenderer().RenderNextChar()

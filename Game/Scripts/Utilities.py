@@ -18,6 +18,7 @@
 import mathutils
 from bge import logic
 from bge import render
+from functools import wraps
 
 XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
 YAXIS  = mathutils.Vector([0.0, 1.0, 0.0])
@@ -44,7 +45,96 @@ BLACK = mathutils.Vector([0.0, 0.0, 0.0, 1.0])
 
 DEBUG = False
 
-class _SceneManager:
+############
+# Decorators
+############
+
+def owner(f):
+	'''Passes a single argument to a function: the owner of the current
+	controller.'''
+	@wraps(f)
+	def f_new():
+		c = logic.getCurrentController()
+		return f(c.owner)
+	return f_new
+
+def controller(f):
+	'''Passes a single argument to a function: the current controller.'''
+	@wraps(f)
+	def f_new():
+		c = logic.getCurrentController()
+		return f(c)
+	return f_new
+
+def all_sensors_positive(f):
+	'''Decorator. Only calls the function if all sensors are positive.'''
+	@wraps(f)
+	def f_new(*args, **kwargs):
+		if not allSensorsPositive():
+			return
+		return f(*args, **kwargs)
+	return f_new
+
+def some_sensors_positive(f):
+	'''Decorator. Only calls the function if one ore more sensors are
+	positive.'''
+	@wraps(f)
+	def f_new(*args, **kwargs):
+		if not someSensorPositive():
+			return
+		return f(*args, **kwargs)
+	return f_new
+
+def singleton(cls):
+	'''Class decorator: turns a class into a Singleton. When applied, all
+	class instantiations return the same instance.'''
+	# Adapted from public domain code in Python docs:
+	# http://www.python.org/dev/peps/pep-0318/#examples
+	instance = []
+	def get():
+		if len(instance) == 0:
+			print('Creating %s' % cls.__name__)
+			instance.append(cls())
+		return instance[0]
+	return get
+
+###################
+# Sensor management
+###################
+
+@controller
+def allSensorsPositive(c):
+	'''
+	Test whether all sensors are positive.
+	
+	Parameters:
+	c: A controller.
+	
+	Returns: true iff all sensors are positive.
+	'''
+	for s in c.sensors:
+		if not s.positive:
+			return False
+	return True
+
+@controller
+def someSensorPositive(c):
+	'''
+	Test whether at least one sensor is positive.
+	
+	Parameters:
+	c: A controller.
+	
+	Returns: true iff at least one sensor is positive.
+	'''
+	for s in c.sensors:
+		if s.positive:
+			return True
+	return False
+
+@singleton
+class SceneManager:
+	
 	def __init__(self):
 		self.Observers = set()
 		self.NewScene = True
@@ -72,17 +162,14 @@ class _SceneManager:
 			o.OnSceneEnd()
 		self.NewScene = True
 
-SceneManager = _SceneManager()
-
+@all_sensors_positive
+@controller
 def EndScene(c):
 	'''Releases all object references (e.g. Actors). Then, all actuators are
 	activated. Call this from a Python controller attached to a switch scene
 	actuator instead of using an AND controller.'''
 	
-	if not allSensorsPositive(c):
-		return
-		
-	SceneManager.EndScene()
+	SceneManager().EndScene()
 	for act in c.actuators:
 		c.activate(act)
 
@@ -290,6 +377,7 @@ def _SlowCopyRot(o, goal, factor):
 	
 	o.localOrientation = orn
 
+@controller
 def SlowCopyRot(c):
 	'''
 	Slow parenting (Rotation only). The owner will copy the rotation of the
@@ -311,6 +399,7 @@ def _SlowCopyLoc(o, goal, factor):
 	
 	o.worldPosition = _lerp(pos, goalPos, factor)
 
+@controller
 def SlowCopyLoc(c):
 	'''
 	Slow parenting (Location only). The owner will copy the position of the
@@ -321,10 +410,11 @@ def SlowCopyLoc(c):
 	goal = c.sensors['sGoal'].owner
 	_SlowCopyLoc(o, goal, o['SlowFac'])
 
+@all_sensors_positive
+@controller
 def CopyTrans(c):
 	'''Copy the transform from a linked sensor's object to this object.'''
-	if allSensorsPositive(c):
-		_copyTransform(c.sensors[0].owner, c.owner)
+	_copyTransform(c.sensors[0].owner, c.owner)
 
 def setRelOrn(ob, target, ref):
 	'''
@@ -350,13 +440,13 @@ def setRelPos(ob, target, ref):
 	offset = ref.worldPosition - ob.worldPosition
 	ob.worldPosition = target.worldPosition - offset
 
-def RayFollow(c):
+@owner
+def RayFollow(o):
 	'''
 	Position an object some distance along its parent's z-axis. The object will 
 	be placed at the first intersection point, or RestDist units from the parent
 	- whichever comes first.
 	'''
-	o = c.owner
 	p = o.parent
 	
 	origin = p.worldPosition
@@ -449,6 +539,8 @@ def triangleNormal(p0, p1, p2):
 	
 	return normal
 
+@all_sensors_positive
+@controller
 def SprayParticle(c):
 	'''
 	Instance one particle, and decrement the particle counter. The particle will
@@ -471,8 +563,6 @@ def SprayParticle(c):
 			reduced by 1. If less than or equal to 0, no particle will be
 			created.
 	'''
-	if not allSensorsPositive(c):
-		return
 	
 	o = c.owner
 	if o['nParticles'] <= 0:
@@ -484,13 +574,14 @@ def SprayParticle(c):
 	c.activate('aEmit')
 	c.activate('aRot')
 
-def billboard(c):
+@owner
+def billboard(o):
 	'''Track the camera - the Z-axis of the current object will be point towards
 	the camera.'''
-	o = c.owner
 	_, vec, _ = o.getVectTo(logic.getCurrentScene().active_camera)
 	o.alignAxisToVect(vec, 2)
 
+@controller
 def timeOffsetChildren(c):
 	'''Copy the 'Frame' property to all children, incrementally adding an offset
 	as defined by the 'Offset' property.'''
@@ -587,37 +678,9 @@ def hasState(ob, state):
 	stateBitmask = 1 << (state - 1)
 	return (ob.state & stateBitmask) != 0
 
-def allSensorsPositive(c):
-	'''
-	Test whether all sensors are positive.
-	
-	Parameters:
-	c: A controller.
-	
-	Returns: true iff all sensors are positive.
-	'''
-	for s in c.sensors:
-		if not s.positive:
-			return False
-	return True
-
-def someSensorPositive(c):
-	'''
-	Test whether at least one sensor is positive.
-	
-	Parameters:
-	c: A controller.
-	
-	Returns: true iff at least one sensor is positive.
-	'''
-	for s in c.sensors:
-		if s.positive:
-			return True
-	return False
-
-def makeScreenshot(c):
-	if allSensorsPositive(c):
-		render.makeScreenshot('//Screenshot#.jpg')
+@all_sensors_positive
+def makeScreenshot():
+	render.makeScreenshot('//Screenshot#.jpg')
 
 class Counter:
 	'''Counts the frequency of objects.'''

@@ -851,11 +851,13 @@ def init(cont):
 	snail = Snail(cont.owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR, camera)
 	cont.owner['Snail'] = snail
 
-def update(c):
-	snail = c.owner['Snail']
+@Utilities.owner
+def update(o):
+	snail = o['Snail']
 	snail.orient()
 	snail.updateEyeLength()
 
+@Utilities.controller
 def look(c):
 	sLookAt = c.sensors['sLookAt']
 	c.owner['Snail'].lookAt(sLookAt.hitObjectList)
@@ -868,45 +870,50 @@ def _GetNearestShell(snailOb, shellObs):
 	
 	return None
 
+@Utilities.all_sensors_positive
+@Utilities.controller
 def SetShellImmediate(c):
-	if not Utilities.allSensorsPositive(c):
-		return
-	
 	snail = c.owner['Snail']
 	closeShells = c.sensors['sShellPickup'].hitObjectList
 	snail.setShell(_GetNearestShell(c.owner, closeShells), False)
 
+@Utilities.controller
 def OnShellTouched(c):
 	snail = c.owner['Snail']
 	closeShells = c.sensors['sShellPickup'].hitObjectList
 	snail.NearestShell = _GetNearestShell(c.owner, closeShells)
 
-def OnDropShell(c):
+@Utilities.all_sensors_positive
+@Utilities.owner
+def OnDropShell(o):
 	'''
 	Called when the snail should drop its shell. This happens on a certain frame
 	of the drop animation, as triggered by DropShell.
 	'''
-	if Utilities.allSensorsPositive(c):
-		c.owner['Snail'].onDropShell()
+	o['Snail'].onDropShell()
 
-def OnShellPostExit(c):
+@Utilities.all_sensors_positive
+@Utilities.owner
+def OnShellPostExit(o):
 	'''Called when the shell has been fully exited.'''
-	if Utilities.allSensorsPositive(c):
-		c.owner['Snail'].onPostExitShell()
+	o['Snail'].onPostExitShell()
 
-def OnShellEnter(c):
+@Utilities.all_sensors_positive
+@Utilities.owner
+def OnShellEnter(o):
 	'''
 	Transfers control of the snail to its shell. Allows for things like
 	steering a rolling shell. This must be run from a controller on the
 	snail. The snail must be carrying a shell. To reverse this, run
 	OnShellExit from a controller on the snail.
 	'''
-	if Utilities.allSensorsPositive(c):
-		c.owner['Snail'].onEnterShell()
+	o['Snail'].onEnterShell()
 
-def OnStartCrawling(c):
-	c.owner['Snail'].onStartCrawling()
+@Utilities.owner
+def OnStartCrawling(o):
+	o['Snail'].onStartCrawling()
 
+@Utilities.controller
 def OnTouchSpeedModifier(c):
 	mult = 0.0
 	hitObs = c.sensors[0].hitObjectList
@@ -926,6 +933,7 @@ def OnTouchSpeedModifier(c):
 # Independent functions.
 #
 
+@Utilities.controller
 def EyeLength(c):
 	'''Sets the length of the eyes. To be called by the snail.'''
 	def getRayLength(sensor):

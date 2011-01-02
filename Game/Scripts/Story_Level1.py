@@ -82,15 +82,18 @@ class Blinkenlights:
 		lampCol.resize3D()
 		self.lamp.color =  Utilities._lerp(currentLampCol, lampCol, 0.1)
 
-def createBlinkenlights(c):
-	c.owner['Actor'] = Blinkenlights(c.owner)
+@Utilities.owner
+def createBlinkenlights(o):
+	o['Actor'] = Blinkenlights(o)
 
-def blinkBlinkenlights(c):
-	bl = c.owner['Actor']
+@Utilities.owner
+def blinkBlinkenlights(o):
+	bl = o['Actor']
 	bl.blink()
 
-def updateBlinkenlights(c):
-	bl = c.owner['Actor']
+@Utilities.owner
+def updateBlinkenlights(o):
+	bl = o['Actor']
 	bl.update()
 
 class Worm(Character):
@@ -291,12 +294,13 @@ class Worm(Character):
 	
 	def isInsideWorld(self):
 		return True
-		
-def CreateWorm(c):
-	if not Utilities.allSensorsPositive(c):
-		return
-	Worm(c.owner)
 
+@Utilities.all_sensors_positive
+@Utilities.owner
+def CreateWorm(o):
+	Worm(o)
+
+@Utilities.controller
 def wormKnockSound(c):
 	frame = c.owner['ActionFrame']
 	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):

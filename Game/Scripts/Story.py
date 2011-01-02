@@ -222,6 +222,7 @@ class Character(Actor.Actor):
 	def CreateSteps(self):
 		pass
 
+@Utilities.controller
 def Progress(c):
 	character = c.owner['Actor']
 	character.Progress(c)

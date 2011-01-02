@@ -99,22 +99,27 @@ class Timer(Actor.Actor):
 		functionality.'''
 		logic.sendMessage(self.owner['Message'])
 
-def CreateTimer(c):
+@Utilities.all_sensors_positive
+@Utilities.owner
+def CreateTimer(o):
 	'''Create a new timer from this controller's owner.'''
-	if Utilities.allSensorsPositive(c):
-		Timer(c.owner)
+	Timer(o)
 
-def Start(c):
+@Utilities.all_sensors_positive
+@Utilities.owner
+def Start(o):
 	'''Start the timer that is attached to this controller.'''
-	if Utilities.allSensorsPositive(c):
-		c.owner['Actor'].Start()
-def Stop(c):
+	o['Actor'].Start()
+
+@Utilities.all_sensors_positive
+@Utilities.owner
+def Stop(o):
 	'''Cancel the timer that is attached to this controller.'''
-	if Utilities.allSensorsPositive(c):
-		c.owner['Actor'].Stop()
-def Pulse(c):
+	o['Actor'].Stop()
+
+@Utilities.all_sensors_positive
+@Utilities.owner
+def Pulse(o):
 	'''Advance the timer by one logic tic. This must be called once per logic
 	frame while the timer is active.'''
-	if Utilities.allSensorsPositive(c):
-		c.owner['Actor'].Pulse()
-
+	o['Actor'].Pulse()

@@ -36,20 +36,13 @@ class EventListener:
     def onEvent(self, sender, message, body):
         pass
 
+@Utilities.singleton
 class EventBus:
-    '''Delivers messages to listeners. Singleton.'''
-    
-    instance = None
+    '''Delivers messages to listeners.'''
     
     def __init__(self):
         self.listeners = set()
         self.eventCache = {}
-
-    @classmethod
-    def get(cls):
-        if cls.instance == None:
-            cls.instance = EventBus()
-        return cls.instance
 
     def addListener(self, listener):
         self.listeners.add(listener)
@@ -75,22 +68,17 @@ class EventBus:
             sender, body = self.eventCache[message]
             target.onEvent(sender, message, body)
 
+@Utilities.singleton
 class SessionManager(EventListener):
-    '''Responds to some high-level messages. Singleton.'''
+    '''Responds to some high-level messages.'''
     
-    instance = None
-    
-    @classmethod
-    def get(cls):
-        if cls.instance == None:
-            cls.instance = SessionManager()
-        EventBus.get().addListener(cls.instance)
-        return cls.instance
+    def __init__(self):
+        EventBus().addListener(self)
     
     def onEvent(self, sender, message, body):
         if message == 'showSavedGameDetails':
             Store.setSessionId(body)
-            EventBus.get().notify(self, 'showScreen', 'LoadDetailsScreen')
+            EventBus().notify(self, 'showScreen', 'LoadDetailsScreen')
         
         elif message == 'startGame':
             # Load the level indicated in the save game.
@@ -100,24 +88,17 @@ class SessionManager(EventListener):
             # Remove all stored items that match the current path.
             for key in Store.list('/game'):
                 Store.unset(key)
-            EventBus.get().notify(self, 'showScreen', 'LoadingScreen')
+            EventBus().notify(self, 'showScreen', 'LoadingScreen')
         
         elif message == 'quit':
             logic.endGame()
 
 # Nothing else uses this directly, so we have to instantiate it.
-SessionManager.get()
+SessionManager()
 
+@Utilities.singleton
 class InputHandler(EventListener):
-    '''Manages UI elements: focus and click events. Singleton.'''
-    
-    instance = None
-    
-    @classmethod
-    def get(cls):
-        if cls.instance == None:
-            cls.instance = InputHandler()
-        return cls.instance
+    '''Manages UI elements: focus and click events.'''
     
     def __init__(self):
         self.widgets = []
@@ -192,18 +173,10 @@ class InputHandler(EventListener):
         # TODO
         pass
 
+@Utilities.singleton
 class AsyncAdoptionHelper:
     '''Creates parent-child relationships between widgets asynchronously. This
-    is required because the order that widgets are created in is undefined.
-    Singleton.'''
-    
-    instance = None
-    
-    @classmethod
-    def get(cls):
-        if cls.instance == None:
-            cls.instance = AsyncAdoptionHelper()
-        return cls.instance
+    is required because the order that widgets are created in is undefined.'''
     
     def __init__(self):
         self.waitingList = {}
@@ -238,36 +211,48 @@ class AsyncAdoptionHelper:
 # Global sensors
 ################
 
+@Utilities.controller
 def controllerInit(c):
     '''Initialise the menu'''
     render.showMouse(True)
     mOver = c.sensors['sMouseOver']
     mOver.usePulseFocus = True
 
-def focusNext(c):
-    InputHandler.get().focusNext()
-def focusPrevious(c):
-    InputHandler.get().focusPrevious()
-def focusLeft(c):
-    InputHandler.get().focusLeft()
-def focusRight(c):
-    InputHandler.get().focusRight()
-def focusUp(c):
-    InputHandler.get().focusUp()
-def focusDown(c):
-    InputHandler.get().focusDown()
+@Utilities.all_sensors_positive
+def focusNext():
+    InputHandler().focusNext()
 
+@Utilities.all_sensors_positive
+def focusPrevious():
+    InputHandler().focusPrevious()
+
+@Utilities.all_sensors_positive
+def focusLeft():
+    InputHandler().focusLeft()
+
+@Utilities.all_sensors_positive
+def focusRight():
+    InputHandler().focusRight()
+
+@Utilities.all_sensors_positive
+def focusUp():
+    InputHandler().focusUp()
+
+@Utilities.all_sensors_positive
+def focusDown():
+    InputHandler().focusDown()
+
+@Utilities.all_sensors_positive
+@Utilities.controller
 def mouseMove(c):
-    if not Utilities.allSensorsPositive(c):
-        return
     mOver = c.sensors['sMouseOver']
-    InputHandler.get().mouseOver(mOver)
+    InputHandler().mouseOver(mOver)
 
 def mouseButton(c):
-    if Utilities.someSensorPositive(c):
-        InputHandler.get().mouseDown()
+    if Utilities.someSensorPositive():
+        InputHandler().mouseDown()
     else:
-        InputHandler.get().mouseUp()
+        InputHandler().mouseUp()
 
 ################
 # Widget classes
@@ -291,7 +276,7 @@ class Container(UIObject):
     def __init__(self, name):
         self.children = []
         self.name = name
-        AsyncAdoptionHelper.get().registerAdopter(self)
+        AsyncAdoptionHelper().registerAdopter(self)
     
     def addChild(self, uiObject):
         '''Adds a child to this container. Usually you should use the
@@ -318,14 +303,14 @@ class Screen(Container, EventListener):
     
     def __init__(self, name, title):
         Container.__init__(self, name)
-        EventBus.get().addListener(self)
+        EventBus().addListener(self)
         self.title = title
     
     def onEvent(self, sender, message, body):
         if message == 'showScreen':
             if body == self.name:
                 self.show()
-                EventBus.get().notify(self, 'screenShown', self.getTitle())
+                EventBus().notify(self, 'screenShown', self.getTitle())
             else:
                 self.hide()
     
@@ -337,7 +322,7 @@ Screen('LoadDetailsScreen', '')
 Screen('OptionsScreen', 'Options')
 Screen('CreditsScreen', 'Credits')
 Screen('ConfirmationDialogue', 'Confirm')
-EventBus.get().notify(None, 'showScreen', 'LoadingScreen')
+EventBus().notify(None, 'showScreen', 'LoadingScreen')
 
 class Camera(EventListener):
     '''A camera that adjusts its position depending on which screen is
@@ -355,8 +340,8 @@ class Camera(EventListener):
     def __init__(self, owner):
         self.owner = owner
         self.owner['Camera'] = self
-        EventBus.get().addListener(self)
-        EventBus.get().replayLast(self, 'showScreen')
+        EventBus().addListener(self)
+        EventBus().replayLast(self, 'showScreen')
     
     def onEvent(self, sender, message, body):
         if message == 'showScreen' and body in Camera.FRAME_MAP:
@@ -374,11 +359,13 @@ class Camera(EventListener):
             frame = max(frame - Camera.FRAME_RATE, targetFrame)
         self.owner['frame'] = frame
 
-def createCamera(c):
-    Camera(c.owner)
+@Utilities.owner
+def createCamera(o):
+    Camera(o)
 
-def updateCamera(c):
-    c.owner['Camera'].update()
+@Utilities.owner
+def updateCamera(o):
+    o['Camera'].update()
 
 class Widget(UIObject):
     '''An interactive UIObject. Has various states (e.g. focused, up, down) to
@@ -413,7 +400,7 @@ class Widget(UIObject):
         Utilities.parseChildren(self, owner)
         
         if 'parentName' in self.owner:
-            AsyncAdoptionHelper.get().requestAdoption(self, self.owner['parentName'])
+            AsyncAdoptionHelper().requestAdoption(self, self.owner['parentName'])
         
     def parseChild(self, child, type):
         # No children of basic widgets. Note: this is about object hierarchies
@@ -453,7 +440,7 @@ class Widget(UIObject):
             body = ''
             if 'onClickBody' in self.owner:
                 body = self.owner['onClickBody']
-            EventBus.get().notify(self, msg, body)
+            EventBus().notify(self, msg, body)
     
     def hide(self):
         super(Widget, self).hide()
@@ -504,8 +491,9 @@ class Widget(UIObject):
         oldv = self.sensitive
         self.sensitive = sensitive
         if oldv != sensitive:
-            EventBus.get().notify(self, 'sensitivityChanged', self.sensitive)
+            EventBus().notify(self, 'sensitivityChanged', self.sensitive)
 
+@Utilities.controller
 def updateWidget(c):
     c.owner['Widget'].update()
     c.activate(c.actuators[0])
@@ -515,8 +503,9 @@ class Button(Widget):
     def __init__(self, owner):
         Widget.__init__(self, owner)
 
-def createButton(c):
-    InputHandler.get().addWidget(Button(c.owner))
+@Utilities.owner
+def createButton(o):
+    InputHandler().addWidget(Button(o))
 
 class SaveButton(Button):
     def __init__(self, owner):
@@ -534,10 +523,11 @@ class SaveButton(Button):
         super(SaveButton, self).updateVisibility(visible)
         self.idCanvas.setVisible(visible, True)
 
-def createSaveButton(c):
-    obj = Utilities.replaceObject('SaveButton_T', c.owner)
+@Utilities.owner
+def createSaveButton(o):
+    obj = Utilities.replaceObject('SaveButton_T', o)
     button = SaveButton(obj)
-    InputHandler.get().addWidget(button)
+    InputHandler().addWidget(button)
 
 class Checkbox(Button):
     def __init__(self, owner):
@@ -587,10 +577,11 @@ class Checkbox(Button):
         self.checkOff['frame'] = self.owner['frame']
         self.checkOn['frame'] = self.owner['frame']
 
-def createCheckbox(c):
-    obj = Utilities.replaceObject('CheckBox_T', c.owner)
+@Utilities.owner
+def createCheckbox(o):
+    obj = Utilities.replaceObject('CheckBox_T', o)
     button = Checkbox(obj)
-    InputHandler.get().addWidget(button)
+    InputHandler().addWidget(button)
 
 class ConfirmationPage(Widget, EventListener):
     def __init__(self, owner):
@@ -602,8 +593,8 @@ class ConfirmationPage(Widget, EventListener):
         self.onConfirm = ''
         self.onConfirmBody = ''
         
-        EventBus.get().addListener(self)
-        EventBus.get().replayLast(self, 'showScreen')
+        EventBus().addListener(self)
+        EventBus().replayLast(self, 'showScreen')
     
     def parseChild(self, child, type):
         if type == 'Text':
@@ -623,21 +614,22 @@ class ConfirmationPage(Widget, EventListener):
         elif message == 'confirmation':
             text, self.onConfirm, self.onConfirmBody = body.split('::')
             self.text['Content'] = text
-            EventBus.get().notify(self, 'showScreen', 'ConfirmationDialogue')
+            EventBus().notify(self, 'showScreen', 'ConfirmationDialogue')
             
         elif message == 'cancel':
             if self.visible:
-                EventBus.get().notify(self, 'showScreen', self.lastScreen)
+                EventBus().notify(self, 'showScreen', self.lastScreen)
                 self.text['Content'] = ""
         
         elif message == 'confirm':
             if self.visible:
-                EventBus.get().notify(self, 'showScreen', self.lastScreen)
-                EventBus.get().notify(self, self.onConfirm, self.onConfirmBody)
+                EventBus().notify(self, 'showScreen', self.lastScreen)
+                EventBus().notify(self, self.onConfirm, self.onConfirmBody)
                 self.text['Content'] = ""
 
-def createConfirmationPage(c):
-    ConfirmationPage(c.owner)
+@Utilities.owner
+def createConfirmationPage(o):
+    ConfirmationPage(o)
 
 class GameDetailsPage(Widget):
     '''A dumb widget that can show and hide itself, but doesn't respond to
@@ -665,8 +657,9 @@ class GameDetailsPage(Widget):
             self.title['Content'] = Store.get('/game/title', 'Game %d' % (Store.getSessionId() + 1))
             self.storyDetails['Content'] = Store.get('/game/storySummary', 'Start a new game.')
 
-def createGameDetailsPage(c):
-    GameDetailsPage(c.owner)
+@Utilities.owner
+def createGameDetailsPage(o):
+    GameDetailsPage(o)
 
 class CreditsPage(Widget):
     '''Controls the display of credits.'''
@@ -714,25 +707,28 @@ class CreditsPage(Widget):
             if self.delayTimer <= 0:
                 self.drawNext()
 
-def createCreditsPage(c):
-    CreditsPage(c.owner)
+@Utilities.owner
+def createCreditsPage(o):
+    CreditsPage(o)
 
-def creditsUpdate(c):
-    creditsPage = c.owner['Widget']
+@Utilities.owner
+def creditsUpdate(o):
+    creditsPage = o['Widget']
     creditsPage.draw()
 
 class Subtitle(EventListener):
     def __init__(self, owner):
         self.owner = owner
-        EventBus.get().addListener(self)
-        EventBus.get().replayLast(self, 'screenShown')
+        EventBus().addListener(self)
+        EventBus().replayLast(self, 'screenShown')
     
     def onEvent(self, sender, message, body):
         if message == 'screenShown':
             self.owner['Content'] = body
 
-def createSubtitle(c):
-    Subtitle(c.owner)
+@Utilities.owner
+def createSubtitle(o):
+    Subtitle(o)
 
 class MenuSnail:
     def __init__(self, owner):
@@ -749,8 +745,8 @@ class MenuSnail:
     
     def update(self):
         target = None
-        if InputHandler.get().current:
-            target = InputHandler.get().current
+        if InputHandler().current:
+            target = InputHandler().current
         else:
             target = logic.getCurrentScene().objects['Camera']
         self.lookAt(target)
@@ -779,8 +775,10 @@ class MenuSnail:
         
         self.armature.update()
 
-def createSnail(c):
-    c.owner['MenuSnail'] = MenuSnail(c.owner)
+@Utilities.owner
+def createSnail(o):
+    o['MenuSnail'] = MenuSnail(o)
 
-def updateSnail(c):
-    c.owner['MenuSnail'].update()
+@Utilities.owner
+def updateSnail(o):
+    o['MenuSnail'].update()

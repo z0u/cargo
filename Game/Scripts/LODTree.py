@@ -103,12 +103,12 @@ class LODTree:
 		self.Root = root
 		LODManager.AddTree(self)
 		
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):
 		LODManager.RemoveTree(self)
 		self.Root = None
-		Utilities.SceneManager.Unsubscribe(self)
+		Utilities.SceneManager().Unsubscribe(self)
 	
 	def ActivateRange(self, boundsList):
 		'''

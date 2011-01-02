@@ -117,7 +117,7 @@ class Actor:
 		
 		self.SaveLocation()
 		
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def AddChild(self, child, attachPoint = None, compound = True, ghost = True):
 		'''
@@ -169,7 +169,7 @@ class Actor:
 	def OnSceneEnd(self):
 		self.owner['Actor'] = None
 		self.owner = None
-		Utilities.SceneManager.Unsubscribe(self)
+		Utilities.SceneManager().Unsubscribe(self)
 	
 	def getChildren(self):
 		if self.Children == None:
@@ -412,18 +412,23 @@ class Actor:
 		the actor doesn't define one.'''
 		return None
 
-def CreateActor(c):
-	c.owner['Actor'] = Actor(c.owner)
+@Utilities.owner
+def CreateActor(o):
+	o['Actor'] = Actor(o)
 
-def DestroyActor(c):
-	c.owner['Actor'].Destroy()
+@Utilities.owner
+def DestroyActor(o):
+	o['Actor'].Destroy()
 
-def SaveLocation(c):
-	c.owner['Actor'].SaveLocation()
+@Utilities.owner
+def SaveLocation(o):
+	o['Actor'].SaveLocation()
 
-def RestoreLocation(c):
-	c.owner['Actor'].RestoreLocation()
+@Utilities.owner
+def RestoreLocation(o):
+	o['Actor'].RestoreLocation()
 
+@Utilities.controller
 def Damage(c):
 	print("damaged")
 	for s in c.sensors:
@@ -451,8 +456,9 @@ class StatefulActor(Actor):
 	def OnResume(self):
 		self.owner.state = self.State
 
-def CreateStatefulActor(c):
-	StatefulActor(c.owner)
+@Utilities.owner
+def CreateStatefulActor(o):
+	StatefulActor(o)
 
 class DirectorListener:
 	def directorMainCharacterChanged(self, oldActor, newActor):
@@ -566,7 +572,7 @@ class _Director:
 
 Director = _Director()
 
-def Update(c):
+def Update():
 	'''Call this once per frame to allow the Director to update the state of its
 	Actors.'''
 	Director.Update()
@@ -577,6 +583,7 @@ def SuspendAction():
 def ResumeAction():
 	Director.ResumeAction()
 
+@Utilities.controller
 def _hitMainCharacter(c):
 	'''
 	Test whether the main character was hit.
@@ -600,6 +607,7 @@ def _hitMainCharacter(c):
 #
 # Methods for dealing with user input.
 #
+@Utilities.controller
 def OnImpulse(c):
 	fwd = c.sensors['sForward']
 	back = c.sensors['sBackward']

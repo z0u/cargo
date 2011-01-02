@@ -199,6 +199,7 @@ def create(obOrController):
     Utilities.setState(o, 2)
     return ffInstance
 
+@Utilities.controller
 def onTouched(c):
     '''Activate the force field.
     
@@ -222,7 +223,9 @@ def onTouched(c):
     for a in actors: 
         ffield.touched(a)
 
-def onRender(c):
+@Utilities.some_sensors_positive
+@Utilities.owner
+def onRender(o):
     '''Activate the force field. This is like onTouched, but should be used by
     force fields with a very long range (i.e. those that affect the whole
     level).
@@ -234,9 +237,7 @@ def onRender(c):
     <any>: One or more of any kind of sensor. While the force field is active,
         these should fire every logic tic.
     '''
-    if not Utilities.someSensorPositive(c):
-        return
-    
-    ffield = c.owner['Actor']
+	
+    ffield = o['Actor']
     for a in Actor.Director.Actors:
         ffield.touched(a)

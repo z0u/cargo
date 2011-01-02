@@ -59,7 +59,7 @@ class Water(Actor.ActorListener):
 		self.ForceFields = []
 		
 		Utilities.parseChildren(self, owner)
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 		Utilities.setState(self.owner, self.S_IDLE)
 	
 	def parseChild(self, child, t):
@@ -74,7 +74,7 @@ class Water(Actor.ActorListener):
 		self.owner = None
 		self.FloatingActors = None
 		self.ForceFields = None
-		Utilities.SceneManager.Unsubscribe(self)
+		Utilities.SceneManager().Unsubscribe(self)
 	
 	def SpawnSurfaceDecal(self, name, position):
 		pos = position.copy()
@@ -358,7 +358,8 @@ class Bubble(Actor.Actor):
 		'''Bubbles aren't important enough to respawn. Just destroy them.'''
 		self.Destroy()
 
-def createWater(c):
+@Utilities.owner
+def createWater(o):
 	'''
 	Create a new Water object. The object should be perfectly flat, with all
 	verices at z = 0 (localspace). Make sure the object is a Ghost.
@@ -367,9 +368,10 @@ def createWater(c):
 	MinDist:        The distance an object has to move before it spawn a ripple.
 	'''
 	
-	Water(c.owner)
+	Water(o)
 
-def createShapedWater(c):
+@Utilities.owner
+def createShapedWater(o):
 	'''
 	Create a new ShapedWater object. The object does not have to be flat, but it
 	has the following constraints. The object must:
@@ -378,8 +380,9 @@ def createShapedWater(c):
 	 - Be a ghost.
 	 - Detect collisions (e.g. Static mesh type).
 	'''
-	ShapedWater(c.owner)
+	ShapedWater(o)
 
+@Utilities.controller
 def onCollision(c):
 	'''
 	Respond to collisions with Actors. Ripples will be created, and 

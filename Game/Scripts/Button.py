@@ -29,12 +29,12 @@ class Button:
 		self.owner = owner
 		owner['Button'] = self
 		self.Down = False
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):
 		self.owner['Button'] = None
 		self.owner = None
-		Utilities.SceneManager.Unsubscribe(self)
+		Utilities.SceneManager().Unsubscribe(self)
 
 	def Accept(self, ob):
 		'''Test whether this button will react to being touched by 'ob'.
@@ -91,14 +91,17 @@ class ToughButton(Button):
 		vel = mathutils.Vector(actor.GetLastLinearVelocity())
 		return vel.magnitude >= self.owner['MinSpeed']
 
-def CreateButton(c):
+@Utilities.owner
+def CreateButton(o):
 	'''Create a new generic button.'''
-	Button(c.owner)
+	Button(o)
 
-def CreateToughButton(c):
+@Utilities.owner
+def CreateToughButton(o):
 	'''Create a new tough button.'''
-	ToughButton(c.owner)
+	ToughButton(o)
 
+@Utilities.controller
 def OnTouched(c):
 	'''Call this when the objects touching a button change.
 	

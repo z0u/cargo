@@ -334,14 +334,18 @@ class BottleCap(ShellBase):
 		self.LeftMagnitude = 0.0
 		self.Occupier['JumpFrame'] = 0
 
-def CreateShell(c):
-	Shell(c.owner)
+@Utilities.owner
+def CreateShell(o):
+	Shell(o)
 
-def CreateNut(c):
-	Nut(c.owner)
+@Utilities.owner
+def CreateNut(o):
+	Nut(o)
 
-def CreateWheel(c):
-	Wheel(c.owner)
+@Utilities.owner
+def CreateWheel(o):
+	Wheel(o)
 
-def CreateBottleCap(c):
-	BottleCap(c.owner)
+@Utilities.owner
+def CreateBottleCap(o):
+	BottleCap(o)

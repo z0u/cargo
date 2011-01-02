@@ -60,12 +60,12 @@ class GrassBlade:
 		
 		self.LastBaseFrame = ZERO2.copy()
 		
-		Utilities.SceneManager.Subscribe(self)
+		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):
 		self.owner['GrassBlade'] = None
 		self.owner = None
-		Utilities.SceneManager.Unsubscribe(self)
+		Utilities.SceneManager().Unsubscribe(self)
 
 	def GetCollisionForce(self, collider):
 		#
@@ -133,9 +133,11 @@ class GrassBlade:
 			self.owner[s.YProp] = s.Frame.y
 			linkDisplacement = s.Velocity
 
-def CreateGrassBlade(c):
-	GrassBlade(c.owner)
+@Utilities.owner
+def CreateGrassBlade(o):
+	GrassBlade(o)
 
+@Utilities.controller
 def Collide(c):
 	s = c.sensors['Near']
 	c.owner['GrassBlade'].Collide(s.hitObjectList)

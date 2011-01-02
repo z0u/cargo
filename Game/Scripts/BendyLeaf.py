@@ -18,6 +18,7 @@
 from . import Utilities
 import mathutils
 
+@Utilities.controller
 def BendLeaf(c):
 	'''
 	Cause a bendy leaf to react to objects touching it. The controller must

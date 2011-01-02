@@ -99,7 +99,23 @@ def singleton(cls):
 	return get
 
 class gameobject:
-	'''Extends a class to wrap KX_GameObjects.'''
+	'''Extends a class to wrap KX_GameObjects. This decorator accepts any number
+	of strings as arguments. Each string should be the name of a member to
+	expose as a top-level function - this makes it available to logic bricks in
+	the BGE. The class name is used as a function prefix. For example, consider
+	the following class definition in a module called 'Module':
+
+	@gameobject('update')
+	class Foo:
+		def __init__(self, owner):
+			self.owner = owner
+		def update(self):
+			self.owner.worldPosition.z += 1.0
+
+	A game object can be bound to the 'Foo' class by calling, from a Python
+	controller, 'Module.Foo'. The 'update' function can then be called with
+	'Module.Foo_update'.
+	'''
 
 	def __init__(self, *externs):
 		self.externs = externs
@@ -111,12 +127,14 @@ class gameobject:
 			self.create_interface(cls)
 			self.converted = True
 
-		def create():
+		old_init = cls.__init__
+		def new_init(self):
 			o = logic.getCurrentController().owner
-			instance = cls(o)
-			o['__wrapper__'] = instance
-			return instance
-		return create
+			old_init(self, o)
+			o['__wrapper__'] = self
+		cls.__init__ = new_init
+
+		return cls
 
 	def create_interface(self, cls):
 		'''Expose the nominated methods as top-level functions in the containing

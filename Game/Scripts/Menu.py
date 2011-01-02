@@ -683,7 +683,7 @@ class CreditsPage(Widget):
             return False
     
     def updateVisibility(self, visible):
-        Widget.updateVisibility(self, visible)
+        super(CreditsPage, self).updateVisibility(visible)
         for child in self.owner.children:
             child.setVisible(visible, True)
         
@@ -702,7 +702,7 @@ class CreditsPage(Widget):
     
     def draw(self):
         if self.people['Rendering'] or self.title['Rendering']:
-            self.delayTimer = self.DELAY
+            self.delayTimer = CreditsPage.DELAY
         else:
             self.delayTimer -= 1
             if self.delayTimer <= 0:

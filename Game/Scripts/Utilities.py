@@ -91,11 +91,12 @@ def singleton(cls):
 	class instantiations return the same instance.'''
 	# Adapted from public domain code in Python docs:
 	# http://www.python.org/dev/peps/pep-0318/#examples
-	instance = []
+	instance = None
 	def get():
-		if len(instance) == 0:
-			instance.append(cls())
-		return instance[0]
+		nonlocal instance
+		if instance == None:
+			instance = cls()
+		return instance
 	return get
 
 class gameobject:

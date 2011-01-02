@@ -98,15 +98,30 @@ def singleton(cls):
 		return instance[0]
 	return get
 
-__converted_kob_classes = set()
+class gameobject:
 
-def kobject(cls):
+	def __init__(self, *externs):
+		self.externs = externs
+		self.converted = False
+
+	def __call__(self, cls):
+		@all_sensors_positive
+		@owner
+		def create(o):
+			if not self.converted:
+				self.create_interface(cls)
+				self.converted = True
+
+			o = logic.getCurrentController().owner
+			instance = cls(o)
+			o['__wrapper__'] = instance
+			return instance
+		return create
 	
-	def create_interface():
+	def create_interface(self, cls):
 		module = sys.modules[cls.__module__]
-		
-		externs = ['update']
-		for methodName in externs:
+
+		for methodName in self.externs:
 			f = cls.__dict__[methodName]
 
 			def method_function(*args, **kwargs):
@@ -115,25 +130,9 @@ def kobject(cls):
 				args = list(args)
 				args.insert(0, instance)
 				return f(*args, **kwargs)
-			
+
 			method_function.__name__ = '%s_%s' % (cls.__name__, methodName)
 			setattr(module, method_function.__name__, method_function)
-		
-		print('Module:', module.__name__)
-		print(dir(module))
-	
-	@all_sensors_positive
-	@owner
-	def create(o):
-		if not cls in __converted_kob_classes:
-			create_interface()
-			__converted_kob_classes.add(cls)
-		
-		o = logic.getCurrentController().owner
-		instance = cls(o)
-		o['__wrapper__'] = instance
-		return instance
-	return create
 
 ###################
 # Sensor management

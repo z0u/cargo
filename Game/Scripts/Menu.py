@@ -661,6 +661,7 @@ class GameDetailsPage(Widget):
 def createGameDetailsPage(o):
     GameDetailsPage(o)
 
+@Utilities.gameobject('draw')
 class CreditsPage(Widget):
     '''Controls the display of credits.'''
     DELAY = 180
@@ -682,7 +683,7 @@ class CreditsPage(Widget):
             return False
     
     def updateVisibility(self, visible):
-        super(CreditsPage, self).updateVisibility(visible)
+        Widget.updateVisibility(self, visible)
         for child in self.owner.children:
             child.setVisible(visible, True)
         
@@ -701,21 +702,13 @@ class CreditsPage(Widget):
     
     def draw(self):
         if self.people['Rendering'] or self.title['Rendering']:
-            self.delayTimer = CreditsPage.DELAY
+            self.delayTimer = self.DELAY
         else:
             self.delayTimer -= 1
             if self.delayTimer <= 0:
                 self.drawNext()
 
-@Utilities.owner
-def createCreditsPage(o):
-    CreditsPage(o)
-
-@Utilities.owner
-def creditsUpdate(o):
-    creditsPage = o['Widget']
-    creditsPage.draw()
-
+@Utilities.gameobject()
 class Subtitle(EventListener):
     def __init__(self, owner):
         self.owner = owner
@@ -726,11 +719,7 @@ class Subtitle(EventListener):
         if message == 'screenShown':
             self.owner['Content'] = body
 
-@Utilities.owner
-def createSubtitle(o):
-    Subtitle(o)
-
-@Utilities.kobject
+@Utilities.gameobject('update')
 class MenuSnail:
     def __init__(self, owner):
         self.owner = owner

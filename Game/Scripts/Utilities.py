@@ -131,12 +131,13 @@ class gameobject:
 			self.converted = True
 
 		old_init = cls.__init__
-		def new_init(self):
-			o = logic.getCurrentController().owner
-			if 'template' in o:
-				o = replaceObject(o['template'], o)
-			old_init(self, o)
-			o['__wrapper__'] = self
+		def new_init(self, owner=None):
+			if owner == None:
+				owner = logic.getCurrentController().owner
+			if 'template' in owner:
+				owner = replaceObject(owner['template'], owner)
+			old_init(self, owner)
+			owner['__wrapper__'] = self
 		cls.__init__ = new_init
 
 		return cls

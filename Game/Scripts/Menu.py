@@ -324,6 +324,7 @@ Screen('CreditsScreen', 'Credits')
 Screen('ConfirmationDialogue', 'Confirm')
 EventBus().notify(None, 'showScreen', 'LoadingScreen')
 
+@Utilities.gameobject('update')
 class Camera(EventListener):
     '''A camera that adjusts its position depending on which screen is
     visible.'''
@@ -359,14 +360,7 @@ class Camera(EventListener):
             frame = max(frame - Camera.FRAME_RATE, targetFrame)
         self.owner['frame'] = frame
 
-@Utilities.owner
-def createCamera(o):
-    Camera(o)
-
-@Utilities.owner
-def updateCamera(o):
-    o['Camera'].update()
-
+@Utilities.gameobject('update')
 class Widget(UIObject):
     '''An interactive UIObject. Has various states (e.g. focused, up, down) to
     facilitate interaction. Some of the states map to a frame to allow a
@@ -483,6 +477,9 @@ class Widget(UIObject):
             self.updateVisibility(False)
         elif oldFrame == 1.0:
             self.updateVisibility(True)
+
+        c = logic.getCurrentController()
+        c.activate(c.actuators[0])
     
     def updateVisibility(self, visible):
         self.owner.setVisible(visible, True)
@@ -493,24 +490,18 @@ class Widget(UIObject):
         if oldv != sensitive:
             EventBus().notify(self, 'sensitivityChanged', self.sensitive)
 
-@Utilities.controller
-def updateWidget(c):
-    c.owner['Widget'].update()
-    c.activate(c.actuators[0])
-
+@Utilities.gameobject()
 class Button(Widget):
     # A Widget has everything needed for a simple button.
     def __init__(self, owner):
         Widget.__init__(self, owner)
 
-@Utilities.owner
-def createButton(o):
-    InputHandler().addWidget(Button(o))
-
+@Utilities.gameobject()
 class SaveButton(Button):
     def __init__(self, owner):
         Button.__init__(self, owner)
         self.id = 0
+        InputHandler().addWidget(self)
     
     def parseChild(self, child, type):
         if type == 'IDCanvas':
@@ -522,12 +513,6 @@ class SaveButton(Button):
     def updateVisibility(self, visible):
         super(SaveButton, self).updateVisibility(visible)
         self.idCanvas.setVisible(visible, True)
-
-@Utilities.owner
-def createSaveButton(o):
-    obj = Utilities.replaceObject('SaveButton_T', o)
-    button = SaveButton(obj)
-    InputHandler().addWidget(button)
 
 @Utilities.gameobject()
 class Checkbox(Button):

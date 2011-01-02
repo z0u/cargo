@@ -583,6 +583,7 @@ def createCheckbox(o):
     button = Checkbox(obj)
     InputHandler().addWidget(button)
 
+@Utilities.gameobject()
 class ConfirmationPage(Widget, EventListener):
     def __init__(self, owner):
         Widget.__init__(self, owner)
@@ -627,10 +628,7 @@ class ConfirmationPage(Widget, EventListener):
                 EventBus().notify(self, self.onConfirm, self.onConfirmBody)
                 self.text['Content'] = ""
 
-@Utilities.owner
-def createConfirmationPage(o):
-    ConfirmationPage(o)
-
+@Utilities.gameobject()
 class GameDetailsPage(Widget):
     '''A dumb widget that can show and hide itself, but doesn't respond to
     mouse events.'''
@@ -656,10 +654,6 @@ class GameDetailsPage(Widget):
         if visible:
             self.title['Content'] = Store.get('/game/title', 'Game %d' % (Store.getSessionId() + 1))
             self.storyDetails['Content'] = Store.get('/game/storySummary', 'Start a new game.')
-
-@Utilities.owner
-def createGameDetailsPage(o):
-    GameDetailsPage(o)
 
 @Utilities.gameobject('draw')
 class CreditsPage(Widget):

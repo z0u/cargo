@@ -115,7 +115,9 @@ class gameobject:
 	A game object can be bound to the 'Foo' class by calling, from a Python
 	controller, 'Module.Foo'. The 'update' function can then be called with
 	'Module.Foo_update'.
-	'''
+
+	This decorator requires arguments; i.e. use '@gameobject()' instead of
+	'@gameobject'.'''
 
 	def __init__(self, *externs):
 		self.externs = externs
@@ -152,6 +154,7 @@ class gameobject:
 				return f(*args, **kwargs)
 
 			method_function.__name__ = '%s_%s' % (cls.__name__, methodName)
+			method_function.__doc__ = f.__doc__
 			setattr(module, method_function.__name__, method_function)
 
 ###################

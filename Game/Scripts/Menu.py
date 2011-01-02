@@ -730,6 +730,7 @@ class Subtitle(EventListener):
 def createSubtitle(o):
     Subtitle(o)
 
+@Utilities.kobject
 class MenuSnail:
     def __init__(self, owner):
         self.owner = owner
@@ -774,11 +775,3 @@ class MenuSnail:
         look(self.HeadLoc, target, self.HeadLoc_rest)
         
         self.armature.update()
-
-@Utilities.owner
-def createSnail(o):
-    o['MenuSnail'] = MenuSnail(o)
-
-@Utilities.owner
-def updateSnail(o):
-    o['MenuSnail'].update()

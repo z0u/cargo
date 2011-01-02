@@ -19,6 +19,7 @@ import mathutils
 from bge import logic
 from bge import render
 from functools import wraps
+import sys
 
 XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
 YAXIS  = mathutils.Vector([0.0, 1.0, 0.0])
@@ -97,9 +98,42 @@ def singleton(cls):
 		return instance[0]
 	return get
 
-def kob_wrapper(cls):
-	def create():
-		pass
+__converted_kob_classes = set()
+
+def kobject(cls):
+	
+	def create_interface():
+		module = sys.modules[cls.__module__]
+		
+		externs = ['update']
+		for methodName in externs:
+			f = cls.__dict__[methodName]
+
+			def method_function(*args, **kwargs):
+				o = logic.getCurrentController().owner
+				instance = o['__wrapper__']
+				args = list(args)
+				args.insert(0, instance)
+				return f(*args, **kwargs)
+			
+			method_function.__name__ = '%s_%s' % (cls.__name__, methodName)
+			setattr(module, method_function.__name__, method_function)
+		
+		print('Module:', module.__name__)
+		print(dir(module))
+	
+	@all_sensors_positive
+	@owner
+	def create(o):
+		if not cls in __converted_kob_classes:
+			create_interface()
+			__converted_kob_classes.add(cls)
+		
+		o = logic.getCurrentController().owner
+		instance = cls(o)
+		o['__wrapper__'] = instance
+		return instance
+	return create
 
 ###################
 # Sensor management

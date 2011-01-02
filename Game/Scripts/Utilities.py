@@ -99,26 +99,28 @@ def singleton(cls):
 	return get
 
 class gameobject:
+	'''Extends a class to wrap KX_GameObjects.'''
 
 	def __init__(self, *externs):
 		self.externs = externs
 		self.converted = False
 
+	@all_sensors_positive
 	def __call__(self, cls):
-		@all_sensors_positive
-		@owner
-		def create(o):
-			if not self.converted:
-				self.create_interface(cls)
-				self.converted = True
+		if not self.converted:
+			self.create_interface(cls)
+			self.converted = True
 
+		def create():
 			o = logic.getCurrentController().owner
 			instance = cls(o)
 			o['__wrapper__'] = instance
 			return instance
 		return create
-	
+
 	def create_interface(self, cls):
+		'''Expose the nominated methods as top-level functions in the containing
+		module.'''
 		module = sys.modules[cls.__module__]
 
 		for methodName in self.externs:

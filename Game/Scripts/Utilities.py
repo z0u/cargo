@@ -93,10 +93,13 @@ def singleton(cls):
 	instance = []
 	def get():
 		if len(instance) == 0:
-			print('Creating %s' % cls.__name__)
 			instance.append(cls())
 		return instance[0]
 	return get
+
+def kob_wrapper(cls):
+	def create():
+		pass
 
 ###################
 # Sensor management
@@ -569,7 +572,7 @@ def SprayParticle(c):
 		return
 	
 	o['nParticles'] = o['nParticles'] - 1
-	speed = o['maxSpeed'] * next(Random)
+	speed = o['maxSpeed'] * next(Random())
 	c.actuators['aEmit'].linearVelocity = (0.0, 0.0, speed)
 	c.activate('aEmit')
 	c.activate('aRot')
@@ -720,7 +723,8 @@ class ZKeyActor:
 	def __call__(self, actor):
 		return actor.owner.worldPosition.z
 
-class _Random:
+@singleton
+class Random():
 	#
 	# 100 random numbers (saves needing to import the 'random' module).
 	#
@@ -750,8 +754,6 @@ class _Random:
 		'''
 		self.LastRandIndex = (self.LastRandIndex + 1) % len(self.RANDOMS)
 		return self.RANDOMS[self.LastRandIndex]
-
-Random = _Random()
 
 class FuzzySwitch:
 	'''A boolean that only switches state after a number of consistent impulses.

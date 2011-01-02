@@ -38,7 +38,8 @@ NS_VISIBLE_DESCENDANT = 1
 NS_VISIBLE            = 2
 NS_IMPLICIT           = 3
 
-class _LODManager:
+@Utilities.singleton
+class LODManager:
 	'''A registrar of LODTrees. Each tree adds itself to this manager
 	(singleton; instance created below). Other scripts then have a central place
 	to access LODTrees, such as the module function ActivateRange, below.'''
@@ -65,11 +66,9 @@ class _LODManager:
 		for t in self.Trees:
 			t.ActivateRange(boundsList)
 
-LODManager = _LODManager()
-
 def Activate(cont):
 	'''Update which blades of grass are active. Call this once per frame.'''
-	LODManager.Activate()
+	LODManager().Activate()
 
 class Cube:
 	'''A bounding cube with arbitrary dimensions, defined by its centre
@@ -101,12 +100,12 @@ class LODTree:
 		root: The root LODNode of the tree.'''
 		
 		self.Root = root
-		LODManager.AddTree(self)
+		LODManager().AddTree(self)
 		
 		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):
-		LODManager.RemoveTree(self)
+		LODManager().RemoveTree(self)
 		self.Root = None
 		Utilities.SceneManager().Unsubscribe(self)
 	

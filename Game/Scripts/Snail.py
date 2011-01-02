@@ -150,7 +150,7 @@ class Snail(SnailSegment, Actor.Actor):
 	def __init__(self, owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR, camera):
 		# FIXME: This derives from two classes, and both set the Owner property.
 		Actor.Actor.__init__(self, owner)
-		Actor.Director.setMainCharacter(self)
+		Actor.Director().setMainCharacter(self)
 		
 		self.Head = None
 		self.Tail = None
@@ -414,7 +414,7 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.RemoveChild(self.Shell)
 		velocity = Utilities.ZAXIS.copy()
-		velocity.x += 0.5 - next(Utilities.Random)
+		velocity.x += 0.5 - next(Utilities.Random())
 		velocity = self.owner.getAxisVect(velocity)
 		velocity *= self.owner['ShellPopForce']
 		self.Shell.owner.setLinearVelocity(velocity)
@@ -473,7 +473,7 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.owner['InShell'] = 1
 		self.Shell.OnEntered()
-		Actor.Director.setMainCharacter(self.Shell)
+		Actor.Director().setMainCharacter(self.Shell)
 	
 	def exitShell(self, animate):
 		'''
@@ -516,7 +516,7 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.owner['InShell'] = 0
 		self.Shell.OnExited()
-		Actor.Director.setMainCharacter(self)
+		Actor.Director().setMainCharacter(self)
 	
 	def onPostExitShell(self):
 		'''Called when the snail has finished its exit shell

@@ -239,5 +239,5 @@ def onRender(o):
     '''
 	
     ffield = o['Actor']
-    for a in Actor.Director.Actors:
+    for a in Actor.Director().Actors:
         ffield.touched(a)

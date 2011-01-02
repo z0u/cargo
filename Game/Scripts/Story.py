@@ -48,11 +48,11 @@ class CondPropertyGE:
 #
 class ActSuspendInput:
 	def Execute(self, c):
-		Actor.Director.SuspendUserInput()
+		Actor.Director().SuspendUserInput()
 
 class ActResumeInput:
 	def Execute(self, c):
-		Actor.Director.ResumeUserInput()
+		Actor.Director().ResumeUserInput()
 
 class ActActuate:
 	def __init__(self, actuatorName):
@@ -93,18 +93,18 @@ class ActShowDialogue:
 		self.Message = message
 	
 	def Execute(self, c):
-		UI.HUD.ShowDialogue(self.Message)
+		UI.HUD().ShowDialogue(self.Message)
 
 class ActHideDialogue:
 	def Execute(self, c):
-		UI.HUD.HideDialogue()
+		UI.HUD().HideDialogue()
 
 class ActShowMessage:
 	def __init__(self, message):
 		self.Message = message
 	
 	def Execute(self, c):
-		UI.HUD.showMessage(self.Message)
+		UI.HUD().showMessage(self.Message)
 
 class ActSetCamera:
 	def __init__(self, camName, fac = None, instantCut = False):

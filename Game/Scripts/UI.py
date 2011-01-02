@@ -19,7 +19,8 @@ from bge import logic
 from . import Utilities
 from . import Actor
 
-class _HUD(Actor.DirectorListener, Actor.ActorListener):
+@Utilities.singleton
+class HUD(Actor.DirectorListener, Actor.ActorListener):
 	'''The head-up display manages the 2D user interface that is drawn over the
 	3D scene. This is a Singleton (see HUD instance below). This object
 	maintains is state even if no HUD objects are attached to it.'''
@@ -41,7 +42,7 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 		self.filterColour = None
 		
 		Utilities.SceneManager().Subscribe(self)
-		Actor.Director.addListener(self)
+		Actor.Director().addListener(self)
 	
 	def Attach(self, owner):
 		'''Attach a new user interface, e.g. at the start of a new scene.
@@ -118,11 +119,11 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 			if self.DialogueBox['Content'] != "":
 				self.DialogueBox['Content'] = ""
 				if self.CausedSuspension:
-					Actor.Director.ResumeUserInput()
+					Actor.Director().ResumeUserInput()
 		else:
 			self.DialogueBox['Content'] = self.DialogueText
-			if not Actor.Director.InputSuspended:
-				Actor.Director.SuspendUserInput()
+			if not Actor.Director().InputSuspended:
+				Actor.Director().SuspendUserInput()
 				self.CausedSuspension = True
 
 	def ShowDialogue(self, message):
@@ -179,7 +180,7 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 		if gauge == None:
 			return
 		
-		actor = Actor.Director.getMainCharacter()
+		actor = Actor.Director().getMainCharacter()
 		if actor != None:
 			gauge.Show()
 			#gauge.SetFraction(actor.getHealth())
@@ -220,19 +221,17 @@ class _HUD(Actor.DirectorListener, Actor.ActorListener):
 		self.filterColour = None
 		self._updateFilter()
 
-HUD = _HUD()
-
 @Utilities.owner
 def CreateHUD(o):
-	HUD.Attach(o)
+	HUD().Attach(o)
 
 @Utilities.owner
 def ShowLoadingScreen(o):
-	HUD.ShowLoadingScreen(o)
+	HUD().ShowLoadingScreen(o)
 
 @Utilities.owner
 def HideLoadingScreen(o):
-	HUD.HideLoadingScreen(o)
+	HUD().HideLoadingScreen(o)
 
 class Filter(Actor.Actor):
 	S_HIDE = 1
@@ -258,7 +257,7 @@ class Gauge(Actor.Actor):
 	
 	Owner properties:
 	Type: 'Gauge'
-	Name: Key for accessing gauge through HUD.getGauge.
+	Name: Key for accessing gauge through HUD().getGauge.
 	
 	Indicator properties:
 	Type: 'Indicator'

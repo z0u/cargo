@@ -26,7 +26,7 @@ from .Story import *
 class Intro(Character):
     def __init__(self, owner):
         Character.__init__(self, owner)
-        UI.HUD.ShowLoadingScreen(self)
+        UI.HUD().ShowLoadingScreen(self)
     
     def CreateSteps(self):
         step = self.NewStep()
@@ -36,7 +36,7 @@ class Intro(Character):
         
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))
-        step.AddAction(ActGeneric(UI.HUD.HideLoadingScreen, self))
+        step.AddAction(ActGeneric(UI.HUD().HideLoadingScreen, self))
         step.AddAction(ActActuate('aStartDungeonMusic'))
         step.AddAction(ActShowDialogue("Welcome to the Cargo demo! This level is a short version of the main dungeon."))
         
@@ -83,7 +83,7 @@ class Extro(Character):
         
         step = self.NewStep()
         step.AddCondition(CondSensor('sReturn'))
-        step.AddAction(ActGeneric(UI.HUD.ShowLoadingScreen, self))
+        step.AddAction(ActGeneric(UI.HUD().ShowLoadingScreen, self))
         step.AddAction(ActHideDialogue())
         step.AddAction(ActActuate('aStartEndingMusic'))
         
@@ -233,9 +233,9 @@ class Bucket(Actor.Actor):
         
         self.isTouchingPlayer = isTouchingPlayer
         if isTouchingPlayer:
-            Actor.Director.SuspendUserInput()
+            Actor.Director().SuspendUserInput()
         else:
-            Actor.Director.ResumeUserInput()
+            Actor.Director().ResumeUserInput()
         self.updateCamera()
 
 @Utilities.controller

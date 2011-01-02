@@ -255,7 +255,7 @@ class CameraGoal:
 
 class _CloseCameraManager(Actor.DirectorListener):
 	def __init__(self):
-		Actor.Director.addListener(self)
+		Actor.Director().addListener(self)
 		self.active = False
 		
 	def directorMainCharacterChanged(self, oldActor, newActor):
@@ -268,7 +268,7 @@ class _CloseCameraManager(Actor.DirectorListener):
 			self.active = False
 	
 	def toggleCloseMode(self):
-		actor = Actor.Director.getMainCharacter()
+		actor = Actor.Director().getMainCharacter()
 		closeCam = actor.getCloseCamera()
 		if closeCam == None:
 			return
@@ -378,7 +378,7 @@ class CameraPath(CameraGoal):
 		#
 		# Get the vector from the camera to the target.
 		#
-		actor = Actor.Director.getMainCharacter()
+		actor = Actor.Director().getMainCharacter()
 		if actor == None:
 			return
 		
@@ -556,7 +556,7 @@ class CameraPath(CameraGoal):
 		return node, distance
 	
 	def updateWayPoints(self):
-		actor = Actor.Director.getMainCharacter()
+		actor = Actor.Director().getMainCharacter()
 		if actor == None:
 			return
 		
@@ -708,9 +708,9 @@ class CameraCollider(CameraObserver):
 		if inside:
 			if not '_VolColCache' in ob:
 				ob['_VolColCache'] = Utilities._parseColour(ob['VolumeCol'])
-			UI.HUD.showFilter(ob['_VolColCache'])
+			UI.HUD().showFilter(ob['_VolColCache'])
 		else:
-			UI.HUD.hideFilter()
+			UI.HUD().hideFilter()
 
 @Utilities.owner
 def createCamCollider(o):

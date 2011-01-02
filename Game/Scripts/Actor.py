@@ -83,7 +83,7 @@ class Actor:
 		
 		owner['Actor'] = self
 		self.Suspended = False
-		Director.AddActor(self)
+		Director().AddActor(self)
 		
 		#
 		# Used to calculate the velocity on impact. Because the velocity is
@@ -99,7 +99,7 @@ class Actor:
 		self.Parent = None
 		
 		if 'LODRadius' in owner:
-			LODTree.LODManager.AddCollider(self)
+			LODTree.LODManager().AddCollider(self)
 		
 		Utilities.SetDefaultProp(self.owner, 'Health', 1.0)
 		
@@ -212,9 +212,9 @@ class Actor:
 			listener.actorDestroyed(self)
 		self.getListeners().clear()
 		
-		Director.RemoveActor(self)
+		Director().RemoveActor(self)
 		if 'LODRadius' in self.owner:
-			LODTree.LODManager.RemoveCollider(self)
+			LODTree.LODManager().RemoveCollider(self)
 		self.owner.endObject()
 		self.invalid = True
 	
@@ -472,7 +472,8 @@ class DirectorListener:
 		'''
 		pass
 
-class _Director:
+@Utilities.singleton
+class Director:
 	def __init__(self):
 		self.Suspended = False
 		self.InputSuspended = False
@@ -570,18 +571,16 @@ class _Director:
 		if self.MainCharacter and not self.InputSuspended:
 			self.MainCharacter.OnButton2(positive, triggered)
 
-Director = _Director()
-
 def Update():
 	'''Call this once per frame to allow the Director to update the state of its
 	Actors.'''
-	Director.Update()
+	Director().Update()
 
 def SuspendAction():
-	Director.SuspendAction()
+	Director().SuspendAction()
 
 def ResumeAction():
-	Director.ResumeAction()
+	Director().ResumeAction()
 
 @Utilities.controller
 def _hitMainCharacter(c):
@@ -600,7 +599,7 @@ def _hitMainCharacter(c):
 		for o in s.hitObjectList:
 			if 'Actor' in o:
 				actor = o['Actor']
-				if Director.getMainCharacter() == actor:
+				if Director().getMainCharacter() == actor:
 					return True
 	return False
 
@@ -615,15 +614,15 @@ def OnImpulse(c):
 	right = c.sensors['sRight']
 	btn1 = c.sensors['sButton1']
 	btn2 = c.sensors['sButton2']
-	Director.OnMovementImpulse(fwd.positive, back.positive, left.positive,
+	Director().OnMovementImpulse(fwd.positive, back.positive, left.positive,
 		right.positive)
-	Director.OnButton1(btn1.positive, btn1.triggered)
-	Director.OnButton2(btn2.positive, btn2.triggered)
+	Director().OnButton1(btn1.positive, btn1.triggered)
+	Director().OnButton2(btn2.positive, btn2.triggered)
 
 def isTouchingMainCharacter(touchSensor):
 	for o in touchSensor.hitObjectList:
 		if 'Actor' in o:
 			a = o['Actor']
-			if a == Director.getMainCharacter():
+			if a == Director().getMainCharacter():
 				return True
 	return False

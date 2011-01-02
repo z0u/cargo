@@ -70,7 +70,7 @@ def PlayWithRandomPitch(c):
 	#
 	# Set the pitch and activate!
 	#
-	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], next(Utilities.Random))
+	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], next(Utilities.Random()))
 	c.activate(a)
 
 @Utilities.controller

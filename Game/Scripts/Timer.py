@@ -62,7 +62,7 @@ class Timer(Actor.Actor):
 		Utilities.remState(self.owner, self.S_RUNNING)
 		
 		if 'Style' in self.owner:
-			gauge = UI.HUD.GetGauge(self.owner['Style'])
+			gauge = UI.HUD().GetGauge(self.owner['Style'])
 			if gauge:
 				gauge.Hide()
 
@@ -84,7 +84,7 @@ class Timer(Actor.Actor):
 		fraction = self.Tics / self.TargetTics
 		
 		if 'Style' in self.owner:
-			gauge = UI.HUD.GetGauge(self.owner['Style'])
+			gauge = UI.HUD().GetGauge(self.owner['Style'])
 			if gauge:
 				gauge.SetFraction(1.0 - fraction)
 				gauge.Show()

@@ -340,7 +340,6 @@ class Camera(EventListener):
     
     def __init__(self, owner):
         self.owner = owner
-        self.owner['Camera'] = self
         EventBus().addListener(self)
         EventBus().replayLast(self, 'showScreen')
     

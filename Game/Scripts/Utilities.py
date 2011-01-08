@@ -18,8 +18,7 @@
 import mathutils
 from bge import logic
 from bge import render
-from functools import wraps
-import sys
+from . import bgeext
 
 XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
 YAXIS  = mathutils.Vector([0.0, 1.0, 0.0])
@@ -50,42 +49,6 @@ DEBUG = False
 # Decorators
 ############
 
-def owner(f):
-	'''Passes a single argument to a function: the owner of the current
-	controller.'''
-	@wraps(f)
-	def f_new():
-		c = logic.getCurrentController()
-		return f(c.owner)
-	return f_new
-
-def controller(f):
-	'''Passes a single argument to a function: the current controller.'''
-	@wraps(f)
-	def f_new():
-		c = logic.getCurrentController()
-		return f(c)
-	return f_new
-
-def all_sensors_positive(f):
-	'''Decorator. Only calls the function if all sensors are positive.'''
-	@wraps(f)
-	def f_new(*args, **kwargs):
-		if not allSensorsPositive():
-			return
-		return f(*args, **kwargs)
-	return f_new
-
-def some_sensors_positive(f):
-	'''Decorator. Only calls the function if one ore more sensors are
-	positive.'''
-	@wraps(f)
-	def f_new(*args, **kwargs):
-		if not someSensorPositive():
-			return
-		return f(*args, **kwargs)
-	return f_new
-
 def singleton(cls):
 	'''Class decorator: turns a class into a Singleton. When applied, all
 	class instantiations return the same instance.'''
@@ -99,101 +62,9 @@ def singleton(cls):
 		return instance
 	return get
 
-class gameobject:
-	'''Extends a class to wrap KX_GameObjects. This decorator accepts any number
-	of strings as arguments. Each string should be the name of a member to
-	expose as a top-level function - this makes it available to logic bricks in
-	the BGE. The class name is used as a function prefix. For example, consider
-	the following class definition in a module called 'Module':
-
-	@gameobject('update')
-	class Foo:
-		def __init__(self, owner):
-			self.owner = owner
-		def update(self):
-			self.owner.worldPosition.z += 1.0
-
-	A game object can be bound to the 'Foo' class by calling, from a Python
-	controller, 'Module.Foo'. The 'update' function can then be called with
-	'Module.Foo_update'.
-
-	This decorator requires arguments; i.e. use '@gameobject()' instead of
-	'@gameobject'.'''
-
-	def __init__(self, *externs):
-		self.externs = externs
-		self.converted = False
-
-	@all_sensors_positive
-	def __call__(self, cls):
-		if not self.converted:
-			self.create_interface(cls)
-			self.converted = True
-
-		old_init = cls.__init__
-		def new_init(self, owner=None):
-			if owner == None:
-				owner = logic.getCurrentController().owner
-			if 'template' in owner:
-				owner = replaceObject(owner['template'], owner)
-			old_init(self, owner)
-			owner['__wrapper__'] = self
-		cls.__init__ = new_init
-
-		return cls
-
-	def create_interface(self, cls):
-		'''Expose the nominated methods as top-level functions in the containing
-		module.'''
-		module = sys.modules[cls.__module__]
-
-		for methodName in self.externs:
-			f = cls.__dict__[methodName]
-
-			def method_function(*args, **kwargs):
-				o = logic.getCurrentController().owner
-				instance = o['__wrapper__']
-				args = list(args)
-				args.insert(0, instance)
-				return f(*args, **kwargs)
-
-			method_function.__name__ = '%s_%s' % (cls.__name__, methodName)
-			method_function.__doc__ = f.__doc__
-			setattr(module, method_function.__name__, method_function)
-
 ###################
 # Sensor management
 ###################
-
-@controller
-def allSensorsPositive(c):
-	'''
-	Test whether all sensors are positive.
-	
-	Parameters:
-	c: A controller.
-	
-	Returns: true iff all sensors are positive.
-	'''
-	for s in c.sensors:
-		if not s.positive:
-			return False
-	return True
-
-@controller
-def someSensorPositive(c):
-	'''
-	Test whether at least one sensor is positive.
-	
-	Parameters:
-	c: A controller.
-	
-	Returns: true iff at least one sensor is positive.
-	'''
-	for s in c.sensors:
-		if s.positive:
-			return True
-	return False
 
 @singleton
 class SceneManager:
@@ -225,8 +96,8 @@ class SceneManager:
 			o.OnSceneEnd()
 		self.NewScene = True
 
-@all_sensors_positive
-@controller
+@bgeext.all_sensors_positive
+@bgeext.controller
 def EndScene(c):
 	'''Releases all object references (e.g. Actors). Then, all actuators are
 	activated. Call this from a Python controller attached to a switch scene
@@ -440,7 +311,7 @@ def _SlowCopyRot(o, goal, factor):
 	
 	o.localOrientation = orn
 
-@controller
+@bgeext.controller
 def SlowCopyRot(c):
 	'''
 	Slow parenting (Rotation only). The owner will copy the rotation of the
@@ -462,7 +333,7 @@ def _SlowCopyLoc(o, goal, factor):
 	
 	o.worldPosition = _lerp(pos, goalPos, factor)
 
-@controller
+@bgeext.controller
 def SlowCopyLoc(c):
 	'''
 	Slow parenting (Location only). The owner will copy the position of the
@@ -473,8 +344,8 @@ def SlowCopyLoc(c):
 	goal = c.sensors['sGoal'].owner
 	_SlowCopyLoc(o, goal, o['SlowFac'])
 
-@all_sensors_positive
-@controller
+@bgeext.all_sensors_positive
+@bgeext.controller
 def CopyTrans(c):
 	'''Copy the transform from a linked sensor's object to this object.'''
 	_copyTransform(c.sensors[0].owner, c.owner)
@@ -503,7 +374,7 @@ def setRelPos(ob, target, ref):
 	offset = ref.worldPosition - ob.worldPosition
 	ob.worldPosition = target.worldPosition - offset
 
-@owner
+@bgeext.owner
 def RayFollow(o):
 	'''
 	Position an object some distance along its parent's z-axis. The object will 
@@ -557,14 +428,6 @@ def addObject(name, time = 0):
 	scene = logic.getCurrentScene()
 	return scene.addObject(name, getCursor(), time)
 
-def replaceObject(name, original, time = 0):
-	scene = logic.getCurrentScene()
-	newObj = scene.addObject(name, original, time)
-	for prop in original.getPropertyNames():
-		newObj[prop] = original[prop]
-	original.endObject()
-	return newObj
-
 def drawPolyline(points, colour, cyclic=False):
 	'''Like bge.render.drawLine, but operates on any number of points.'''
 	for (a, b) in zip(points, points[1:]):
@@ -602,8 +465,8 @@ def triangleNormal(p0, p1, p2):
 	
 	return normal
 
-@all_sensors_positive
-@controller
+@bgeext.all_sensors_positive
+@bgeext.controller
 def SprayParticle(c):
 	'''
 	Instance one particle, and decrement the particle counter. The particle will
@@ -637,14 +500,14 @@ def SprayParticle(c):
 	c.activate('aEmit')
 	c.activate('aRot')
 
-@owner
+@bgeext.owner
 def billboard(o):
 	'''Track the camera - the Z-axis of the current object will be point towards
 	the camera.'''
 	_, vec, _ = o.getVectTo(logic.getCurrentScene().active_camera)
 	o.alignAxisToVect(vec, 2)
 
-@controller
+@bgeext.controller
 def timeOffsetChildren(c):
 	'''Copy the 'Frame' property to all children, incrementally adding an offset
 	as defined by the 'Offset' property.'''
@@ -691,8 +554,8 @@ _NAMED_COLOURS = {
 }
 
 def _parseColour(colstr):
-	'''Parse a colour from a hexadecimal number; either "rrggbb" or
-	"rrggbbaa". If no alpha is specified, a value of 1.0 will be used.
+	'''Parse a colour from a hexadecimal number; either "#rrggbb" or
+	"#rrggbbaa". If no alpha is specified, a value of 1.0 will be used.
 	
 	Returns:
 	A 4D vector compatible with object colour.
@@ -741,7 +604,7 @@ def hasState(ob, state):
 	stateBitmask = 1 << (state - 1)
 	return (ob.state & stateBitmask) != 0
 
-@all_sensors_positive
+@bgeext.all_sensors_positive
 def makeScreenshot():
 	render.makeScreenshot('//Screenshot#.jpg')
 

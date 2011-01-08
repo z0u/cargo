@@ -16,6 +16,7 @@
 #
 
 from . import Utilities
+from . import bgeext
 from bge import logic
 from bge import render
 import mathutils
@@ -211,45 +212,45 @@ class AsyncAdoptionHelper:
 # Global sensors
 ################
 
-@Utilities.controller
+@bgeext.controller
 def controllerInit(c):
     '''Initialise the menu'''
     render.showMouse(True)
     mOver = c.sensors['sMouseOver']
     mOver.usePulseFocus = True
 
-@Utilities.all_sensors_positive
+@bgeext.all_sensors_positive
 def focusNext():
     InputHandler().focusNext()
 
-@Utilities.all_sensors_positive
+@bgeext.all_sensors_positive
 def focusPrevious():
     InputHandler().focusPrevious()
 
-@Utilities.all_sensors_positive
+@bgeext.all_sensors_positive
 def focusLeft():
     InputHandler().focusLeft()
 
-@Utilities.all_sensors_positive
+@bgeext.all_sensors_positive
 def focusRight():
     InputHandler().focusRight()
 
-@Utilities.all_sensors_positive
+@bgeext.all_sensors_positive
 def focusUp():
     InputHandler().focusUp()
 
-@Utilities.all_sensors_positive
+@bgeext.all_sensors_positive
 def focusDown():
     InputHandler().focusDown()
 
-@Utilities.all_sensors_positive
-@Utilities.controller
+@bgeext.all_sensors_positive
+@bgeext.controller
 def mouseMove(c):
     mOver = c.sensors['sMouseOver']
     InputHandler().mouseOver(mOver)
 
 def mouseButton(c):
-    if Utilities.someSensorPositive():
+    if bgeext.someSensorPositive():
         InputHandler().mouseDown()
     else:
         InputHandler().mouseUp()
@@ -324,7 +325,7 @@ Screen('CreditsScreen', 'Credits')
 Screen('ConfirmationDialogue', 'Confirm')
 EventBus().notify(None, 'showScreen', 'LoadingScreen')
 
-@Utilities.gameobject('update')
+@bgeext.gameobject('update')
 class Camera(EventListener):
     '''A camera that adjusts its position depending on which screen is
     visible.'''
@@ -359,7 +360,7 @@ class Camera(EventListener):
             frame = max(frame - Camera.FRAME_RATE, targetFrame)
         self.owner['frame'] = frame
 
-@Utilities.gameobject('update')
+@bgeext.gameobject('update')
 class Widget(UIObject):
     '''An interactive UIObject. Has various states (e.g. focused, up, down) to
     facilitate interaction. Some of the states map to a frame to allow a
@@ -489,13 +490,13 @@ class Widget(UIObject):
         if oldv != sensitive:
             EventBus().notify(self, 'sensitivityChanged', self.sensitive)
 
-@Utilities.gameobject()
+@bgeext.gameobject()
 class Button(Widget):
     # A Widget has everything needed for a simple button.
     def __init__(self, owner):
         Widget.__init__(self, owner)
 
-@Utilities.gameobject()
+@bgeext.gameobject()
 class SaveButton(Button):
     def __init__(self, owner):
         Button.__init__(self, owner)
@@ -513,7 +514,7 @@ class SaveButton(Button):
         super(SaveButton, self).updateVisibility(visible)
         self.idCanvas.setVisible(visible, True)
 
-@Utilities.gameobject()
+@bgeext.gameobject()
 class Checkbox(Button):
     def __init__(self, owner):
         Button.__init__(self, owner)
@@ -563,7 +564,7 @@ class Checkbox(Button):
         self.checkOff['frame'] = self.owner['frame']
         self.checkOn['frame'] = self.owner['frame']
 
-@Utilities.gameobject()
+@bgeext.gameobject()
 class ConfirmationPage(Widget, EventListener):
     def __init__(self, owner):
         Widget.__init__(self, owner)
@@ -608,7 +609,7 @@ class ConfirmationPage(Widget, EventListener):
                 EventBus().notify(self, self.onConfirm, self.onConfirmBody)
                 self.text['Content'] = ""
 
-@Utilities.gameobject()
+@bgeext.gameobject()
 class GameDetailsPage(Widget):
     '''A dumb widget that can show and hide itself, but doesn't respond to
     mouse events.'''
@@ -635,7 +636,7 @@ class GameDetailsPage(Widget):
             self.title['Content'] = Store.get('/game/title', 'Game %d' % (Store.getSessionId() + 1))
             self.storyDetails['Content'] = Store.get('/game/storySummary', 'Start a new game.')
 
-@Utilities.gameobject('draw')
+@bgeext.gameobject('draw')
 class CreditsPage(Widget):
     '''Controls the display of credits.'''
     DELAY = 180
@@ -682,7 +683,7 @@ class CreditsPage(Widget):
             if self.delayTimer <= 0:
                 self.drawNext()
 
-@Utilities.gameobject()
+@bgeext.gameobject()
 class Subtitle(EventListener):
     def __init__(self, owner):
         self.owner = owner
@@ -693,7 +694,7 @@ class Subtitle(EventListener):
         if message == 'screenShown':
             self.owner['Content'] = body
 
-@Utilities.gameobject('update')
+@bgeext.gameobject('update')
 class MenuSnail:
     def __init__(self, owner):
         self.owner = owner

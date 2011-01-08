@@ -16,6 +16,7 @@
 #
 
 import mathutils
+from . import bgeext
 from . import Utilities
 
 ZERO2 = mathutils.Vector((0.0, 0.0))
@@ -133,11 +134,11 @@ class GrassBlade:
 			self.owner[s.YProp] = s.Frame.y
 			linkDisplacement = s.Velocity
 
-@Utilities.owner
+@bgeext.owner
 def CreateGrassBlade(o):
 	GrassBlade(o)
 
-@Utilities.controller
+@bgeext.controller
 def Collide(c):
 	s = c.sensors['Near']
 	c.owner['GrassBlade'].Collide(s.hitObjectList)

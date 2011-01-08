@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from . import bgeext
 from . import Actor
 from . import Camera
 import mathutils
@@ -334,18 +335,18 @@ class BottleCap(ShellBase):
 		self.LeftMagnitude = 0.0
 		self.Occupier['JumpFrame'] = 0
 
-@Utilities.owner
+@bgeext.owner
 def CreateShell(o):
 	Shell(o)
 
-@Utilities.owner
+@bgeext.owner
 def CreateNut(o):
 	Nut(o)
 
-@Utilities.owner
+@bgeext.owner
 def CreateWheel(o):
 	Wheel(o)
 
-@Utilities.owner
+@bgeext.owner
 def CreateBottleCap(o):
 	BottleCap(o)

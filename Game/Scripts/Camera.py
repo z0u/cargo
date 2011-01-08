@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from . import bgeext
 from . import Utilities
 from . import Actor
 from . import UI
@@ -197,7 +198,7 @@ AutoCamera = _AutoCamera()
 def onRender():
 	AutoCamera.onRender()
 
-@Utilities.owner
+@bgeext.owner
 def setCamera(o):
 	camera = o
 	AutoCamera.SetCamera(camera)
@@ -205,32 +206,32 @@ def setCamera(o):
 def addGoalOb(goal):
 	AutoCamera.addGoalOb(goal)
 
-@Utilities.all_sensors_positive
-@Utilities.owner
+@bgeext.all_sensors_positive
+@bgeext.owner
 def AddGoal(o):
 	AutoCamera.addGoalOb(o)
 
-@Utilities.all_sensors_positive
-@Utilities.owner
+@bgeext.all_sensors_positive
+@bgeext.owner
 def RemoveGoal(o):
 	removeGoalOb(o)
 
-@Utilities.controller
+@bgeext.controller
 def AddGoalIfMainChar(c):
 	'''
 	Add the owner of this controller as a goal if the main actor has been hit.
 	
 	@see Actor._hitMainCharacter.
 	'''
-	if not Actor._hitMainCharacter(c):
+	if not Actor._hitMainCharacter():
 		return
 	
 	goal = c.owner
 	addGoalOb(goal)
 
-@Utilities.controller
+@bgeext.controller
 def RemoveGoalIfNotMainChar(c):
-	if Actor._hitMainCharacter(c):
+	if Actor._hitMainCharacter():
 		return
 	
 	goal = c.owner
@@ -614,13 +615,13 @@ class CameraPath(CameraGoal):
 										self.pathHead.ceilingHeight,
 										self.ZOFFSET_INCREMENT))
 
-@Utilities.owner
+@bgeext.owner
 def createCameraPath(o):
 	path = CameraPath(o, o['SlowFac'], o['InstantCut'])
 	o['CameraPath'] = path
 	AutoCamera.SetDefaultGoal(path)
 
-@Utilities.owner
+@bgeext.owner
 def updatePath(o):
 	o['CameraPath'].onRender()
 
@@ -712,7 +713,7 @@ class CameraCollider(CameraObserver):
 		else:
 			UI.HUD().hideFilter()
 
-@Utilities.owner
+@bgeext.owner
 def createCamCollider(o):
 	o['CamCollider'] = CameraCollider(o)
 
@@ -738,6 +739,6 @@ class BackgroundCamera(CameraObserver):
 		self.owner.worldOrientation = autoCamera.Camera.worldOrientation
 		self.owner.lens = autoCamera.Camera.lens
 
-@Utilities.owner
+@bgeext.owner
 def createBackgroundCamera(o):
 	BackgroundCamera(o)

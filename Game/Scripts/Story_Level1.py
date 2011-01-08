@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from . import bgeext
 from . import Utilities
 from . import Sound
 import mathutils
@@ -82,16 +83,16 @@ class Blinkenlights:
 		lampCol.resize3D()
 		self.lamp.color =  Utilities._lerp(currentLampCol, lampCol, 0.1)
 
-@Utilities.owner
+@bgeext.owner
 def createBlinkenlights(o):
 	o['Actor'] = Blinkenlights(o)
 
-@Utilities.owner
+@bgeext.owner
 def blinkBlinkenlights(o):
 	bl = o['Actor']
 	bl.blink()
 
-@Utilities.owner
+@bgeext.owner
 def updateBlinkenlights(o):
 	bl = o['Actor']
 	bl.update()
@@ -295,12 +296,12 @@ class Worm(Character):
 	def isInsideWorld(self):
 		return True
 
-@Utilities.all_sensors_positive
-@Utilities.owner
+@bgeext.all_sensors_positive
+@bgeext.owner
 def CreateWorm(o):
 	Worm(o)
 
-@Utilities.controller
+@bgeext.controller
 def wormKnockSound(c):
 	frame = c.owner['ActionFrame']
 	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):

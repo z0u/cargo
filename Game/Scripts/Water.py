@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from . import bgeext
 import mathutils
 from . import Utilities
 from . import Actor
@@ -47,7 +48,7 @@ class Water(Actor.ActorListener):
 		Utilities.SetDefaultProp(self.owner, 'DampingFactor', 0.2)
 		# Colour to use as filter when camera is under water
 		# (see Camera.CameraCollider)
-		Utilities.SetDefaultProp(self.owner, 'VolumeCol', '22448880')
+		Utilities.SetDefaultProp(self.owner, 'VolumeCol', '#22448880')
 		
 		self.InstanceAngle = 0.0
 		self.CurrentFrame = 0
@@ -358,7 +359,7 @@ class Bubble(Actor.Actor):
 		'''Bubbles aren't important enough to respawn. Just destroy them.'''
 		self.Destroy()
 
-@Utilities.owner
+@bgeext.owner
 def createWater(o):
 	'''
 	Create a new Water object. The object should be perfectly flat, with all
@@ -370,7 +371,7 @@ def createWater(o):
 	
 	Water(o)
 
-@Utilities.owner
+@bgeext.owner
 def createShapedWater(o):
 	'''
 	Create a new ShapedWater object. The object does not have to be flat, but it
@@ -382,7 +383,7 @@ def createShapedWater(o):
 	'''
 	ShapedWater(o)
 
-@Utilities.controller
+@bgeext.controller
 def onCollision(c):
 	'''
 	Respond to collisions with Actors. Ripples will be created, and 

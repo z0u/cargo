@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from . import bgeext
 from . import Utilities
 import mathutils
 
@@ -26,7 +27,7 @@ MIN_VOLUME = 0.001
 #
 _SoundActuatorIndices = {}
 
-@Utilities.controller
+@bgeext.controller
 def PlayWithRandomPitch(c):
 	'''
 	Play a sound with a random pitch. The pitch range is defined by the
@@ -73,7 +74,7 @@ def PlayWithRandomPitch(c):
 	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], next(Utilities.Random()))
 	c.activate(a)
 
-@Utilities.controller
+@bgeext.controller
 def Fade(c):
 	'''
 	Causes a sound to play a long as its inputs are active. On activation, the
@@ -125,7 +126,7 @@ def _Modulate(speed, c):
 	
 	_Fade(c, factor)
 
-@Utilities.controller
+@bgeext.controller
 def ModulateByLinV(c):
 	'''
 	Change the pitch and volume of the sound depending on the angular velocity
@@ -150,7 +151,7 @@ def ModulateByLinV(c):
 	linV = mathutils.Vector(o.getLinearVelocity(False))
 	_Modulate(linV.magnitude, c)
 
-@Utilities.controller
+@bgeext.controller
 def ModulateByAngV(c):
 	'''
 	Change the pitch and volume of the sound depending on the angular velocity

@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from . import bgeext
 from . import Actor
 from . import UI
 from bge import logic
 from . import Camera
-from . import Utilities
 
 class StoryError(Exception):
 	pass
@@ -222,7 +222,7 @@ class Character(Actor.Actor):
 	def CreateSteps(self):
 		pass
 
-@Utilities.controller
+@bgeext.controller
 def Progress(c):
 	character = c.owner['Actor']
 	character.Progress(c)

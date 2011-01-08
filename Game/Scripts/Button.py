@@ -18,6 +18,7 @@
 from bge import logic
 import mathutils
 from . import Utilities
+from . import bgeext
 
 class Button:
 	'''A generic 3D button that can be activated by objects in the scene. No
@@ -91,17 +92,17 @@ class ToughButton(Button):
 		vel = mathutils.Vector(actor.GetLastLinearVelocity())
 		return vel.magnitude >= self.owner['MinSpeed']
 
-@Utilities.owner
+@bgeext.owner
 def CreateButton(o):
 	'''Create a new generic button.'''
 	Button(o)
 
-@Utilities.owner
+@bgeext.owner
 def CreateToughButton(o):
 	'''Create a new tough button.'''
 	ToughButton(o)
 
-@Utilities.controller
+@bgeext.controller
 def OnTouched(c):
 	'''Call this when the objects touching a button change.
 	

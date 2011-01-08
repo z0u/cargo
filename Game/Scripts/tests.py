@@ -1,6 +1,7 @@
 import unittest
 from bge import logic
 from . import bgeext
+from . import Utilities
 
 class ProxyTest(unittest.TestCase):
 	'''bgeext.ProxyGameObject'''
@@ -44,4 +45,41 @@ class ProxyTest(unittest.TestCase):
 
 def proxy_test():
 	suite = unittest.TestLoader().loadTestsFromTestCase(ProxyTest)
+	unittest.TextTestRunner(verbosity=2).run(suite)
+
+class PQTest(unittest.TestCase):
+	'''Utilities.PriorityQueue'''
+
+	def setUp(self):
+		self.Q = Utilities.PriorityQueue()
+
+	def testAdd(self):
+		self.Q.push('foo', 'fooI', 1)
+		self.assertEquals(self.Q[-1], 'fooI')
+		self.assertEquals(len(self.Q), 1)
+
+	def testAddSeveral(self):
+		self.Q.push('foo', 'fooI', 1)
+		self.Q.push('bar', 'barI', 0)
+		self.assertEquals(self.Q[-1], 'fooI')
+		self.assertEquals(len(self.Q), 2)
+		self.Q.push('baz', 'bazI', 1)
+		self.assertEquals(self.Q[-1], 'bazI')
+		self.assertEquals(len(self.Q), 3)
+
+	def testRemove(self):
+		self.Q.push('foo', 'fooI', 1)
+		self.Q.push('bar', 'barI', 0)
+		self.Q.push('baz', 'bazI', 1)
+		self.Q.pop()
+		self.assertEquals(self.Q[-1], 'fooI')
+		self.assertEquals(len(self.Q), 2)
+		self.Q.pop()
+		self.assertEquals(self.Q[-1], 'barI')
+		self.assertEquals(len(self.Q), 1)
+		self.Q.pop()
+		self.assertEquals(len(self.Q), 0)
+
+def generic_tests():
+	suite = unittest.TestLoader().loadTestsFromTestCase(PQTest)
 	unittest.TextTestRunner(verbosity=2).run(suite)

@@ -679,36 +679,36 @@ class FuzzySwitch:
 	def isOn(self):
 		return self.on
 
-class PriorityQueueItem:
-	def __init__(self, key, item, priority):
-		self.key = key
-		self.item = item
-		self.priority = priority
-	
-	def __repr__(self):
-		return "(%s, %s, %d)" % (self.key, self.item, self.priority)
-
 class PriorityQueue:
 	'''
 	A poor man's associative priority queue. All operations run in O(n) time.
 	This is only meant to contain a small number of items.
 	'''
-	
+
+	class Item:
+		def __init__(self, key, item, priority):
+			self.key = key
+			self.item = item
+			self.priority = priority
+
+		def __repr__(self):
+			return "(%s, %s, %d)" % (self.key, self.item, self.priority)
+
 	def __init__(self):
 		'''Create a new, empty priority queue.'''
 		self.Q = []
 		self.ItemSet = set()
-	
+
 	def __len__(self):
 		return len(self.Q)
-	
+
 	def __getitem__(self, y):
 		'''
 		Get the yth item from the queue. 0 is the bottom (oldest/lowest
 		priority); -1 is the top (youngest/highest priority).
 		'''
 		return self.Q[y].item
-	
+
 	def push(self, key, item, priority):
 		'''
 		Add an item to the end of the queue. If the item is already in the
@@ -722,9 +722,9 @@ class PriorityQueue:
 		'''
 		if key in self.ItemSet:
 			self.discard(key)
-		
-		pqi = PriorityQueueItem(key, item, priority)
-		
+
+		pqi = PriorityQueue.Item(key, item, priority)
+
 		added = False
 		i = len(self.Q) - 1
 		while i >= 0:
@@ -735,13 +735,13 @@ class PriorityQueue:
 			i = i - 1
 		if not added:
 			self.Q.insert(0, pqi)
-		
+
 		self.ItemSet.add(key)
-	
+
 	def discard(self, key):
 		'''
 		Remove an item from the queue.
-		
+
 		Parameters:
 		key: The key that was used to insert the item.
 		'''
@@ -752,57 +752,19 @@ class PriorityQueue:
 				self.ItemSet.remove(key)
 				return
 			i = i - 1
-	
+
 	def pop(self):
 		'''
 		Remove the highest item in the queue.
-		
+
 		Returns: the item that is being removed.
-		
+
 		Raises:
 		IndexError: if the queue is empty.
 		'''
 		pqi = self.Q.pop()
 		self.ItemSet.remove(pqi.key)
 		return pqi.item
-	
+
 	def top(self):
 		return self[-1]
-
-def RunTests():
-	import unittest
-	
-	class PQTest(unittest.TestCase):
-		def setUp(self):
-			self.Q = PriorityQueue()
-		
-		def testAdd(self):
-			self.Q.push('foo', 'fooI', 1)
-			self.assertEquals(self.Q[-1], 'fooI')
-			self.assertEquals(len(self.Q), 1)
-		
-		def testAddSeveral(self):
-			self.Q.push('foo', 'fooI', 1)
-			self.Q.push('bar', 'barI', 0)
-			self.assertEquals(self.Q[-1], 'fooI')
-			self.assertEquals(len(self.Q), 2)
-			self.Q.push('baz', 'bazI', 1)
-			self.assertEquals(self.Q[-1], 'bazI')
-			self.assertEquals(len(self.Q), 3)
-		
-		def testRemove(self):
-			self.Q.push('foo', 'fooI', 1)
-			self.Q.push('bar', 'barI', 0)
-			self.Q.push('baz', 'bazI', 1)
-			self.Q.remove('foo')
-			self.assertEquals(self.Q[-1], 'bazI')
-			self.assertEquals(len(self.Q), 2)
-			self.Q.remove('baz')
-			self.assertEquals(self.Q[-1], 'barI')
-			self.assertEquals(len(self.Q), 1)
-			self.Q.remove('bar')
-			self.assertEquals(len(self.Q), 0)
-	
-	suite = unittest.TestLoader().loadTestsFromTestCase(PQTest)
-	unittest.TextTestRunner(verbosity=2).run(suite)
-

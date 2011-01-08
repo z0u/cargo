@@ -3,7 +3,7 @@ from bge import logic
 from . import bgeext
 from . import Utilities
 
-class ProxyTest(unittest.TestCase):
+class ProxyGameObjectTest(unittest.TestCase):
 	'''bgeext.ProxyGameObject'''
 
 	def setUp(self):
@@ -44,21 +44,21 @@ class ProxyTest(unittest.TestCase):
 		self.assertTrue(self.o1._get_owner() in self.o2._get_owner().children)
 
 def proxy_test():
-	suite = unittest.TestLoader().loadTestsFromTestCase(ProxyTest)
+	suite = unittest.TestLoader().loadTestsFromTestCase(ProxyGameObjectTest)
 	unittest.TextTestRunner(verbosity=2).run(suite)
 
-class PQTest(unittest.TestCase):
+class PriorityQueueTest(unittest.TestCase):
 	'''Utilities.PriorityQueue'''
 
 	def setUp(self):
 		self.Q = Utilities.PriorityQueue()
 
-	def testAdd(self):
+	def test_add(self):
 		self.Q.push('foo', 'fooI', 1)
 		self.assertEquals(self.Q[-1], 'fooI')
 		self.assertEquals(len(self.Q), 1)
 
-	def testAddSeveral(self):
+	def test_add_several(self):
 		self.Q.push('foo', 'fooI', 1)
 		self.Q.push('bar', 'barI', 0)
 		self.assertEquals(self.Q[-1], 'fooI')
@@ -67,7 +67,7 @@ class PQTest(unittest.TestCase):
 		self.assertEquals(self.Q[-1], 'bazI')
 		self.assertEquals(len(self.Q), 3)
 
-	def testRemove(self):
+	def test_remove(self):
 		self.Q.push('foo', 'fooI', 1)
 		self.Q.push('bar', 'barI', 0)
 		self.Q.push('baz', 'bazI', 1)
@@ -80,6 +80,46 @@ class PQTest(unittest.TestCase):
 		self.Q.pop()
 		self.assertEquals(len(self.Q), 0)
 
+class FuzzySwitchTest(unittest.TestCase):
+	'''Utilities.FuzzySwitch'''
+
+	def test_init(self):
+		self.sw = Utilities.FuzzySwitch(5, 10, False)
+		self.assertFalse(self.sw.isOn())
+
+	def test_on(self):
+		self.sw = Utilities.FuzzySwitch(3, 4, False)
+		self.sw.turnOn()
+		self.assertFalse(self.sw.isOn())
+		self.sw.turnOn()
+		self.assertFalse(self.sw.isOn())
+		self.sw.turnOn()
+		self.assertTrue(self.sw.isOn())
+
+	def test_off(self):
+		self.sw = Utilities.FuzzySwitch(3, 4, True)
+		self.sw.turnOff()
+		self.assertTrue(self.sw.isOn())
+		self.sw.turnOff()
+		self.assertTrue(self.sw.isOn())
+		self.sw.turnOff()
+		self.assertTrue(self.sw.isOn())
+		self.sw.turnOff()
+		self.assertFalse(self.sw.isOn())
+
+	def test_both(self):
+		self.sw = Utilities.FuzzySwitch(2, 2, False)
+		self.sw.turnOn()
+		self.assertFalse(self.sw.isOn())
+		self.sw.turnOff()
+		self.assertFalse(self.sw.isOn())
+		self.sw.turnOn()
+		self.assertFalse(self.sw.isOn())
+		
+		self.sw.turnOn()
+		self.assertTrue(self.sw.isOn())
+
 def generic_tests():
-	suite = unittest.TestLoader().loadTestsFromTestCase(PQTest)
+	suite = unittest.TestLoader().loadTestsFromTestCase(PriorityQueueTest)
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(FuzzySwitchTest))
 	unittest.TextTestRunner(verbosity=2).run(suite)

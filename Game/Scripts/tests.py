@@ -2,6 +2,7 @@ import unittest
 from bge import logic
 from . import bgeext
 from . import Utilities
+import weakref
 
 class ProxyGameObjectTest(unittest.TestCase):
 	'''bgeext.ProxyGameObject'''
@@ -123,3 +124,48 @@ def generic_tests():
 	suite = unittest.TestLoader().loadTestsFromTestCase(PriorityQueueTest)
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(FuzzySwitchTest))
 	unittest.TextTestRunner(verbosity=2).run(suite)
+
+
+#########################
+# Non-standard unit tests
+#########################
+
+# Weak reference testing for ProxyGameObjects
+
+wref = None
+wrefCountdown = 3
+wrefPass = True
+
+def weakref_init():
+	global wref
+
+	def callback(ref):
+		print("Info: Weak reference is dying.")
+
+	o = bgeext.get_proxy(logic.getCurrentScene().objects['weakref'])
+	wref = weakref.ref(o, callback)
+
+def weakref_test():
+	global wrefCountdown
+	global wrefPass
+
+	wrefCountdown -= 1
+
+	if wrefCountdown > 0 and wref() == None:
+		print("Info: Weak reference died before it was due to.")
+		wrefPass = False
+	elif wrefCountdown == 1:
+		wref().endObject()
+	elif wrefCountdown == 0:
+		if wref() != None:
+			wrefPass = False
+			print("Info: Weak reference did not die on time.")
+
+		if wrefPass:
+			print("weakref_test ... ok")
+			print("\n----------------------------------------------------------------------")
+			print("OK")
+		else:
+			print("weakref_test ... FAIL")
+			print("\n----------------------------------------------------------------------")
+			print("FAIL")

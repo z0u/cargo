@@ -15,6 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+'''Wraps some useful features of the game engine API to allow it to be extended.
+'''
+
 from bge import types
 from bge import logic
 
@@ -323,24 +326,3 @@ def has_proxy(owner):
 
 def get_proxy(owner):
 	return owner['__wrapper__']
-
-@owner
-def test(o):
-	proxy = get_proxy(o)
-	print(proxy.getVelocity())
-	print(proxy.worldPosition)
-	proxy.worldPosition.y += 5
-	print(proxy.worldPosition)
-	print(proxy['foo'])
-	proxy['bar'] = 26
-	print('bar' in proxy)
-	print(proxy['bar'])
-	del proxy['bar']
-
-	other = get_proxy(logic.getCurrentScene().objects['other'])
-	proxy.setParent(other)
-	for child in other.children:
-		print(child)
-	print(list(other._get_owner().children))
-	print(proxy in other.children)
-	print(o in other.children)

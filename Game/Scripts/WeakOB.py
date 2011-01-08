@@ -27,9 +27,11 @@ def get_reference(f):
 	return f_new
 
 class Mixin:
-	def __init__(self, base, privates):
+	def __init__(self, base, privates=[], refs=[], derefs=[]):
 		self.base = base
 		self.privates = privates
+		self.refs = refs
+		self.derefs = derefs
 		self.converted = False
 
 	def __call__(self, cls):
@@ -60,22 +62,40 @@ class Mixin:
 			self.import_property(cls, name, member)
 
 	def import_method(self, cls, name, member):
-		def proxy_fun(slf, *argc, **argv):
+		def proxy_fn(slf, *argc, **argv):
 			ret = member(slf._get_owner(), *argc, **argv)
 			return ret
-		proxy_fun.__name__ = name
-		proxy_fun.__doc__ = member.__doc__
-		setattr(cls, name, proxy_fun)
+
+		# Wrap/unwrap args and return values.
+		if name in self.derefs:
+			proxy_fn = dereference_arg1(proxy_fn)
+		if name in self.refs:
+			proxy_fn = get_reference(proxy_fn)
+
+		proxy_fn.__doc__ = member.__doc__
+		proxy_fn.__name__ = name
+
+		setattr(cls, name, proxy_fn)
 
 	def import_property(self, cls, name, member):
 		def get(slf):
 			return getattr(slf._get_owner(), name)
 		def set(slf, value):
 			setattr(slf._get_owner(), name, value)
+
+		# Wrap/unwrap args and return values.
+		if name in self.derefs:
+			set = dereference_arg1(set)
+		if name in self.refs:
+			get = get_reference(get)
+
 		p = property(get, set, doc=member.__doc__)
 		setattr(cls, name, p)
 
-@Mixin(types.CListValue, LIST_FUNCTIONS)
+@Mixin(types.CListValue,
+	privates=LIST_FUNCTIONS,
+	refs=['__getitem__', 'from_id', 'get'],
+	derefs=['__contains__', 'append', 'count', 'index'])
 class ProxyCListValue:
 	def __init__(self, owner):
 		self._owner = owner
@@ -83,12 +103,11 @@ class ProxyCListValue:
 	def _get_owner(self):
 		return self._owner
 
-	@get_reference
-	def __getitem__(self, *args, **kwargs):
-		return self._get_owner().__getitem__(*args, **kwargs)
-
 @Utilities.gameobject()
-@Mixin(types.KX_GameObject, LIST_FUNCTIONS)
+@Mixin(types.KX_GameObject,
+	privates=LIST_FUNCTIONS,
+	refs=['parent', 'rayCastTo'],
+	derefs=['getDistanceTo', 'getVectTo', 'setParent', 'rayCastTo', 'reinstancePhysicsMesh'])
 class ProxyGameObject:
 
 	def __init__(self, owner):
@@ -96,15 +115,6 @@ class ProxyGameObject:
 
 	def _get_owner(self):
 		return self._owner
-
-	@dereference_arg1
-	def setParent(self, *args, **kwargs):
-		self._get_owner().setParent(*args, **kwargs)
-
-	@get_reference
-	def _getParent(self):
-		return self._get_owner().parent
-	parent = property(_getParent, doc=types.KX_GameObject.parent)
 
 	# The CListValues need to be wrapped every time, because every time it's a
 	# new instance.
@@ -119,29 +129,19 @@ class ProxyGameObject:
 	childrenRecursive = property(_getChildrenRecursive,
 								doc=types.KX_GameObject.childrenRecursive)
 
-	@dereference_arg1
-	def getDistanceTo(self, *args, **kwargs):
-		return self._get_owner().getDistanceTo(*args, **kwargs)
-
-	@dereference_arg1
-	def getVectTo(self, *args, **kwargs):
-		return self._get_owner().getVectTo(*args, **kwargs)
-
-	@dereference_arg1
-	def rayCastTo(self, *args, **kwargs):
-		return self._get_owner().rayCastTo(*args, **kwargs)
-
+	# This function is special: the returned object may be wrapped, but it is
+	# inside a tuple.
 	@dereference_arg1
 	def rayCast(self, *args, **kwargs):
-		return self._get_owner().rayCast(*args, **kwargs)
-
-	@dereference_arg1
-	def reinstancePhysicsMesh(self, *args, **kwargs):
-		return self._get_owner().reinstancePhysicsMesh(*args, **kwargs)
+		ob, p, n = self._get_owner().rayCast(*args, **kwargs)
+		if ob != None and '__wrapper__' in ob:
+			ob = ob['__wrapper__']
+		return ob, p, n
 
 @Utilities.owner
 def test(o):
 	proxy = o['__wrapper__']
+	print(dir(o.children))
 	print(proxy.getVelocity())
 	print(proxy.worldPosition)
 	proxy.worldPosition.y += 5
@@ -157,3 +157,5 @@ def test(o):
 	for child in other.children:
 		print(child)
 	print(list(other._get_owner().children))
+	print(proxy in other.children)
+	print(o in other.children)

@@ -18,6 +18,7 @@
 from . import bgeext
 from . import Utilities
 import mathutils
+from bge import logic
 
 MIN_VOLUME = 0.001
 
@@ -71,7 +72,7 @@ def PlayWithRandomPitch(c):
 	#
 	# Set the pitch and activate!
 	#
-	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], next(Utilities.Random()))
+	a.pitch = Utilities._lerp(o['PitchMin'], o['PitchMax'], logic.getRandomFloat())
 	c.activate(a)
 
 @bgeext.controller

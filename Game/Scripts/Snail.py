@@ -415,7 +415,7 @@ class Snail(SnailSegment, Actor.Actor):
 		
 		self.RemoveChild(self.Shell)
 		velocity = Utilities.ZAXIS.copy()
-		velocity.x += 0.5 - next(Utilities.Random())
+		velocity.x += 0.5 - logic.getRandomFloat()
 		velocity = self.owner.getAxisVect(velocity)
 		velocity *= self.owner['ShellPopForce']
 		self.Shell.owner.setLinearVelocity(velocity)

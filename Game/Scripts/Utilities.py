@@ -495,7 +495,7 @@ def SprayParticle(c):
 		return
 	
 	o['nParticles'] = o['nParticles'] - 1
-	speed = o['maxSpeed'] * next(Random())
+	speed = o['maxSpeed'] * logic.getRandomFloat()
 	c.actuators['aEmit'].linearVelocity = (0.0, 0.0, speed)
 	c.activate('aEmit')
 	c.activate('aRot')
@@ -645,38 +645,6 @@ class ZKey:
 class ZKeyActor:
 	def __call__(self, actor):
 		return actor.owner.worldPosition.z
-
-@singleton
-class Random():
-	#
-	# 100 random numbers (saves needing to import the 'random' module).
-	#
-	RANDOMS = [
-		0.61542, 0.69297, 0.76860, 0.53475, 0.40886, 0.91689, 0.93900, 0.68926,
-		0.13285, 0.06095, 0.48474, 0.72606, 0.08579, 0.86588, 0.51390, 0.49194,
-		0.94516, 0.65302, 0.89945, 0.17170, 0.73977, 0.57983, 0.47412, 0.70460,
-		0.57242, 0.84086, 0.59730, 0.21010, 0.62376, 0.03536, 0.04448, 0.59527,
-		0.27221, 0.66046, 0.38000, 0.50336, 0.86750, 0.14385, 0.93692, 0.46126,
-		0.81840, 0.15508, 0.64163, 0.34990, 0.14746, 0.40949, 0.85291, 0.05562,
-		0.31280, 0.20150, 0.43594, 0.97547, 0.68338, 0.70483, 0.85266, 0.32621,
-		0.18625, 0.86591, 0.20850, 0.73349, 0.87122, 0.16648, 0.48411, 0.23507,
-		0.15775, 0.55275, 0.68549, 0.99837, 0.06443, 0.01583, 0.10712, 0.98735,
-		0.02540, 0.11582, 0.14976, 0.89697, 0.24265, 0.85307, 0.24749, 0.62709,
-		0.74986, 0.45483, 0.10935, 0.46603, 0.46222, 0.61726, 0.36655, 0.16848,
-		0.35994, 0.71661, 0.18646, 0.81395, 0.56462, 0.36674, 0.00286, 0.31847,
-		0.26284, 0.01141, 0.67497, 0.78098
-	]
-	
-	def __init__(self):
-		self.LastRandIndex = 0
-	
-	def __next__(self):
-		'''
-		Get a random number between 0.0 and 1.0. This is only vaguely random: each
-		number is drawn from a finite set of numbers, and the sequence repeats.
-		'''
-		self.LastRandIndex = (self.LastRandIndex + 1) % len(self.RANDOMS)
-		return self.RANDOMS[self.LastRandIndex]
 
 class FuzzySwitch:
 	'''A boolean that only switches state after a number of consistent impulses.

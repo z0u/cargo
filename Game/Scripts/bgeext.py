@@ -160,7 +160,7 @@ class gameobject:
 
 			def method_function(*args, **kwargs):
 				o = logic.getCurrentController().owner
-				instance = get_proxy(o)
+				instance = get_wrapper(o)
 				args = list(args)
 				args.insert(0, instance)
 				return f(*args, **kwargs)
@@ -170,20 +170,25 @@ class gameobject:
 			setattr(module, method_function.__name__, method_function)
 
 def dereference_arg1(f):
+	'''Function decorator: un-wraps the first argument of a function if
+	possible. If the argument is not wrapped, it is passed through unchanged.'''
 	@wraps(f)
 	def f_new(*args, **kwargs):
-		if hasattr(args[1], '_get_owner'):
+		if is_wrapper(args[1]):
 			args = list(args)
-			args[1] = args[1]._get_owner()
+			args[1] = args[1].unwrap()
 		return f(*args, **kwargs)
 	return f_new
 
 def get_reference(f):
+	'''Function decorator: Changes the function to return the wrapper of a
+	wrapped object. If the object has no wrapper, the return value is
+	unchanged.'''
 	@wraps(f)
 	def f_new(*args, **kwargs):
 		res = f(*args, **kwargs)
-		if has_proxy(res):
-			return get_proxy(res)
+		if has_wrapper(res):
+			return get_wrapper(res)
 		else:
 			return res
 	return f_new
@@ -195,7 +200,7 @@ LIST_FUNCTIONS = ['__getitem__', '__setitem__', '__delitem__', '__contains__',
 class mixin:
 	'''Wraps all the functions of one class so that they may be called from
 	another. The class that this is applied to must provide a link back to the
-	wrapped object via a _get_owner method.'''
+	wrapped object via a unwrap method.'''
 
 	def __init__(self, base, privates=[], refs=[], derefs=[]):
 		'''
@@ -218,7 +223,7 @@ class mixin:
 			self.import_member(cls, name, member)
 
 		def new_repr(slf):
-			return "%s(%s)" % (slf.__class__.__name__, repr(slf._get_owner()))
+			return "%s(%s)" % (slf.__class__.__name__, repr(slf.unwrap()))
 		new_repr.__name__ = '__repr__'
 		setattr(cls, '__repr__', new_repr)
 
@@ -245,7 +250,7 @@ class mixin:
 		'''Wrap a method. This creates a function of the same name in the target
 		class.'''
 		def proxy_fn(slf, *argc, **argv):
-			ret = member(slf._get_owner(), *argc, **argv)
+			ret = member(slf.unwrap(), *argc, **argv)
 			return ret
 
 		# Wrap/unwrap args and return values.
@@ -264,9 +269,9 @@ class mixin:
 		target class; calling the property's get and set methods operate on the
 		attribute with the same name in the wrapped object.'''
 		def get(slf):
-			return getattr(slf._get_owner(), name)
+			return getattr(slf.unwrap(), name)
 		def set(slf, value):
-			setattr(slf._get_owner(), name, value)
+			setattr(slf.unwrap(), name, value)
 
 		# Wrap/unwrap args and return values.
 		if name in self.derefs:
@@ -287,7 +292,7 @@ class ProxyCListValue:
 	def __init__(self, owner):
 		self._owner = owner
 
-	def _get_owner(self):
+	def unwrap(self):
 		return self._owner
 
 @gameobject()
@@ -296,38 +301,41 @@ class ProxyCListValue:
 	refs=['parent', 'rayCastTo'],
 	derefs=['getDistanceTo', 'getVectTo', 'setParent', 'rayCastTo', 'reinstancePhysicsMesh'])
 class ProxyGameObject:
-	'''Wraps a bge.types.KX_GameObject. You can directly use any methods defined
-	by KX_GameObject.'''
+	'''Wraps a bge.types.KX_GameObject. You can directly use any attributes
+	defined by KX_GameObject, e.g. self.worldPosition.z += 1.0.'''
 
 	def __init__(self, owner):
 		self._owner = owner
 
-	def _get_owner(self):
+	def unwrap(self):
 		return self._owner
 
-	# The CListValues need to be wrapped every time, because every time it's a
-	# new instance.
+	# CListValues need to be wrapped every time, because every time it's a new
+	# instance.
 	def _getChildren(self):
-		return ProxyCListValue(self._get_owner().children)
+		return ProxyCListValue(self.unwrap().children)
 	children = property(_getChildren)
 
-	# The CListValues need to be wrapped every time, because every time it's a
-	# new instance.
+	# CListValues need to be wrapped every time, because every time it's a new
+	# instance.
 	def _getChildrenRecursive(self):
-		return ProxyCListValue(self._get_owner().childrenRecursive)
+		return ProxyCListValue(self.unwrap().childrenRecursive)
 	childrenRecursive = property(_getChildrenRecursive)
 
 	# This function is special: the returned object may be wrapped, but it is
 	# inside a tuple.
 	@dereference_arg1
 	def rayCast(self, *args, **kwargs):
-		ob, p, n = self._get_owner().rayCast(*args, **kwargs)
-		if ob != None and has_proxy(ob):
-			ob = get_proxy(ob)
+		ob, p, n = self.unwrap().rayCast(*args, **kwargs)
+		if ob != None and has_wrapper(ob):
+			ob = get_wrapper(ob)
 		return ob, p, n
 
-def has_proxy(owner):
+def has_wrapper(owner):
 	return '__wrapper__' in owner
 
-def get_proxy(owner):
+def get_wrapper(owner):
 	return owner['__wrapper__']
+
+def is_wrapper(ob):
+	return hasattr(ob, 'unwrap')

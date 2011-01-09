@@ -8,45 +8,41 @@ class ProxyGameObjectTest(unittest.TestCase):
 	'''bgeext.ProxyGameObject'''
 
 	def setUp(self):
-		self.o1 = bgeext.get_proxy(logic.getCurrentScene().objects['pt.1'])
-		self.o2 = bgeext.get_proxy(logic.getCurrentScene().objects['pt.2'])
+		self.o1 = bgeext.get_wrapper(logic.getCurrentScene().objects['pt.1'])
+		self.o2 = bgeext.get_wrapper(logic.getCurrentScene().objects['pt.2'])
 
 	def test_0_unwrap(self):
-		self.assertEquals(self.o1._get_owner().__class__.__name__, 'KX_GameObject')
+		self.assertEquals(self.o1.unwrap().__class__.__name__, 'KX_GameObject')
 
 	def test_function(self):
 		vw = self.o1.getVelocity()
-		v = self.o1._get_owner().getVelocity()
+		v = self.o1.unwrap().getVelocity()
 		self.assertEqual(vw, v)
 
 	def test_property_get(self):
 		pw = self.o1.worldPosition
-		p = self.o1._get_owner().worldPosition
+		p = self.o1.unwrap().worldPosition
 		self.assertEqual(pw, p)
 
 	def test_property_set(self):
-		wp = self.o1._get_owner().worldPosition.copy()
+		wp = self.o1.unwrap().worldPosition.copy()
 		wp.y = 5.0
 		self.o1.worldPosition = wp
 		
 		pw = self.o1.worldPosition
-		p = self.o1._get_owner().worldPosition
+		p = self.o1.unwrap().worldPosition
 		self.assertEqual(pw, p)
 		self.assertEqual(pw.y, 5.0)
 
 	def test_game_property(self):
 		self.o1['Foo'] = 'foo'
-		self.assertTrue('foo' in self.o1._get_owner())
+		self.assertTrue('foo' in self.o1.unwrap())
 		self.assertEqual(self.o1['Foo'], 'foo')
 
 	def test_parent(self):
 		self.o1.setParent(self.o2)
 		self.assertTrue(self.o1 in self.o2.children)
-		self.assertTrue(self.o1._get_owner() in self.o2._get_owner().children)
-
-def proxy_test():
-	suite = unittest.TestLoader().loadTestsFromTestCase(ProxyGameObjectTest)
-	unittest.TextTestRunner(verbosity=2).run(suite)
+		self.assertTrue(self.o1.unwrap() in self.o2.unwrap().children)
 
 class PriorityQueueTest(unittest.TestCase):
 	'''Utilities.PriorityQueue'''
@@ -120,8 +116,10 @@ class FuzzySwitchTest(unittest.TestCase):
 		self.sw.turnOn()
 		self.assertTrue(self.sw.isOn())
 
-def generic_tests():
-	suite = unittest.TestLoader().loadTestsFromTestCase(PriorityQueueTest)
+def run_tests():
+	suite = unittest.TestSuite()
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(ProxyGameObjectTest))
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(PriorityQueueTest))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(FuzzySwitchTest))
 	unittest.TextTestRunner(verbosity=2).run(suite)
 
@@ -142,7 +140,7 @@ def weakref_init():
 	def callback(ref):
 		print("Info: Weak reference is dying.")
 
-	o = bgeext.get_proxy(logic.getCurrentScene().objects['weakref'])
+	o = bgeext.get_wrapper(logic.getCurrentScene().objects['weakref'])
 	wref = weakref.ref(o, callback)
 
 def weakref_test():

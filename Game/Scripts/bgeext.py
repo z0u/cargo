@@ -109,7 +109,7 @@ class gameobject:
 	the BGE. The class name is used as a function prefix. For example, consider
 	the following class definition in a module called 'Module':
 
-	@gameobject('update')
+	@gameobject('update', prefix='f_')
 	class Foo(ProxyGameObject):
 		def __init__(self, owner):
 			ProxyGameObject.__init__(self, owner)
@@ -118,14 +118,16 @@ class gameobject:
 
 	A game object can be bound to the 'Foo' class by calling, from a Python
 	controller, 'Module.Foo'. The 'update' function can then be called with
-	'Module.Foo_update'.
+	'Module.f_update'. The 'prefix' argument is optional; if omitted, the
+	functions will begin with <class name>_, e.g. 'Foo_update'.
 
 	This decorator requires arguments; i.e. use '@gameobject()' instead of
 	'@gameobject'.'''
 
-	def __init__(self, *externs):
+	def __init__(self, *externs, prefix=None):
 		self.externs = externs
 		self.converted = False
+		self.prefix = prefix
 
 	@all_sensors_positive
 	def __call__(self, cls):
@@ -149,6 +151,9 @@ class gameobject:
 		'''Expose the nominated methods as top-level functions in the containing
 		module.'''
 		module = sys.modules[cls.__module__]
+		prefix = self.prefix
+		if prefix == None:
+			prefix = cls.__name__ + '_'
 
 		for methodName in self.externs:
 			f = cls.__dict__[methodName]
@@ -160,7 +165,7 @@ class gameobject:
 				args.insert(0, instance)
 				return f(*args, **kwargs)
 
-			method_function.__name__ = '%s_%s' % (cls.__name__, methodName)
+			method_function.__name__ = '%s%s' % (prefix, methodName)
 			method_function.__doc__ = f.__doc__
 			setattr(module, method_function.__name__, method_function)
 

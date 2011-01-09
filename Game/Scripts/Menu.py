@@ -325,7 +325,7 @@ Screen('CreditsScreen', 'Credits')
 Screen('ConfirmationDialogue', 'Confirm')
 EventBus().notify(None, 'showScreen', 'LoadingScreen')
 
-@bgeext.gameobject('update')
+@bgeext.gameobject('update', prefix='cam_')
 class Camera(EventListener):
     '''A camera that adjusts its position depending on which screen is
     visible.'''

@@ -16,6 +16,22 @@
 #
 
 '''Wraps some useful features of the game engine API to allow it to be extended.
+This makes it easy to add functionality to KX_GameObjects. Use it like this:
+ 
+ 	@bgeext.gameobject('update', prefix='ED_')
+ 	class ExtensionDemo(bgeext.ProxyGameObject):
+ 		@bgeext.all_sensors_positive
+ 		def update(self):
+ 			currentpos = self.worldPosition.x
+ 			currentpos += 1.0
+ 			currentpos %= 5.0
+ 			self.worldPosition.x = currentpos
+ 
+ Note that:
+  - ExtensionDemo inherits all KX_GameObject attributes.
+  - Call module.ExtensionDemo from a Python controller to bind it to an object.
+  - Call module.ED_update to run ExtensionDemo.update for a given object.
+  - ExtensionDemo.update will only execute if all sensors are positive.
 '''
 
 from bge import types
@@ -25,9 +41,29 @@ import sys
 import inspect
 from functools import wraps
 
-############
-# Decorators
-############
+##################################
+# Decorators and Utility Functions
+##################################
+
+def replaceObject(name, original, time = 0):
+	'''Like bge.types.scene.addObject, but:
+	 - Transfers the properies of the original to the new object, and
+	 - Deletes the original after the new one is created.'''
+	scene = logic.getCurrentScene()
+	newObj = scene.addObject(name, original, time)
+	for prop in original.getPropertyNames():
+		newObj[prop] = original[prop]
+	original.endObject()
+	return newObj
+
+def has_wrapper(owner):
+	return '__wrapper__' in owner
+
+def get_wrapper(owner):
+	return owner['__wrapper__']
+
+def is_wrapper(ob):
+	return hasattr(ob, 'unwrap')
 
 def owner(f):
 	'''Passes a single argument to a function: the owner of the current
@@ -90,17 +126,6 @@ def some_sensors_positive(f):
 			return
 		return f(*args, **kwargs)
 	return f_new
-
-def replaceObject(name, original, time = 0):
-	'''Like bge.types.scene.addObject, but:
-	 - Transfers the properies of the original to the new object, and
-	 - Deletes the original after the new one is created.'''
-	scene = logic.getCurrentScene()
-	newObj = scene.addObject(name, original, time)
-	for prop in original.getPropertyNames():
-		newObj[prop] = original[prop]
-	original.endObject()
-	return newObj
 
 class gameobject:
 	'''Extends a class to wrap KX_GameObjects. This decorator accepts any number
@@ -282,6 +307,10 @@ class mixin:
 		p = property(get, set, doc=member.__doc__)
 		setattr(cls, name, p)
 
+#########
+# Classes
+#########
+
 @mixin(types.CListValue,
 	privates=LIST_FUNCTIONS,
 	refs=['__getitem__', 'from_id', 'get'],
@@ -330,12 +359,3 @@ class ProxyGameObject:
 		if ob != None and has_wrapper(ob):
 			ob = get_wrapper(ob)
 		return ob, p, n
-
-def has_wrapper(owner):
-	return '__wrapper__' in owner
-
-def get_wrapper(owner):
-	return owner['__wrapper__']
-
-def is_wrapper(ob):
-	return hasattr(ob, 'unwrap')

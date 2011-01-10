@@ -1,3 +1,20 @@
+#
+# Copyright 2009-2011 Alex Fraser <alex@phatcore.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 import unittest
 from bge import logic
 from . import bgeext
@@ -167,3 +184,22 @@ def weakref_test():
 			print("weakref_test ... FAIL")
 			print("\n----------------------------------------------------------------------")
 			print("FAIL")
+
+################
+# Demonstrations
+################
+
+@bgeext.gameobject('update', prefix='ED_')
+class ExtensionDemo(bgeext.ProxyGameObject):
+	'''Demonstrates:
+	 - Input filtering (makes sure all sensors are positive).
+	 - Promotion of methods to top-level functions, so they may be called from
+	   a Python controller in the game engine.
+	 - Using KX_GameObject attributes as though they belong to this class.'''
+
+	@bgeext.all_sensors_positive
+	def update(self):
+		currentpos = self.worldPosition.x
+		currentpos += 1.0
+		currentpos %= 5.0
+		self.worldPosition.x = currentpos

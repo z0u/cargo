@@ -15,12 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import Utilities
 from . import bgeext
+from . import Utilities
+from . import Store
+
 from bge import logic
 from bge import render
 import mathutils
-from . import Store
+
+import weakref
 
 DEBUG = False
 
@@ -34,7 +37,7 @@ CREDITS = [
 
 class EventListener:
     '''Interface for an object that can receive messages.'''
-    def onEvent(self, sender, message, body):
+    def onEvent(self, message, body):
         pass
 
 @Utilities.singleton
@@ -42,7 +45,7 @@ class EventBus:
     '''Delivers messages to listeners.'''
     
     def __init__(self):
-        self.listeners = set()
+        self.listeners = weakref.WeakSet()
         self.eventCache = {}
 
     def addListener(self, listener):
@@ -51,23 +54,23 @@ class EventBus:
     def remListener(self, listener):
         self.listeners.remove(listener)
     
-    def notify(self, sender, message, body):
+    def notify(self, message, body):
         '''Send a message.'''
         
         if DEBUG:
             print("Message: %s\n\t%s" % (message, body))
 
         for listener in self.listeners:
-            listener.onEvent(sender, message, body)
-        self.eventCache[message] = (sender, body)
+            listener.onEvent(message, body)
+        self.eventCache[message] = body
     
     def replayLast(self, target, message):
         '''Re-send a message. This should be used by new listeners that missed
         out on the last message, so they know what state the system is in.'''
         
         if message in self.eventCache:
-            sender, body = self.eventCache[message]
-            target.onEvent(sender, message, body)
+            body = self.eventCache[message]
+            target.onEvent(message, body)
 
 @Utilities.singleton
 class SessionManager(EventListener):
@@ -76,10 +79,10 @@ class SessionManager(EventListener):
     def __init__(self):
         EventBus().addListener(self)
     
-    def onEvent(self, sender, message, body):
+    def onEvent(self, message, body):
         if message == 'showSavedGameDetails':
             Store.setSessionId(body)
-            EventBus().notify(self, 'showScreen', 'LoadDetailsScreen')
+            EventBus().notify('showScreen', 'LoadDetailsScreen')
         
         elif message == 'startGame':
             # Load the level indicated in the save game.
@@ -89,7 +92,7 @@ class SessionManager(EventListener):
             # Remove all stored items that match the current path.
             for key in Store.list('/game'):
                 Store.unset(key)
-            EventBus().notify(self, 'showScreen', 'LoadingScreen')
+            EventBus().notify('showScreen', 'LoadingScreen')
         
         elif message == 'quit':
             logic.endGame()
@@ -102,12 +105,12 @@ class InputHandler(EventListener):
     '''Manages UI elements: focus and click events.'''
     
     def __init__(self):
-        self.widgets = []
+        self.widgets = weakref.WeakSet()
         self.current = None
         self.downCurrent = None
     
     def addWidget(self, widget):
-        self.widgets.append(widget)
+        self.widgets.add(widget)
     
     def mouseOver(self, mOver):
         newFocus = mOver.hitObject
@@ -143,7 +146,7 @@ class InputHandler(EventListener):
                 self.downCurrent['Widget'].click()
         self.downCurrent = None
     
-    def onEvent(self, sender, message, body):
+    def onEvent(self, message, body):
         if message == 'sensitivityChanged':
             # Not implemented. Eventually, this should update the visual state
             # of the current button.
@@ -307,11 +310,11 @@ class Screen(Container, EventListener):
         EventBus().addListener(self)
         self.title = title
     
-    def onEvent(self, sender, message, body):
+    def onEvent(self, message, body):
         if message == 'showScreen':
             if body == self.name:
                 self.show()
-                EventBus().notify(self, 'screenShown', self.getTitle())
+                EventBus().notify('screenShown', self.getTitle())
             else:
                 self.hide()
     
@@ -323,7 +326,7 @@ Screen('LoadDetailsScreen', '')
 Screen('OptionsScreen', 'Options')
 Screen('CreditsScreen', 'Credits')
 Screen('ConfirmationDialogue', 'Confirm')
-EventBus().notify(None, 'showScreen', 'LoadingScreen')
+EventBus().notify('showScreen', 'LoadingScreen')
 
 @bgeext.gameobject('update', prefix='cam_')
 class Camera(EventListener):
@@ -344,7 +347,7 @@ class Camera(EventListener):
         EventBus().addListener(self)
         EventBus().replayLast(self, 'showScreen')
     
-    def onEvent(self, sender, message, body):
+    def onEvent(self, message, body):
         if message == 'showScreen' and body in Camera.FRAME_MAP:
             self.owner['targetFrame'] = Camera.FRAME_MAP[body]
     
@@ -434,7 +437,7 @@ class Widget(UIObject):
             body = ''
             if 'onClickBody' in self.owner:
                 body = self.owner['onClickBody']
-            EventBus().notify(self, msg, body)
+            EventBus().notify(msg, body)
     
     def hide(self):
         super(Widget, self).hide()
@@ -488,7 +491,7 @@ class Widget(UIObject):
         oldv = self.sensitive
         self.sensitive = sensitive
         if oldv != sensitive:
-            EventBus().notify(self, 'sensitivityChanged', self.sensitive)
+            EventBus().notify('sensitivityChanged', self.sensitive)
 
 @bgeext.gameobject()
 class Button(Widget):
@@ -585,8 +588,8 @@ class ConfirmationPage(Widget, EventListener):
         else:
             return False
     
-    def onEvent(self, sender, message, body):
-        super(ConfirmationPage, self).onEvent(sender, message, body)
+    def onEvent(self, message, body):
+        super(ConfirmationPage, self).onEvent(message, body)
         if message == 'showScreen':
             # Store the last screen name so it can be restored later.
             if self.currentScreen != body:
@@ -596,17 +599,17 @@ class ConfirmationPage(Widget, EventListener):
         elif message == 'confirmation':
             text, self.onConfirm, self.onConfirmBody = body.split('::')
             self.text['Content'] = text
-            EventBus().notify(self, 'showScreen', 'ConfirmationDialogue')
+            EventBus().notify('showScreen', 'ConfirmationDialogue')
             
         elif message == 'cancel':
             if self.visible:
-                EventBus().notify(self, 'showScreen', self.lastScreen)
+                EventBus().notify('showScreen', self.lastScreen)
                 self.text['Content'] = ""
         
         elif message == 'confirm':
             if self.visible:
-                EventBus().notify(self, 'showScreen', self.lastScreen)
-                EventBus().notify(self, self.onConfirm, self.onConfirmBody)
+                EventBus().notify('showScreen', self.lastScreen)
+                EventBus().notify(self.onConfirm, self.onConfirmBody)
                 self.text['Content'] = ""
 
 @bgeext.gameobject()
@@ -690,7 +693,7 @@ class Subtitle(EventListener):
         EventBus().addListener(self)
         EventBus().replayLast(self, 'screenShown')
     
-    def onEvent(self, sender, message, body):
+    def onEvent(self, message, body):
         if message == 'screenShown':
             self.owner['Content'] = body
 

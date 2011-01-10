@@ -41,9 +41,9 @@ import sys
 import inspect
 from functools import wraps
 
-##################################
-# Decorators and Utility Functions
-##################################
+###########
+# Utilities
+###########
 
 def replaceObject(name, original, time = 0):
 	'''Like bge.types.scene.addObject, but:
@@ -55,15 +55,6 @@ def replaceObject(name, original, time = 0):
 		newObj[prop] = original[prop]
 	original.endObject()
 	return newObj
-
-def has_wrapper(owner):
-	return '__wrapper__' in owner
-
-def get_wrapper(owner):
-	return owner['__wrapper__']
-
-def is_wrapper(ob):
-	return hasattr(ob, 'unwrap')
 
 def owner(f):
 	'''Passes a single argument to a function: the owner of the current
@@ -126,6 +117,19 @@ def some_sensors_positive(f):
 			return
 		return f(*args, **kwargs)
 	return f_new
+
+#######
+# Types
+#######
+
+def has_wrapper(owner):
+	return '__wrapper__' in owner
+
+def get_wrapper(owner):
+	return owner['__wrapper__']
+
+def is_wrapper(ob):
+	return hasattr(ob, 'unwrap')
 
 class gameobject:
 	'''Extends a class to wrap KX_GameObjects. This decorator accepts any number
@@ -306,10 +310,6 @@ class mixin:
 
 		p = property(get, set, doc=member.__doc__)
 		setattr(cls, name, p)
-
-#########
-# Classes
-#########
 
 @mixin(types.CListValue,
 	privates=LIST_FUNCTIONS,

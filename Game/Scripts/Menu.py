@@ -698,10 +698,10 @@ class Subtitle(EventListener):
             self.owner['Content'] = body
 
 @bgeext.gameobject('update')
-class MenuSnail:
+class MenuSnail(bgeext.ProxyGameObject):
     def __init__(self, owner):
-        self.owner = owner
-        self.armature = self.owner.children['SnailArm_Min']
+        bgeext.ProxyGameObject.__init__(self, owner)
+        self.armature = self.children['SnailArm_Min']
         self.EyeLocL = self.armature.children['Eyeref_L']
         self.EyeLocR = self.armature.children['Eyeref_R']
         self.HeadLoc = self.armature.children['HeadLoc']
@@ -712,10 +712,8 @@ class MenuSnail:
                 self.HeadLoc['channel']].rotation_quaternion)
     
     def update(self):
-        target = None
-        if InputHandler().current:
-            target = InputHandler().current
-        else:
+        target = InputHandler().current
+        if not target:
             target = logic.getCurrentScene().objects['Camera']
         self.lookAt(target)
     

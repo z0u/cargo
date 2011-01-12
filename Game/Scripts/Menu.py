@@ -106,44 +106,70 @@ class InputHandler(EventListener):
     
     def __init__(self):
         self.widgets = weakref.WeakSet()
-        self.current = None
-        self.downCurrent = None
-    
+        self.refs = weakref.WeakValueDictionary()
+
+    def _getCurrent(self):
+        if not 'current' in self.refs:
+            return None
+        else:
+            return self.refs['current']
+    def _setCurrent(self, current):
+        if current == None:
+            del self.refs['current']
+        else:
+            self.refs['current'] = current
+    current = property(_getCurrent, _setCurrent)
+
+    def _getDownCurrent(self):
+        if not 'downcurrent' in self.refs:
+            return None
+        else:
+            return self.refs['downcurrent']
+    def _setDownCurrent(self, downcurrent):
+        if downcurrent == None:
+            del self.refs['downcurrent']
+        else:
+            self.refs['downcurrent'] = downcurrent
+    downcurrent = property(_getDownCurrent, _setDownCurrent)
+
     def addWidget(self, widget):
         self.widgets.add(widget)
-    
+
     def mouseOver(self, mOver):
         newFocus = mOver.hitObject
-        
+
         # Bubble up to ancestor if need be
         while newFocus != None:
             if 'Widget' in newFocus:
                 break
             newFocus = newFocus.parent
-        
+
+        if newFocus != None:
+            newFocus = bgeext.get_wrapper(newFocus)
+
         if newFocus == self.current:
             return
-        
-        if self.current != None and not self.current.invalid:
-            self.current['Widget'].exit()
+
+        if self.current:
+            self.current.exit()
         if newFocus != None:
-            newFocus['Widget'].enter()
+            newFocus.enter()
         self.current = newFocus
     
     def mouseDown(self):
         '''Send a mouse down event to the widget under the cursor.'''
-        if self.current != None:
-            self.current['Widget'].down()
+        if self.current:
+            self.current.down()
             self.downCurrent = self.current
     
     def mouseUp(self):
         '''Send a mouse up event to the widget under the cursor. If that widget
         also received the last mouse down event, it will be sent a click event
         in addition to (after) the up event.'''
-        if self.downCurrent != None:
-            self.downCurrent['Widget'].up()
+        if self.downCurrent:
+            self.downCurrent.up()
             if self.current == self.downCurrent:
-                self.downCurrent['Widget'].click()
+                self.downCurrent.click()
         self.downCurrent = None
     
     def onEvent(self, message, body):
@@ -278,14 +304,14 @@ class Container(UIObject):
     '''Contains other UIObjects.'''
     
     def __init__(self, name):
-        self.children = []
+        self.children = weakref.WeakSet()
         self.name = name
         AsyncAdoptionHelper().registerAdopter(self)
     
     def addChild(self, uiObject):
         '''Adds a child to this container. Usually you should use the
         asyncAdoptionHandler instead of calling this directly.'''
-        self.children.append(uiObject)
+        self.children.add(uiObject)
         if self.visible:
             uiObject.show()
         else:
@@ -320,12 +346,15 @@ class Screen(Container, EventListener):
     
     def getTitle(self):
         return self.title
-        
-Screen('LoadingScreen', 'Load')
-Screen('LoadDetailsScreen', '')
-Screen('OptionsScreen', 'Options')
-Screen('CreditsScreen', 'Credits')
-Screen('ConfirmationDialogue', 'Confirm')
+
+# These need to be stored in a list - the EventBus only keeps weak references to
+# listeners.
+screens = []
+screens.append(Screen('LoadingScreen', 'Load'))
+screens.append(Screen('LoadDetailsScreen', ''))
+screens.append(Screen('OptionsScreen', 'Options'))
+screens.append(Screen('CreditsScreen', 'Credits'))
+screens.append(Screen('ConfirmationDialogue', 'Confirm'))
 EventBus().notify('showScreen', 'LoadingScreen')
 
 @bgeext.gameobject('update', prefix='cam_')
@@ -364,7 +393,7 @@ class Camera(EventListener):
         self.owner['frame'] = frame
 
 @bgeext.gameobject('update')
-class Widget(UIObject):
+class Widget(UIObject, bgeext.ProxyGameObject):
     '''An interactive UIObject. Has various states (e.g. focused, up, down) to
     facilitate interaction. Some of the states map to a frame to allow a
     visual progression.'''
@@ -388,93 +417,87 @@ class Widget(UIObject):
     ACTIVE_FRAME = 12.0
     
     def __init__(self, owner):
-        self.owner = owner
+        bgeext.ProxyGameObject.__init__(self, owner)
         self.sensitive = True
         self.active = False
-        self.owner['Widget'] = self
-        self.state = Widget.S_HIDDEN
+        self['Widget'] = True
+        self.show()
         
-        Utilities.parseChildren(self, owner)
-        
-        if 'parentName' in self.owner:
-            AsyncAdoptionHelper().requestAdoption(self, self.owner['parentName'])
-        
-    def parseChild(self, child, type):
-        # No children of basic widgets. Note: this is about object hierarchies
-        # the Blender scene, which is different to the Container-UIObject
-        # relationship.
-        return False
+        if 'parentName' in self:
+            AsyncAdoptionHelper().requestAdoption(self, self['parentName'])
+
+        InputHandler().addWidget(self)
     
     def enter(self):
         if not self.sensitive:
             return
-        Utilities.addState(self.owner, Widget.S_FOCUS)
-        Utilities.remState(self.owner, Widget.S_DEFOCUS)
+        self.addState(Widget.S_FOCUS)
+        self.remState(Widget.S_DEFOCUS)
         self.updateTargetFrame()
     
     def exit(self):
-        Utilities.remState(self.owner, Widget.S_FOCUS)
-        Utilities.addState(self.owner, Widget.S_DEFOCUS)
+        self.addState(Widget.S_DEFOCUS)
+        self.remState(Widget.S_FOCUS)
         self.updateTargetFrame()
     
     def down(self):
         if not self.sensitive:
             return
-        Utilities.addState(self.owner, Widget.S_DOWN)
-        Utilities.remState(self.owner, Widget.S_UP)
+        self.addState(Widget.S_DOWN)
+        self.remState(Widget.S_UP)
         self.updateTargetFrame()
     
     def up(self):
-        Utilities.remState(self.owner, Widget.S_DOWN)
-        Utilities.addState(self.owner, Widget.S_UP)
+        self.addState(Widget.S_UP)
+        self.remState(Widget.S_DOWN)
         self.updateTargetFrame()
     
     def click(self):
         if not self.sensitive:
             return
-        if 'onClickMsg' in self.owner:
-            msg = self.owner['onClickMsg']
+        if 'onClickMsg' in self:
+            msg = self['onClickMsg']
             body = ''
-            if 'onClickBody' in self.owner:
-                body = self.owner['onClickBody']
+            if 'onClickBody' in self:
+                body = self['onClickBody']
             EventBus().notify(msg, body)
     
     def hide(self):
-        super(Widget, self).hide()
-        Utilities.addState(self.owner, Widget.S_HIDDEN)
-        Utilities.remState(self.owner, Widget.S_VISIBLE)
-        Utilities.remState(self.owner, Widget.S_DOWN)
-        Utilities.remState(self.owner, Widget.S_FOCUS)
+        UIObject.hide(self)
+        self.addState(Widget.S_HIDDEN)
+        self.remState(Widget.S_VISIBLE)
+        self.remState(Widget.S_DOWN)
+        self.remState(Widget.S_FOCUS)
         self.updateTargetFrame()
     
     def show(self):
-        super(Widget, self).show()
-        Utilities.remState(self.owner, Widget.S_HIDDEN)
-        Utilities.addState(self.owner, Widget.S_VISIBLE)
+        UIObject.show(self)
+        self.addState(Widget.S_VISIBLE)
+        self.remState(Widget.S_HIDDEN)
         self.updateTargetFrame()
     
     def updateTargetFrame(self):
         targetFrame = Widget.IDLE_FRAME
-        if Utilities.hasState(self.owner, Widget.S_HIDDEN):
+        if self.hasState(Widget.S_HIDDEN):
             targetFrame = Widget.HIDDEN_FRAME
-        elif Utilities.hasState(self.owner, Widget.S_FOCUS):
-            if Utilities.hasState(self.owner, Widget.S_DOWN):
+        elif self.hasState(Widget.S_FOCUS):
+            if self.hasState(Widget.S_DOWN):
                 targetFrame = Widget.ACTIVE_FRAME
             else:
                 targetFrame = Widget.FOCUS_FRAME
         else:
             targetFrame = Widget.IDLE_FRAME
-        self.owner['targetFrame'] = targetFrame
+        self['targetFrame'] = targetFrame
     
     def update(self):
-        targetFrame = self.owner['targetFrame']
-        frame = self.owner['frame']
+        targetFrame = self['targetFrame']
+        frame = self['frame']
         oldFrame = frame
         if frame < targetFrame:
             frame = min(frame + Widget.FRAME_RATE, targetFrame)
         else:
             frame = max(frame - Widget.FRAME_RATE, targetFrame)
-        self.owner['frame'] = frame
+        self['frame'] = frame
         
         if frame == 1.0:
             self.updateVisibility(False)
@@ -485,7 +508,7 @@ class Widget(UIObject):
         c.activate(c.actuators[0])
     
     def updateVisibility(self, visible):
-        self.owner.setVisible(visible, True)
+        self.setVisible(visible, True)
     
     def setSensitive(self, sensitive):
         oldv = self.sensitive
@@ -504,68 +527,46 @@ class SaveButton(Button):
     def __init__(self, owner):
         Button.__init__(self, owner)
         self.id = 0
-        InputHandler().addWidget(self)
-    
-    def parseChild(self, child, type):
-        if type == 'IDCanvas':
-            self.idCanvas = child
-            return True
-        else:
-            return False
         
     def updateVisibility(self, visible):
         super(SaveButton, self).updateVisibility(visible)
-        self.idCanvas.setVisible(visible, True)
+        self.children['IDCanvas'].setVisible(visible, True)
 
 @bgeext.gameobject()
 class Checkbox(Button):
     def __init__(self, owner):
         Button.__init__(self, owner)
         self.checked = False
-        if 'dataBinding' in self.owner:
-            self.checked = Store.get(self.owner['dataBinding'], self.owner['dataDefault'])
+        if 'dataBinding' in self:
+            self.checked = Store.get(self['dataBinding'], self['dataDefault'])
         self.updateCheckFace()
-        self.label['Content'] = self.owner['label']
-        self.label['colour'] = self.owner['colour']
-        InputHandler().addWidget(self)
-    
-    def parseChild(self, child, type):
-        if type == 'CheckOff':
-            self.checkOff = child
-            return True
-        elif type == 'CheckOn':
-            self.checkOn = child
-            return True
-        elif type == 'Canvas':
-            self.label = child
-            return True
-        else:
-            return False
+        self.children['Canvas']['Content'] = self['label']
+        self.children['Canvas']['colour'] = self['colour']
     
     def click(self):
         self.checked = not self.checked
         self.updateCheckFace()
-        if 'dataBinding' in self.owner:
-            Store.set(self.owner['dataBinding'], self.checked)
+        if 'dataBinding' in self:
+            Store.set(self['dataBinding'], self.checked)
         super(Checkbox, self).click()
     
     def updateVisibility(self, visible):
         super(Checkbox, self).updateVisibility(visible)
-        self.label.setVisible(visible, True)
+        self.children['Canvas'].setVisible(visible, True)
         self.updateCheckFace()
     
     def updateCheckFace(self):
         if self.visible:
-            self.checkOff.setVisible(not self.checked, True)
-            self.checkOn.setVisible(self.checked, True)
+            self.children['CheckOff'].setVisible(not self.checked, True)
+            self.children['CheckOn'].setVisible(self.checked, True)
         else:
-            self.checkOff.setVisible(False, True)
-            self.checkOn.setVisible(False, True)
+            self.children['CheckOff'].setVisible(False, True)
+            self.children['CheckOn'].setVisible(False, True)
     
     def update(self):
         super(Checkbox, self).update()
-        self.checkOff['frame'] = self.owner['frame']
-        self.checkOn['frame'] = self.owner['frame']
+        self.children['CheckOff']['frame'] = self['frame']
+        self.children['CheckOn']['frame'] = self['frame']
 
 @bgeext.gameobject()
 class ConfirmationPage(Widget, EventListener):
@@ -581,13 +582,6 @@ class ConfirmationPage(Widget, EventListener):
         EventBus().addListener(self)
         EventBus().replayLast(self, 'showScreen')
     
-    def parseChild(self, child, type):
-        if type == 'Text':
-            self.text = child
-            return True
-        else:
-            return False
-    
     def onEvent(self, message, body):
         super(ConfirmationPage, self).onEvent(message, body)
         if message == 'showScreen':
@@ -598,19 +592,19 @@ class ConfirmationPage(Widget, EventListener):
         
         elif message == 'confirmation':
             text, self.onConfirm, self.onConfirmBody = body.split('::')
-            self.text['Content'] = text
+            self.children['ConfirmText']['Content'] = text
             EventBus().notify('showScreen', 'ConfirmationDialogue')
             
         elif message == 'cancel':
             if self.visible:
                 EventBus().notify('showScreen', self.lastScreen)
-                self.text['Content'] = ""
+                self.children['ConfirmText']['Content'] = ""
         
         elif message == 'confirm':
             if self.visible:
                 EventBus().notify('showScreen', self.lastScreen)
                 EventBus().notify(self.onConfirm, self.onConfirmBody)
-                self.text['Content'] = ""
+                self.children['ConfirmText']['Content'] = ""
 
 @bgeext.gameobject()
 class GameDetailsPage(Widget):
@@ -620,24 +614,16 @@ class GameDetailsPage(Widget):
         Widget.__init__(self, owner)
         self.setSensitive(False)
     
-    def parseChild(self, child, type):
-        if type == 'Title':
-            self.title = child
-            return True
-        elif type == 'StoryDetails':
-            self.storyDetails = child
-            return True
-        else:
-            return False
-    
     def updateVisibility(self, visible):
         super(GameDetailsPage, self).updateVisibility(visible)
-        for child in self.owner.children:
+        for child in self.children:
             child.setVisible(visible, True)
         
         if visible:
-            self.title['Content'] = Store.get('/game/title', 'Game %d' % (Store.getSessionId() + 1))
-            self.storyDetails['Content'] = Store.get('/game/storySummary', 'Start a new game.')
+            self.children['GameName']['Content'] = Store.get(
+				'/game/title', 'Game %d' % (Store.getSessionId() + 1))
+            self.children['StoryDetails']['Content'] = Store.get(
+				'/game/storySummary', 'Start a new game.')
 
 @bgeext.gameobject('draw')
 class CreditsPage(Widget):
@@ -650,36 +636,26 @@ class CreditsPage(Widget):
         self.index = 0
         self.delayTimer = 0
     
-    def parseChild(self, child, type):
-        if type == 'Role':
-            self.title = child
-            return True
-        if type == 'People':
-            self.people = child
-            return True
-        else:
-            return False
-    
     def updateVisibility(self, visible):
         super(CreditsPage, self).updateVisibility(visible)
-        for child in self.owner.children:
+        for child in self.children:
             child.setVisible(visible, True)
         
         if not visible:
-            self.title['Content'] = ""
-            self.people['Content'] = ""
+            self.children['Role']['Content'] = ""
+            self.children['People']['Content'] = ""
             self.index = 0
             self.delayTimer = 0
     
     def drawNext(self):
         role, people = CREDITS[self.index]
-        self.title['Content'] = role
-        self.people['Content'] = people
+        self.children['Role']['Content'] = role
+        self.children['People']['Content'] = people
         self.index += 1
         self.index %= len(CREDITS)
     
     def draw(self):
-        if self.people['Rendering'] or self.title['Rendering']:
+        if self.children['People']['Rendering'] or self.children['Role']['Rendering']:
             self.delayTimer = CreditsPage.DELAY
         else:
             self.delayTimer -= 1
@@ -687,15 +663,15 @@ class CreditsPage(Widget):
                 self.drawNext()
 
 @bgeext.gameobject()
-class Subtitle(EventListener):
+class Subtitle(EventListener, bgeext.ProxyGameObject):
     def __init__(self, owner):
-        self.owner = owner
+        bgeext.ProxyGameObject.__init__(self, owner)
         EventBus().addListener(self)
         EventBus().replayLast(self, 'screenShown')
     
     def onEvent(self, message, body):
         if message == 'screenShown':
-            self.owner['Content'] = body
+            self['Content'] = body
 
 @bgeext.gameobject('update')
 class MenuSnail(bgeext.ProxyGameObject):
@@ -724,7 +700,7 @@ class MenuSnail(bgeext.ProxyGameObject):
 
         def look(bone, target, restOrn = None):
             channel = self.armature.channels[bone['channel']]
-            _, gVec, _ = bone.getVectTo(target)
+            _, gVec, _ = bone.getVectTo(bgeext.unwrap(target))
             bone.alignAxisToVect(bone.parent.getAxisVect(Utilities.ZAXIS), 2)
             bone.alignAxisToVect(gVec, 1)
             orn = bone.localOrientation.to_quat()

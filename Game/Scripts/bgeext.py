@@ -131,6 +131,12 @@ def get_wrapper(owner):
 def is_wrapper(ob):
 	return hasattr(ob, 'unwrap')
 
+def unwrap(ob):
+	if hasattr(ob, 'unwrap'):
+		return ob.unwrap()
+	else:
+		return ob
+
 class gameobject:
 	'''Extends a class to wrap KX_GameObjects. This decorator accepts any number
 	of strings as arguments. Each string should be the name of a member to
@@ -359,3 +365,24 @@ class ProxyGameObject:
 		if ob != None and has_wrapper(ob):
 			ob = get_wrapper(ob)
 		return ob, p, n
+
+	def addState(self, state):
+		'''Add a set of states to this object's state.'''
+		stateBitmask = 1 << (state - 1)
+		self.state |= stateBitmask
+
+	def remState(self, state):
+		'''Remove a state from this object's state.'''
+		stateBitmask = 1 << (state - 1)
+		self.state &= (~stateBitmask)
+
+	def setState(self, state):
+		'''Set the object's state. All current states will be un-set and replaced
+		with the one specified.'''
+		stateBitmask = 1 << (state - 1)
+		self.state = stateBitmask
+
+	def hasState(self, state):
+		'''Test whether the object is in the specified state.'''
+		stateBitmask = 1 << (state - 1)
+		return (self.state & stateBitmask) != 0

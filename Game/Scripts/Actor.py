@@ -24,7 +24,8 @@ directly.'''
 
 from . import LODTree
 from . import Utilities
-from . import bgeext
+#import bxt
+import bxt
 import mathutils
 
 SANITY_RAY_LENGTH = 10000
@@ -413,23 +414,23 @@ class Actor:
 		the actor doesn't define one.'''
 		return None
 
-@bgeext.owner
+@bxt.utils.owner
 def CreateActor(o):
 	o['Actor'] = Actor(o)
 
-@bgeext.owner
+@bxt.utils.owner
 def DestroyActor(o):
 	o['Actor'].Destroy()
 
-@bgeext.owner
+@bxt.utils.owner
 def SaveLocation(o):
 	o['Actor'].SaveLocation()
 
-@bgeext.owner
+@bxt.utils.owner
 def RestoreLocation(o):
 	o['Actor'].RestoreLocation()
 
-@bgeext.controller
+@bxt.utils.controller
 def Damage(c):
 	print("damaged")
 	for s in c.sensors:
@@ -457,7 +458,7 @@ class StatefulActor(Actor):
 	def OnResume(self):
 		self.owner.state = self.State
 
-@bgeext.owner
+@bxt.utils.owner
 def CreateStatefulActor(o):
 	StatefulActor(o)
 
@@ -583,7 +584,7 @@ def SuspendAction():
 def ResumeAction():
 	Director().ResumeAction()
 
-@bgeext.controller
+@bxt.utils.controller
 def _hitMainCharacter(c):
 	'''
 	Test whether the main character was hit.
@@ -607,7 +608,7 @@ def _hitMainCharacter(c):
 #
 # Methods for dealing with user input.
 #
-@bgeext.controller
+@bxt.utils.controller
 def OnImpulse(c):
 	fwd = c.sensors['sForward']
 	back = c.sensors['sBackward']

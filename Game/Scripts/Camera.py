@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import bgeext
+import bxt
 from . import Utilities
 from . import Actor
 from . import UI
@@ -198,7 +198,7 @@ AutoCamera = _AutoCamera()
 def onRender():
 	AutoCamera.onRender()
 
-@bgeext.owner
+@bxt.utils.owner
 def setCamera(o):
 	camera = o
 	AutoCamera.SetCamera(camera)
@@ -206,17 +206,17 @@ def setCamera(o):
 def addGoalOb(goal):
 	AutoCamera.addGoalOb(goal)
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def AddGoal(o):
 	AutoCamera.addGoalOb(o)
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def RemoveGoal(o):
 	removeGoalOb(o)
 
-@bgeext.controller
+@bxt.utils.controller
 def AddGoalIfMainChar(c):
 	'''
 	Add the owner of this controller as a goal if the main actor has been hit.
@@ -229,7 +229,7 @@ def AddGoalIfMainChar(c):
 	goal = c.owner
 	addGoalOb(goal)
 
-@bgeext.controller
+@bxt.utils.controller
 def RemoveGoalIfNotMainChar(c):
 	if Actor._hitMainCharacter():
 		return
@@ -615,13 +615,13 @@ class CameraPath(CameraGoal):
 										self.pathHead.ceilingHeight,
 										self.ZOFFSET_INCREMENT))
 
-@bgeext.owner
+@bxt.utils.owner
 def createCameraPath(o):
 	path = CameraPath(o, o['SlowFac'], o['InstantCut'])
 	o['CameraPath'] = path
 	AutoCamera.SetDefaultGoal(path)
 
-@bgeext.owner
+@bxt.utils.owner
 def updatePath(o):
 	o['CameraPath'].onRender()
 
@@ -713,7 +713,7 @@ class CameraCollider(CameraObserver):
 		else:
 			UI.HUD().hideFilter()
 
-@bgeext.owner
+@bxt.utils.owner
 def createCamCollider(o):
 	o['CamCollider'] = CameraCollider(o)
 
@@ -739,6 +739,6 @@ class BackgroundCamera(CameraObserver):
 		self.owner.worldOrientation = autoCamera.Camera.worldOrientation
 		self.owner.lens = autoCamera.Camera.lens
 
-@bgeext.owner
+@bxt.utils.owner
 def createBackgroundCamera(o):
 	BackgroundCamera(o)

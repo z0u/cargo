@@ -18,7 +18,7 @@
 import mathutils
 from bge import logic
 from bge import render
-from . import bgeext
+import bxt
 
 XAXIS  = mathutils.Vector([1.0, 0.0, 0.0])
 YAXIS  = mathutils.Vector([0.0, 1.0, 0.0])
@@ -96,8 +96,8 @@ class SceneManager:
 			o.OnSceneEnd()
 		self.NewScene = True
 
-@bgeext.all_sensors_positive
-@bgeext.controller
+@bxt.utils.all_sensors_positive
+@bxt.utils.controller
 def EndScene(c):
 	'''Releases all object references (e.g. Actors). Then, all actuators are
 	activated. Call this from a Python controller attached to a switch scene
@@ -311,7 +311,7 @@ def _SlowCopyRot(o, goal, factor):
 	
 	o.localOrientation = orn
 
-@bgeext.controller
+@bxt.utils.controller
 def SlowCopyRot(c):
 	'''
 	Slow parenting (Rotation only). The owner will copy the rotation of the
@@ -333,7 +333,7 @@ def _SlowCopyLoc(o, goal, factor):
 	
 	o.worldPosition = _lerp(pos, goalPos, factor)
 
-@bgeext.controller
+@bxt.utils.controller
 def SlowCopyLoc(c):
 	'''
 	Slow parenting (Location only). The owner will copy the position of the
@@ -344,8 +344,8 @@ def SlowCopyLoc(c):
 	goal = c.sensors['sGoal'].owner
 	_SlowCopyLoc(o, goal, o['SlowFac'])
 
-@bgeext.all_sensors_positive
-@bgeext.controller
+@bxt.utils.all_sensors_positive
+@bxt.utils.controller
 def CopyTrans(c):
 	'''Copy the transform from a linked sensor's object to this object.'''
 	_copyTransform(c.sensors[0].owner, c.owner)
@@ -374,7 +374,7 @@ def setRelPos(ob, target, ref):
 	offset = ref.worldPosition - ob.worldPosition
 	ob.worldPosition = target.worldPosition - offset
 
-@bgeext.owner
+@bxt.utils.owner
 def RayFollow(o):
 	'''
 	Position an object some distance along its parent's z-axis. The object will 
@@ -465,8 +465,8 @@ def triangleNormal(p0, p1, p2):
 	
 	return normal
 
-@bgeext.all_sensors_positive
-@bgeext.controller
+@bxt.utils.all_sensors_positive
+@bxt.utils.controller
 def SprayParticle(c):
 	'''
 	Instance one particle, and decrement the particle counter. The particle will
@@ -500,14 +500,14 @@ def SprayParticle(c):
 	c.activate('aEmit')
 	c.activate('aRot')
 
-@bgeext.owner
+@bxt.utils.owner
 def billboard(o):
 	'''Track the camera - the Z-axis of the current object will be point towards
 	the camera.'''
 	_, vec, _ = o.getVectTo(logic.getCurrentScene().active_camera)
 	o.alignAxisToVect(vec, 2)
 
-@bgeext.controller
+@bxt.utils.controller
 def timeOffsetChildren(c):
 	'''Copy the 'Frame' property to all children, incrementally adding an offset
 	as defined by the 'Offset' property.'''
@@ -604,7 +604,7 @@ def hasState(ob, state):
 	stateBitmask = 1 << (state - 1)
 	return (ob.state & stateBitmask) != 0
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def makeScreenshot():
 	render.makeScreenshot('//Screenshot#.jpg')
 

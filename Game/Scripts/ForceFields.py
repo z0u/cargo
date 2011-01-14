@@ -20,7 +20,7 @@ Created on 13/02/2010
 @author: alex
 '''
 
-from . import bgeext
+import bxt
 from . import Utilities
 from . import Actor
 import mathutils
@@ -200,7 +200,7 @@ def create(obOrController):
 	Utilities.setState(o, 2)
 	return ffInstance
 
-@bgeext.controller
+@bxt.utils.controller
 def onTouched(c):
 	'''Activate the force field.
 	
@@ -224,8 +224,8 @@ def onTouched(c):
 	for a in actors: 
 		ffield.touched(a)
 
-@bgeext.some_sensors_positive
-@bgeext.owner
+@bxt.utils.some_sensors_positive
+@bxt.utils.owner
 def onRender(o):
 	'''Activate the force field. This is like onTouched, but should be used by
 	force fields with a very long range (i.e. those that affect the whole

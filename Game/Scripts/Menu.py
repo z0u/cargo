@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import bgeext
+import bxt
 from . import Utilities
 from . import Store
 
@@ -147,7 +147,7 @@ class InputHandler(EventListener):
 			newFocus = newFocus.parent
 
 		if newFocus != None:
-			newFocus = bgeext.get_wrapper(newFocus)
+			newFocus = bxt.types.get_wrapper(newFocus)
 
 		if newFocus == self.current:
 			return
@@ -243,45 +243,45 @@ class AsyncAdoptionHelper:
 # Global sensors
 ################
 
-@bgeext.controller
+@bxt.utils.controller
 def controllerInit(c):
 	'''Initialise the menu'''
 	render.showMouse(True)
 	mOver = c.sensors['sMouseOver']
 	mOver.usePulseFocus = True
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def focusNext():
 	InputHandler().focusNext()
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def focusPrevious():
 	InputHandler().focusPrevious()
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def focusLeft():
 	InputHandler().focusLeft()
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def focusRight():
 	InputHandler().focusRight()
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def focusUp():
 	InputHandler().focusUp()
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def focusDown():
 	InputHandler().focusDown()
 
-@bgeext.all_sensors_positive
-@bgeext.controller
+@bxt.utils.all_sensors_positive
+@bxt.utils.controller
 def mouseMove(c):
 	mOver = c.sensors['sMouseOver']
 	InputHandler().mouseOver(mOver)
 
 def mouseButton(c):
-	if bgeext.someSensorPositive():
+	if bxt.utils.someSensorPositive():
 		InputHandler().mouseDown()
 	else:
 		InputHandler().mouseUp()
@@ -359,8 +359,8 @@ screens.append(Screen('CreditsScreen', 'Credits'))
 screens.append(Screen('ConfirmationDialogue', 'Confirm'))
 EventBus().notify('showScreen', 'LoadingScreen')
 
-@bgeext.gameobject('update', prefix='cam_')
-class Camera(EventListener, bgeext.ProxyGameObject):
+@bxt.types.gameobject('update', prefix='cam_')
+class Camera(EventListener, bxt.types.ProxyGameObject):
 	'''A camera that adjusts its position depending on which screen is
 	visible.'''
 	
@@ -374,7 +374,7 @@ class Camera(EventListener, bgeext.ProxyGameObject):
 	FRAME_RATE = 25.0 / logic.getLogicTicRate()
 	
 	def __init__(self, owner):
-		bgeext.ProxyGameObject.__init__(self, owner)
+		bxt.types.ProxyGameObject.__init__(self, owner)
 		EventBus().addListener(self)
 		EventBus().replayLast(self, 'showScreen')
 	
@@ -394,8 +394,8 @@ class Camera(EventListener, bgeext.ProxyGameObject):
 			frame = max(frame - Camera.FRAME_RATE, targetFrame)
 		self['frame'] = frame
 
-@bgeext.gameobject('update')
-class Widget(UIObject, bgeext.ProxyGameObject):
+@bxt.types.gameobject('update')
+class Widget(UIObject, bxt.types.ProxyGameObject):
 	'''An interactive UIObject. Has various states (e.g. focused, up, down) to
 	facilitate interaction. Some of the states map to a frame to allow a
 	visual progression.'''
@@ -419,7 +419,7 @@ class Widget(UIObject, bgeext.ProxyGameObject):
 	ACTIVE_FRAME = 12.0
 	
 	def __init__(self, owner):
-		bgeext.ProxyGameObject.__init__(self, owner)
+		bxt.types.ProxyGameObject.__init__(self, owner)
 		self.sensitive = True
 		self.active = False
 		self['Widget'] = True
@@ -518,13 +518,13 @@ class Widget(UIObject, bgeext.ProxyGameObject):
 		if oldv != sensitive:
 			EventBus().notify('sensitivityChanged', self.sensitive)
 
-@bgeext.gameobject()
+@bxt.types.gameobject()
 class Button(Widget):
 	# A Widget has everything needed for a simple button.
 	def __init__(self, owner):
 		Widget.__init__(self, owner)
 
-@bgeext.gameobject()
+@bxt.types.gameobject()
 class SaveButton(Button):
 	def __init__(self, owner):
 		Button.__init__(self, owner)
@@ -534,7 +534,7 @@ class SaveButton(Button):
 		super(SaveButton, self).updateVisibility(visible)
 		self.children['IDCanvas'].setVisible(visible, True)
 
-@bgeext.gameobject()
+@bxt.types.gameobject()
 class Checkbox(Button):
 	def __init__(self, owner):
 		Button.__init__(self, owner)
@@ -570,7 +570,7 @@ class Checkbox(Button):
 		self.children['CheckOff']['frame'] = self['frame']
 		self.children['CheckOn']['frame'] = self['frame']
 
-@bgeext.gameobject()
+@bxt.types.gameobject()
 class ConfirmationPage(Widget, EventListener):
 	def __init__(self, owner):
 		Widget.__init__(self, owner)
@@ -608,7 +608,7 @@ class ConfirmationPage(Widget, EventListener):
 				EventBus().notify(self.onConfirm, self.onConfirmBody)
 				self.children['ConfirmText']['Content'] = ""
 
-@bgeext.gameobject()
+@bxt.types.gameobject()
 class GameDetailsPage(Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to
 	mouse events.'''
@@ -627,7 +627,7 @@ class GameDetailsPage(Widget):
 			self.children['StoryDetails']['Content'] = Store.get(
 				'/game/storySummary', 'Start a new game.')
 
-@bgeext.gameobject('draw')
+@bxt.types.gameobject('draw')
 class CreditsPage(Widget):
 	'''Controls the display of credits.'''
 	DELAY = 180
@@ -664,10 +664,10 @@ class CreditsPage(Widget):
 			if self.delayTimer <= 0:
 				self.drawNext()
 
-@bgeext.gameobject()
-class Subtitle(EventListener, bgeext.ProxyGameObject):
+@bxt.types.gameobject()
+class Subtitle(EventListener, bxt.types.ProxyGameObject):
 	def __init__(self, owner):
-		bgeext.ProxyGameObject.__init__(self, owner)
+		bxt.types.ProxyGameObject.__init__(self, owner)
 		EventBus().addListener(self)
 		EventBus().replayLast(self, 'screenShown')
 	
@@ -675,10 +675,10 @@ class Subtitle(EventListener, bgeext.ProxyGameObject):
 		if message == 'screenShown':
 			self['Content'] = body
 
-@bgeext.gameobject('update')
-class MenuSnail(bgeext.ProxyGameObject):
+@bxt.types.gameobject('update')
+class MenuSnail(bxt.types.ProxyGameObject):
 	def __init__(self, owner):
-		bgeext.ProxyGameObject.__init__(self, owner)
+		bxt.types.ProxyGameObject.__init__(self, owner)
 		self.armature = self.children['SnailArm_Min']
 		self.EyeLocL = self.armature.children['Eyeref_L']
 		self.EyeLocR = self.armature.children['Eyeref_R']
@@ -702,7 +702,7 @@ class MenuSnail(bgeext.ProxyGameObject):
 
 		def look(bone, target, restOrn = None):
 			channel = self.armature.channels[bone['channel']]
-			_, gVec, _ = bone.getVectTo(bgeext.unwrap(target))
+			_, gVec, _ = bone.getVectTo(bxt.types.unwrap(target))
 			bone.alignAxisToVect(bone.parent.getAxisVect(Utilities.ZAXIS), 2)
 			bone.alignAxisToVect(gVec, 1)
 			orn = bone.localOrientation.to_quat()

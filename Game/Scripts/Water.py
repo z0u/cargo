@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import bgeext
+import bxt
 import mathutils
 from . import Utilities
 from . import Actor
@@ -359,7 +359,7 @@ class Bubble(Actor.Actor):
 		'''Bubbles aren't important enough to respawn. Just destroy them.'''
 		self.Destroy()
 
-@bgeext.owner
+@bxt.utils.owner
 def createWater(o):
 	'''
 	Create a new Water object. The object should be perfectly flat, with all
@@ -371,7 +371,7 @@ def createWater(o):
 	
 	Water(o)
 
-@bgeext.owner
+@bxt.utils.owner
 def createShapedWater(o):
 	'''
 	Create a new ShapedWater object. The object does not have to be flat, but it
@@ -383,7 +383,7 @@ def createShapedWater(o):
 	'''
 	ShapedWater(o)
 
-@bgeext.controller
+@bxt.utils.controller
 def onCollision(c):
 	'''
 	Respond to collisions with Actors. Ripples will be created, and 

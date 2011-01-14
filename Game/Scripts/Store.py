@@ -16,7 +16,7 @@
 #
 
 from bge import logic
-from . import bgeext
+import bxt
 
 current = 0
 def getSessionId():
@@ -95,7 +95,7 @@ def _load():
 # Load once on initialisation.
 _load()
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def save():
 	'''Save the data to a file. This should be called periodically - it will
 	only actually write the file if the settings have changed.'''

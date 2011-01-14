@@ -17,16 +17,16 @@
 
 import unittest
 from bge import logic
-from . import bgeext
+import bxt
 from . import Utilities
 import weakref
 
 class ProxyGameObjectTest(unittest.TestCase):
-	'''bgeext.ProxyGameObject'''
+	'''bxt.types.ProxyGameObject'''
 
 	def setUp(self):
-		self.o1 = bgeext.get_wrapper(logic.getCurrentScene().objects['pt.1'])
-		self.o2 = bgeext.get_wrapper(logic.getCurrentScene().objects['pt.2'])
+		self.o1 = bxt.types.get_wrapper(logic.getCurrentScene().objects['pt.1'])
+		self.o2 = bxt.types.get_wrapper(logic.getCurrentScene().objects['pt.2'])
 
 	def test_0_unwrap(self):
 		self.assertEquals(self.o1.unwrap().__class__.__name__, 'KX_GameObject')
@@ -157,7 +157,7 @@ def weakref_init():
 	def callback(ref):
 		print("Info: Weak reference is dying.")
 
-	o = bgeext.get_wrapper(logic.getCurrentScene().objects['weakref'])
+	o = bxt.types.get_wrapper(logic.getCurrentScene().objects['weakref'])
 	wref = weakref.ref(o, callback)
 
 def weakref_test():
@@ -189,15 +189,15 @@ def weakref_test():
 # Demonstrations
 ################
 
-@bgeext.gameobject('update', prefix='ED_')
-class ExtensionDemo(bgeext.ProxyGameObject):
+@bxt.types.gameobject('update', prefix='ED_')
+class ExtensionDemo(bxt.types.ProxyGameObject):
 	'''Demonstrates:
 	 - Input filtering (makes sure all sensors are positive).
 	 - Promotion of methods to top-level functions, so they may be called from
 	   a Python controller in the game engine.
 	 - Using KX_GameObject attributes as though they belong to this class.'''
 
-	@bgeext.all_sensors_positive
+	@bxt.utils.all_sensors_positive
 	def update(self):
 		currentpos = self.worldPosition.x
 		currentpos += 1.0

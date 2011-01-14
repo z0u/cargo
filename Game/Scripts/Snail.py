@@ -23,7 +23,7 @@ hierarchy, with the owner as the root.
 
 import mathutils
 from . import Utilities
-from . import bgeext
+import bxt
 from . import Actor
 from bge import render
 from bge import logic
@@ -852,13 +852,13 @@ def init(cont):
 	snail = Snail(cont.owner, cargoHold, eyeRayL, eyeRayR, eyeLocL, eyeLocR, camera)
 	cont.owner['Snail'] = snail
 
-@bgeext.owner
+@bxt.utils.owner
 def update(o):
 	snail = o['Snail']
 	snail.orient()
 	snail.updateEyeLength()
 
-@bgeext.controller
+@bxt.utils.controller
 def look(c):
 	sLookAt = c.sensors['sLookAt']
 	c.owner['Snail'].lookAt(sLookAt.hitObjectList)
@@ -871,21 +871,21 @@ def _GetNearestShell(snailOb, shellObs):
 	
 	return None
 
-@bgeext.all_sensors_positive
-@bgeext.controller
+@bxt.utils.all_sensors_positive
+@bxt.utils.controller
 def SetShellImmediate(c):
 	snail = c.owner['Snail']
 	closeShells = c.sensors['sShellPickup'].hitObjectList
 	snail.setShell(_GetNearestShell(c.owner, closeShells), False)
 
-@bgeext.controller
+@bxt.utils.controller
 def OnShellTouched(c):
 	snail = c.owner['Snail']
 	closeShells = c.sensors['sShellPickup'].hitObjectList
 	snail.NearestShell = _GetNearestShell(c.owner, closeShells)
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def OnDropShell(o):
 	'''
 	Called when the snail should drop its shell. This happens on a certain frame
@@ -893,14 +893,14 @@ def OnDropShell(o):
 	'''
 	o['Snail'].onDropShell()
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def OnShellPostExit(o):
 	'''Called when the shell has been fully exited.'''
 	o['Snail'].onPostExitShell()
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def OnShellEnter(o):
 	'''
 	Transfers control of the snail to its shell. Allows for things like
@@ -910,11 +910,11 @@ def OnShellEnter(o):
 	'''
 	o['Snail'].onEnterShell()
 
-@bgeext.owner
+@bxt.utils.owner
 def OnStartCrawling(o):
 	o['Snail'].onStartCrawling()
 
-@bgeext.controller
+@bxt.utils.controller
 def OnTouchSpeedModifier(c):
 	mult = 0.0
 	hitObs = c.sensors[0].hitObjectList
@@ -934,7 +934,7 @@ def OnTouchSpeedModifier(c):
 # Independent functions.
 #
 
-@bgeext.controller
+@bxt.utils.controller
 def EyeLength(c):
 	'''Sets the length of the eyes. To be called by the snail.'''
 	def getRayLength(sensor):

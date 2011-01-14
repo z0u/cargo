@@ -16,10 +16,10 @@
 #
 
 from . import Utilities
-from . import bgeext
+import bxt
 import mathutils
 
-@bgeext.controller
+@bxt.utils.controller
 def BendLeaf(c):
 	'''
 	Cause a bendy leaf to react to objects touching it. The controller must

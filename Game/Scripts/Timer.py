@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import bgeext
+import bxt
 from bge import logic
 from . import Utilities
 from . import Actor
@@ -100,26 +100,26 @@ class Timer(Actor.Actor):
 		functionality.'''
 		logic.sendMessage(self.owner['Message'])
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def CreateTimer(o):
 	'''Create a new timer from this controller's owner.'''
 	Timer(o)
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def Start(o):
 	'''Start the timer that is attached to this controller.'''
 	o['Actor'].Start()
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def Stop(o):
 	'''Cancel the timer that is attached to this controller.'''
 	o['Actor'].Stop()
 
-@bgeext.all_sensors_positive
-@bgeext.owner
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def Pulse(o):
 	'''Advance the timer by one logic tic. This must be called once per logic
 	frame while the timer is active.'''

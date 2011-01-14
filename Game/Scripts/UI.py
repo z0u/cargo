@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import bgeext
+import bxt
 from bge import logic
 from . import Utilities
 from . import Actor
@@ -222,15 +222,15 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 		self.filterColour = None
 		self._updateFilter()
 
-@bgeext.owner
+@bxt.utils.owner
 def CreateHUD(o):
 	HUD().Attach(o)
 
-@bgeext.owner
+@bxt.utils.owner
 def ShowLoadingScreen(o):
 	HUD().ShowLoadingScreen(o)
 
-@bgeext.owner
+@bxt.utils.owner
 def HideLoadingScreen(o):
 	HUD().HideLoadingScreen(o)
 
@@ -318,7 +318,7 @@ class Gauge(Actor.Actor):
 		for a in c.actuators:
 			c.activate(a)
 
-@bgeext.controller
+@bxt.utils.controller
 def UpdateGauge(c):
 	'''
 	Update the indicators of a gauge. This sets the Frame property of each
@@ -420,7 +420,7 @@ class Font:
 
 _fonts = {}
 
-@bgeext.owner
+@bxt.utils.owner
 def CreateFont(o):
 	global _fonts
 	_fonts[o['FontName']] = Font(o)
@@ -606,7 +606,7 @@ class TextRenderer:
 			while self.canvas['Rendering']:
 				self.RenderNextChar()
 
-@bgeext.owner
+@bxt.utils.owner
 def _getTextRenderer(o):
 	try:
 		tr = o['_TextRenderer']
@@ -618,6 +618,6 @@ def _getTextRenderer(o):
 def RenderText():
 	_getTextRenderer().RenderText()
 
-@bgeext.all_sensors_positive
+@bxt.utils.all_sensors_positive
 def RenderNextChar():
 	_getTextRenderer().RenderNextChar()

@@ -18,9 +18,9 @@
 '''Wraps some useful features of the game engine API to allow it to be extended.
 This makes it easy to add functionality to KX_GameObjects. Use it like this:
  
- 	@bgeext.gameobject('update', prefix='ED_')
- 	class ExtensionDemo(bgeext.ProxyGameObject):
- 		@bgeext.all_sensors_positive
+ 	@bxt.types.gameobject('update', prefix='ED_')
+ 	class ExtensionDemo(bxt.types.ProxyGameObject):
+ 		@bxt.utils.all_sensors_positive
  		def update(self):
  			currentpos = self.worldPosition.x
  			currentpos += 1.0
@@ -36,97 +36,20 @@ This makes it easy to add functionality to KX_GameObjects. Use it like this:
 
 from bge import types
 from bge import logic
+from . import utils
 
 import sys
 import inspect
 from functools import wraps
 
-###########
-# Utilities
-###########
-
-def replaceObject(name, original, time = 0):
-	'''Like bge.types.scene.addObject, but:
-	 - Transfers the properies of the original to the new object, and
-	 - Deletes the original after the new one is created.'''
-	scene = logic.getCurrentScene()
-	newObj = scene.addObject(name, original, time)
-	for prop in original.getPropertyNames():
-		newObj[prop] = original[prop]
-	original.endObject()
-	return newObj
-
-def owner(f):
-	'''Passes a single argument to a function: the owner of the current
-	controller.'''
-	@wraps(f)
-	def f_new():
-		c = logic.getCurrentController()
-		return f(c.owner)
-	return f_new
-
-def controller(f):
-	'''Passes a single argument to a function: the current controller.'''
-	@wraps(f)
-	def f_new():
-		c = logic.getCurrentController()
-		return f(c)
-	return f_new
-
-@controller
-def allSensorsPositive(c):
-	'''Test whether all sensors are positive.
-	
-	Parameters:
-	c: A controller.
-	
-	Returns: True if all sensors are positive.'''
-	for s in c.sensors:
-		if not s.positive:
-			return False
-	return True
-
-@controller
-def someSensorPositive(c):
-	'''Test whether at least one sensor is positive.
-	
-	Parameters:
-	c: A controller.
-	
-	Returns: True if at least one sensor is positive.'''
-	for s in c.sensors:
-		if s.positive:
-			return True
-	return False
-
-def all_sensors_positive(f):
-	'''Decorator. Only calls the function if all sensors are positive.'''
-	@wraps(f)
-	def f_new(*args, **kwargs):
-		if not allSensorsPositive():
-			return
-		return f(*args, **kwargs)
-	return f_new
-
-def some_sensors_positive(f):
-	'''Decorator. Only calls the function if one ore more sensors are
-	positive.'''
-	@wraps(f)
-	def f_new(*args, **kwargs):
-		if not someSensorPositive():
-			return
-		return f(*args, **kwargs)
-	return f_new
-
-#######
-# Types
-#######
-
 def has_wrapper(owner):
 	return '__wrapper__' in owner
 
 def get_wrapper(owner):
-	return owner['__wrapper__']
+	try:
+		return owner['__wrapper__']
+	except KeyError as e:
+		raise KeyError('The object %s is not wrapped.' % owner.name) from e
 
 def is_wrapper(ob):
 	return hasattr(ob, 'unwrap')
@@ -164,7 +87,7 @@ class gameobject:
 		self.converted = False
 		self.prefix = prefix
 
-	@all_sensors_positive
+	@utils.all_sensors_positive
 	def __call__(self, cls):
 		if not self.converted:
 			self.create_interface(cls)
@@ -175,7 +98,7 @@ class gameobject:
 			if owner == None:
 				owner = logic.getCurrentController().owner
 			if 'template' in owner:
-				owner = replaceObject(owner['template'], owner)
+				owner = utils.replaceObject(owner['template'], owner)
 			old_init(self, owner)
 			owner['__wrapper__'] = self
 		cls.__init__ = new_init

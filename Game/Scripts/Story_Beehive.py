@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import bgeext
+import bxt
 from . import UI
 from . import Actor
 from . import Utilities
@@ -59,7 +59,7 @@ class Intro(Character):
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActGeneric(Intro.Destroy, self))
 
-@bgeext.owner
+@bxt.utils.owner
 def createIntro(o):
 	Intro(o)
 
@@ -135,7 +135,7 @@ class Extro(Character):
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActShowDialogue("Press ESC to exit."))
 
-@bgeext.owner
+@bxt.utils.owner
 def createExtro(o):
 	Extro(o)
 
@@ -238,13 +238,13 @@ class Bucket(Actor.Actor):
 			Actor.Director().ResumeUserInput()
 		self.updateCamera()
 
-@bgeext.controller
+@bxt.utils.controller
 def createBucket(c):
 	camTop = c.sensors['sCameraTop'].owner
 	camBottom = c.sensors['sCameraBottom'].owner
 	Bucket(c.owner, camTop, camBottom)
 
-@bgeext.controller
+@bxt.utils.controller
 def updateBucket(c):
 	bucket = c.owner['Actor']
 	bucket.frameChanged()

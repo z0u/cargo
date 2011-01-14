@@ -108,6 +108,7 @@ class InputHandler(EventListener):
         self.widgets = weakref.WeakSet()
         self.refs = weakref.WeakValueDictionary()
 
+    # Getter and setter to allow use of weakref
     def _getCurrent(self):
         if not 'current' in self.refs:
             return None
@@ -120,6 +121,7 @@ class InputHandler(EventListener):
             self.refs['current'] = current
     current = property(_getCurrent, _setCurrent)
 
+    # Getter and setter to allow use of weakref
     def _getDownCurrent(self):
         if not 'downcurrent' in self.refs:
             return None
@@ -209,8 +211,8 @@ class AsyncAdoptionHelper:
     is required because the order that widgets are created in is undefined.'''
     
     def __init__(self):
-        self.waitingList = {}
-        self.containers = {}
+        self.pendingChildren = {}
+        self.containers = weakref.WeakValueDictionary()
     
     def requestAdoption(self, child, parentName):
         '''Add a child to the registry. If the child's parent is already
@@ -221,21 +223,21 @@ class AsyncAdoptionHelper:
             container = self.containers[parentName]
             container.addChild(child)
         else:
-            if not parentName in self.waitingList:
-                self.waitingList[parentName] = []
-            self.waitingList[parentName].append(child)
+            if not parentName in self.pendingChildren:
+                self.pendingChildren[parentName] = weakref.WeakSet()
+            self.pendingChildren[parentName].add(child)
     
     def registerAdopter(self, parent):
-        '''Add a parent to the registry. Any children waiting for this parent
+        '''Add a parent to the registry. Any children pendingChildren for this parent
         will be attached.'''
         
         self.containers[parent.name] = parent
         
-        # Assign all children waiting on this container.
-        if parent.name in self.waitingList:
-            for child in self.waitingList[parent.name]:
+        # Assign all children pendingChildren on this container.
+        if parent.name in self.pendingChildren:
+            for child in self.pendingChildren[parent.name]:
                 parent.addChild(child)
-            del self.waitingList[parent.name]
+            del self.pendingChildren[parent.name]
 
 ################
 # Global sensors
@@ -358,7 +360,7 @@ screens.append(Screen('ConfirmationDialogue', 'Confirm'))
 EventBus().notify('showScreen', 'LoadingScreen')
 
 @bgeext.gameobject('update', prefix='cam_')
-class Camera(EventListener):
+class Camera(EventListener, bgeext.ProxyGameObject):
     '''A camera that adjusts its position depending on which screen is
     visible.'''
     
@@ -372,25 +374,25 @@ class Camera(EventListener):
     FRAME_RATE = 25.0 / logic.getLogicTicRate()
     
     def __init__(self, owner):
-        self.owner = owner
+        bgeext.ProxyGameObject.__init__(self, owner)
         EventBus().addListener(self)
         EventBus().replayLast(self, 'showScreen')
     
     def onEvent(self, message, body):
         if message == 'showScreen' and body in Camera.FRAME_MAP:
-            self.owner['targetFrame'] = Camera.FRAME_MAP[body]
+            self['targetFrame'] = Camera.FRAME_MAP[body]
     
     def update(self):
         '''Update the camera animation frame. Should be called once per frame
         when targetFrame != frame.'''
         
-        targetFrame = self.owner['targetFrame']
-        frame = self.owner['frame']
+        targetFrame = self['targetFrame']
+        frame = self['frame']
         if frame < targetFrame:
             frame = min(frame + Camera.FRAME_RATE, targetFrame)
         else:
             frame = max(frame - Camera.FRAME_RATE, targetFrame)
-        self.owner['frame'] = frame
+        self['frame'] = frame
 
 @bgeext.gameobject('update')
 class Widget(UIObject, bgeext.ProxyGameObject):

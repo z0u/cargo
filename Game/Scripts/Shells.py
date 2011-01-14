@@ -234,7 +234,7 @@ class Wheel(ShellBase):
 		#
 		# Turn (steer).
 		#
-		self.CurrentTurnSpeed = Utilities._lerp(
+		self.CurrentTurnSpeed = bxt.math.lerp(
 			self.CurrentTurnSpeed,
 			self.owner['TurnSpeed'] * leftMagnitude,
 			self.owner['SpeedFac'])
@@ -246,10 +246,10 @@ class Wheel(ShellBase):
 		# the wheel is being steered at (above).
 		#
 		turnStrength = abs(self.CurrentTurnSpeed) / self.owner['TurnSpeed']
-		targetRotSpeed = self.owner['RotSpeed'] * Utilities._safeInvert(
+		targetRotSpeed = self.owner['RotSpeed'] * bxt.math.safe_invert(
 			turnStrength, self.owner['TurnInfluence'])
 		
-		self.CurrentRotSpeed = Utilities._lerp(
+		self.CurrentRotSpeed = bxt.math.lerp(
 			self.CurrentRotSpeed,
 			targetRotSpeed,
 			self.owner['SpeedFac'])

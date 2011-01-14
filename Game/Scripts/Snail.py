@@ -91,15 +91,15 @@ class SnailSegment:
 
 	def orient(self, parentOrnMat, armature):
 		if (self.Parent):
-			right = self.Parent.owner.getAxisVect(Utilities.XAXIS)
+			right = self.Parent.owner.getAxisVect(bxt.math.XAXIS)
 			self.owner.alignAxisToVect(right, 0)
 		
 		_, p1, _ = self.Parent.Rays['Right'].getHitPosition()
 		_, p2, _ = self.Parent.Rays['Left'].getHitPosition()
 		p3 = self.Parent.Fulcrum.worldPosition
-		normal = Utilities.triangleNormal(p1, p2, p3)
+		normal = bxt.math.triangleNormal(p1, p2, p3)
 		
-		if normal.dot(self.Parent.owner.getAxisVect(Utilities.ZAXIS)) > 0.0:
+		if normal.dot(self.Parent.owner.getAxisVect(bxt.math.ZAXIS)) > 0.0:
 			#
 			# Normal is within 90 degrees of parent's normal -> segment not
 			# doubling back on itself.
@@ -108,8 +108,8 @@ class SnailSegment:
 			# Don't use a factor of 0.5: potential for normal to average out
 			# to be (0,0,0)
 			#
-			orientation = self.owner.getAxisVect(Utilities.ZAXIS)
-			orientation = Utilities._lerp(normal, orientation, 0.4)
+			orientation = self.owner.getAxisVect(bxt.math.ZAXIS)
+			orientation = bxt.math.lerp(normal, orientation, 0.4)
 			self.owner.alignAxisToVect(orientation, 2)
 		
 		#
@@ -178,11 +178,11 @@ class Snail(SnailSegment, Actor.Actor):
 		self.setHealth(7.0)
 		
 		if DEBUG:
-			self.eyeMarkerL = Utilities.addObject('AxisMarker', 0)
-			Utilities._copyTransform(eyeLocL, self.eyeMarkerL)
+			self.eyeMarkerL = bxt.utils.add_object('AxisMarker', 0)
+			bxt.math.copy_transform(eyeLocL, self.eyeMarkerL)
 			self.eyeMarkerL.setParent(eyeLocL)
-			self.eyeMarkerR = Utilities.addObject('AxisMarker', 0)
-			Utilities._copyTransform(eyeLocR, self.eyeMarkerR)
+			self.eyeMarkerR = bxt.utils.add_object('AxisMarker', 0)
+			bxt.math.copy_transform(eyeLocR, self.eyeMarkerR)
 			self.eyeMarkerR.setParent(eyeLocR)
 	
 	def getTouchedObject(self):
@@ -230,8 +230,8 @@ class Snail(SnailSegment, Actor.Actor):
 	
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
-		counter = Utilities.Counter()
-		avNormal = Utilities.ZEROVEC.copy()
+		counter = bxt.utils.Counter()
+		avNormal = bxt.math.ZEROVEC.copy()
 		ob0, p0, n0 = self.Rays['0'].getHitPosition()
 		avNormal += n0
 		if ob0:
@@ -260,8 +260,8 @@ class Snail(SnailSegment, Actor.Actor):
 		self.TouchedObject = counter.mode
 		if self.TouchedObject != None:
 			angV = counter.mode.getAngularVelocity()
-			if angV.magnitude < Utilities.EPSILON:
-				angV = Utilities.MINVECTOR
+			if angV.magnitude < bxt.math.EPSILON:
+				angV = bxt.math.MINVECTOR
 			self.owner.setAngularVelocity(angV)
 		
 		#
@@ -275,7 +275,7 @@ class Snail(SnailSegment, Actor.Actor):
 		# smoother transition than just averaging the normals returned by the
 		# rays.
 		#
-		normal = Utilities.quadNormal(p0, p1, p2, p3)
+		normal = bxt.math.quadNormal(p0, p1, p2, p3)
 		if normal.dot(avNormal) < 0.0:
 			normal.negate()
 		self.owner.alignAxisToVect(normal, 2)
@@ -287,9 +287,9 @@ class Snail(SnailSegment, Actor.Actor):
 		restLength = self.owner['EyeRestLen']
 		channel = self.Armature.channels[eyeRayOb['channel']]
 		
-		vect = eyeRayOb.getAxisVect(Utilities.ZAXIS) * restLength
+		vect = eyeRayOb.getAxisVect(bxt.math.ZAXIS) * restLength
 		through = eyeRayOb.worldPosition + vect
-		hitOb, hitPos, _ = Utilities._rayCastP2P(through, eyeRayOb,
+		hitOb, hitPos, _ = bxt.math.ray_cast_p2p(through, eyeRayOb,
 				prop = 'Ground')
 		
 		targetLength = vect.magnitude
@@ -302,7 +302,7 @@ class Snail(SnailSegment, Actor.Actor):
 		if (currentProportion >= targetProportion):
 			targetProportion *= 0.5
 		else:
-			targetProportion = Utilities._lerp(currentProportion,
+			targetProportion = bxt.math.lerp(currentProportion,
 					targetProportion, self.owner['EyeLenFac'])
 		
 		channel.scale = (1.0, targetProportion, 1.0)
@@ -322,7 +322,7 @@ class Snail(SnailSegment, Actor.Actor):
 		def look(eye, target):
 			channel = self.Armature.channels[eye['channel']]
 			_, gVec, _ = eye.getVectTo(target)
-			eye.alignAxisToVect(eye.parent.getAxisVect(Utilities.ZAXIS), 2)
+			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.math.ZAXIS), 2)
 			eye.alignAxisToVect(gVec, 1)
 			orn = eye.localOrientation.to_quat()
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
@@ -358,10 +358,10 @@ class Snail(SnailSegment, Actor.Actor):
 	def _stowShell(self, shell):
 		referential = shell.CargoHook
 		
-		Utilities.setRelOrn(shell.owner,
+		bxt.math.set_rel_orn(shell.owner,
 						    self.getAttachPoints()['CargoHold'],
 						    referential)
-		Utilities.setRelPos(shell.owner,
+		bxt.math.set_rel_pos(shell.owner,
 						    self.getAttachPoints()['CargoHold'],
 						    referential)
 		self.AddChild(shell, 'CargoHold', compound = False)
@@ -414,7 +414,7 @@ class Snail(SnailSegment, Actor.Actor):
 		Utilities.addState(self.owner, S_NOSHELL)
 		
 		self.RemoveChild(self.Shell)
-		velocity = Utilities.ZAXIS.copy()
+		velocity = bxt.math.ZAXIS.copy()
 		velocity.x += 0.5 - logic.getRandomFloat()
 		velocity = self.owner.getAxisVect(velocity)
 		velocity *= self.owner['ShellPopForce']
@@ -647,7 +647,7 @@ class Snail(SnailSegment, Actor.Actor):
 		#
 		# Rotate the snail.
 		#
-		o['Rot'] = Utilities._lerp(o['Rot'], targetRot, o['RotFactor'])
+		o['Rot'] = bxt.math.lerp(o['Rot'], targetRot, o['RotFactor'])
 		oRot = mathutils.Matrix.Rotation(o['Rot'], 3, Utilities.ZAXIS)
 		o.localOrientation = o.localOrientation * oRot
 		
@@ -656,11 +656,11 @@ class Snail(SnailSegment, Actor.Actor):
 		#
 		targetBendAngleAft = targetBendAngleAft / o['SpeedMultiplier']
 		
-		o['BendAngleFore'] = Utilities._lerp(o['BendAngleFore'],
+		o['BendAngleFore'] = bxt.math.lerp(o['BendAngleFore'],
 		                                     targetBendAngleFore,
 		                                     o['BendFactor'])
 		if fwdSign != 0:
-			o['BendAngleAft'] = Utilities._lerp(o['BendAngleAft'],
+			o['BendAngleAft'] = bxt.math.lerp(o['BendAngleAft'],
 		                                        targetBendAngleAft,
 		                                        o['BendFactor'])
 		
@@ -710,14 +710,14 @@ class ArcRay:
 	def __init__(self, owner):
 		self.owner = owner
 		self._createPoints()
-		self.lastHitPoint = Utilities.ORIGIN.copy()
-		self.lastHitNorm = Utilities.ZAXIS.copy()
+		self.lastHitPoint = bxt.math.ORIGIN.copy()
+		self.lastHitNorm = bxt.math.ZAXIS.copy()
 		self.prop = ArcRay.PROP
 		if hasattr(owner, 'prop'):
 			self.prop = owner['prop']
 		
 		if DEBUG:
-			self.marker = Utilities.addObject('PointMarker', 0)
+			self.marker = bxt.utils.add_object('PointMarker', 0)
 	
 	def _createPoints(self):
 		'''Generate an arc of line segments to cast rays along.'''
@@ -753,21 +753,21 @@ class ArcRay:
 		ob = None
 		norm = None
 		for A, B in zip(self.path, self.path[1:]):
-			A = Utilities._toWorld(self.owner, A)
-			B = Utilities._toWorld(self.owner, B)
-			ob, p, norm = Utilities._rayCastP2P(B, A, prop = self.prop)
+			A = bxt.math.to_world(self.owner, A)
+			B = bxt.math.to_world(self.owner, B)
+			ob, p, norm = bxt.math.ray_cast_p2p(B, A, prop = self.prop)
 			if ob:
-				self.lastHitPoint = Utilities._toLocal(self.owner, p)
-				self.lastHitNorm = Utilities._toLocalVec(self.owner, norm)
+				self.lastHitPoint = bxt.math.to_local(self.owner, p)
+				self.lastHitNorm = bxt.math.to_localVec(self.owner, norm)
 				if DEBUG:
-					render.drawLine(A, p, Utilities.ORANGE.xyz)
+					render.drawLine(A, p, bxt.render.ORANGE.xyz)
 				break
 			else:
 				if DEBUG:
-					render.drawLine(A, B, Utilities.YELLOW.xyz)
+					render.drawLine(A, B, bxt.render.YELLOW.xyz)
 		
-		wp = Utilities._toWorld(self.owner, self.lastHitPoint)
-		wn = Utilities._toWorldVec(self.owner, self.lastHitNorm)
+		wp = bxt.math.to_world(self.owner, self.lastHitPoint)
+		wn = bxt.math.to_worldVec(self.owner, self.lastHitNorm)
 		if DEBUG:
 			self.marker.worldPosition = wp
 			
@@ -832,9 +832,9 @@ class SnailTrail:
 		if distMinor > self.Snail.owner['TrailSpacingMinor']:
 			self.LastMinorPos = pos.copy()
 			speedStyle = SnailTrail.S_NORMAL
-			if speedMultiplier > (1.0 + Utilities.EPSILON):
+			if speedMultiplier > (1.0 + bxt.math.EPSILON):
 				speedStyle = SnailTrail.S_FAST
-			elif speedMultiplier < (1.0 - Utilities.EPSILON):
+			elif speedMultiplier < (1.0 - bxt.math.EPSILON):
 				speedStyle = SnailTrail.S_SLOW
 			self.addSpot(speedStyle)
 
@@ -864,7 +864,7 @@ def look(c):
 	c.owner['Snail'].lookAt(sLookAt.hitObjectList)
 
 def _GetNearestShell(snailOb, shellObs):
-	for shellOb in sorted(shellObs, key=Utilities.DistanceKey(snailOb)):
+	for shellOb in sorted(shellObs, key=bxt.math.DistanceKey(snailOb)):
 		shell = shellOb['Actor']
 		if not shell.IsCarried():
 			return shell
@@ -953,7 +953,7 @@ def EyeLength(c):
 		if (currentProportion >= targetProportion):
 			return targetProportion * 0.5
 		else:
-			return Utilities._lerp(currentProportion, targetProportion, factorUp)
+			return bxt.math.lerp(currentProportion, targetProportion, factorUp)
 	
 	o = c.owner
 	sRayL = c.sensors['sEyeRay_L']

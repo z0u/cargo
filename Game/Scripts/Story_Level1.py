@@ -55,16 +55,16 @@ class Blinkenlights:
 				self.lamp = ob
 			else:
 				self.lights.append(ob)
-		self.lights.sort(key=Utilities.DistanceKey(owner))
+		self.lights.sort(key=bxt.math.DistanceKey(owner))
 		
 		self.cols = list(map(lambda x: x.color.copy(), self.lights))
 		self.targetCols = list(self.cols)
-		self.targetLampCol = Utilities.BLACK.copy()
+		self.targetLampCol = bxt.render.BLACK.copy()
 	
 	def blink(self):
 		stringLen = self.owner['cycleLen']
 		self.step = (self.step + 1) % stringLen
-		self.targetLampCol = Utilities.BLACK.copy()
+		self.targetLampCol = bxt.render.BLACK.copy()
 		for i, col in enumerate(self.cols):
 			target = None
 			if (i % stringLen) == self.step:
@@ -76,12 +76,12 @@ class Blinkenlights:
 	
 	def update(self):
 		for light, targetCol in zip(self.lights, self.targetCols):
-			light.color = Utilities._lerp(light.color, targetCol, 0.1)
+			light.color = bxt.math.lerp(light.color, targetCol, 0.1)
 		
 		currentLampCol = mathutils.Vector(self.lamp.color)
 		lampCol = self.targetLampCol.copy()
 		lampCol.resize3D()
-		self.lamp.color =  Utilities._lerp(currentLampCol, lampCol, 0.1)
+		self.lamp.color =  bxt.math.lerp(currentLampCol, lampCol, 0.1)
 
 @bxt.utils.owner
 def createBlinkenlights(o):

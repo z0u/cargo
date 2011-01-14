@@ -18,6 +18,7 @@
 
 from bge import logic
 from . import Utilities
+import bxt.utils
 
 ACTIVATION_TIMEOUT = 120
 
@@ -38,7 +39,7 @@ NS_VISIBLE_DESCENDANT = 1
 NS_VISIBLE            = 2
 NS_IMPLICIT           = 3
 
-@Utilities.singleton
+@bxt.utils.singleton
 class LODManager:
 	'''A registrar of LODTrees. Each tree adds itself to this manager
 	(singleton; instance created below). Other scripts then have a central place

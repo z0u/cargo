@@ -20,7 +20,7 @@ from bge import logic
 from . import Utilities
 from . import Actor
 
-@Utilities.singleton
+@bxt.utils.singleton
 class HUD(Actor.DirectorListener, Actor.ActorListener):
 	'''The head-up display manages the 2D user interface that is drawn over the
 	3D scene. This is a Singleton (see HUD instance below). This object
@@ -280,7 +280,7 @@ class Gauge(Actor.Actor):
 			self.owner = owner
 		
 		def update(self):
-			self.Fraction = Utilities._lerp(self.Fraction, self.TargetFraction,
+			self.Fraction = bxt.math.lerp(self.Fraction, self.TargetFraction,
 				self.owner['Speed'])
 			self.owner['Frame'] = self.Fraction * 100.0
 
@@ -442,8 +442,8 @@ class TextRenderer:
 	
 	def __init__(self, canvas):
 		self.canvas = canvas
-		Utilities.SetDefaultProp(canvas, 'colour', 'black')
-		Utilities.SetDefaultProp(canvas, 'valign', 'bottom')
+		bxt.utils.set_default_prop(canvas, 'colour', 'black')
+		bxt.utils.set_default_prop(canvas, 'valign', 'bottom')
 		self.lastHash = None
 		self.Clear()
 		
@@ -563,7 +563,7 @@ class TextRenderer:
 		glyphInstance = logic.getCurrentScene().addObject(glyph,
 			self.canvas, 0)
 		glyphInstance.setParent(self.canvas)
-		glyphInstance.color = Utilities._parseColour(self.canvas['colour'])
+		glyphInstance.color = bxt.math.parse_colour(self.canvas['colour'])
 		glyphInstance.localPosition = [pos[0], pos[1], 0.0]
 		
 		if self.canvas['Instant']:

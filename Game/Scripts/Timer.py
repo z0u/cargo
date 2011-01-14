@@ -46,7 +46,7 @@ class Timer(Actor.Actor):
 		self.Tics = 0.0
 		self.TargetTics = 1.0
 		self.SuspendStart = None
-		Utilities.SetDefaultProp(owner, 'Message', 'TimerFinished')
+		bxt.utils.set_default_prop(owner, 'Message', 'TimerFinished')
 	
 	def Start(self):
 		'''The the timer running for the duration specified by the owner.'''

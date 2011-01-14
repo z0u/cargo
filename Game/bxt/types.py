@@ -34,13 +34,14 @@ This makes it easy to add functionality to KX_GameObjects. Use it like this:
   - ExtensionDemo.update will only execute if all sensors are positive.
 '''
 
-from bge import types
-from bge import logic
-from . import utils
-
 import sys
 import inspect
 from functools import wraps
+
+from bge import types
+from bge import logic
+
+from . import utils
 
 def has_wrapper(owner):
 	return '__wrapper__' in owner

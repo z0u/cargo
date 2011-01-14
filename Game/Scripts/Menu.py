@@ -40,7 +40,7 @@ class EventListener:
 	def onEvent(self, message, body):
 		pass
 
-@Utilities.singleton
+@bxt.utils.singleton
 class EventBus:
 	'''Delivers messages to listeners.'''
 	
@@ -72,7 +72,7 @@ class EventBus:
 			body = self.eventCache[message]
 			target.onEvent(message, body)
 
-@Utilities.singleton
+@bxt.utils.singleton
 class SessionManager(EventListener):
 	'''Responds to some high-level messages.'''
 	
@@ -100,7 +100,7 @@ class SessionManager(EventListener):
 # Nothing else uses this directly, so we have to instantiate it.
 SessionManager()
 
-@Utilities.singleton
+@bxt.utils.singleton
 class InputHandler(EventListener):
 	'''Manages UI elements: focus and click events.'''
 	
@@ -205,7 +205,7 @@ class InputHandler(EventListener):
 		# TODO
 		pass
 
-@Utilities.singleton
+@bxt.utils.singleton
 class AsyncAdoptionHelper:
 	'''Creates parent-child relationships between widgets asynchronously. This
 	is required because the order that widgets are created in is undefined.'''
@@ -703,7 +703,7 @@ class MenuSnail(bxt.types.ProxyGameObject):
 		def look(bone, target, restOrn = None):
 			channel = self.armature.channels[bone['channel']]
 			_, gVec, _ = bone.getVectTo(bxt.types.unwrap(target))
-			bone.alignAxisToVect(bone.parent.getAxisVect(Utilities.ZAXIS), 2)
+			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.math.ZAXIS), 2)
 			bone.alignAxisToVect(gVec, 1)
 			orn = bone.localOrientation.to_quat()
 			

@@ -24,7 +24,7 @@ ZERO2 = mathutils.Vector((0.0, 0.0))
 class SBParticle:
 	'''
 	A 2D softbody particle. Always tries to return to (0, 0). Set the Frame
-	property directly to displace the particle; then call UpdateDynamics to
+	property directly to displace the particle; then call update_dynamics to
 	accelerate the particle back towards (0, 0).
 	'''
 	def __init__(self, spring, damp, index):
@@ -37,7 +37,7 @@ class SBParticle:
 		self.XProp = "BladeX%d" % index
 		self.YProp = "BladeY%d" % index
 	
-	def UpdateDynamics(self):
+	def update_dynamics(self):
 		'''
 		Accelerate the particle towards (0, 0)
 		'''
@@ -52,7 +52,7 @@ class GrassBlade:
 		
 		ry = self.owner['GrassRadY']
 		rz = self.owner['GrassRadZ']
-		self.BBox = Utilities.Box2D(0.0 - ry, 0.0 - rz, ry, rz)
+		self.bbox = bxt.utils.Box2D(0.0 - ry, 0.0 - rz, ry, rz)
 		
 		self.Segments = []
 		for i in range(0, self.owner['nSegments']):
@@ -68,11 +68,11 @@ class GrassBlade:
 		self.owner = None
 		Utilities.SceneManager().Unsubscribe(self)
 
-	def GetCollisionForce(self, collider):
+	def get_collision_force(self, collider):
 		#
 		# Transform collider into blade's coordinate system.
 		#
-		cPos = Utilities._toLocal(self.owner, collider.worldPosition)
+		cPos = bxt.math.to_local(self.owner, collider.worldPosition)
 		
 		#
 		# The blades are rotated 90 degrees to work better as Blender particles.
@@ -84,14 +84,14 @@ class GrassBlade:
 		# Collider bounding box.
 		#
 		colRad = collider['LODRadius']
-		colBox = Utilities.Box2D(cPos.x - colRad, cPos.y - colRad,
+		colBox = bxt.utils.Box2D(cPos.x - colRad, cPos.y - colRad,
 		                         cPos.x + colRad, cPos.y + colRad)
 		
 		#
 		# Perform axis-aligned 2D bounding box collision.
 		#
-		colBox.Intersect(self.BBox)
-		area = colBox.GetArea()
+		colBox.intersect(self.bbox)
+		area = colBox.get_area()
 		
 		if area < 0.0:
 			#
@@ -99,20 +99,20 @@ class GrassBlade:
 			#
 			return ZERO2.copy()
 		
-		areaFraction = area / self.BBox.GetArea()
+		areaFraction = area / self.bbox.get_area()
 		
 		cPos.normalize()
 		cPos = cPos * (areaFraction * 100.0)
 		
 		return cPos
 	
-	def Collide(self, colliders):
+	def collide(self, colliders):
 		#
 		# Find the offset of the base.
 		#
 		vec = ZERO2.copy()
 		for col in colliders:
-			vec = vec + self.GetCollisionForce(col)
+			vec = vec + self.get_collision_force(col)
 		self.owner['BladeXBase'] = vec.x
 		self.owner['BladeYBase'] = vec.x
 		
@@ -129,7 +129,7 @@ class GrassBlade:
 		#
 		for s in self.Segments:
 			s.Frame = s.Frame - linkDisplacement
-			s.UpdateDynamics()
+			s.update_dynamics()
 			self.owner[s.XProp] = s.Frame.x
 			self.owner[s.YProp] = s.Frame.y
 			linkDisplacement = s.Velocity
@@ -141,6 +141,6 @@ def CreateGrassBlade(o):
 @bxt.utils.controller
 def Collide(c):
 	s = c.sensors['Near']
-	c.owner['GrassBlade'].Collide(s.hitObjectList)
+	c.owner['GrassBlade'].collide(s.hitObjectList)
 	for act in c.actuators:
 		c.activate(act)

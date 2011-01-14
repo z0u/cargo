@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import Utilities
 import bxt
 import mathutils
 
@@ -68,7 +67,8 @@ def BendLeaf(c):
 	#
 	# Interpolate to target angle.
 	#
-	o['CurrentDelta'], o['BendAngle'] = Utilities._smerp(o['CurrentDelta'], o['BendAngle'], bendAngle, o['SpeedFactor'], o['Responsiveness'])
+	o['CurrentDelta'], o['BendAngle'] = bxt.math.smerp(o['CurrentDelta'],
+		o['BendAngle'], bendAngle, o['SpeedFactor'], o['Responsiveness'])
 	
 	#
 	# Apply deformation.

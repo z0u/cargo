@@ -103,19 +103,19 @@ class Actor:
 		if 'LODRadius' in owner:
 			LODTree.LODManager().AddCollider(self)
 		
-		Utilities.SetDefaultProp(self.owner, 'Health', 1.0)
+		bxt.utils.set_default_prop(self.owner, 'Health', 1.0)
 		
 		#
 		# Prepare the actor for floatation. This is used by Water.Water.Float.
 		#
-		Utilities.SetDefaultProp(self.owner, 'Oxygen', 1.0)
-		Utilities.SetDefaultProp(self.owner, 'OxygenDepletionRate', 0.005)
-		Utilities.SetDefaultProp(self.owner, 'Buoyancy', 1)
-		Utilities.SetDefaultProp(
+		bxt.utils.set_default_prop(self.owner, 'Oxygen', 1.0)
+		bxt.utils.set_default_prop(self.owner, 'OxygenDepletionRate', 0.005)
+		bxt.utils.set_default_prop(self.owner, 'Buoyancy', 1)
+		bxt.utils.set_default_prop(
 			self.owner, 'CurrentBuoyancy', self.owner['Buoyancy'])
-		Utilities.SetDefaultProp(self.owner, 'FloatRadius', 1.1)
-		Utilities.SetDefaultProp(self.owner, 'SinkFactor', 0.02)
-		Utilities.SetDefaultProp(self.owner, 'MinRippleSpeed', 1.0)
+		bxt.utils.set_default_prop(self.owner, 'FloatRadius', 1.1)
+		bxt.utils.set_default_prop(self.owner, 'SinkFactor', 0.02)
+		bxt.utils.set_default_prop(self.owner, 'MinRippleSpeed', 1.0)
 		
 		self.SaveLocation()
 		
@@ -294,8 +294,8 @@ class Actor:
 	def RestoreLocation(self, reason = None):
 		self.owner.worldPosition = self.Pos
 		self.owner.worldOrientation = self.Orn
-		self.owner.setLinearVelocity(Utilities.MINVECTOR)
-		self.owner.setAngularVelocity(Utilities.MINVECTOR)
+		self.owner.setLinearVelocity(bxt.math.MINVECTOR)
+		self.owner.setAngularVelocity(bxt.math.MINVECTOR)
 		
 		for l in self.getListeners().copy():
 			l.actorRespawned(self, reason)
@@ -357,7 +357,7 @@ class Actor:
 		
 		# First, look up.
 		origin = mathutils.Vector(self.owner.worldPosition)
-		vec = Utilities.ZAXIS.copy()
+		vec = bxt.math.ZAXIS.copy()
 		through = origin + vec
 		ob, _, normal = self.owner.rayCast(
 			through,             # to
@@ -378,7 +378,7 @@ class Actor:
 					outsideGround = False
 		
 		# Now look down.
-		vec = Utilities.ZAXIS.copy()
+		vec = bxt.math.ZAXIS.copy()
 		vec.negate()
 		through = origin + vec
 		ob, _, normal = self.owner.rayCast(
@@ -474,7 +474,7 @@ class DirectorListener:
 		'''
 		pass
 
-@Utilities.singleton
+@bxt.utils.singleton
 class Director:
 	def __init__(self):
 		self.Suspended = False

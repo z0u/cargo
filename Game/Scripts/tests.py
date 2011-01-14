@@ -62,10 +62,10 @@ class ProxyGameObjectTest(unittest.TestCase):
 		self.assertTrue(self.o1.unwrap() in self.o2.unwrap().children)
 
 class PriorityQueueTest(unittest.TestCase):
-	'''Utilities.PriorityQueue'''
+	'''bxt.utils.PriorityQueue'''
 
 	def setUp(self):
-		self.Q = Utilities.PriorityQueue()
+		self.Q = bxt.utils.PriorityQueue()
 
 	def test_add(self):
 		self.Q.push('foo', 'fooI', 1)
@@ -95,14 +95,14 @@ class PriorityQueueTest(unittest.TestCase):
 		self.assertEquals(len(self.Q), 0)
 
 class FuzzySwitchTest(unittest.TestCase):
-	'''Utilities.FuzzySwitch'''
+	'''bxt.utils.FuzzySwitch'''
 
 	def test_init(self):
-		self.sw = Utilities.FuzzySwitch(5, 10, False)
+		self.sw = bxt.utils.FuzzySwitch(5, 10, False)
 		self.assertFalse(self.sw.isOn())
 
 	def test_on(self):
-		self.sw = Utilities.FuzzySwitch(3, 4, False)
+		self.sw = bxt.utils.FuzzySwitch(3, 4, False)
 		self.sw.turnOn()
 		self.assertFalse(self.sw.isOn())
 		self.sw.turnOn()
@@ -111,7 +111,7 @@ class FuzzySwitchTest(unittest.TestCase):
 		self.assertTrue(self.sw.isOn())
 
 	def test_off(self):
-		self.sw = Utilities.FuzzySwitch(3, 4, True)
+		self.sw = bxt.utils.FuzzySwitch(3, 4, True)
 		self.sw.turnOff()
 		self.assertTrue(self.sw.isOn())
 		self.sw.turnOff()
@@ -122,7 +122,7 @@ class FuzzySwitchTest(unittest.TestCase):
 		self.assertFalse(self.sw.isOn())
 
 	def test_both(self):
-		self.sw = Utilities.FuzzySwitch(2, 2, False)
+		self.sw = bxt.utils.FuzzySwitch(2, 2, False)
 		self.sw.turnOn()
 		self.assertFalse(self.sw.isOn())
 		self.sw.turnOff()

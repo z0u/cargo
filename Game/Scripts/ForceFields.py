@@ -31,8 +31,8 @@ class ForceField(Actor.Actor):
 	def __init__(self, owner):
 		Actor.Actor.__init__(self, owner)
 		if DEBUG:
-			self.forceMarker = Utilities.addObject('VectorMarker', 0)
-			self.forceMarker.color = Utilities.YELLOW
+			self.forceMarker = bxt.utils.add_object('VectorMarker', 0)
+			self.forceMarker.color = bxt.render.YELLOW
 		
 	def isInsideWorld(self):
 		return True
@@ -62,11 +62,11 @@ class ForceField(Actor.Actor):
 		'''Called when an object is inside the force field.'''
 		pos = mathutils.Vector(actor.owner.worldPosition)
 		
-		if (Utilities._manhattanDist(pos, self.owner.worldPosition) >
+		if (bxt.utils.manhattan_dist(pos, self.owner.worldPosition) >
 			self.owner['FFDist2']):
 			return
 		
-		pos = Utilities._toLocal(self.owner, pos)
+		pos = bxt.math.to_local(self.owner, pos)
 		if 'FFZCut' in self.owner and self.owner['FFZCut'] and (pos.z > 0.0):
 			return
 		
@@ -76,15 +76,15 @@ class ForceField(Actor.Actor):
 			vec.normalize()
 		magnitude = self.getMagnitude(dist)
 		vec *= magnitude * factor
-		vec = Utilities._toWorldVec(self.owner, vec)
+		vec = bxt.math.to_worldVec(self.owner, vec)
 		
 		if DEBUG:
 			self.forceMarker.worldPosition = actor.owner.worldPosition
-			if vec.magnitude > Utilities.EPSILON:
+			if vec.magnitude > bxt.math.EPSILON:
 				self.forceMarker.alignAxisToVect(vec, 2)
-				self.forceMarker.color = Utilities.YELLOW
+				self.forceMarker.color = bxt.render.YELLOW
 			else:
-				self.forceMarker.color = Utilities.BLACK
+				self.forceMarker.color = bxt.render.BLACK
 		
 		linV = mathutils.Vector(actor.owner.getLinearVelocity(False))
 		linV += vec

@@ -44,17 +44,17 @@ class Water(Actor.ActorListener):
 		owner['Water'] = self
 		owner['IsWater'] = True
 		
-		Utilities.SetDefaultProp(self.owner, 'RippleInterval', 20)
-		Utilities.SetDefaultProp(self.owner, 'DampingFactor', 0.2)
+		bxt.utils.set_default_prop(self.owner, 'RippleInterval', 20)
+		bxt.utils.set_default_prop(self.owner, 'DampingFactor', 0.2)
 		# Colour to use as filter when camera is under water
 		# (see Camera.CameraCollider)
-		Utilities.SetDefaultProp(self.owner, 'VolumeCol', '#22448880')
+		bxt.utils.set_default_prop(self.owner, 'VolumeCol', '#22448880')
 		
 		self.InstanceAngle = 0.0
 		self.CurrentFrame = 0
 		
 		if DEBUG:
-			self.floatMarker = Utilities.addObject('VectorMarker', 0)
+			self.floatMarker = bxt.utils.add_object('VectorMarker', 0)
 		
 		self.FloatingActors = set()
 		self.ForceFields = []
@@ -89,7 +89,7 @@ class Water(Actor.ActorListener):
 		self.InstanceAngle = self.InstanceAngle + ANGLE_INCREMENT
 		oMat = elr.to_matrix()
 		
-		decal = Utilities.addObject(name, 0)
+		decal = bxt.utils.add_object(name, 0)
 		decal.worldPosition = pos
 		decal.worldOrientation = oMat
 		decal.setParent(self.owner)
@@ -155,7 +155,7 @@ class Water(Actor.ActorListener):
 		
 		depth = hitPoint.z - origin.z
 		submergedFactor = depth / (actor.owner['FloatRadius'] * 2.0)
-		submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
+		submergedFactor = bxt.math.clamp(0.0, 1.0, submergedFactor)
 		
 		if not inside:
 			# The object is submerged, but its base is outside the water object.
@@ -167,7 +167,7 @@ class Water(Actor.ActorListener):
 		return submergedFactor
 	
 	def applyDamping(self, linV, submergedFactor):
-		return Utilities._lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'] * submergedFactor)
+		return bxt.math.lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'] * submergedFactor)
 	
 	def Float(self, actor):
 		'''
@@ -218,7 +218,7 @@ class Water(Actor.ActorListener):
 		# water (up). Acceleration increases linearly with the depth, until the
 		# object is fully submerged.
 		#
-		submergedFactor = Utilities._clamp(0.0, 1.0, submergedFactor)
+		submergedFactor = bxt.math.clamp(0.0, 1.0, submergedFactor)
 		accel = submergedFactor * body['CurrentBuoyancy']
 		linV = body.getLinearVelocity(False)
 		linV.z = linV.z + accel
@@ -338,7 +338,7 @@ class ShapedWater(Water):
 		Water.__init__(self, owner)
 	
 	def applyDamping(self, linV, submergedFactor):
-		return Utilities._lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'])
+		return bxt.math.lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'])
 	
 	def spawnBubble(self, actor):
 		'''No bubbles in shaped water.'''
@@ -350,7 +350,7 @@ class ShapedWater(Water):
 
 class Bubble(Actor.Actor):
 	def __init__(self, pos):
-		owner = Utilities.addObject('Bubble', 0)
+		owner = bxt.utils.add_object('Bubble', 0)
 		owner.worldPosition = pos
 		owner['Bubble'] = True
 		Actor.Actor.__init__(self, owner)

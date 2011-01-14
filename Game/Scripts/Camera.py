@@ -24,7 +24,7 @@ from bge import logic
 DEBUG = False
 
 def hasLineOfSight(ob, other):
-	hitOb, _, _ = Utilities._rayCastP2P(other, ob, prop = 'Ray')
+	hitOb, _, _ = bxt.math.ray_cast_p2p(other, ob, prop = 'Ray')
 	return hitOb == None
 	
 class CameraObserver:
@@ -55,7 +55,7 @@ class _AutoCamera:
 		self.DefaultGoal = None
 		self.CurrentGoal = None
 		
-		self.Q = Utilities.PriorityQueue()
+		self.Q = bxt.utils.PriorityQueue()
 		self.StackModified = False
 		self.instantCut = False
 		
@@ -108,13 +108,13 @@ class _AutoCamera:
 		fac = self.DefaultGoal.factor
 		if self.CurrentGoal.factor != None:
 			fac = self.CurrentGoal.factor
-		Utilities._SlowCopyLoc(self.Camera, self.CurrentGoal.owner, fac)
-		Utilities._SlowCopyRot(self.Camera, self.CurrentGoal.owner, fac)
+		bxt.math.slow_copy_loc(self.Camera, self.CurrentGoal.owner, fac)
+		bxt.math.slow_copy_rot(self.Camera, self.CurrentGoal.owner, fac)
 		
 		targetLens = self.DefaultLens
 		if hasattr(self.CurrentGoal.owner, 'lens'):
 			targetLens = self.CurrentGoal.owner.lens
-		self.Camera.lens = Utilities._lerp(self.Camera.lens, targetLens, fac)
+		self.Camera.lens = bxt.math.lerp(self.Camera.lens, targetLens, fac)
 		
 		for o in self.Observers:
 			o.OnCameraMoved(self)
@@ -348,15 +348,15 @@ class CameraPath(CameraGoal):
 		# A list of CameraNodes.
 		self.path = []
 		self.pathHead = CameraNode()
-		self.linV = Utilities.ZEROVEC.copy()
+		self.linV = bxt.math.ZEROVEC.copy()
 		
 		self.radMult = 1.0
-		self.expand = Utilities.FuzzySwitch(CameraPath.EXPAND_ON_WAIT,
+		self.expand = bxt.utils.FuzzySwitch(CameraPath.EXPAND_ON_WAIT,
 										CameraPath.EXPAND_OFF_WAIT, True)
 		
 		if DEBUG:
-			self.targetVis = Utilities.addObject('DebugReticule')
-			self.predictVis = Utilities.addObject('DebugReticule')
+			self.targetVis = bxt.utils.add_object('DebugReticule')
+			self.predictVis = bxt.utils.add_object('DebugReticule')
 		Utilities.SceneManager().Subscribe(self)
 	
 	def onRender(self):
@@ -408,7 +408,7 @@ class CameraPath(CameraGoal):
 			radMult = CameraPath.EXPAND_FACTOR
 		else:
 			radMult = CameraPath.REST_FACTOR
-		self.radMult = Utilities._lerp(self.radMult, radMult,
+		self.radMult = bxt.math.lerp(self.radMult, radMult,
 									CameraPath.RADIUS_SPEED)
 		restNear = self.REST_DISTANCE
 		restFar = self.REST_DISTANCE * self.radMult
@@ -431,10 +431,10 @@ class CameraPath(CameraGoal):
 		look = actor.owner.worldPosition - self.owner.worldPosition
 		look.negate()
 		if actor.useLocalCoordinates():
-			axis = node.owner.getAxisVect(Utilities.ZAXIS)
+			axis = node.owner.getAxisVect(bxt.math.ZAXIS)
 			self.owner.alignAxisToVect(axis, 1, CameraPath.ALIGN_Y_SPEED)
 		else:
-			self.owner.alignAxisToVect(Utilities.ZAXIS, 1, 0.5)
+			self.owner.alignAxisToVect(bxt.math.ZAXIS, 1, 0.5)
 		self.owner.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
 		
 		if DEBUG: self.targetVis.worldPosition = target
@@ -444,9 +444,9 @@ class CameraPath(CameraGoal):
 		if DEBUG:
 			self.predictVis.worldPosition = projectedPoint
 			if ok:
-				self.predictVis.color = Utilities.BLACK
+				self.predictVis.color = bxt.render.BLACK
 			else:
-				self.predictVis.color = Utilities.RED
+				self.predictVis.color = bxt.render.RED
 		return ok
 	
 	def __canSeeFuture(self):
@@ -462,7 +462,7 @@ class CameraPath(CameraGoal):
 		ba.normalize()
 		projectedPoint = a.owner.worldPosition + (ba * CameraPath.PREDICT_FWD)
 		
-		hitOb, hitPoint, _ = Utilities._rayCastP2P(
+		hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
 				projectedPoint, a.owner, prop = 'Ray')
 		if hitOb != None:
 			vect = hitPoint - a.owner.worldPosition
@@ -487,7 +487,7 @@ class CameraPath(CameraGoal):
 			upAxis = rotAxis.cross(ba)
 			pp2 = projectedPoint - (upAxis * CameraPath.PREDICT_FWD)
 		
-			hitOb, hitPoint, _ = Utilities._rayCastP2P(
+			hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
 					pp2, projectedPoint, prop = 'Ray')
 			if hitOb != None:
 				vect = hitPoint - projectedPoint
@@ -508,18 +508,18 @@ class CameraPath(CameraGoal):
 			
 			if node == self.pathHead:
 				found = True
-				node.owner.color = Utilities.RED
+				node.owner.color = bxt.render.RED
 			else:
-				node.owner.color = Utilities.WHITE
+				node.owner.color = bxt.render.WHITE
 			
 			for n in self.path:
 				if node == n:
-					n.owner.color = Utilities.RED
+					n.owner.color = bxt.render.RED
 					found = True
 				elif found:
-					n.owner.color = Utilities.BLACK
+					n.owner.color = bxt.render.BLACK
 				else:
-					n.owner.color = Utilities.WHITE
+					n.owner.color = bxt.render.WHITE
 		
 		return node, pathLength
 	
@@ -562,10 +562,10 @@ class CameraPath(CameraGoal):
 			return
 		
 		if actor.useLocalCoordinates():
-			Utilities._copyTransform(actor.owner, self.pathHead.owner)
+			bxt.math.copy_transform(actor.owner, self.pathHead.owner)
 		else:
 			self.pathHead.owner.worldPosition = actor.owner.worldPosition
-			Utilities._resetOrientation(self.pathHead.owner)
+			bxt.math.reset_orientation(self.pathHead.owner)
 		
 		# Add a new node if the actor has moved far enough.
 		addNew = False
@@ -580,7 +580,7 @@ class CameraPath(CameraGoal):
 		if addNew:
 			node = CameraNode()
 			if actor.useLocalCoordinates():
-				Utilities._copyTransform(actor.owner, node.owner)
+				bxt.math.copy_transform(actor.owner, node.owner)
 			else:
 				node.owner.worldPosition = actor.owner.worldPosition
 			self.path.insert(0, node)
@@ -632,22 +632,22 @@ class CameraNode:
 	def __init__(self):
 		# Defines the location of the way point. Using a way point allows the
 		# node to parented to an object.
-		self.owner = Utilities.addObject('PointMarker')
+		self.owner = bxt.utils.add_object('PointMarker')
 		if not DEBUG:
 			self.owner.visible = False
 		else:
-			self.marker = Utilities.addObject("PointMarker")
-			self.marker.color = Utilities.BLUE
+			self.marker = bxt.utils.add_object("PointMarker")
+			self.marker.color = bxt.render.BLUE
 		
 		# It is an error to access these next two before calling update().
 		self.ceilingHeight = None
 		self.target = None
 
 	def update(self):
-		self.target = Utilities.ZAXIS.copy()
+		self.target = bxt.math.ZAXIS.copy()
 		self.target *= CameraPath.ZOFFSET
-		self.target = Utilities._toWorld(self.owner, self.target)
-		hitOb, hitPoint, hitNorm = Utilities._rayCastP2P(
+		self.target = bxt.math.to_world(self.owner, self.target)
+		hitOb, hitPoint, hitNorm = bxt.math.ray_cast_p2p(
 				self.target, # objto
 				self.owner.worldPosition, # objfrom
 				prop = 'Ray')
@@ -661,7 +661,7 @@ class CameraNode:
 	def getTarget(self):
 		bias = self.ceilingHeight / CameraPath.ZOFFSET
 		bias *= CameraPath.CEILING_AVOIDANCE_BIAS
-		return Utilities._lerp(self.owner.worldPosition, self.target, bias)
+		return bxt.math.lerp(self.owner.worldPosition, self.target, bias)
 
 	def destroy(self):
 		self.owner.endObject()
@@ -698,7 +698,7 @@ class CameraCollider(CameraObserver):
 		through.z += CameraCollider.MAX_DIST
 		vec = through - pos
 		
-		ob, _, normal = Utilities._rayCastP2P(through, pos, prop='VolumeCol')
+		ob, _, normal = bxt.math.ray_cast_p2p(through, pos, prop='VolumeCol')
 		
 		inside = False
 		if ob != None:
@@ -708,7 +708,7 @@ class CameraCollider(CameraObserver):
 		
 		if inside:
 			if not '_VolColCache' in ob:
-				ob['_VolColCache'] = Utilities._parseColour(ob['VolumeCol'])
+				ob['_VolColCache'] = bxt.math.parse_colour(ob['VolumeCol'])
 			UI.HUD().showFilter(ob['_VolColCache'])
 		else:
 			UI.HUD().hideFilter()

@@ -18,7 +18,6 @@
 import unittest
 from bge import logic
 import bxt
-from . import Utilities
 import weakref
 
 class ProxyGameObjectTest(unittest.TestCase):

@@ -155,9 +155,9 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 	
 	def _UpdateLoadingScreen(self):
 		if self.LoadingScreenVisible:
-			Utilities.setState(self.LoadingScreen, 1)
+			bxt.utils.set_state(self.LoadingScreen, 1)
 		else:
-			Utilities.setState(self.LoadingScreen, 2)
+			bxt.utils.set_state(self.LoadingScreen, 2)
 	
 	def ShowLoadingScreen(self, caller):
 		print("%s started loading." % caller)
@@ -304,10 +304,10 @@ class Gauge(Actor.Actor):
 		Actor.Actor.OnSceneEnd(self)
 	
 	def Show(self):
-		Utilities.setState(self.owner, self.S_VISIBLE)
+		bxt.utils.set_state(self.owner, self.S_VISIBLE)
 	
 	def Hide(self):
-		Utilities.setState(self.owner, self.S_HIDING)
+		bxt.utils.set_state(self.owner, self.S_HIDING)
 	
 	def SetFraction(self, fraction, name = None):
 		self.Indicators[name].TargetFraction = fraction
@@ -563,15 +563,15 @@ class TextRenderer:
 		glyphInstance = logic.getCurrentScene().addObject(glyph,
 			self.canvas, 0)
 		glyphInstance.setParent(self.canvas)
-		glyphInstance.color = bxt.math.parse_colour(self.canvas['colour'])
+		glyphInstance.color = bxt.render.parse_colour(self.canvas['colour'])
 		glyphInstance.localPosition = [pos[0], pos[1], 0.0]
 		
 		if self.canvas['Instant']:
-			Utilities.setState(glyphInstance, 4)
+			bxt.utils.set_state(glyphInstance, 4)
 		else:
 			self.delay = (self.font.TypingSpeed * width *
 				glyph['DelayMultiplier'])
-			Utilities.setState(glyphInstance, 3)
+			bxt.utils.set_state(glyphInstance, 3)
 	
 	def RenderNextChar(self):
 		'''

@@ -453,7 +453,7 @@ class StatefulActor(Actor):
 	
 	def OnSuspend(self):
 		self.State = self.owner.state
-		Utilities.setState(self.owner, 10)
+		bxt.utils.set_state(self.owner, 10)
 	
 	def OnResume(self):
 		self.owner.state = self.State

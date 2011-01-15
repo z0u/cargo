@@ -61,7 +61,7 @@ class Water(Actor.ActorListener):
 		
 		Utilities.parseChildren(self, owner)
 		Utilities.SceneManager().Subscribe(self)
-		Utilities.setState(self.owner, self.S_IDLE)
+		Utilities.set_state(self.owner, self.S_IDLE)
 	
 	def parseChild(self, child, t):
 		if t == 'ForceField':
@@ -115,7 +115,7 @@ class Water(Actor.ActorListener):
 		#
 		bubble = Bubble(pos)
 		self.FloatingActors.add(bubble)
-		Utilities.setState(self.owner, self.S_FLOATING)
+		bxt.utils.set_state(self.owner, self.S_FLOATING)
 	
 	def getSubmergedFactor(self, actor):
 		'''Determine the fraction of the object that is inside the water. This
@@ -167,7 +167,7 @@ class Water(Actor.ActorListener):
 		return submergedFactor
 	
 	def applyDamping(self, linV, submergedFactor):
-		return bxt.math.lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'] * submergedFactor)
+		return bxt.math.lerp(linV, bxt.math.ZEROVEC, self.owner['DampingFactor'] * submergedFactor)
 	
 	def Float(self, actor):
 		'''
@@ -231,7 +231,7 @@ class Water(Actor.ActorListener):
 		
 		if DEBUG:
 			self.floatMarker.worldPosition = body.worldPosition
-			self.floatMarker.localScale = Utilities.ONEVEC * accel
+			self.floatMarker.localScale = bxt.math.ONEVEC * accel
 		
 		#
 		# Update buoyancy (take on water).
@@ -296,9 +296,9 @@ class Water(Actor.ActorListener):
 				actor.removeListener(self)
 		
 		if len(self.FloatingActors) > 0:
-			Utilities.setState(self.owner, self.S_FLOATING)
+			bxt.utils.set_state(self.owner, self.S_FLOATING)
 		else:
-			Utilities.setState(self.owner, self.S_IDLE)
+			bxt.utils.set_state(self.owner, self.S_IDLE)
 		
 		#
 		# Increase the frame counter.
@@ -338,7 +338,7 @@ class ShapedWater(Water):
 		Water.__init__(self, owner)
 	
 	def applyDamping(self, linV, submergedFactor):
-		return bxt.math.lerp(linV, Utilities.ZEROVEC, self.owner['DampingFactor'])
+		return bxt.math.lerp(linV, bxt.math.ZEROVEC, self.owner['DampingFactor'])
 	
 	def spawnBubble(self, actor):
 		'''No bubbles in shaped water.'''

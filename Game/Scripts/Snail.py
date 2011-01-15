@@ -378,8 +378,8 @@ class Snail(SnailSegment, Actor.Actor):
 		Adding the shell as a child prevents collision with the
 		parent. The shell's inactive state will also be set.
 		'''
-		Utilities.remState(self.owner, S_NOSHELL)
-		Utilities.addState(self.owner, S_HASSHELL)
+		bxt.utils.rem_state(self.owner, S_NOSHELL)
+		bxt.utils.add_state(self.owner, S_HASSHELL)
 		
 		self._stowShell(shell)
 		
@@ -390,28 +390,28 @@ class Snail(SnailSegment, Actor.Actor):
 		if animate:
 			self.Shockwave.worldPosition = self.Shell.owner.worldPosition
 			self.Shockwave.worldOrientation = self.Shell.owner.worldOrientation
-			Utilities.setState(self.Shockwave, 2)
+			bxt.utils.set_state(self.Shockwave, 2)
 	
 	def dropShell(self, animate):
 		'''Causes the snail to drop its shell, if it is carrying one.'''
 		if self.Suspended:
 			return
 		
-		if not Utilities.hasState(self.owner, S_HASSHELL):
+		if not bxt.utils.has_state(self.owner, S_HASSHELL):
 			return
 		
-		Utilities.remState(self.owner, S_HASSHELL)
-		Utilities.addState(self.owner, S_POPPING)
-		Utilities.addState(self.Armature, S_ARM_POP)
+		bxt.utils.rem_state(self.owner, S_HASSHELL)
+		bxt.utils.add_state(self.owner, S_POPPING)
+		bxt.utils.add_state(self.Armature, S_ARM_POP)
 		self.Armature['NoTransition'] = not animate
 	
 	def onDropShell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
-		if not Utilities.hasState(self.owner, S_POPPING):
+		if not bxt.utils.has_state(self.owner, S_POPPING):
 			return
 		
-		Utilities.remState(self.owner, S_POPPING)
-		Utilities.addState(self.owner, S_NOSHELL)
+		bxt.utils.rem_state(self.owner, S_POPPING)
+		bxt.utils.add_state(self.owner, S_NOSHELL)
 		
 		self.RemoveChild(self.Shell)
 		velocity = bxt.math.ZAXIS.copy()
@@ -433,26 +433,26 @@ class Snail(SnailSegment, Actor.Actor):
 		if self.Suspended:
 			return
 		
-		if not Utilities.hasState(self.owner, S_HASSHELL):
+		if not bxt.utils.has_state(self.owner, S_HASSHELL):
 			return
 		
-		Utilities.remState(self.owner, S_HASSHELL)
-		Utilities.addState(self.owner, S_ENTERING)
-		Utilities.remState(self.Armature, S_ARM_CRAWL)
-		Utilities.remState(self.Armature, S_ARM_LOCOMOTION)
-		Utilities.addState(self.Armature, S_ARM_ENTER)
+		bxt.utils.rem_state(self.owner, S_HASSHELL)
+		bxt.utils.add_state(self.owner, S_ENTERING)
+		bxt.utils.rem_state(self.Armature, S_ARM_CRAWL)
+		bxt.utils.rem_state(self.Armature, S_ARM_LOCOMOTION)
+		bxt.utils.add_state(self.Armature, S_ARM_ENTER)
 		self.Armature['NoTransition'] = not animate
 		self.Shell.OnPreEnter()
 	
 	def onEnterShell(self):
 		'''Transfers control of the character to the shell. The snail must have
 		a shell.'''
-		if not Utilities.hasState(self.owner, S_ENTERING):
+		if not bxt.utils.has_state(self.owner, S_ENTERING):
 			return
 		
-		Utilities.remState(self.owner, S_CRAWLING)
-		Utilities.remState(self.owner, S_ENTERING)
-		Utilities.addState(self.owner, S_INSHELL)
+		bxt.utils.rem_state(self.owner, S_CRAWLING)
+		bxt.utils.rem_state(self.owner, S_ENTERING)
+		bxt.utils.add_state(self.owner, S_INSHELL)
 		
 		linV = self.owner.getLinearVelocity()
 		angV = self.owner.getAngularVelocity()
@@ -484,15 +484,15 @@ class Snail(SnailSegment, Actor.Actor):
 		if self.Suspended:
 			return
 		
-		if not Utilities.hasState(self.owner, S_INSHELL):
+		if not bxt.utils.has_state(self.owner, S_INSHELL):
 			return
 		
-		Utilities.remState(self.owner, S_INSHELL)
-		Utilities.addState(self.owner, S_EXITING)
-		Utilities.addState(self.owner, S_FALLING)
-		Utilities.addState(self.Armature, S_ARM_EXIT)
-		Utilities.addState(self.Armature, S_ARM_CRAWL)
-		Utilities.addState(self.Armature, S_ARM_LOCOMOTION)
+		bxt.utils.rem_state(self.owner, S_INSHELL)
+		bxt.utils.add_state(self.owner, S_EXITING)
+		bxt.utils.add_state(self.owner, S_FALLING)
+		bxt.utils.add_state(self.Armature, S_ARM_EXIT)
+		bxt.utils.add_state(self.Armature, S_ARM_CRAWL)
+		bxt.utils.add_state(self.Armature, S_ARM_LOCOMOTION)
 		self.Armature['NoTransition'] = not animate
 		
 		linV = self.Shell.owner.getLinearVelocity()
@@ -523,11 +523,11 @@ class Snail(SnailSegment, Actor.Actor):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
 		transferred).'''
-		if not Utilities.hasState(self.owner, S_EXITING):
+		if not bxt.utils.has_state(self.owner, S_EXITING):
 			return
 		
-		Utilities.remState(self.owner, S_EXITING)
-		Utilities.addState(self.owner, S_HASSHELL)
+		bxt.utils.rem_state(self.owner, S_EXITING)
+		bxt.utils.add_state(self.owner, S_HASSHELL)
 		self.Shell.OnPostExit()
 	
 	def onStartCrawling(self):
@@ -555,21 +555,21 @@ class Snail(SnailSegment, Actor.Actor):
 			o['SpeedMultiplier'] = min(mult + dr, 1.0)
 	
 	def crawling(self):
-		return Utilities.hasState(self.owner, S_CRAWLING)
+		return bxt.utils.has_state(self.owner, S_CRAWLING)
 	
 	def Drown(self):
-		if not Utilities.hasState(self.owner, S_INSHELL):
+		if not bxt.utils.has_state(self.owner, S_INSHELL):
 			return Actor.Actor.Drown(self)
 		else:
 			return False
 	
 	def damage(self, amount, shock):
-		if (Utilities.hasState(self.owner, S_ENTERING) or
-		    Utilities.hasState(self.owner, S_EXITING)):
+		if (bxt.utils.has_state(self.owner, S_ENTERING) or
+		    bxt.utils.has_state(self.owner, S_EXITING)):
 			return
 		Actor.Actor.damage(self, amount, shock)
 		if amount > 0.0:
-			if shock and Utilities.hasState(self.owner, S_HASSHELL):
+			if shock and bxt.utils.has_state(self.owner, S_HASSHELL):
 				self.enterShell(True)
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
@@ -676,23 +676,23 @@ class Snail(SnailSegment, Actor.Actor):
 	
 	def OnButton1(self, positive, triggered):
 		if positive and triggered:
-			if Utilities.hasState(self.owner, S_INSHELL):
+			if bxt.utils.has_state(self.owner, S_INSHELL):
 				self.exitShell(animate = True)
-			elif Utilities.hasState(self.owner, S_HASSHELL):
+			elif bxt.utils.has_state(self.owner, S_HASSHELL):
 				self.enterShell(animate = True)
-			elif Utilities.hasState(self.owner, S_NOSHELL):
+			elif bxt.utils.has_state(self.owner, S_NOSHELL):
 				if self.NearestShell:
 					self.setShell(self.NearestShell, animate = True)
 	
 	def OnButton2(self, positive, triggered):
 		if positive and triggered:
-			if Utilities.hasState(self.owner, S_HASSHELL):
+			if bxt.utils.has_state(self.owner, S_HASSHELL):
 				self.dropShell(animate = True)
 	
 	def useLocalCoordinates(self):
 		# As the snail exits a shell, it might be upside down, which would
 		# cause the camera to think it is in a very small tunnel.
-		return not Utilities.hasState(self.owner, S_INSHELL)
+		return not bxt.utils.has_state(self.owner, S_INSHELL)
 	
 	def getCloseCamera(self):
 		return self.camera
@@ -815,7 +815,7 @@ class SnailTrail:
 		if self.Snail.getTouchedObject() != None:
 			spotI.setParent(self.Snail.getTouchedObject())
 		
-		Utilities.setState(spotI, speedStyle)
+		bxt.utils.set_state(spotI, speedStyle)
 	
 	def onSnailMoved(self, speedMultiplier):
 		pos = self.owner.worldPosition

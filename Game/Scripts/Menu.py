@@ -16,7 +16,6 @@
 #
 
 import bxt
-from . import Utilities
 from . import Store
 
 from bge import logic
@@ -433,25 +432,25 @@ class Widget(UIObject, bxt.types.ProxyGameObject):
 	def enter(self):
 		if not self.sensitive:
 			return
-		self.addState(Widget.S_FOCUS)
-		self.remState(Widget.S_DEFOCUS)
+		self.add_state(Widget.S_FOCUS)
+		self.rem_state(Widget.S_DEFOCUS)
 		self.updateTargetFrame()
 	
 	def exit(self):
-		self.addState(Widget.S_DEFOCUS)
-		self.remState(Widget.S_FOCUS)
+		self.add_state(Widget.S_DEFOCUS)
+		self.rem_state(Widget.S_FOCUS)
 		self.updateTargetFrame()
 	
 	def down(self):
 		if not self.sensitive:
 			return
-		self.addState(Widget.S_DOWN)
-		self.remState(Widget.S_UP)
+		self.add_state(Widget.S_DOWN)
+		self.rem_state(Widget.S_UP)
 		self.updateTargetFrame()
 	
 	def up(self):
-		self.addState(Widget.S_UP)
-		self.remState(Widget.S_DOWN)
+		self.add_state(Widget.S_UP)
+		self.rem_state(Widget.S_DOWN)
 		self.updateTargetFrame()
 	
 	def click(self):
@@ -466,24 +465,24 @@ class Widget(UIObject, bxt.types.ProxyGameObject):
 	
 	def hide(self):
 		UIObject.hide(self)
-		self.addState(Widget.S_HIDDEN)
-		self.remState(Widget.S_VISIBLE)
-		self.remState(Widget.S_DOWN)
-		self.remState(Widget.S_FOCUS)
+		self.add_state(Widget.S_HIDDEN)
+		self.rem_state(Widget.S_VISIBLE)
+		self.rem_state(Widget.S_DOWN)
+		self.rem_state(Widget.S_FOCUS)
 		self.updateTargetFrame()
 	
 	def show(self):
 		UIObject.show(self)
-		self.addState(Widget.S_VISIBLE)
-		self.remState(Widget.S_HIDDEN)
+		self.add_state(Widget.S_VISIBLE)
+		self.rem_state(Widget.S_HIDDEN)
 		self.updateTargetFrame()
 	
 	def updateTargetFrame(self):
 		targetFrame = Widget.IDLE_FRAME
-		if self.hasState(Widget.S_HIDDEN):
+		if self.has_state(Widget.S_HIDDEN):
 			targetFrame = Widget.HIDDEN_FRAME
-		elif self.hasState(Widget.S_FOCUS):
-			if self.hasState(Widget.S_DOWN):
+		elif self.has_state(Widget.S_FOCUS):
+			if self.has_state(Widget.S_DOWN):
 				targetFrame = Widget.ACTIVE_FRAME
 			else:
 				targetFrame = Widget.FOCUS_FRAME

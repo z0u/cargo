@@ -708,7 +708,7 @@ class CameraCollider(CameraObserver):
 		
 		if inside:
 			if not '_VolColCache' in ob:
-				ob['_VolColCache'] = bxt.math.parse_colour(ob['VolumeCol'])
+				ob['_VolColCache'] = bxt.render.parse_colour(ob['VolumeCol'])
 			UI.HUD().showFilter(ob['_VolColCache'])
 		else:
 			UI.HUD().hideFilter()

@@ -197,7 +197,7 @@ def create(obOrController):
 	
 	ffClass = globals()[o['FFType']]
 	ffInstance = ffClass(o)
-	Utilities.setState(o, 2)
+	bxt.utils.set_state(o, 2)
 	return ffInstance
 
 @bxt.utils.controller

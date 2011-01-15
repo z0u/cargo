@@ -54,13 +54,13 @@ class Timer(Actor.Actor):
 		self.TargetTics = self.owner['Duration'] * logic.getLogicTicRate()
 		if self.TargetTics < 1.0:
 			self.TargetTics = 1.0
-		Utilities.addState(self.owner, self.S_RUNNING)
+		bxt.utils.add_state(self.owner, self.S_RUNNING)
 		self.Pulse()
 
 	def Stop(self):
 		'''Cancel the timer. The gauge will be hidden. No message will be sent.
 		'''
-		Utilities.remState(self.owner, self.S_RUNNING)
+		bxt.utils.rem_state(self.owner, self.S_RUNNING)
 		
 		if 'Style' in self.owner:
 			gauge = UI.HUD().GetGauge(self.owner['Style'])

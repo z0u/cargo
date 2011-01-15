@@ -134,6 +134,27 @@ def set_default_prop(ob, propName, value):
 	if propName not in ob:
 		ob[propName] = value
 
+def add_state(ob, state):
+	'''Add a set of states to the object's state.'''
+	stateBitmask = 1 << (state - 1)
+	ob.state |= stateBitmask
+
+def rem_state(ob, state):
+	'''Remove a state from the object's state.'''
+	stateBitmask = 1 << (state - 1)
+	ob.state &= (~stateBitmask)
+
+def set_state(ob, state):
+	'''Set the object's state. All current states will be un-set and replaced
+	with the one specified.'''
+	stateBitmask = 1 << (state - 1)
+	ob.state = stateBitmask
+
+def has_state(ob, state):
+	'''Test whether the object is in the specified state.'''
+	stateBitmask = 1 << (state - 1)
+	return (ob.state & stateBitmask) != 0
+
 class Counter:
 	'''Counts the frequency of objects. This should only be used temporarily and
 	then thrown away, as it keeps hard references to objects.

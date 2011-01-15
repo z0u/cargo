@@ -41,7 +41,7 @@ from functools import wraps
 from bge import types
 from bge import logic
 
-from . import utils
+import bxt.utils
 
 def has_wrapper(owner):
 	return '__wrapper__' in owner
@@ -88,7 +88,7 @@ class gameobject:
 		self.converted = False
 		self.prefix = prefix
 
-	@utils.all_sensors_positive
+	@bxt.utils.all_sensors_positive
 	def __call__(self, cls):
 		if not self.converted:
 			self.create_interface(cls)
@@ -99,7 +99,7 @@ class gameobject:
 			if owner == None:
 				owner = logic.getCurrentController().owner
 			if 'template' in owner:
-				owner = utils.replaceObject(owner['template'], owner)
+				owner = bxt.utils.replaceObject(owner['template'], owner)
 			old_init(self, owner)
 			owner['__wrapper__'] = self
 		cls.__init__ = new_init
@@ -290,23 +290,19 @@ class ProxyGameObject:
 			ob = get_wrapper(ob)
 		return ob, p, n
 
-	def addState(self, state):
+	def add_state(self, state):
 		'''Add a set of states to this object's state.'''
-		stateBitmask = 1 << (state - 1)
-		self.state |= stateBitmask
+		bxt.utils.add_state(self, state)
 
-	def remState(self, state):
+	def rem_state(self, state):
 		'''Remove a state from this object's state.'''
-		stateBitmask = 1 << (state - 1)
-		self.state &= (~stateBitmask)
+		bxt.utils.rem_state(self, state)
 
-	def setState(self, state):
+	def set_state(self, state):
 		'''Set the object's state. All current states will be un-set and replaced
 		with the one specified.'''
-		stateBitmask = 1 << (state - 1)
-		self.state = stateBitmask
+		bxt.utils.set_state(self, state)
 
-	def hasState(self, state):
+	def has_state(self, state):
 		'''Test whether the object is in the specified state.'''
-		stateBitmask = 1 << (state - 1)
-		return (self.state & stateBitmask) != 0
+		return bxt.utils.has_state(self, state)

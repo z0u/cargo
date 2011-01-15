@@ -20,99 +20,74 @@ import mathutils
 from . import Utilities
 import bxt
 
-class Button:
+@bxt.types.gameobject('on_touched', prefix='btn_')
+class Button(bxt.types.ProxyGameObject):
 	'''A generic 3D button that can be activated by objects in the scene. No
 	special object hierarchy is required. The button sends messages when it is
 	touched.'''
 	
 	def __init__(self, owner):
 		'''Create a new button and attach it to 'owner'.'''
-		self.owner = owner
-		owner['Button'] = self
-		self.Down = False
-		Utilities.SceneManager().Subscribe(self)
-	
-	def OnSceneEnd(self):
-		self.owner['Button'] = None
-		self.owner = None
-		Utilities.SceneManager().Unsubscribe(self)
+		bxt.types.ProxyGameObject.__init__(self, owner)
+		self.down = False
 
-	def Accept(self, ob):
+	def accept(self, ob):
 		'''Test whether this button will react to being touched by 'ob'.
 		Override this to filter out other objects.'''
 		return True
 
-	def OnTouched(self, obsTouch, obsReset):
+	def on_touched(self):
 		'''Called when this button is touched.
 		
 		Parameters:
 		 - obsTouch: The objects touching this button.
 		 - obsReset: The objects that are close enough to keep the button
 		             pressed, but not close enough to push it down.'''
+
+		c = logic.getCurrentController()
+		obsTouch = c.sensors['sTouch'].hitObjectList
+		obsReset = c.sensors['sTouchReset'].hitObjectList
+
 		down = False
 		
 		obs = set(obsTouch)
-		if self.Down:
+		if self.down:
 			obs.update(obsReset)
 		
 		for ob in obs:
-			if self.Accept(ob):
+			if self.accept(ob):
 				down = True
 				break
 		
-		if self.Down == down:
+		if self.down == down:
 			return
 		
-		self.Down = down
+		self.down = down
 		if down:
-			self.OnDown()
+			self.on_down()
 		else:
-			self.OnUp()
+			self.on_up()
 	
-	def OnDown(self):
+	def on_down(self):
 		'''Called when at least one object has triggered this button. Sends a
 		message to the scene with the subject 'ButtonDown'.'''
-		logic.sendMessage('ButtonDown', '', '', self.owner.name)
+		logic.sendMessage('ButtonDown', '', '', self.name)
 	
-	def OnUp(self):
+	def on_up(self):
 		'''Called when no objects are triggering the button. Sends a message to
-		the scene with the subject 'ButtonUp'. This only happens after OnDown is
+		the scene with the subject 'ButtonUp'. This only happens after on_down is
 		called.'''
-		logic.sendMessage('ButtonUp', '', '', self.owner.name)
+		logic.sendMessage('ButtonUp', '', '', self.name)
 
+@bxt.types.gameobject()
 class ToughButton(Button):
 	'''A button that filters objects by their speed: only fast objects will
 	trigger this button. This button only works with Actors.'''
 	
-	def Accept(self, ob):
+	def accept(self, ob):
 		if 'Actor' not in ob:
 			return False
 		
 		actor = ob['Actor']
 		vel = mathutils.Vector(actor.GetLastLinearVelocity())
-		return vel.magnitude >= self.owner['MinSpeed']
-
-@bxt.utils.owner
-def CreateButton(o):
-	'''Create a new generic button.'''
-	Button(o)
-
-@bxt.utils.owner
-def CreateToughButton(o):
-	'''Create a new tough button.'''
-	ToughButton(o)
-
-@bxt.utils.controller
-def OnTouched(c):
-	'''Call this when the objects touching a button change.
-	
-	Sensors:
-	 - sTouch:      A KX_TouchSensor that indicates all the objects that are
-	                touching. An object sensed here may push the button down.
-	 - sTouchReset: A KX_TouchSensor that indicates are still within range, but
-	                not close enough to push the button down. When this sensor
-	                detects no objects, the button may be reset.'''
-	s1 = c.sensors['sTouch']
-	s2 = c.sensors['sTouchReset']
-	c.owner['Button'].OnTouched(s1.hitObjectList, s2.hitObjectList)
-
+		return vel.magnitude >= self['MinSpeed']

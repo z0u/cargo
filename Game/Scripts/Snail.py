@@ -21,13 +21,15 @@ will be created to match the types of Blender objects in the
 hierarchy, with the owner as the root.
 '''
 
+import math
+
 import mathutils
+from bge import render
+from bge import logic
+
 from . import Utilities
 import bxt
 from . import Actor
-from bge import render
-from bge import logic
-import math
 
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
@@ -648,7 +650,7 @@ class Snail(SnailSegment, Actor.Actor):
 		# Rotate the snail.
 		#
 		o['Rot'] = bxt.math.lerp(o['Rot'], targetRot, o['RotFactor'])
-		oRot = mathutils.Matrix.Rotation(o['Rot'], 3, Utilities.ZAXIS)
+		oRot = mathutils.Matrix.Rotation(o['Rot'], 3, bxt.math.ZAXIS)
 		o.localOrientation = o.localOrientation * oRot
 		
 		#
@@ -758,7 +760,7 @@ class ArcRay:
 			ob, p, norm = bxt.math.ray_cast_p2p(B, A, prop = self.prop)
 			if ob:
 				self.lastHitPoint = bxt.math.to_local(self.owner, p)
-				self.lastHitNorm = bxt.math.to_localVec(self.owner, norm)
+				self.lastHitNorm = bxt.math.to_local_vec(self.owner, norm)
 				if DEBUG:
 					render.drawLine(A, p, bxt.render.ORANGE.xyz)
 				break
@@ -767,7 +769,7 @@ class ArcRay:
 					render.drawLine(A, B, bxt.render.YELLOW.xyz)
 		
 		wp = bxt.math.to_world(self.owner, self.lastHitPoint)
-		wn = bxt.math.to_worldVec(self.owner, self.lastHitNorm)
+		wn = bxt.math.to_world_vec(self.owner, self.lastHitNorm)
 		if DEBUG:
 			self.marker.worldPosition = wp
 			

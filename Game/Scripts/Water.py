@@ -61,7 +61,7 @@ class Water(Actor.ActorListener):
 		
 		Utilities.parseChildren(self, owner)
 		Utilities.SceneManager().Subscribe(self)
-		Utilities.set_state(self.owner, self.S_IDLE)
+		bxt.utils.set_state(self.owner, self.S_IDLE)
 	
 	def parseChild(self, child, t):
 		if t == 'ForceField':

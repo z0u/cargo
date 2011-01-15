@@ -62,7 +62,7 @@ class ForceField(Actor.Actor):
 		'''Called when an object is inside the force field.'''
 		pos = mathutils.Vector(actor.owner.worldPosition)
 		
-		if (bxt.utils.manhattan_dist(pos, self.owner.worldPosition) >
+		if (bxt.math.manhattan_dist(pos, self.owner.worldPosition) >
 			self.owner['FFDist2']):
 			return
 		
@@ -76,7 +76,7 @@ class ForceField(Actor.Actor):
 			vec.normalize()
 		magnitude = self.getMagnitude(dist)
 		vec *= magnitude * factor
-		vec = bxt.math.to_worldVec(self.owner, vec)
+		vec = bxt.math.to_world_vec(self.owner, vec)
 		
 		if DEBUG:
 			self.forceMarker.worldPosition = actor.owner.worldPosition

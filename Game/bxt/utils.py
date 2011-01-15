@@ -334,26 +334,3 @@ class Box2D:
 		w = self.xHigh - self.xLow
 		h = self.yHigh - self.yLow
 		return w * h
-
-@controller
-def timeOffsetChildren(c):
-	'''Copy the 'Frame' property to all children, incrementally adding an offset
-	as defined by the 'Offset' property.
-	'''
-
-	o = c.owner
-	a = c.actuators[0]
-	range = a.frameEnd - a.frameStart
-	increment = 0.0
-	if len(o.children) > 0:
-		increment = range / len(o.children)
-
-	offset = 0.0
-	for child in o.children:
-		frame = o['Frame'] + offset
-		frame -= a.frameStart
-		frame %= range
-		frame += a.frameStart
-		child['Frame'] = frame
-		offset += increment
-	c.activate(a)

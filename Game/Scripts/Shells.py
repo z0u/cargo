@@ -17,7 +17,7 @@
 
 import bxt
 from . import Actor
-from . import Camera
+from . import camera
 import mathutils
 from . import Utilities
 
@@ -180,8 +180,7 @@ class Shell(ShellBase):
 		#
 		# Get the vectors to apply force along.
 		#
-		cam = Camera.AutoCamera.Camera
-		p1 = cam.worldPosition
+		p1 = camera.AutoCamera().get_camera().worldPosition
 		p2 = self.owner.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.normalize()
@@ -304,8 +303,7 @@ class BottleCap(ShellBase):
 		#
 		# Get the vectors to apply force along.
 		#
-		cam = Camera.AutoCamera.Camera
-		p1 = cam.worldPosition
+		p1 = camera.AutoCamera().get_camera().worldPosition
 		p2 = self.owner.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.z = 0.0

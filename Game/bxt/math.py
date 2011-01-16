@@ -20,6 +20,7 @@ import mathutils
 
 import bxt.utils
 import bxt.render
+import bxt.types
 
 DEBUG = False
 
@@ -175,8 +176,8 @@ def ray_cast_p2p(objto, objfrom, dist = 0.0, prop = ''):
 	face = 1
 	xray = 1
 	poly = 0
-	return bxt.utils.get_cursor().rayCast(objto, objfrom, dist, prop, face,
-										xray, poly)
+	return bxt.types.get_wrapped_cursor().rayCast(objto, objfrom, dist, prop,
+			face, xray, poly)
 
 def slow_copy_rot(o, goal, factor):
 	'''Slow parenting (Rotation only). 'o' will copy the rotation of the 'goal'.
@@ -253,8 +254,8 @@ def quadNormal(p0, p1, p2, p3):
 	
 	if DEBUG:
 		centre = (p0 + p1 + p2 + p3) / 4.0
-		render.drawLine(centre, centre + normal, RED.xyz)
-		bxt.render.draw_polyline([p0, p1, p2, p3], GREEN, cyclic=True)
+		render.drawLine(centre, centre + normal, bxt.render.RED.xyz)
+		bxt.render.draw_polyline([p0, p1, p2, p3], bxt.render.GREEN, cyclic=True)
 	
 	return normal
 
@@ -267,7 +268,7 @@ def triangleNormal(p0, p1, p2):
 	
 	if DEBUG:
 		centre = (p0 + p1 + p2) / 3.0
-		render.drawLine(centre, centre + normal, RED.xyz)
-		bxt.render.draw_polyline([p0, p1, p2], GREEN, cyclic=True)
+		render.drawLine(centre, centre + normal, bxt.render.RED.xyz)
+		bxt.render.draw_polyline([p0, p1, p2], bxt.render.GREEN, cyclic=True)
 	
 	return normal

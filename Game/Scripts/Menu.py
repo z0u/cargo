@@ -105,33 +105,34 @@ class InputHandler(EventListener):
 	
 	def __init__(self):
 		self.widgets = weakref.WeakSet()
-		self.refs = weakref.WeakValueDictionary()
+		self._current = None
+		self._downCurrent = None
 
 	# Getter and setter to allow use of weakref
 	def _getCurrent(self):
-		if not 'current' in self.refs:
+		if self._current == None:
 			return None
 		else:
-			return self.refs['current']
+			return self._current()
 	def _setCurrent(self, current):
 		if current == None:
-			del self.refs['current']
+			self._current = None
 		else:
-			self.refs['current'] = current
+			self._current = weakref.ref(current)
 	current = property(_getCurrent, _setCurrent)
 
 	# Getter and setter to allow use of weakref
 	def _getDownCurrent(self):
-		if not 'downcurrent' in self.refs:
+		if self._downCurrent == None:
 			return None
 		else:
-			return self.refs['downcurrent']
+			return self._downCurrent()
 	def _setDownCurrent(self, downcurrent):
 		if downcurrent == None:
-			del self.refs['downcurrent']
+			self._downCurrent = None
 		else:
-			self.refs['downcurrent'] = downcurrent
-	downcurrent = property(_getDownCurrent, _setDownCurrent)
+			self._downCurrent = weakref.ref(downcurrent)
+	downCurrent = property(_getDownCurrent, _setDownCurrent)
 
 	def addWidget(self, widget):
 		self.widgets.add(widget)

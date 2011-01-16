@@ -20,6 +20,7 @@ from . import Utilities
 from . import Actor
 from . import UI
 from bge import logic
+import weakref
 
 DEBUG = False
 
@@ -33,191 +34,143 @@ class CameraObserver:
 	For example, the background camera sets its worldOrientation to be the same
 	as the camera in the game play scene, which is bound to the AutoCamera.
 	'''
-	def OnCameraMoved(self, autoCamera):
+	def on_camera_moved(self, autoCamera):
 		pass
 
-class _AutoCamera:
+@bxt.types.singleton('set_camera', 'update', 'add_goal', 'remove_goal',
+					prefix='AC_')
+class AutoCamera:
+	'''Manages the transform of the camera, and provides transitions between
+	camera locations. To transition to a new location, call PushGoal. The
+	reverse transition can be performed by calling PopGoal.
 	'''
-	Manages the transform of the camera, and provides transitions between camera
-	locations. To transition to a new location, call PushGoal. The reverse
-	transition can be performed by calling PopGoal.
-	
-	A Singleton; use the AutoCamera instance (below).
-	'''
-	
+
 	def __init__(self):
-		'''
-		Create an uninitialised AutoCamera. Call SetCamera to bind it to a
+		'''Create an uninitialised AutoCamera. Call SetCamera to bind it to a
 		camera.
 		'''
-		self.Camera = None
-		self.DefaultLens = 22.0
-		self.DefaultGoal = None
-		self.CurrentGoal = None
-		
-		self.Q = bxt.utils.PriorityQueue()
-		self.StackModified = False
+		self.camera = None
+		self.defaultLens = 22.0
+		self.queue = bxt.utils.WeakPriorityQueue()
+		self.lastGoal = None
 		self.instantCut = False
-		
-		self.Observers = []
-		
-		Utilities.SceneManager().Subscribe(self)
-	
-	def OnSceneEnd(self):
-		self.__init__()
-	
-	def SetCamera(self, camera):
+		self.observers = weakref.WeakSet()
+
+	@bxt.utils.owner_cls
+	def set_camera(self, camera):
 		'''Bind to a camera.'''
-		self.Camera = camera
-		self.DefaultLens = camera.lens
+
+		def auto_unset_camera(ref):
+			if ref == self.camera:
+				self.camera = None
+
+		wrapper = bxt.types.wrap(camera, bxt.types.ProxyCamera)
+		self.camera = weakref.ref(wrapper, auto_unset_camera)
+		self.defaultLens = camera.lens
 		logic.getCurrentScene().active_camera = camera
+
+	def get_camera(self):
+		if self.camera == None:
+			return None
+		else:
+			return self.camera()
 	
-	def SetDefaultGoal(self, goal):
-		'''
-		Set the default goal. If there is already a goal on the GoalStack, it
-		will be used instead of this default one - until it is popped off the
-		stack.
-		'''
-		self.DefaultGoal = goal
-		self.StackModified = True
-	
-	def onRender(self):
-		'''
-		Update the location of the camera. Observers will be notified. The
+	def update(self):
+		'''Update the location of the camera. observers will be notified. The
 		camera should have a controller set up to call this once per frame.
 		'''
-		if not self.Camera or not self.DefaultGoal:
+
+		if not self.get_camera() or len(self.queue) == 0:
 			return
-		
-		if self.StackModified:
-			self.CurrentGoal = self.DefaultGoal
-			
-			if len(self.Q) > 0:
-				self.CurrentGoal = self.Q.top()
-			
+
+		currentGoal = self.queue.top()
+		ref = weakref.ref(currentGoal)
+		if self.lastGoal != ref:
+			# Keeping track of goals being added and removed it very
+			# difficult, so we just consider the last action when deciding
+			# whether or not to cut instantly.
 			if self.instantCut:
-				self.Camera.worldPosition = self.CurrentGoal.owner.worldPosition
-				self.Camera.worldOrientation = self.CurrentGoal.owner.worldOrientation
-				targetLens = self.DefaultLens
-				if hasattr(self.CurrentGoal.owner, 'lens'):
-					targetLens = self.CurrentGoal.owner.lens
-				self.Camera.lens = targetLens
+				self.get_camera().worldPosition = currentGoal.worldPosition
+				self.get_camera().worldOrientation = currentGoal.worldOrientation
+				if hasattr(currentGoal, 'lens'):
+					self.get_camera().lens = currentGoal.lens
 				self.instantCut = False
-			self.StackModified = False
+
+		fac = currentGoal['SlowFac']
+		bxt.math.slow_copy_loc(self.get_camera(), currentGoal, fac)
+		bxt.math.slow_copy_rot(self.get_camera(), currentGoal, fac)
+
+		targetLens = self.defaultLens
+		if hasattr(currentGoal, 'lens'):
+			targetLens = currentGoal.lens
+		self.get_camera().lens = bxt.math.lerp(self.get_camera().lens, targetLens, fac)
+
+		self.lastGoal = ref
 		
-		fac = self.DefaultGoal.factor
-		if self.CurrentGoal.factor != None:
-			fac = self.CurrentGoal.factor
-		bxt.math.slow_copy_loc(self.Camera, self.CurrentGoal.owner, fac)
-		bxt.math.slow_copy_rot(self.Camera, self.CurrentGoal.owner, fac)
-		
-		targetLens = self.DefaultLens
-		if hasattr(self.CurrentGoal.owner, 'lens'):
-			targetLens = self.CurrentGoal.owner.lens
-		self.Camera.lens = bxt.math.lerp(self.Camera.lens, targetLens, fac)
-		
-		for o in self.Observers:
-			o.OnCameraMoved(self)
-	
-	def AddGoal(self, goal, priority, fac, instantCut):
+		for o in self.observers:
+			o.on_camera_moved(self)
+
+	@bxt.utils.owner_cls
+	def add_goal(self, goal):
+		'''Give the camera a new goal, and remember the last one. Call
+		RemoveGoal to restore the previous relationship. The camera position
+		isn't changed until update is called.
 		'''
-		Give the camera a new goal, and remember the last one. Call RemoveGoal 
-		to restore the previous relationship. The camera position isn't changed
-		until onRender is called.
-		
-		Paremeters:
-		goal:       The new goal (KX_GameObject).
-		highPriority: True if this goal should override regular goals.
-		fac:        The speed factor to use for the slow parent relationship.
-		            If None, the factor of the default goal will be used.
-		            0.0 <= fac <= 1.0.
-		instantCut: Whether to make the camera jump immediately to the new
-		            position. Thereafter, the camera will follow its goal
-		            according to 'fac'.
-		'''
-		self.Q.push(goal, CameraGoal(goal, fac, instantCut), priority)
-		self.StackModified = True
-		if instantCut:
-			self.instantCut = True
-	
-	def addGoalOb(self, goal):
-		pri = False
-		if 'Priority' in goal:
-			pri = goal['Priority']
-		
-		fac = None
-		if 'SlowFac' in goal:
-			fac = goal['SlowFac']
-			
-		instant = False
-		if 'InstantCut' in goal:
-			instant = goal['InstantCut']
-		
-		self.AddGoal(goal, pri, fac, instant)
-	
-	def RemoveGoal(self, goalOb):
-		'''
-		Remove a goal from the stack. If it was currently in use, the camera
-		will switch to follow the next one on the stack. The transform isn't
-		changed until onRender is called.
-		'''
-		if len(self.Q) == 0:
-			return
-		
-		if self.Q.top().owner == goalOb:
-			#
-			# Goal is on top of the stack: it's in use!
-			#
-			oldGoal = self.Q.pop()
-			self.StackModified = True
-			if oldGoal.instantCut:
-				self.instantCut = True
+
+		# Wrap the goal in a proxy object, if it doesn't already have one.
+		wrapper = None
+		if bxt.types.has_wrapper(goal):
+			wrapper = bxt.types.get_wrapper(goal)
+		elif bxt.types.is_wrapper(goal):
+			wrapper = goal
 		else:
-			#
-			# Remove the goal from the rest of the stack.
-			#
-			self.Q.discard(goalOb)
+			if hasattr(goal, 'lens'):
+				wrapper = bxt.types.ProxyCamera(goal)
+			else:
+				wrapper = bxt.types.ProxyGameObject(goal)
+
+		# Set some defaults for properties.
+		wrapper.set_default_prop('SlowFac', 0.1)
+		wrapper.set_default_prop('InstantCut', False)
+		wrapper.set_default_prop('Priority', 1)
+
+		# Add the goal to the queue.
+		self.queue.push(wrapper, wrapper['Priority'])
+
+		if self.queue.top() == wrapper['InstantCut']:
+			# Goal is on top of the stack: it will be switched to next
+			self.instantCut = True
+
+	@bxt.utils.owner_cls
+	def remove_goal(self, goal):
+		'''Remove a goal from the stack. If it was currently in use, the camera
+		will switch to follow the next one on the stack. The transform isn't
+		changed until update is called.
+		'''
+
+		wrapper = None
+		if bxt.types.has_wrapper(goal):
+			wrapper = bxt.types.get_wrapper(goal)
+		elif bxt.types.is_wrapper(goal):
+			wrapper = goal
+		else:
+			# add_goal would have added a wrapper, so this object can't be in
+			# the queue.
+			return
+
+		if self.queue.top() == wrapper and wrapper['InstantCut']:
+			# Goal is on top of the stack: it's in use!
+			self.instantCut = True
+
+		self.queue.discard(wrapper)
 	
-	def ResetGoal(self):
-		'''Reset the camera to follow its original goal. This clears the
-		relationship stack.'''
-		while len(self.Q) > 0:
-			g = self.Q.pop()
-			if g.instantCut:
-				self.instantCut = True
-		self.StackModified = True
+	def add_observer(self, camObserver):
+		self.observers.add(camObserver)
 	
-	def AddObserver(self, camObserver):
-		self.Observers.append(camObserver)
-	
-	def RemoveObserver(self, camObserver):
-		self.Observers.remove(camObserver)
+	def remove_observer(self, camObserver):
+		self.observers.remove(camObserver)
 
-AutoCamera = _AutoCamera()
-
-def onRender():
-	AutoCamera.onRender()
-
-@bxt.utils.owner
-def setCamera(o):
-	camera = o
-	AutoCamera.SetCamera(camera)
-
-def addGoalOb(goal):
-	AutoCamera.addGoalOb(goal)
-
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
-def AddGoal(o):
-	AutoCamera.addGoalOb(o)
-
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
-def RemoveGoal(o):
-	removeGoalOb(o)
-
-@bxt.utils.controller
-def AddGoalIfMainChar(c):
+def add_goal_if_main_char():
 	'''
 	Add the owner of this controller as a goal if the main actor has been hit.
 	
@@ -225,76 +178,53 @@ def AddGoalIfMainChar(c):
 	'''
 	if not Actor._hitMainCharacter():
 		return
-	
-	goal = c.owner
-	addGoalOb(goal)
 
-@bxt.utils.controller
-def RemoveGoalIfNotMainChar(c):
+	AutoCamera().add_goal()
+
+def remove_goal_if_not_main_char():
 	if Actor._hitMainCharacter():
 		return
-	
-	goal = c.owner
-	removeGoalOb(goal)
 
-def removeGoalOb(goal):
-	AutoCamera.RemoveGoal(goal)
+	AutoCamera().remove_goal()
 
-class CameraGoal:
-	'''An object that acts as a camera that can be switched to. It defines a
-	point in space, an orientation, and (optionally) a focal length. The
-	AutoCamera copies its location, interpolating as need be.'''
-	def __init__(self, owner, factor = None, instantCut = False):
-		# The object defining the location. If it's a camera, the focal length
-		# (lens value) will be used too.
-		self.owner = owner
-		# How quickly the camera moves to this goal (0.01 = slow, 0.1 = fast).
-		self.factor = factor
-		# Whether to interpolate to this goal. If false, the AutoCamera will
-		# switch instantly to the new values.
-		self.instantCut = instantCut
-
-class _CloseCameraManager(Actor.DirectorListener):
+@bxt.types.singleton('set_active', prefix='CCM_')
+class CloseCameraManager(Actor.DirectorListener):
 	def __init__(self):
 		Actor.Director().addListener(self)
 		self.active = False
-		
+
 	def directorMainCharacterChanged(self, oldActor, newActor):
 		if oldActor == None:
 			return
-		
+
 		closeCam = oldActor.getCloseCamera()
 		if closeCam != None:
-			AutoCamera.RemoveGoal(closeCam)
+			AutoCamera().remove_goal(closeCam)
 			self.active = False
-	
+
 	def toggleCloseMode(self):
 		actor = Actor.Director().getMainCharacter()
 		closeCam = actor.getCloseCamera()
 		if closeCam == None:
 			return
-		
+
 		if self.active:
-			AutoCamera.RemoveGoal(closeCam)
+			AutoCamera().remove_goal(closeCam)
 			self.active = False
 		else:
-			AutoCamera.addGoalOb(closeCam)
+			AutoCamera().add_goal(closeCam)
 			self.active = True
-	
-	def setActive(self, active):
-		if active != self.active:
+
+	def set_active(self):
+		if self.active != bxt.utils.allSensorsPositive():
 			self.toggleCloseMode()
 
-CloseCameraManager = _CloseCameraManager()
-
-def setCloseMode():
-	CloseCameraManager.setActive(Utilities.allSensorsPositive())
-
 #
-# Camera for following the player
+# camera for following the player
 #
 
-class CameraPath(CameraGoal):
+@bxt.types.gameobject('update', prefix='CP_')
+class CameraPath(bxt.types.ProxyGameObject):
 	'''A camera goal that follows the active player.'''
 	
 	# The maximum number of nodes to track. Once this number is reached, the
@@ -343,8 +273,8 @@ class CameraPath(CameraGoal):
 	PREDICT_FWD = 20.0
 	PREDICT_UP = 50.0
 	
-	def __init__(self, owner, factor, instantCut):
-		CameraGoal.__init__(self, owner, factor, instantCut)
+	def __init__(self, owner):
+		bxt.types.ProxyGameObject.__init__(self, owner)
 		# A list of CameraNodes.
 		self.path = []
 		self.pathHead = CameraNode()
@@ -353,24 +283,16 @@ class CameraPath(CameraGoal):
 		self.radMult = 1.0
 		self.expand = bxt.utils.FuzzySwitch(CameraPath.EXPAND_ON_WAIT,
 										CameraPath.EXPAND_OFF_WAIT, True)
+
+		AutoCamera().add_goal(self)
 		
 		if DEBUG:
 			self.targetVis = bxt.utils.add_object('DebugReticule')
 			self.predictVis = bxt.utils.add_object('DebugReticule')
-		Utilities.SceneManager().Subscribe(self)
 	
-	def onRender(self):
+	def update(self):
 		self.updateWayPoints()
 		self.advanceGoal()
-	
-	def OnSceneEnd(self):
-		for n in self.path:
-			n.destroy()
-		self.goal = None
-		if DEBUG:
-			self.targetVis = None
-			self.predictVis = None
-		Utilities.SceneManager().Unsubscribe(self)
 	
 	def advanceGoal(self):
 		'''Move the camera to follow the main character. This will either follow
@@ -386,7 +308,7 @@ class CameraPath(CameraGoal):
 		# Get the vector from the camera to the next way point.
 		node, pathLength = self._getNextWayPoint()
 		target = node.getTarget()
-		dirWay = target - self.owner.worldPosition
+		dirWay = target - self.worldPosition
 		dirWay.normalize()
 		
 		# Adjust preferred distance from actor based on current conditions.
@@ -397,14 +319,14 @@ class CameraPath(CameraGoal):
 		
 		if self._canSeeFuture():
 			# Otherwise, relax the camera if the predicted point is visible.
-			self.expand.turnOn()
+			self.expand.turn_on()
 		else:
-			self.expand.turnOff()
+			self.expand.turn_off()
 		
 		radMult = 1.0
 		if contract:
 			radMult = 1.0 + (node.ceilingHeight / CameraPath.ZOFFSET)
-		elif self.expand.isOn():
+		elif self.expand.is_on():
 			radMult = CameraPath.EXPAND_FACTOR
 		else:
 			radMult = CameraPath.REST_FACTOR
@@ -414,7 +336,7 @@ class CameraPath(CameraGoal):
 		restFar = self.REST_DISTANCE * self.radMult
 		
 		# Determine the acceleration, based on the distance from the actor.
-		dist = self.owner.getDistanceTo(node.owner) + pathLength
+		dist = self.getDistanceTo(node.owner) + pathLength
 		acceleration = 0.0
 		if dist < restNear:
 			acceleration = (dist - restNear) * self.ACCELERATION
@@ -424,23 +346,24 @@ class CameraPath(CameraGoal):
 		# Apply the acceleration.
 		self.linV = self.linV + (dirWay * acceleration)
 		self.linV = self.linV * (1.0 - self.DAMPING)
-		self.owner.worldPosition = self.owner.worldPosition + self.linV
+		self.worldPosition = self.worldPosition + self.linV
 
 		# Align the camera's Y-axis with the global Z, and align
 		# its Z-axis with the direction to the target.
-		look = actor.owner.worldPosition - self.owner.worldPosition
+		look = actor.owner.worldPosition - self.worldPosition
 		look.negate()
 		if actor.useLocalCoordinates():
 			axis = node.owner.getAxisVect(bxt.math.ZAXIS)
-			self.owner.alignAxisToVect(axis, 1, CameraPath.ALIGN_Y_SPEED)
+			self.alignAxisToVect(axis, 1, CameraPath.ALIGN_Y_SPEED)
 		else:
-			self.owner.alignAxisToVect(bxt.math.ZAXIS, 1, 0.5)
-		self.owner.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
+			self.alignAxisToVect(bxt.math.ZAXIS, 1, 0.5)
+		self.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
 		
 		if DEBUG: self.targetVis.worldPosition = target
 	
 	def _canSeeFuture(self):
-		ok, projectedPoint = self.__canSeeFuture()
+		# TODO: Make a DEBUG function decorator that runs stuff before and after
+		ok, projectedPoint = self._canSeeFuture_()
 		if DEBUG:
 			self.predictVis.worldPosition = projectedPoint
 			if ok:
@@ -449,11 +372,11 @@ class CameraPath(CameraGoal):
 				self.predictVis.color = bxt.render.RED
 		return ok
 	
-	def __canSeeFuture(self):
+	def _canSeeFuture_(self):
 		if len(self.path) < 2:
 			# Can't determine direction. Return True if actor is visible.
 			projectedPoint = self.pathHead.owner.worldPosition
-			return hasLineOfSight(self.owner, projectedPoint), projectedPoint
+			return hasLineOfSight(self, projectedPoint), projectedPoint
 		
 		# Try a point ahead of the actor. If the path is curving, project the
 		# point 'down' in anticipation of the motion.
@@ -495,13 +418,14 @@ class CameraPath(CameraGoal):
 				pp2 = projectedPoint + vect
 			projectedPoint = pp2
 			
-		if hasLineOfSight(self.owner, projectedPoint):
+		if hasLineOfSight(self, projectedPoint):
 			return True, projectedPoint
 		else:
 			return False, projectedPoint
 	
 	def _getNextWayPoint(self):
-		node, pathLength = self.__getNextWayPoint()
+		# TODO: Make a DEBUG function decorator that runs stuff before and after
+		node, pathLength = self._getNextWayPoint_()
 		if DEBUG:
 			# Colour nodes.
 			found = False
@@ -523,15 +447,15 @@ class CameraPath(CameraGoal):
 		
 		return node, pathLength
 	
-	def __getNextWayPoint(self):
+	def _getNextWayPoint_(self):
 		'''Find the next point that the camera should advance towards.'''
 		
 		# Try to go straight to the actor.
 		nFound = 0
 		node = self.pathHead
 		target = node.getTarget()
-		if (hasLineOfSight(self.owner, node.owner) and
-			hasLineOfSight(self.owner, target)):
+		if (hasLineOfSight(self, node.owner) and
+			hasLineOfSight(self, target)):
 			return node, 0.0
 		
 		# Actor is obscured; find a good way point.
@@ -541,8 +465,8 @@ class CameraPath(CameraGoal):
 			
 			currentTarget = currentNode.getTarget()
 			
-			if (not hasLineOfSight(self.owner, currentNode.owner) or
-				not hasLineOfSight(self.owner, currentTarget)):
+			if (not hasLineOfSight(self, currentNode.owner) or
+				not hasLineOfSight(self, currentTarget)):
 				nFound = 0
 				continue
 			
@@ -615,16 +539,6 @@ class CameraPath(CameraGoal):
 										self.pathHead.ceilingHeight,
 										self.ZOFFSET_INCREMENT))
 
-@bxt.utils.owner
-def createCameraPath(o):
-	path = CameraPath(o, o['SlowFac'], o['InstantCut'])
-	o['CameraPath'] = path
-	AutoCamera.SetDefaultGoal(path)
-
-@bxt.utils.owner
-def updatePath(o):
-	o['CameraPath'].onRender()
-
 class CameraNode:
 	'''A single point in a path used by the CameraPathGoal. These act as
 	way points for the camera to follow.'''
@@ -647,7 +561,7 @@ class CameraNode:
 		self.target = bxt.math.ZAXIS.copy()
 		self.target *= CameraPath.ZOFFSET
 		self.target = bxt.math.to_world(self.owner, self.target)
-		hitOb, hitPoint, hitNorm = bxt.math.ray_cast_p2p(
+		hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
 				self.target, # objto
 				self.owner.worldPosition, # objfrom
 				prop = 'Ray')
@@ -675,7 +589,8 @@ class CameraNode:
 # Helper for sensing when camera is inside something.
 #
 
-class CameraCollider(CameraObserver):
+@bxt.types.gameobject()
+class CameraCollider(CameraObserver, bxt.types.ProxyGameObject):
 	'''Helper for sensing when camera is inside something. This senses when the
 	camera touches a volumetric object, and then tracks to see when the camera
 	enters and leaves that object, adjusting the screen filter appropriately.'''
@@ -683,29 +598,23 @@ class CameraCollider(CameraObserver):
 	MAX_DIST = 1000.0
 	
 	def __init__(self, owner):
-		self.owner = owner
-		AutoCamera.AddObserver(self)
-		Utilities.SceneManager().Subscribe(self)
+		bxt.types.ProxyGameObject.__init__(self, owner)
+		AutoCamera().add_observer(self)
 	
-	def OnSceneEnd(self):
-		self.owner = None
-		AutoCamera.RemoveObserver(self)
-	
-	def OnCameraMoved(self, autoCamera):
-		self.owner.worldPosition = autoCamera.Camera.worldPosition
-		pos = autoCamera.Camera.worldPosition.copy()
+	def on_camera_moved(self, autoCamera):
+		self.worldPosition = autoCamera.get_camera().worldPosition
+		pos = autoCamera.get_camera().worldPosition.copy()
 		through = pos.copy()
 		through.z += CameraCollider.MAX_DIST
 		vec = through - pos
-		
+
 		ob, _, normal = bxt.math.ray_cast_p2p(through, pos, prop='VolumeCol')
-		
+
 		inside = False
 		if ob != None:
 			if normal.dot(vec) > 0.0:
 				inside = True
-		
-		
+
 		if inside:
 			if not '_VolColCache' in ob:
 				ob['_VolColCache'] = bxt.render.parse_colour(ob['VolumeCol'])
@@ -713,32 +622,20 @@ class CameraCollider(CameraObserver):
 		else:
 			UI.HUD().hideFilter()
 
-@bxt.utils.owner
-def createCamCollider(o):
-	o['CamCollider'] = CameraCollider(o)
-
 #
-# Camera for viewing the background scene
+# camera for viewing the background scene
 #
 
-class BackgroundCamera(CameraObserver):
+@bxt.types.gameobject()
+class BackgroundCamera(CameraObserver, bxt.types.ProxyGameObject):
 	'''Links a second camera to the main 3D camera. This second, background
 	camera will always match the orientation and zoom of the main camera. It is
 	guaranteed to update after the main one.'''
 	
 	def __init__(self, owner):
-		self.owner = owner
-		AutoCamera.AddObserver(self)
-		Utilities.SceneManager().Subscribe(self)
+		bxt.types.ProxyGameObject.__init__(self, owner)
+		AutoCamera().add_observer(self)
 	
-	def OnSceneEnd(self):
-		self.owner = None
-		AutoCamera.RemoveObserver(self)
-	
-	def OnCameraMoved(self, autoCamera):
-		self.owner.worldOrientation = autoCamera.Camera.worldOrientation
-		self.owner.lens = autoCamera.Camera.lens
-
-@bxt.utils.owner
-def createBackgroundCamera(o):
-	BackgroundCamera(o)
+	def on_camera_moved(self, autoCamera):
+		self.worldOrientation = autoCamera.get_camera().worldOrientation
+		self.lens = autoCamera.get_camera().lens

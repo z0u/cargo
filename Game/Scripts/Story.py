@@ -119,7 +119,7 @@ class ActSetCamera:
 			print(("Warning: couldn't find camera %s. Not adding." %
 				self.CamName))
 			return
-		Camera.AutoCamera.AddGoal(cam, True, self.Fac, self.instantCut)
+		camera.AutoCamera().AddGoal(cam, True, self.Fac, self.instantCut)
 
 class ActRemoveCamera:
 	def __init__(self, camName):
@@ -132,7 +132,7 @@ class ActRemoveCamera:
 			print(("Warning: couldn't find camera %s. Not removing." %
 				self.CamName))
 			return
-		Camera.AutoCamera.RemoveGoal(cam)
+		camera.AutoCamera().RemoveGoal(cam)
 
 class ActGeneric:
 	def __init__(self, f, *closure):

@@ -61,6 +61,45 @@ def unwrap(ob):
 	else:
 		return ob
 
+class singleton:
+	def __init__(self, *externs, prefix=None):
+		self.externs = externs
+		self.converted = False
+		self.prefix = prefix
+		self.instance = None
+
+	@bxt.utils.all_sensors_positive
+	def __call__(self, cls):
+		if not self.converted:
+			self.create_interface(cls)
+			self.converted = True
+
+		self.instance = cls()
+		def get():
+			return self.instance
+		return get
+
+	def create_interface(self, cls):
+		'''Expose the nominated methods as top-level functions in the containing
+		module.'''
+		prefix = self.prefix
+		if prefix == None:
+			prefix = cls.__name__ + '_'
+
+		module = sys.modules[cls.__module__]
+
+		for methodName in self.externs:
+			f = cls.__dict__[methodName]
+			self.expose_method(methodName, f, module, prefix)
+
+	def expose_method(self, methodName, f, module, prefix):
+		def method_function(*args, **kwargs):
+			return f(self.instance, *args, **kwargs)
+
+		method_function.__name__ = '%s%s' % (prefix, methodName)
+		method_function.__doc__ = f.__doc__
+		setattr(module, method_function.__name__, method_function)
+
 class gameobject:
 	'''Extends a class to wrap KX_GameObjects. This decorator accepts any number
 	of strings as arguments. Each string should be the name of a member to
@@ -109,24 +148,27 @@ class gameobject:
 	def create_interface(self, cls):
 		'''Expose the nominated methods as top-level functions in the containing
 		module.'''
-		module = sys.modules[cls.__module__]
 		prefix = self.prefix
 		if prefix == None:
 			prefix = cls.__name__ + '_'
 
+		module = sys.modules[cls.__module__]
+
 		for methodName in self.externs:
 			f = cls.__dict__[methodName]
+			self.expose_method(methodName, f, module, prefix)
 
-			def method_function(*args, **kwargs):
-				o = logic.getCurrentController().owner
-				instance = get_wrapper(o)
-				args = list(args)
-				args.insert(0, instance)
-				return f(*args, **kwargs)
+	def expose_method(self, methodName, f, module, prefix):
+		def method_function(*args, **kwargs):
+			o = logic.getCurrentController().owner
+			instance = get_wrapper(o)
+			args = list(args)
+			args.insert(0, instance)
+			return f(*args, **kwargs)
 
-			method_function.__name__ = '%s%s' % (prefix, methodName)
-			method_function.__doc__ = f.__doc__
-			setattr(module, method_function.__name__, method_function)
+		method_function.__name__ = '%s%s' % (prefix, methodName)
+		method_function.__doc__ = f.__doc__
+		setattr(module, method_function.__name__, method_function)
 
 def dereference_arg1(f):
 	'''Function decorator: un-wraps the first argument of a function if
@@ -136,6 +178,17 @@ def dereference_arg1(f):
 		if is_wrapper(args[1]):
 			args = list(args)
 			args[1] = args[1].unwrap()
+		return f(*args, **kwargs)
+	return f_new
+
+def dereference_arg2(f):
+	'''Function decorator: un-wraps the second argument of a function if
+	possible. If the argument is not wrapped, it is passed through unchanged.'''
+	@wraps(f)
+	def f_new(*args, **kwargs):
+		if is_wrapper(args[2]):
+			args = list(args)
+			args[2] = args[2].unwrap()
 		return f(*args, **kwargs)
 	return f_new
 
@@ -227,18 +280,18 @@ class mixin:
 		'''Wrap a property or member variable. This creates a property in the
 		target class; calling the property's get and set methods operate on the
 		attribute with the same name in the wrapped object.'''
-		def get(slf):
+		def _get(slf):
 			return getattr(slf.unwrap(), name)
-		def set(slf, value):
+		def _set(slf, value):
 			setattr(slf.unwrap(), name, value)
 
 		# Wrap/unwrap args and return values.
 		if name in self.derefs:
-			set = dereference_arg1(set)
+			_set = dereference_arg1(_set)
 		if name in self.refs:
-			get = get_reference(get)
+			_get = get_reference(_get)
 
-		p = property(get, set, doc=member.__doc__)
+		p = property(_get, _set, doc=member.__doc__)
 		setattr(cls, name, p)
 
 @mixin(types.CListValue,
@@ -254,15 +307,7 @@ class ProxyCListValue:
 	def unwrap(self):
 		return self._owner
 
-@gameobject()
-@mixin(types.KX_GameObject,
-	privates=LIST_FUNCTIONS,
-	refs=['parent', 'rayCastTo'],
-	derefs=['getDistanceTo', 'getVectTo', 'setParent', 'rayCastTo', 'reinstancePhysicsMesh'])
-class ProxyGameObject:
-	'''Wraps a bge.types.KX_GameObject. You can directly use any attributes
-	defined by KX_GameObject, e.g. self.worldPosition.z += 1.0.'''
-
+class _ProxyObjectBase:
 	def __init__(self, owner):
 		self._owner = owner
 
@@ -284,6 +329,7 @@ class ProxyGameObject:
 	# This function is special: the returned object may be wrapped, but it is
 	# inside a tuple.
 	@dereference_arg1
+	@dereference_arg2
 	def rayCast(self, *args, **kwargs):
 		ob, p, n = self.unwrap().rayCast(*args, **kwargs)
 		if ob != None and has_wrapper(ob):
@@ -306,3 +352,44 @@ class ProxyGameObject:
 	def has_state(self, state):
 		'''Test whether the object is in the specified state.'''
 		return bxt.utils.has_state(self, state)
+
+	def set_default_prop(self, propName, defaultValue):
+		bxt.utils.set_default_prop(self, propName, defaultValue)
+
+@gameobject()
+@mixin(types.KX_GameObject,
+	privates=LIST_FUNCTIONS,
+	refs=['parent', 'rayCastTo'],
+	derefs=['getDistanceTo', 'getVectTo', 'setParent', 'rayCastTo', 'reinstancePhysicsMesh'])
+class ProxyGameObject(_ProxyObjectBase):
+	'''Wraps a bge.types.KX_GameObject. You can directly use any attributes
+	defined by KX_GameObject, e.g. self.worldPosition.z += 1.0.'''
+	def __init__(self, owner):
+		_ProxyObjectBase.__init__(self, owner)
+
+@gameobject()
+@mixin(types.KX_Camera,
+	privates=LIST_FUNCTIONS,
+	refs=['parent', 'rayCastTo'],
+	derefs=['getDistanceTo', 'getVectTo', 'setParent', 'rayCastTo', 'reinstancePhysicsMesh'])
+class ProxyCamera(_ProxyObjectBase):
+	def __init__(self, owner):
+		_ProxyObjectBase.__init__(self, owner)
+
+def wrap(ob, defaultType=ProxyGameObject):
+	if is_wrapper(ob):
+		return ob
+	elif has_wrapper(ob):
+		return get_wrapper(ob)
+	else:
+		return defaultType(ob)
+
+def get_wrapped_cursor():
+	'''Gets the 'Cursor' object in the current scene. This object can be used
+	when you need to call a method on a KX_GameObject, but you don't care which
+	object it gets called on.
+
+	See also bxt.utils.get_cursor.
+	'''
+
+	return wrap(bxt.utils.get_cursor())

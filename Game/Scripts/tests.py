@@ -63,74 +63,93 @@ class ProxyGameObjectTest(unittest.TestCase):
 class PriorityQueueTest(unittest.TestCase):
 	'''bxt.utils.PriorityQueue'''
 
+	class Dummy:
+		pass
+
 	def setUp(self):
-		self.Q = bxt.utils.PriorityQueue()
+		self.foo = PriorityQueueTest.Dummy()
+		self.bar = PriorityQueueTest.Dummy()
+		self.baz = PriorityQueueTest.Dummy()
+		self.queue = bxt.utils.WeakPriorityQueue()
 
 	def test_add(self):
-		self.Q.push('foo', 'fooI', 1)
-		self.assertEquals(self.Q[-1], 'fooI')
-		self.assertEquals(len(self.Q), 1)
+		self.queue.push(self.foo, 1)
+		self.assertEquals(self.queue[-1], self.foo)
+		self.assertEquals(len(self.queue), 1)
 
 	def test_add_several(self):
-		self.Q.push('foo', 'fooI', 1)
-		self.Q.push('bar', 'barI', 0)
-		self.assertEquals(self.Q[-1], 'fooI')
-		self.assertEquals(len(self.Q), 2)
-		self.Q.push('baz', 'bazI', 1)
-		self.assertEquals(self.Q[-1], 'bazI')
-		self.assertEquals(len(self.Q), 3)
+		self.queue.push(self.foo, 1)
+		self.queue.push(self.bar, 0)
+		self.assertEquals(self.queue[-1], self.foo)
+		self.assertEquals(len(self.queue), 2)
+		self.queue.push(self.baz, 1)
+		self.assertEquals(self.queue[-1], self.baz)
+		self.assertEquals(len(self.queue), 3)
 
 	def test_remove(self):
-		self.Q.push('foo', 'fooI', 1)
-		self.Q.push('bar', 'barI', 0)
-		self.Q.push('baz', 'bazI', 1)
-		self.Q.pop()
-		self.assertEquals(self.Q[-1], 'fooI')
-		self.assertEquals(len(self.Q), 2)
-		self.Q.pop()
-		self.assertEquals(self.Q[-1], 'barI')
-		self.assertEquals(len(self.Q), 1)
-		self.Q.pop()
-		self.assertEquals(len(self.Q), 0)
+		self.queue.push(self.foo, 1)
+		self.queue.push(self.bar, 0)
+		self.queue.push(self.baz, 1)
+		self.queue.pop()
+		self.assertEquals(self.queue[-1], self.foo)
+		self.assertEquals(len(self.queue), 2)
+		self.queue.pop()
+		self.assertEquals(self.queue[-1], self.bar)
+		self.assertEquals(len(self.queue), 1)
+		self.queue.pop()
+		self.assertEquals(len(self.queue), 0)
+
+	def test_weak(self):
+		self.queue.push(self.foo, 1)
+		self.queue.push(self.bar, 0)
+		self.queue.push(self.baz, 1)
+		self.baz = None
+		self.assertEquals(self.queue[-1], self.foo)
+		self.assertEquals(len(self.queue), 2)
+		self.foo = None
+		self.assertEquals(self.queue[-1], self.bar)
+		self.assertEquals(len(self.queue), 1)
+		self.bar = None
+		self.assertEquals(len(self.queue), 0)
 
 class FuzzySwitchTest(unittest.TestCase):
 	'''bxt.utils.FuzzySwitch'''
 
 	def test_init(self):
 		self.sw = bxt.utils.FuzzySwitch(5, 10, False)
-		self.assertFalse(self.sw.isOn())
+		self.assertFalse(self.sw.is_on())
 
 	def test_on(self):
 		self.sw = bxt.utils.FuzzySwitch(3, 4, False)
-		self.sw.turnOn()
-		self.assertFalse(self.sw.isOn())
-		self.sw.turnOn()
-		self.assertFalse(self.sw.isOn())
-		self.sw.turnOn()
-		self.assertTrue(self.sw.isOn())
+		self.sw.turn_on()
+		self.assertFalse(self.sw.is_on())
+		self.sw.turn_on()
+		self.assertFalse(self.sw.is_on())
+		self.sw.turn_on()
+		self.assertTrue(self.sw.is_on())
 
 	def test_off(self):
 		self.sw = bxt.utils.FuzzySwitch(3, 4, True)
-		self.sw.turnOff()
-		self.assertTrue(self.sw.isOn())
-		self.sw.turnOff()
-		self.assertTrue(self.sw.isOn())
-		self.sw.turnOff()
-		self.assertTrue(self.sw.isOn())
-		self.sw.turnOff()
-		self.assertFalse(self.sw.isOn())
+		self.sw.turn_off()
+		self.assertTrue(self.sw.is_on())
+		self.sw.turn_off()
+		self.assertTrue(self.sw.is_on())
+		self.sw.turn_off()
+		self.assertTrue(self.sw.is_on())
+		self.sw.turn_off()
+		self.assertFalse(self.sw.is_on())
 
 	def test_both(self):
 		self.sw = bxt.utils.FuzzySwitch(2, 2, False)
-		self.sw.turnOn()
-		self.assertFalse(self.sw.isOn())
-		self.sw.turnOff()
-		self.assertFalse(self.sw.isOn())
-		self.sw.turnOn()
-		self.assertFalse(self.sw.isOn())
+		self.sw.turn_on()
+		self.assertFalse(self.sw.is_on())
+		self.sw.turn_off()
+		self.assertFalse(self.sw.is_on())
+		self.sw.turn_on()
+		self.assertFalse(self.sw.is_on())
 		
-		self.sw.turnOn()
-		self.assertTrue(self.sw.isOn())
+		self.sw.turn_on()
+		self.assertTrue(self.sw.is_on())
 
 def run_tests():
 	suite = unittest.TestSuite()

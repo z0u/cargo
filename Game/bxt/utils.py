@@ -18,6 +18,7 @@
 from functools import wraps
 
 from bge import logic
+import weakref
 
 def singleton(cls):
 	'''Class decorator: turns a class into a Singleton. When applied, all
@@ -48,9 +49,22 @@ def owner(f):
 	'''Decorator. Passes a single argument to a function: the owner of the
 	current controller.'''
 	@wraps(f)
-	def f_new():
-		c = logic.getCurrentController()
-		return f(c.owner)
+	def f_new(owner=None):
+		if owner == None:
+			owner = logic.getCurrentController().owner
+		elif owner.__class__.__name__ == 'SCA_PythonController':
+			owner = owner.owner
+		return f(owner)
+	return f_new
+
+def owner_cls(f):
+	@wraps(f)
+	def f_new(self, owner=None):
+		if owner == None:
+			owner = logic.getCurrentController().owner
+		elif owner.__class__.__name__ == 'SCA_PythonController':
+			owner = owner.owner
+		return f(self, owner)
 	return f_new
 
 def controller(f):
@@ -111,6 +125,8 @@ def get_cursor():
 	'''Gets the 'Cursor' object in the current scene. This object can be used
 	when you need to call a method on a KX_GameObject, but you don't care which
 	object it gets called on.
+
+	See also bxt.types.get_wrapped_cursor.
 	'''
 
 	return logic.getCurrentScene().objects['Cursor']
@@ -191,7 +207,7 @@ class FuzzySwitch:
 		else:
 			self.current = self.delayOff
 
-	def turnOn(self):
+	def turn_on(self):
 		self.current = max(0, self.current)
 		if self.on:
 			return
@@ -200,7 +216,7 @@ class FuzzySwitch:
 		if self.current == self.delayOn:
 			self.on = True
 
-	def turnOff(self):
+	def turn_off(self):
 		self.current = min(0, self.current)
 		if not self.on:
 			return
@@ -209,82 +225,78 @@ class FuzzySwitch:
 		if self.current == self.delayOff:
 			self.on = False
 
-	def isOn(self):
+	def is_on(self):
 		return self.on
 
-class PriorityQueue:
-	'''A poor man's associative priority queue. All operations run in O(n) time.
-	This is only meant to contain a small number of items.
+class WeakPriorityQueue:
+	'''A poor man's associative priority queue. This is likely to be slow. It is
+	only meant to contain a small number of items.
 	'''
-
-	class Item:
-		def __init__(self, key, item, priority):
-			self.key = key
-			self.item = item
-			self.priority = priority
-
-		def __repr__(self):
-			return "(%s, %s, %d)" % (self.key, self.item, self.priority)
 
 	def __init__(self):
 		'''Create a new, empty priority queue.'''
 
-		self.Q = []
-		self.ItemSet = set()
+		self.queue = []
+		self.priorities = {}
 
 	def __len__(self):
-		return len(self.Q)
+		return len(self.queue)
 
 	def __getitem__(self, y):
 		'''Get the yth item from the queue. 0 is the bottom (oldest/lowest
 		priority); -1 is the top (youngest/highest priority).
 		'''
 
-		return self.Q[y].item
+		return self.queue[y]()
 
-	def push(self, key, item, priority):
+	def _index(self, ref, *args, **kwargs):
+		return self.queue.index(item, *args, **kwards)
+
+	def index(self, item, *args, **kwards):
+		return self._index(weakref.ref(item), *args, **kwards)
+
+	def push(self, item, priority):
 		'''Add an item to the end of the queue. If the item is already in the
 		queue, it is removed and added again using the new priority.
-		
+
 		Parameters:
-		key:      The key to associate this item with.
 		item:     The item to store in the queue.
 		priority: Items with higher priority will be stored higher on the queue.
 		          0 <= priority. (Integer)
 		'''
 
-		if key in self.ItemSet:
-			self.discard(key)
+		def autoremove(r):
+			self._discard(r)
 
-		pqi = PriorityQueue.Item(key, item, priority)
+		ref = weakref.ref(item, autoremove)
 
-		added = False
-		i = len(self.Q) - 1
-		while i >= 0:
-			if self.Q[i].priority <= priority:
-				self.Q.insert(i + 1, pqi)
-				added = True
+		if ref in self.priorities:
+			self.discard(item)
+
+		i = len(self.queue)
+		while i > 0:
+			refOther = self.queue[i - 1]
+			priOther = self.priorities[refOther]
+			if priOther <= priority:
 				break
-			i = i - 1
-		if not added:
-			self.Q.insert(0, pqi)
+			i -= 1
+		self.queue.insert(i, ref)
 
-		self.ItemSet.add(key)
+		self.priorities[ref] = priority
 
-	def discard(self, key):
+		return i
+
+	def _discard(self, ref):
+		self.queue.remove(ref)
+		del self.priorities[ref]
+
+	def discard(self, item):
 		'''Remove an item from the queue.
 
 		Parameters:
 		key: The key that was used to insert the item.
 		'''
-
-		i = len(self.Q) - 1
-		while i >= 0:
-			if self.Q[i].key == key:
-				del self.Q[i]
-				self.ItemSet.remove(key)
-				return
-			i = i - 1
+		self._discard(weakref.ref(item))
 
 	def pop(self):
 		'''Remove the highest item in the queue.
@@ -295,9 +307,9 @@ class PriorityQueue:
 		IndexError: if the queue is empty.
 		'''
 
-		pqi = self.Q.pop()
-		self.ItemSet.remove(pqi.key)
-		return pqi.item
+		ref = self.queue.pop()
+		del self.priorities[ref]
+		return ref()
 
 	def top(self):
 		return self[-1]

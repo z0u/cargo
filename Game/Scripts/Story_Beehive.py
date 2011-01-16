@@ -19,7 +19,7 @@ import bxt
 from . import UI
 from . import Actor
 from . import Utilities
-from . import Camera
+from . import camera
 from . import Snail
 from .Story import *
 
@@ -221,9 +221,9 @@ class Bucket(Actor.Actor):
 			return
 		
 		if self.currentCamera != None:
-			Camera.removeGoalOb(self.currentCamera)
+			camera.AutoCamera().remove_goal(self.currentCamera)
 		if cam != None:
-			Camera.addGoalOb(cam)
+			camera.AutoCamera().add_goal(cam)
 		
 		self.currentCamera = cam
 	

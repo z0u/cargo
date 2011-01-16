@@ -158,6 +158,9 @@ class AutoCamera:
 			# the queue.
 			return
 
+		if not wrapper in self.queue:
+			return
+
 		if self.queue.top() == wrapper and wrapper['InstantCut']:
 			# Goal is on top of the stack: it's in use!
 			self.instantCut = True

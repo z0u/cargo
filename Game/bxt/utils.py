@@ -244,11 +244,16 @@ class WeakPriorityQueue:
 
 		return self.queue[y]()
 
-	def _index(self, ref, *args, **kwargs):
-		return self.queue.index(item, *args, **kwards)
+	def __contains__(self, item):
+		print('Searching')
+		ref = weakref.ref(item)
+		return ref in self.priorities
 
-	def index(self, item, *args, **kwards):
-		return self._index(weakref.ref(item), *args, **kwards)
+	def _index(self, ref, *args, **kwargs):
+		return self.queue.index(ref, *args, **kwargs)
+
+	def index(self, item, *args, **kwargs):
+		return self._index(weakref.ref(item), *args, **kwargs)
 
 	def push(self, item, priority):
 		'''Add an item to the end of the queue. If the item is already in the

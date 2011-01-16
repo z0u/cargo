@@ -19,7 +19,7 @@ import bxt
 from . import Actor
 from . import UI
 from bge import logic
-from . import Camera
+from . import camera
 
 class StoryError(Exception):
 	pass
@@ -107,10 +107,8 @@ class ActShowMessage:
 		UI.HUD().showMessage(self.Message)
 
 class ActSetCamera:
-	def __init__(self, camName, fac = None, instantCut = False):
+	def __init__(self, camName):
 		self.CamName = camName
-		self.instantCut = instantCut
-		self.Fac = fac
 	
 	def Execute(self, c):
 		try:
@@ -119,7 +117,7 @@ class ActSetCamera:
 			print(("Warning: couldn't find camera %s. Not adding." %
 				self.CamName))
 			return
-		camera.AutoCamera().AddGoal(cam, True, self.Fac, self.instantCut)
+		camera.AutoCamera().add_goal(cam)
 
 class ActRemoveCamera:
 	def __init__(self, camName):
@@ -132,7 +130,7 @@ class ActRemoveCamera:
 			print(("Warning: couldn't find camera %s. Not removing." %
 				self.CamName))
 			return
-		camera.AutoCamera().RemoveGoal(cam)
+		camera.AutoCamera().remove_goal(cam)
 
 class ActGeneric:
 	def __init__(self, f, *closure):

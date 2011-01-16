@@ -245,7 +245,6 @@ class WeakPriorityQueue:
 		return self.queue[y]()
 
 	def __contains__(self, item):
-		print('Searching')
 		ref = weakref.ref(item)
 		return ref in self.priorities
 

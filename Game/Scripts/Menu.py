@@ -39,7 +39,7 @@ class EventListener:
 	def onEvent(self, message, body):
 		pass
 
-@bxt.utils.singleton
+@bxt.types.singleton()
 class EventBus:
 	'''Delivers messages to listeners.'''
 	
@@ -71,7 +71,7 @@ class EventBus:
 			body = self.eventCache[message]
 			target.onEvent(message, body)
 
-@bxt.utils.singleton
+@bxt.types.singleton()
 class SessionManager(EventListener):
 	'''Responds to some high-level messages.'''
 	
@@ -96,10 +96,9 @@ class SessionManager(EventListener):
 		elif message == 'quit':
 			logic.endGame()
 
-# Nothing else uses this directly, so we have to instantiate it.
-SessionManager()
-
-@bxt.utils.singleton
+@bxt.types.singleton('focusNext', 'focusPrevious', 'focusUp', 'focusDown',
+					'focusLeft', 'focusRight', 'mouseMove', 'mouseButton',
+					prefix='IH_')
 class InputHandler(EventListener):
 	'''Manages UI elements: focus and click events.'''
 	
@@ -137,6 +136,12 @@ class InputHandler(EventListener):
 	def addWidget(self, widget):
 		self.widgets.add(widget)
 
+	@bxt.utils.all_sensors_positive
+	@bxt.utils.controller_cls
+	def mouseMove(self, c):
+		mOver = c.sensors['sMouseOver']
+		InputHandler().mouseOver(mOver)
+
 	def mouseOver(self, mOver):
 		newFocus = mOver.hitObject
 
@@ -157,6 +162,13 @@ class InputHandler(EventListener):
 		if newFocus != None:
 			newFocus.enter()
 		self.current = newFocus
+
+	@bxt.utils.controller_cls
+	def mouseButton(self, c):
+		if bxt.utils.someSensorPositive():
+			InputHandler().mouseDown()
+		else:
+			InputHandler().mouseUp()
 	
 	def mouseDown(self):
 		'''Send a mouse down event to the widget under the cursor.'''
@@ -180,32 +192,43 @@ class InputHandler(EventListener):
 			# of the current button.
 			pass
 
+	@bxt.utils.all_sensors_positive
 	def focusNext(self):
 		'''Switch to the next widget according to tab-order.'''
 		# TODO
 		pass
+
+	@bxt.utils.all_sensors_positive
 	def focusPrevious(self):
 		'''Switch to the previous widget according to tab-order.'''
 		# TODO
 		pass
+
+	@bxt.utils.all_sensors_positive
 	def focusLeft(self):
 		'''Switch to the widget to the left of current.'''
 		# TODO
 		pass
+
+	@bxt.utils.all_sensors_positive
 	def focusRight(self):
 		'''Switch to the widget to the right of current.'''
 		# TODO
 		pass
+
+	@bxt.utils.all_sensors_positive
 	def focusUp(self):
 		'''Switch to the widget above current.'''
 		# TODO
 		pass
+
+	@bxt.utils.all_sensors_positive
 	def focusDown(self):
 		'''Switch to the widget below current.'''
 		# TODO
 		pass
 
-@bxt.utils.singleton
+@bxt.types.singleton()
 class AsyncAdoptionHelper:
 	'''Creates parent-child relationships between widgets asynchronously. This
 	is required because the order that widgets are created in is undefined.'''
@@ -249,42 +272,6 @@ def controllerInit(c):
 	render.showMouse(True)
 	mOver = c.sensors['sMouseOver']
 	mOver.usePulseFocus = True
-
-@bxt.utils.all_sensors_positive
-def focusNext():
-	InputHandler().focusNext()
-
-@bxt.utils.all_sensors_positive
-def focusPrevious():
-	InputHandler().focusPrevious()
-
-@bxt.utils.all_sensors_positive
-def focusLeft():
-	InputHandler().focusLeft()
-
-@bxt.utils.all_sensors_positive
-def focusRight():
-	InputHandler().focusRight()
-
-@bxt.utils.all_sensors_positive
-def focusUp():
-	InputHandler().focusUp()
-
-@bxt.utils.all_sensors_positive
-def focusDown():
-	InputHandler().focusDown()
-
-@bxt.utils.all_sensors_positive
-@bxt.utils.controller
-def mouseMove(c):
-	mOver = c.sensors['sMouseOver']
-	InputHandler().mouseOver(mOver)
-
-def mouseButton(c):
-	if bxt.utils.someSensorPositive():
-		InputHandler().mouseDown()
-	else:
-		InputHandler().mouseUp()
 
 ################
 # Widget classes

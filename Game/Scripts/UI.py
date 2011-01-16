@@ -20,7 +20,7 @@ from bge import logic
 from . import Utilities
 from . import Actor
 
-@bxt.utils.singleton
+@bxt.types.singleton()
 class HUD(Actor.DirectorListener, Actor.ActorListener):
 	'''The head-up display manages the 2D user interface that is drawn over the
 	3D scene. This is a Singleton (see HUD instance below). This object

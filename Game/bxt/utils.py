@@ -20,20 +20,6 @@ from functools import wraps
 from bge import logic
 import weakref
 
-def singleton(cls):
-	'''Class decorator: turns a class into a Singleton. When applied, all
-	class instantiations return the same instance.'''
-
-	# Adapted from public domain code in Python docs:
-	# http://www.python.org/dev/peps/pep-0318/#examples
-	instance = None
-	def get():
-		nonlocal instance
-		if instance == None:
-			instance = cls()
-		return instance
-	return get
-
 def replaceObject(name, original, time = 0):
 	'''Like bge.types.scene.addObject, but:
 	 - Transfers the properies of the original to the new object, and
@@ -74,6 +60,15 @@ def controller(f):
 	def f_new():
 		c = logic.getCurrentController()
 		return f(c)
+	return f_new
+
+def controller_cls(f):
+	'''Decorator. Passes a single argument to a function: the current
+	controller.'''
+	@wraps(f)
+	def f_new(self):
+		c = logic.getCurrentController()
+		return f(self, c)
 	return f_new
 
 @controller

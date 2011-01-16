@@ -474,7 +474,7 @@ class DirectorListener:
 		'''
 		pass
 
-@bxt.utils.singleton
+@bxt.types.singleton()
 class Director:
 	def __init__(self):
 		self.Suspended = False

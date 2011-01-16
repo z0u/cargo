@@ -106,7 +106,7 @@ class AutoCamera:
 		self.get_camera().lens = bxt.math.lerp(self.get_camera().lens, targetLens, fac)
 
 		self.lastGoal = ref
-		
+
 		for o in self.observers:
 			o.on_camera_moved(self)
 
@@ -630,7 +630,7 @@ class CameraCollider(CameraObserver, bxt.types.ProxyGameObject):
 #
 
 @bxt.types.gameobject()
-class BackgroundCamera(CameraObserver, bxt.types.ProxyGameObject):
+class BackgroundCamera(CameraObserver, bxt.types.ProxyCamera):
 	'''Links a second camera to the main 3D camera. This second, background
 	camera will always match the orientation and zoom of the main camera. It is
 	guaranteed to update after the main one.'''

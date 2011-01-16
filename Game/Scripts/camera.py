@@ -192,6 +192,9 @@ def remove_goal_if_not_main_char():
 
 @bxt.types.singleton('set_active', prefix='CCM_')
 class CloseCameraManager(Actor.DirectorListener):
+	'''Switches to a secondary camera, e.g. from 3rd person to 1st person
+	view.'''
+
 	def __init__(self):
 		Actor.Director().addListener(self)
 		self.active = False
@@ -222,23 +225,21 @@ class CloseCameraManager(Actor.DirectorListener):
 		if self.active != bxt.utils.allSensorsPositive():
 			self.toggleCloseMode()
 
-#
-# camera for following the player
-#
-
 @bxt.types.gameobject('update', prefix='CP_')
 class CameraPath(bxt.types.ProxyGameObject):
-	'''A camera goal that follows the active player.'''
-	
+	'''A camera goal that follows the active player. It tries to follow the same
+	path as the player, so that it avoids static scenery.
+	'''
+
 	# The maximum number of nodes to track. Once this number is reached, the
 	# oldest nodes will be removed.
 	MAX_NODES = 50
 	# The minimum distance to leave between nodes. 
 	MIN_DIST = 1.0
-	
+
 	ACCELERATION = 0.01
 	DAMPING = 0.1
-	
+
 	# The preferred distance from the target (a point above the actor).
 	# Note that this mill change depending on the situation; e.g. it becomes
 	# lower when the ceiling is low.
@@ -250,7 +251,7 @@ class CameraPath(bxt.types.ProxyGameObject):
 	# factor is never below about 1.5 - so a similar value is used for
 	# continuity.
 	REST_FACTOR = 1.5
-	
+
 	# The distance above the actor that the camera should aim for. Actually, the
 	# camera will aim for a point ZOFFSET * CEILING_AVOIDANCE_BIAS away from the
 	# actor.
@@ -259,7 +260,7 @@ class CameraPath(bxt.types.ProxyGameObject):
 	# The maximum height difference between two consecutive targets. This
 	# smoothes off the path as the actor goes under a ceiling.
 	ZOFFSET_INCREMENT = MIN_DIST * 0.5
-	
+
 	# The number of consecutive nodes that must be seen before being accepted.
 	# If this is too low, the camera will clip through sharp corners. 
 	NODE_DELAY = 2
@@ -275,28 +276,79 @@ class CameraPath(bxt.types.ProxyGameObject):
 	# Distance to project predictive node.
 	PREDICT_FWD = 20.0
 	PREDICT_UP = 50.0
-	
+
+	class CameraNode:
+		'''A single point in a path used by the CameraPathGoal. These act as
+		way points for the camera to follow.'''
+
+		# Note: This class uses strong references, so it will hang around even
+		# when the associated game object dies. But that's OK, because the only
+		# class that uses this one is CameraPath, which should end with its
+		# object, thus releasing this one.
+
+		def __init__(self):
+			# Defines the location of the way point. Using a way point allows the
+			# node to parented to an object.
+			self.owner = bxt.utils.add_object('PointMarker')
+			if not DEBUG:
+				self.owner.visible = False
+			else:
+				self.marker = bxt.utils.add_object("PointMarker")
+				self.marker.color = bxt.render.BLUE
+
+			# It is an error to access these next two before calling update().
+			self.ceilingHeight = None
+			self.target = None
+
+		def update(self):
+			self.target = bxt.math.ZAXIS.copy()
+			self.target *= CameraPath.ZOFFSET
+			self.target = bxt.math.to_world(self.owner, self.target)
+			hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
+					self.target, # objto
+					self.owner.worldPosition, # objfrom
+					prop = 'Ray')
+
+			if hitOb:
+				vec = hitPoint - self.owner.worldPosition
+				self.setCeilingHeight(vec.magnitude)
+			else:
+				self.setCeilingHeight(CameraPath.ZOFFSET)
+
+		def getTarget(self):
+			bias = self.ceilingHeight / CameraPath.ZOFFSET
+			bias *= CameraPath.CEILING_AVOIDANCE_BIAS
+			return bxt.math.lerp(self.owner.worldPosition, self.target, bias)
+
+		def destroy(self):
+			self.owner.endObject()
+			if DEBUG: self.marker.endObject()
+
+		def setCeilingHeight(self, height):
+			self.ceilingHeight = height
+			if DEBUG: self.marker.worldPosition = self.getTarget()
+
 	def __init__(self, owner):
 		bxt.types.ProxyGameObject.__init__(self, owner)
 		# A list of CameraNodes.
 		self.path = []
-		self.pathHead = CameraNode()
+		self.pathHead = CameraPath.CameraNode()
 		self.linV = bxt.math.ZEROVEC.copy()
-		
+
 		self.radMult = 1.0
 		self.expand = bxt.utils.FuzzySwitch(CameraPath.EXPAND_ON_WAIT,
 										CameraPath.EXPAND_OFF_WAIT, True)
 
 		AutoCamera().add_goal(self)
-		
+
 		if DEBUG:
 			self.targetVis = bxt.utils.add_object('DebugReticule')
 			self.predictVis = bxt.utils.add_object('DebugReticule')
-	
+
 	def update(self):
 		self.updateWayPoints()
 		self.advanceGoal()
-	
+
 	def advanceGoal(self):
 		'''Move the camera to follow the main character. This will either follow
 		the path or the character, depending on which is closest. Don't worry
@@ -307,25 +359,25 @@ class CameraPath(bxt.types.ProxyGameObject):
 		actor = Actor.Director().getMainCharacter()
 		if actor == None:
 			return
-		
+
 		# Get the vector from the camera to the next way point.
 		node, pathLength = self._getNextWayPoint()
 		target = node.getTarget()
 		dirWay = target - self.worldPosition
 		dirWay.normalize()
-		
+
 		# Adjust preferred distance from actor based on current conditions.
 		contract = False
 		if node.ceilingHeight < CameraPath.ZOFFSET:
 			# Bring the camera closer when under a low ceiling or in a tunnel.
 			contract = True
-		
+
 		if self._canSeeFuture():
 			# Otherwise, relax the camera if the predicted point is visible.
 			self.expand.turn_on()
 		else:
 			self.expand.turn_off()
-		
+
 		radMult = 1.0
 		if contract:
 			radMult = 1.0 + (node.ceilingHeight / CameraPath.ZOFFSET)
@@ -337,7 +389,7 @@ class CameraPath(bxt.types.ProxyGameObject):
 									CameraPath.RADIUS_SPEED)
 		restNear = self.REST_DISTANCE
 		restFar = self.REST_DISTANCE * self.radMult
-		
+
 		# Determine the acceleration, based on the distance from the actor.
 		dist = self.getDistanceTo(node.owner) + pathLength
 		acceleration = 0.0
@@ -345,7 +397,7 @@ class CameraPath(bxt.types.ProxyGameObject):
 			acceleration = (dist - restNear) * self.ACCELERATION
 		elif dist > restFar:
 			acceleration = (dist - restFar) * self.ACCELERATION
-		
+
 		# Apply the acceleration.
 		self.linV = self.linV + (dirWay * acceleration)
 		self.linV = self.linV * (1.0 - self.DAMPING)
@@ -361,9 +413,9 @@ class CameraPath(bxt.types.ProxyGameObject):
 		else:
 			self.alignAxisToVect(bxt.math.ZAXIS, 1, 0.5)
 		self.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
-		
+
 		if DEBUG: self.targetVis.worldPosition = target
-	
+
 	def _canSeeFuture(self):
 		# TODO: Make a DEBUG function decorator that runs stuff before and after
 		ok, projectedPoint = self._canSeeFuture_()
@@ -374,45 +426,45 @@ class CameraPath(bxt.types.ProxyGameObject):
 			else:
 				self.predictVis.color = bxt.render.RED
 		return ok
-	
+
 	def _canSeeFuture_(self):
 		if len(self.path) < 2:
 			# Can't determine direction. Return True if actor is visible.
 			projectedPoint = self.pathHead.owner.worldPosition
 			return hasLineOfSight(self, projectedPoint), projectedPoint
-		
+
 		# Try a point ahead of the actor. If the path is curving, project the
 		# point 'down' in anticipation of the motion.
 		a, b = self.path[0], self.path[1]
 		ba = a.owner.worldPosition - b.owner.worldPosition
 		ba.normalize()
 		projectedPoint = a.owner.worldPosition + (ba * CameraPath.PREDICT_FWD)
-		
+
 		hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
 				projectedPoint, a.owner, prop = 'Ray')
 		if hitOb != None:
 			vect = hitPoint - a.owner.worldPosition
 			vect.magnitude = vect.magnitude * 0.9
 			projectedPoint = a.owner.worldPosition + vect
-		
+
 		# Check the difference in direction of consecutive line segments.
 		dot = 1.0
 		cb = ba.copy()
 		for c in self.path[2:7]:
 			cb = b.owner.worldPosition - c.owner.worldPosition
 			cb.normalize()
-			
+
 			dot = ba.dot(cb)
 			if dot < 0.999:
 				break
-		
+
 		if dot < 0.999:
 			# The path is bent; project the point in the direction of the
 			# curvature. The cross product gives us the axis of rotation.
 			rotAxis = ba.cross(cb)
 			upAxis = rotAxis.cross(ba)
 			pp2 = projectedPoint - (upAxis * CameraPath.PREDICT_FWD)
-		
+
 			hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
 					pp2, projectedPoint, prop = 'Ray')
 			if hitOb != None:
@@ -420,25 +472,25 @@ class CameraPath(bxt.types.ProxyGameObject):
 				vect.magnitude = vect.magnitude * 0.9
 				pp2 = projectedPoint + vect
 			projectedPoint = pp2
-			
+
 		if hasLineOfSight(self, projectedPoint):
 			return True, projectedPoint
 		else:
 			return False, projectedPoint
-	
+
 	def _getNextWayPoint(self):
 		# TODO: Make a DEBUG function decorator that runs stuff before and after
 		node, pathLength = self._getNextWayPoint_()
 		if DEBUG:
 			# Colour nodes.
 			found = False
-			
+
 			if node == self.pathHead:
 				found = True
 				node.owner.color = bxt.render.RED
 			else:
 				node.owner.color = bxt.render.WHITE
-			
+
 			for n in self.path:
 				if node == n:
 					n.owner.color = bxt.render.RED
@@ -447,12 +499,12 @@ class CameraPath(bxt.types.ProxyGameObject):
 					n.owner.color = bxt.render.BLACK
 				else:
 					n.owner.color = bxt.render.WHITE
-		
+
 		return node, pathLength
-	
+
 	def _getNextWayPoint_(self):
 		'''Find the next point that the camera should advance towards.'''
-		
+
 		# Try to go straight to the actor.
 		nFound = 0
 		node = self.pathHead
@@ -460,40 +512,40 @@ class CameraPath(bxt.types.ProxyGameObject):
 		if (hasLineOfSight(self, node.owner) and
 			hasLineOfSight(self, target)):
 			return node, 0.0
-		
+
 		# Actor is obscured; find a good way point.
 		nSearched = 0
 		for currentNode in self.path:
 			nSearched += 1
-			
+
 			currentTarget = currentNode.getTarget()
-			
+
 			if (not hasLineOfSight(self, currentNode.owner) or
 				not hasLineOfSight(self, currentTarget)):
 				nFound = 0
 				continue
-			
+
 			nFound += 1
 			if nFound >= self.NODE_DELAY:
 				node = currentNode
 				break
-		
+
 		distance = nSearched * self.MIN_DIST
 		if len(self.path) > 0:
 			distance += self.pathHead.owner.getDistanceTo(self.path[0].owner)
 		return node, distance
-	
+
 	def updateWayPoints(self):
 		actor = Actor.Director().getMainCharacter()
 		if actor == None:
 			return
-		
+
 		if actor.useLocalCoordinates():
 			bxt.math.copy_transform(actor.owner, self.pathHead.owner)
 		else:
 			self.pathHead.owner.worldPosition = actor.owner.worldPosition
 			bxt.math.reset_orientation(self.pathHead.owner)
-		
+
 		# Add a new node if the actor has moved far enough.
 		addNew = False
 		if len(self.path) == 0:
@@ -503,9 +555,9 @@ class CameraPath(bxt.types.ProxyGameObject):
 			vec = currentPos - self.path[0].owner.worldPosition
 			if vec.magnitude > self.MIN_DIST:
 				addNew = True
-		
+
 		if addNew:
-			node = CameraNode()
+			node = CameraPath.CameraNode()
 			if actor.useLocalCoordinates():
 				bxt.math.copy_transform(actor.owner, node.owner)
 			else:
@@ -516,13 +568,13 @@ class CameraPath(bxt.types.ProxyGameObject):
 			if len(self.path) > self.MAX_NODES:
 				# Delete the oldest node.
 				self.path.pop().destroy()
-		
+
 		# Update the ceiling height for each node, ensuring a smooth transition
 		# between consecutive z-offsets.
 		self.pathHead.update()
 		for node in self.path:
 			node.update()
-		
+
 		def pingPong(iterable):
 			# pingPong('ABC') --> A B C C B A
 			for element in iterable:
@@ -532,7 +584,7 @@ class CameraPath(bxt.types.ProxyGameObject):
 
 		def marginMin(current, next, margin):
 			return min(current + margin, next)
-		
+
 		currentOffset = self.pathHead.ceilingHeight
 		for node in pingPong(self.path):
 			node.setCeilingHeight(marginMin(currentOffset, node.ceilingHeight,
@@ -541,52 +593,6 @@ class CameraPath(bxt.types.ProxyGameObject):
 		self.pathHead.setCeilingHeight(marginMin(currentOffset,
 										self.pathHead.ceilingHeight,
 										self.ZOFFSET_INCREMENT))
-
-class CameraNode:
-	'''A single point in a path used by the CameraPathGoal. These act as
-	way points for the camera to follow.'''
-	
-	def __init__(self):
-		# Defines the location of the way point. Using a way point allows the
-		# node to parented to an object.
-		self.owner = bxt.utils.add_object('PointMarker')
-		if not DEBUG:
-			self.owner.visible = False
-		else:
-			self.marker = bxt.utils.add_object("PointMarker")
-			self.marker.color = bxt.render.BLUE
-		
-		# It is an error to access these next two before calling update().
-		self.ceilingHeight = None
-		self.target = None
-
-	def update(self):
-		self.target = bxt.math.ZAXIS.copy()
-		self.target *= CameraPath.ZOFFSET
-		self.target = bxt.math.to_world(self.owner, self.target)
-		hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
-				self.target, # objto
-				self.owner.worldPosition, # objfrom
-				prop = 'Ray')
-		
-		if hitOb:
-			vec = hitPoint - self.owner.worldPosition
-			self.setCeilingHeight(vec.magnitude)
-		else:
-			self.setCeilingHeight(CameraPath.ZOFFSET)
-	
-	def getTarget(self):
-		bias = self.ceilingHeight / CameraPath.ZOFFSET
-		bias *= CameraPath.CEILING_AVOIDANCE_BIAS
-		return bxt.math.lerp(self.owner.worldPosition, self.target, bias)
-
-	def destroy(self):
-		self.owner.endObject()
-		if DEBUG: self.marker.endObject()
-	
-	def setCeilingHeight(self, height):
-		self.ceilingHeight = height
-		if DEBUG: self.marker.worldPosition = self.getTarget()
 
 #
 # Helper for sensing when camera is inside something.
@@ -597,13 +603,13 @@ class CameraCollider(CameraObserver, bxt.types.ProxyGameObject):
 	'''Helper for sensing when camera is inside something. This senses when the
 	camera touches a volumetric object, and then tracks to see when the camera
 	enters and leaves that object, adjusting the screen filter appropriately.'''
-	
+
 	MAX_DIST = 1000.0
-	
+
 	def __init__(self, owner):
 		bxt.types.ProxyGameObject.__init__(self, owner)
 		AutoCamera().add_observer(self)
-	
+
 	def on_camera_moved(self, autoCamera):
 		self.worldPosition = autoCamera.get_camera().worldPosition
 		pos = autoCamera.get_camera().worldPosition.copy()
@@ -634,11 +640,11 @@ class BackgroundCamera(CameraObserver, bxt.types.ProxyCamera):
 	'''Links a second camera to the main 3D camera. This second, background
 	camera will always match the orientation and zoom of the main camera. It is
 	guaranteed to update after the main one.'''
-	
+
 	def __init__(self, owner):
 		bxt.types.ProxyGameObject.__init__(self, owner)
 		AutoCamera().add_observer(self)
-	
+
 	def on_camera_moved(self, autoCamera):
 		self.worldOrientation = autoCamera.get_camera().worldOrientation
 		self.lens = autoCamera.get_camera().lens

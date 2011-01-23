@@ -1,0 +1,3 @@
+[submodule "Game/bxt"]
+	path = Game/bxt
+	url = file:///home/alex/Documents/bgelibs/bxt

@@ -94,7 +94,7 @@ class Water(Actor.ActorListener):
 		decal.worldOrientation = oMat
 		decal.setParent(self.owner)
 	
-	def spawnBubble(self, actor):
+	def spawn_bubble(self, actor):
 		if self.isBubble(actor):
 			return
 		
@@ -166,12 +166,11 @@ class Water(Actor.ActorListener):
 		
 		return submergedFactor
 	
-	def applyDamping(self, linV, submergedFactor):
+	def apply_damping(self, linV, submergedFactor):
 		return bxt.math.lerp(linV, bxt.math.ZEROVEC, self.owner['DampingFactor'] * submergedFactor)
 	
-	def Float(self, actor):
-		'''
-		Adjust the velocity of an object to make it float on the water.
+	def float(self, actor):
+		'''Adjust the velocity of an object to make it float on the water.
 		
 		Returns: True if the object is floating; False otherwise (e.g. if it has
 		sunk or emerged fully).
@@ -189,7 +188,7 @@ class Water(Actor.ActorListener):
 			o22 = o2 - body['OxygenDepletionRate']
 			actor.setOxygen(o22)
 			if int(o2 * 10) != int(o22 * 10):
-				self.spawnBubble(actor)
+				self.spawn_bubble(actor)
 			
 			if actor.getOxygen() <= 0.0:
 				if actor.Drown():
@@ -222,11 +221,11 @@ class Water(Actor.ActorListener):
 		accel = submergedFactor * body['CurrentBuoyancy']
 		linV = body.getLinearVelocity(False)
 		linV.z = linV.z + accel
-		linV = self.applyDamping(linV, submergedFactor)
+		linV = self.apply_damping(linV, submergedFactor)
 		body.setLinearVelocity(linV, False)
 		
 		angV = body.getAngularVelocity(False)
-		angV = self.applyDamping(angV, submergedFactor)
+		angV = self.apply_damping(angV, submergedFactor)
 		body.setAngularVelocity(angV, False)
 		
 		if DEBUG:
@@ -247,7 +246,7 @@ class Water(Actor.ActorListener):
 		
 		return True
 	
-	def SpawnRipples(self, actor, force = False):
+	def spawn_ripples(self, actor, force = False):
 		if self.isBubble(actor):
 			return
 		
@@ -272,18 +271,18 @@ class Water(Actor.ActorListener):
 		ob['Water_CanRipple'] = False
 		self.SpawnSurfaceDecal('Ripple', ob.worldPosition)
 	
-	def onCollision(self, hitActors):
+	def on_collision(self, hitActors):
 		'''
 		Called when an object collides with the water. Creates ripples and
 		causes objects to float or sink. Should only be called once per frame.
 		'''
 		for actor in hitActors:
-			self.SpawnRipples(actor, False)
+			self.spawn_ripples(actor, False)
 		
 		self.FloatingActors.update(hitActors)
 		for actor in self.FloatingActors.copy():
 			try:
-				floating = self.Float(actor)
+				floating = self.float(actor)
 				if not floating:
 					self.FloatingActors.discard(actor)
 					actor.removeListener(self)
@@ -337,14 +336,14 @@ class ShapedWater(Water):
 	def __init__(self, owner):
 		Water.__init__(self, owner)
 	
-	def applyDamping(self, linV, submergedFactor):
+	def apply_damping(self, linV, submergedFactor):
 		return bxt.math.lerp(linV, bxt.math.ZEROVEC, self.owner['DampingFactor'])
 	
-	def spawnBubble(self, actor):
+	def spawn_bubble(self, actor):
 		'''No bubbles in shaped water.'''
 		pass
 	
-	def SpawnRipples(self, actor, force = False):
+	def spawn_ripples(self, actor, force = False):
 		'''No ripples in shaped water: too hard to find surface.'''
 		pass
 
@@ -355,7 +354,7 @@ class Bubble(Actor.Actor):
 		owner['Bubble'] = True
 		Actor.Actor.__init__(self, owner)
 	
-	def RestoreLocation(self, reason = None):
+	def restore_location(self, reason = None):
 		'''Bubbles aren't important enough to respawn. Just destroy them.'''
 		self.Destroy()
 
@@ -411,7 +410,7 @@ def onCollision(c):
 			actors.add(ob['Actor'])
 	
 	#
-	# Call Water.onCollision regardless of collisions: this allows for one more
+	# Call Water.on_collision regardless of collisions: this allows for one more
 	# frame of processing to sink submerged objects.
 	#
-	water.onCollision(actors)
+	water.on_collision(actors)

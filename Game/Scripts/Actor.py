@@ -24,7 +24,6 @@ directly.'''
 
 from . import LODTree
 from . import Utilities
-#import bxt
 import bxt
 import mathutils
 
@@ -254,7 +253,7 @@ class Actor:
 		if self.Parent != None:
 			return False
 		
-		self.RestoreLocation("You drowned! Try again.")
+		self.restore_location("You drowned! Try again.")
 		self.damage(1.0, shock = False)
 		return True
 	
@@ -291,7 +290,7 @@ class Actor:
 		for child in self.getChildren():
 			child.SaveLocation()
 	
-	def RestoreLocation(self, reason = None):
+	def restore_location(self, reason = None):
 		self.owner.worldPosition = self.Pos
 		self.owner.worldOrientation = self.Orn
 		self.owner.setLinearVelocity(bxt.math.MINVECTOR)
@@ -427,8 +426,8 @@ def SaveLocation(o):
 	o['Actor'].SaveLocation()
 
 @bxt.utils.owner
-def RestoreLocation(o):
-	o['Actor'].RestoreLocation()
+def restore_location(o):
+	o['Actor'].restore_location()
 
 @bxt.utils.controller
 def Damage(c):
@@ -554,7 +553,7 @@ class Director:
 			if actor == self.MainCharacter or i == self.SanityCheckIndex:
 				if not actor.isInsideWorld():
 					print("Actor %s was outside world!" % actor.name)
-					actor.RestoreLocation("Ouch! You got squashed.")
+					actor.restore_location("Ouch! You got squashed.")
 			
 			actor.RecordVelocity()
 			i += 1

@@ -137,8 +137,8 @@ class ShellBase(Actor.Actor):
 		if positive and triggered:
 			self.Snail.exitShell(animate = True)
 		
-	def RestoreLocation(self, reason = None):
-		Actor.Actor.RestoreLocation(self, reason)
+	def restore_location(self, reason = None):
+		Actor.Actor.restore_location(self, reason)
 		if bxt.utils.has_state(self.owner, S_OCCUPIED):
 			self.Snail.exitShell(False)
 	

@@ -23,6 +23,18 @@ import weakref
 class ProxyGameObjectTest(unittest.TestCase):
 	'''bxt.types.ProxyGameObject'''
 
+	class GOSubclass(bxt.types.ProxyGameObject):
+		def __init__(self, owner):
+			bxt.types.ProxyGameObject.__init__(self, owner)
+			self.callback = None
+
+		def setCallback(self, callback):
+			self.callback = callback
+
+		def setParent(self, *args, **kwargs):
+			self.callback()
+			bxt.types.ProxyGameObject.setParent(self, *args, **kwargs)
+
 	def setUp(self):
 		self.o1 = bxt.types.get_wrapper(logic.getCurrentScene().objects['pt.1'])
 		self.o2 = bxt.types.get_wrapper(logic.getCurrentScene().objects['pt.2'])
@@ -59,6 +71,16 @@ class ProxyGameObjectTest(unittest.TestCase):
 		self.o1.setParent(self.o2)
 		self.assertTrue(self.o1 in self.o2.children)
 		self.assertTrue(self.o1.unwrap() in self.o2.unwrap().children)
+
+	def test_subclass(self):
+		mutation = ['TestFailed']
+		def callback():
+			mutation[0] = 'TestPassed'
+
+		o3 = ProxyGameObjectTest.GOSubclass(logic.getCurrentScene().objects['pt.3'])
+		o3.setCallback(callback)
+		o3.setParent(self.o2)
+		self.assertTrue(mutation[0] == 'TestPassed')
 
 class PriorityQueueTest(unittest.TestCase):
 	'''bxt.utils.PriorityQueue'''

@@ -17,7 +17,6 @@
 
 import bxt
 from . import Utilities
-from . import Sound
 import mathutils
 from .Story import *
 
@@ -305,4 +304,4 @@ def CreateWorm(o):
 def wormKnockSound(c):
 	frame = c.owner['ActionFrame']
 	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):
-		Sound.PlayWithRandomPitch(c)
+		bxt.sound.play_with_random_pitch(c)

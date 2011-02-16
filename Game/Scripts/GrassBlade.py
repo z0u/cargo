@@ -52,7 +52,7 @@ class GrassBlade:
 		
 		ry = self.owner['GrassRadY']
 		rz = self.owner['GrassRadZ']
-		self.bbox = bxt.utils.Box2D(0.0 - ry, 0.0 - rz, ry, rz)
+		self.bbox = bxt.math.Box2D(0.0 - ry, 0.0 - rz, ry, rz)
 		
 		self.Segments = []
 		for i in range(0, self.owner['nSegments']):
@@ -84,8 +84,8 @@ class GrassBlade:
 		# Collider bounding box.
 		#
 		colRad = collider['LODRadius']
-		colBox = bxt.utils.Box2D(cPos.x - colRad, cPos.y - colRad,
-		                         cPos.x + colRad, cPos.y + colRad)
+		colBox = bxt.math.Box2D(cPos.x - colRad, cPos.y - colRad,
+		                        cPos.x + colRad, cPos.y + colRad)
 		
 		#
 		# Perform axis-aligned 2D bounding box collision.

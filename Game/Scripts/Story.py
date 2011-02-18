@@ -66,7 +66,7 @@ class ActActionPair:
 		self.aArmName = aArmName
 		self.aMeshName = aMeshName
 		self.ActionPrefix = actionPrefix
-		self.Start = start
+		self.start = start
 		self.End = end
 		self.Loop = loop
 		
@@ -76,9 +76,9 @@ class ActActionPair:
 		aArm.action = self.ActionPrefix
 		aMesh.action = self.ActionPrefix + '_S'
 		
-		aArm.frameStart = aMesh.frameStart = self.Start
+		aArm.frameStart = aMesh.frameStart = self.start
 		aArm.frameEnd = aMesh.frameEnd = self.End
-		aArm.frame = aMesh.frame = self.Start
+		aArm.frame = aMesh.frame = self.start
 		
 		if self.Loop:
 			aArm.mode = aMesh.mode = logic.KX_ACTIONACT_LOOPEND

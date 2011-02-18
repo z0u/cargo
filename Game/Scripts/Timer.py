@@ -21,7 +21,8 @@ from . import Utilities
 from . import Actor
 from . import UI
 
-class Timer(Actor.Actor):
+@bxt.types.gameobject('start', 'stop', 'pulse', prefix='')
+class Timer(bxt.types.ProxyGameObject):
 	'''A countdown timer actor. Uses a regular pulse to count down to zero over
 	a given duration. The remaining time may be shown on a gauge on-screen.
 	
@@ -42,85 +43,61 @@ class Timer(Actor.Actor):
 
 	def __init__(self, owner):
 		'''Initialise a new timer.'''
-		Actor.Actor.__init__(self, owner)
-		self.Tics = 0.0
-		self.TargetTics = 1.0
-		self.SuspendStart = None
-		bxt.utils.set_default_prop(owner, 'Message', 'TimerFinished')
+		bxt.types.ProxyGameObject.__init__(self, owner)
+		self.tics = 0.0
+		self.targetTics = 1.0
+		self.suspendStart = None
+		self.set_default_prop('Message', 'TimerFinished')
+		self.set_default_prop('Duration', 1.0)
 	
-	def Start(self):
+	@bxt.utils.all_sensors_positive
+	def start(self):
 		'''The the timer running for the duration specified by the owner.'''
-		self.Tics = 0.0
-		self.TargetTics = self.owner['Duration'] * logic.getLogicTicRate()
-		if self.TargetTics < 1.0:
-			self.TargetTics = 1.0
-		bxt.utils.add_state(self.owner, self.S_RUNNING)
-		self.Pulse()
+		self.tics = 0.0
+		self.targetTics = self['Duration'] * logic.getLogicTicRate()
+		if self.targetTics < 1.0:
+			self.targetTics = 1.0
+		self.add_state(self.S_RUNNING)
+		self.pulse()
 
-	def Stop(self):
+	@bxt.utils.all_sensors_positive
+	def stop(self):
 		'''Cancel the timer. The gauge will be hidden. No message will be sent.
 		'''
-		bxt.utils.rem_state(self.owner, self.S_RUNNING)
+		self.rem_state(self.S_RUNNING)
 		
-		if 'Style' in self.owner:
-			gauge = UI.HUD().GetGauge(self.owner['Style'])
+		if 'Style' in self:
+			gauge = UI.HUD().GetGauge(self['Style'])
 			if gauge:
 				gauge.Hide()
 
-	def Pulse(self):
+	@bxt.utils.all_sensors_positive
+	def pulse(self):
 		'''Increase the elapsed time by one tic. This must be called once per
 		logic frame (i.e. by using an Always sensor in pulse mode 0).'''
-		if self.Suspended:
-			return
-		
-		if 'Paused' in self.owner:
-			if self.owner['Paused'] == 'Temporary':
+		if 'Paused' in self:
+			if self['Paused'] == 'Temporary':
 				# Pause this frame, but resume on the next.
-				self.owner['Paused'] = 'No'
+				self['Paused'] = 'No'
 				return
-			elif self.owner['Paused'] == 'Yes':
+			elif self['Paused'] == 'Yes':
 				return
 		
-		self.Tics = self.Tics + 1.0
-		fraction = self.Tics / self.TargetTics
+		self.tics = self.tics + 1.0
+		fraction = self.tics / self.targetTics
 		
-		if 'Style' in self.owner:
-			gauge = UI.HUD().GetGauge(self.owner['Style'])
+		if 'Style' in self:
+			gauge = UI.HUD().GetGauge(self['Style'])
 			if gauge:
 				gauge.SetFraction(1.0 - fraction)
 				gauge.Show()
 		
 		if fraction >= 1.0:
-			self.Stop()
+			self.stop()
 			self.OnFinished()
 	
 	def OnFinished(self):
 		'''Called when the timer has finished normally. This usually sends the
 		message specified by the 'Message' property. Override to change this
 		functionality.'''
-		logic.sendMessage(self.owner['Message'])
-
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
-def CreateTimer(o):
-	'''Create a new timer from this controller's owner.'''
-	Timer(o)
-
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
-def Start(o):
-	'''Start the timer that is attached to this controller.'''
-	o['Actor'].Start()
-
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
-def Stop(o):
-	'''Cancel the timer that is attached to this controller.'''
-	o['Actor'].Stop()
-
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
-def Pulse(o):
-	'''Advance the timer by one logic tic. This must be called once per logic
-	frame while the timer is active.'''
-	o['Actor'].Pulse()
+		logic.sendMessage(self['Message'])

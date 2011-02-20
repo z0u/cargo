@@ -473,14 +473,14 @@ class DirectorListener:
 		'''
 		pass
 
-@bxt.types.singleton()
+@bxt.utils.singleton()
 class Director:
 	def __init__(self):
 		self.Suspended = False
 		self.InputSuspended = False
 		self.Actors = set()
-		self.MainCharacter = None
-		self.SanityCheckIndex = 0
+		self.mainCharacter = None
+		self.sanityCheckIndex = 0
 		
 		self.Listeners = set()
 	
@@ -505,7 +505,7 @@ class Director:
 		
 		self.Actors.discard(actor)
 		
-		if self.MainCharacter == actor:
+		if self.mainCharacter == actor:
 			self.setMainCharacter(None)
 		if self.Suspended:
 			actor._Resume()
@@ -529,11 +529,11 @@ class Director:
 		self.Suspended = False
 	
 	def getMainCharacter(self):
-		return self.MainCharacter
+		return self.mainCharacter
 	
 	def setMainCharacter(self, actor):
-		oldMainSubject = self.MainCharacter
-		self.MainCharacter = actor
+		oldMainSubject = self.mainCharacter
+		self.mainCharacter = actor
 		for l in self.Listeners.copy():
 			l.directorMainCharacterChanged(oldMainSubject, actor)
 	
@@ -545,12 +545,12 @@ class Director:
 	
 	def Update(self):
 		'''Update the state of all the actors.'''
-		if self.SanityCheckIndex >= len(self.Actors):
-			self.SanityCheckIndex = 0
+		if self.sanityCheckIndex >= len(self.Actors):
+			self.sanityCheckIndex = 0
 		
 		i = 0
 		for actor in self.Actors.copy():
-			if actor == self.MainCharacter or i == self.SanityCheckIndex:
+			if actor == self.mainCharacter or i == self.sanityCheckIndex:
 				if not actor.isInsideWorld():
 					print("Actor %s was outside world!" % actor.name)
 					actor.restore_location("Ouch! You got squashed.")
@@ -558,19 +558,19 @@ class Director:
 			actor.RecordVelocity()
 			i += 1
 		
-		self.SanityCheckIndex += 1
+		self.sanityCheckIndex += 1
 	
 	def OnMovementImpulse(self, fwd, back, left, right):
-		if self.MainCharacter and not self.InputSuspended:
-			self.MainCharacter.OnMovementImpulse(fwd, back, left, right)
+		if self.mainCharacter and not self.InputSuspended:
+			self.mainCharacter.OnMovementImpulse(fwd, back, left, right)
 	
 	def OnButton1(self, positive, triggered):
-		if self.MainCharacter and not self.InputSuspended:
-			self.MainCharacter.OnButton1(positive, triggered)
+		if self.mainCharacter and not self.InputSuspended:
+			self.mainCharacter.OnButton1(positive, triggered)
 		
 	def OnButton2(self, positive, triggered):
-		if self.MainCharacter and not self.InputSuspended:
-			self.MainCharacter.OnButton2(positive, triggered)
+		if self.mainCharacter and not self.InputSuspended:
+			self.mainCharacter.OnButton2(positive, triggered)
 
 def Update():
 	'''Call this once per frame to allow the Director to update the state of its

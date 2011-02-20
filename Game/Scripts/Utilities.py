@@ -26,7 +26,7 @@ DEBUG = False
 # Sensor management
 ###################
 
-@bxt.types.singleton()
+@bxt.utils.singleton()
 class SceneManager:
 	
 	def __init__(self):

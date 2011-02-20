@@ -24,8 +24,6 @@ import mathutils
 
 import weakref
 
-DEBUG = False
-
 CREDITS = [
 	("Most Things", "Alex Fraser"),
 	("Story", "Alex Fraser, Lara Micocki"),
@@ -34,72 +32,37 @@ CREDITS = [
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
 	("Made With", "Blender, Bullet, The GIMP and Inkscape")]
 
-class EventListener:
-	'''Interface for an object that can receive messages.'''
-	def onEvent(self, message, body):
-		pass
-
-@bxt.types.singleton()
-class EventBus:
-	'''Delivers messages to listeners.'''
-	
-	def __init__(self):
-		self.listeners = weakref.WeakSet()
-		self.eventCache = {}
-
-	def addListener(self, listener):
-		self.listeners.add(listener)
-	
-	def remListener(self, listener):
-		self.listeners.remove(listener)
-	
-	def notify(self, message, body):
-		'''Send a message.'''
-		
-		if DEBUG:
-			print("Message: %s\n\t%s" % (message, body))
-
-		for listener in self.listeners:
-			listener.onEvent(message, body)
-		self.eventCache[message] = body
-	
-	def replayLast(self, target, message):
-		'''Re-send a message. This should be used by new listeners that missed
-		out on the last message, so they know what state the system is in.'''
-		
-		if message in self.eventCache:
-			body = self.eventCache[message]
-			target.onEvent(message, body)
-
-@bxt.types.singleton()
-class SessionManager(EventListener):
+@bxt.utils.singleton()
+class SessionManager(bxt.utils.EventListener):
 	'''Responds to some high-level messages.'''
 	
 	def __init__(self):
-		EventBus().addListener(self)
+		bxt.utils.EventBus().addListener(self)
 	
-	def onEvent(self, message, body):
-		if message == 'showSavedGameDetails':
-			Store.setSessionId(body)
-			EventBus().notify('showScreen', 'LoadDetailsScreen')
+	def onEvent(self, event):
+		if event.message == 'showSavedGameDetails':
+			Store.setSessionId(event.body)
+			evt = bxt.utils.Event('showScreen', 'LoadDetailsScreen')
+			bxt.utils.EventBus().notify(evt)
 		
-		elif message == 'startGame':
+		elif event.message == 'startGame':
 			# Load the level indicated in the save game.
 			logic.startGame(Store.get('/game/level', 'Outdoors.blend'))
 		
-		elif message == 'deleteGame':
+		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.
 			for key in Store.list('/game'):
 				Store.unset(key)
-			EventBus().notify('showScreen', 'LoadingScreen')
+			evt = bxt.utils.Event('showScreen', 'LoadingScreen')
+			bxt.utils.EventBus().notify(evt)
 		
-		elif message == 'quit':
+		elif event.message == 'quit':
 			logic.endGame()
 
-@bxt.types.singleton('focusNext', 'focusPrevious', 'focusUp', 'focusDown',
+@bxt.utils.singleton('focusNext', 'focusPrevious', 'focusUp', 'focusDown',
 					'focusLeft', 'focusRight', 'mouseMove', 'mouseButton',
 					prefix='IH_')
-class InputHandler(EventListener):
+class InputHandler(bxt.utils.EventListener):
 	'''Manages UI elements: focus and click events.'''
 	
 	def __init__(self):
@@ -186,8 +149,8 @@ class InputHandler(EventListener):
 				self.downCurrent.click()
 		self.downCurrent = None
 	
-	def onEvent(self, message, body):
-		if message == 'sensitivityChanged':
+	def onEvent(self, event):
+		if event.message == 'sensitivityChanged':
 			# Not implemented. Eventually, this should update the visual state
 			# of the current button.
 			pass
@@ -228,7 +191,7 @@ class InputHandler(EventListener):
 		# TODO
 		pass
 
-@bxt.types.singleton()
+@bxt.utils.singleton()
 class AsyncAdoptionHelper:
 	'''Creates parent-child relationships between widgets asynchronously. This
 	is required because the order that widgets are created in is undefined.'''
@@ -316,20 +279,21 @@ class Container(UIObject):
 		for child in self.children:
 			child.hide()
 
-class Screen(Container, EventListener):
+class Screen(Container, bxt.utils.EventListener):
 	'''A collection of UIObjects. Only one screen can be visible at a time. To
 	display a Screen, send a showScreen message on the EventBus.'''
 	
 	def __init__(self, name, title):
 		Container.__init__(self, name)
-		EventBus().addListener(self)
+		bxt.utils.EventBus().addListener(self)
 		self.title = title
 	
-	def onEvent(self, message, body):
-		if message == 'showScreen':
-			if body == self.name:
+	def onEvent(self, event):
+		if event.message == 'showScreen':
+			if event.body == self.name:
 				self.show()
-				EventBus().notify('screenShown', self.getTitle())
+				evt = bxt.utils.Event('screenShown', self.getTitle())
+				bxt.utils.EventBus().notify(evt)
 			else:
 				self.hide()
 	
@@ -344,10 +308,11 @@ screens.append(Screen('LoadDetailsScreen', ''))
 screens.append(Screen('OptionsScreen', 'Options'))
 screens.append(Screen('CreditsScreen', 'Credits'))
 screens.append(Screen('ConfirmationDialogue', 'Confirm'))
-EventBus().notify('showScreen', 'LoadingScreen')
+bxt.utils.EventBus().notify(
+		bxt.utils.Event('showScreen', 'LoadingScreen'))
 
 @bxt.types.gameobject('update', prefix='cam_')
-class Camera(EventListener, bxt.types.ProxyGameObject):
+class Camera(bxt.utils.EventListener, bxt.types.ProxyGameObject):
 	'''A camera that adjusts its position depending on which screen is
 	visible.'''
 	
@@ -362,12 +327,12 @@ class Camera(EventListener, bxt.types.ProxyGameObject):
 	
 	def __init__(self, owner):
 		bxt.types.ProxyGameObject.__init__(self, owner)
-		EventBus().addListener(self)
-		EventBus().replayLast(self, 'showScreen')
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'showScreen')
 	
-	def onEvent(self, message, body):
-		if message == 'showScreen' and body in Camera.FRAME_MAP:
-			self['targetFrame'] = Camera.FRAME_MAP[body]
+	def onEvent(self, event):
+		if event.message == 'showScreen' and event.body in Camera.FRAME_MAP:
+			self['targetFrame'] = Camera.FRAME_MAP[event.body]
 	
 	def update(self):
 		'''Update the camera animation frame. Should be called once per frame
@@ -449,7 +414,8 @@ class Widget(UIObject, bxt.types.ProxyGameObject):
 			body = ''
 			if 'onClickBody' in self:
 				body = self['onClickBody']
-			EventBus().notify(msg, body)
+			evt = bxt.utils.Event(msg, body)
+			bxt.utils.EventBus().notify(evt)
 	
 	def hide(self):
 		UIObject.hide(self)
@@ -503,7 +469,8 @@ class Widget(UIObject, bxt.types.ProxyGameObject):
 		oldv = self.sensitive
 		self.sensitive = sensitive
 		if oldv != sensitive:
-			EventBus().notify('sensitivityChanged', self.sensitive)
+			evt = bxt.utils.Event('sensitivityChanged', self.sensitive)
+			bxt.utils.EventBus().notify(evt)
 
 @bxt.types.gameobject()
 class Button(Widget):
@@ -558,7 +525,7 @@ class Checkbox(Button):
 		self.children['CheckOn']['frame'] = self['frame']
 
 @bxt.types.gameobject()
-class ConfirmationPage(Widget, EventListener):
+class ConfirmationPage(Widget, bxt.utils.EventListener):
 	def __init__(self, owner):
 		Widget.__init__(self, owner)
 		self.setSensitive(False)
@@ -568,31 +535,35 @@ class ConfirmationPage(Widget, EventListener):
 		self.onConfirm = ''
 		self.onConfirmBody = ''
 		
-		EventBus().addListener(self)
-		EventBus().replayLast(self, 'showScreen')
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'showScreen')
 	
-	def onEvent(self, message, body):
-		super(ConfirmationPage, self).onEvent(message, body)
-		if message == 'showScreen':
+	def onEvent(self, event):
+		super(ConfirmationPage, self).onEvent(event)
+		if event.message == 'showScreen':
 			# Store the last screen name so it can be restored later.
-			if self.currentScreen != body:
+			if self.currentScreen != event.body:
 				self.lastScreen = self.currentScreen
-				self.currentScreen = body
+				self.currentScreen = event.body
 		
-		elif message == 'confirmation':
-			text, self.onConfirm, self.onConfirmBody = body.split('::')
+		elif event.message == 'confirmation':
+			text, self.onConfirm, self.onConfirmBody = event.body.split('::')
 			self.children['ConfirmText']['Content'] = text
-			EventBus().notify('showScreen', 'ConfirmationDialogue')
+			evt = bxt.utils.Event('showScreen', 'ConfirmationDialogue')
+			bxt.utils.EventBus().notify(evt)
 			
-		elif message == 'cancel':
+		elif event.message == 'cancel':
 			if self.visible:
-				EventBus().notify('showScreen', self.lastScreen)
+				evt = bxt.utils.Event('showScreen', self.lastScreen)
+				bxt.utils.EventBus().notify(evt)
 				self.children['ConfirmText']['Content'] = ""
 		
-		elif message == 'confirm':
+		elif event.message == 'confirm':
 			if self.visible:
-				EventBus().notify('showScreen', self.lastScreen)
-				EventBus().notify(self.onConfirm, self.onConfirmBody)
+				evt = bxt.utils.Event('showScreen', self.lastScreen)
+				bxt.utils.EventBus().notify(evt)
+				evt = bxt.utils.Event(self.onConfirm, self.onConfirmBody)
+				bxt.utils.EventBus().notify(evt)
 				self.children['ConfirmText']['Content'] = ""
 
 @bxt.types.gameobject()
@@ -652,15 +623,15 @@ class CreditsPage(Widget):
 				self.drawNext()
 
 @bxt.types.gameobject()
-class Subtitle(EventListener, bxt.types.ProxyGameObject):
+class Subtitle(bxt.utils.EventListener, bxt.types.ProxyGameObject):
 	def __init__(self, owner):
 		bxt.types.ProxyGameObject.__init__(self, owner)
-		EventBus().addListener(self)
-		EventBus().replayLast(self, 'screenShown')
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'screenShown')
 	
-	def onEvent(self, message, body):
-		if message == 'screenShown':
-			self['Content'] = body
+	def onEvent(self, event):
+		if event.message == 'screenShown':
+			self['Content'] = event.body
 
 @bxt.types.gameobject('update')
 class MenuSnail(bxt.types.ProxyGameObject):

@@ -39,7 +39,7 @@ NS_VISIBLE_DESCENDANT = 1
 NS_VISIBLE            = 2
 NS_IMPLICIT           = 3
 
-@bxt.types.singleton()
+@bxt.utils.singleton()
 class LODManager:
 	'''A registrar of LODTrees. Each tree adds itself to this manager
 	(singleton; instance created below). Other scripts then have a central place

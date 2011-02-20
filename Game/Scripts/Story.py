@@ -17,7 +17,7 @@
 
 import bxt
 from . import Actor
-from . import UI
+from . import ui
 from bge import logic
 from . import camera
 
@@ -93,18 +93,18 @@ class ActShowDialogue:
 		self.Message = message
 	
 	def Execute(self, c):
-		UI.HUD().ShowDialogue(self.Message)
+		ui.HUD().ShowDialogue(self.Message)
 
 class ActHideDialogue:
 	def Execute(self, c):
-		UI.HUD().HideDialogue()
+		ui.HUD().HideDialogue()
 
 class ActShowMessage:
 	def __init__(self, message):
 		self.Message = message
 	
 	def Execute(self, c):
-		UI.HUD().showMessage(self.Message)
+		ui.HUD().showMessage(self.Message)
 
 class ActSetCamera:
 	def __init__(self, camName):

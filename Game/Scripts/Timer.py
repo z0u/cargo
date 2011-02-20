@@ -19,7 +19,7 @@ import bxt
 from bge import logic
 from . import Utilities
 from . import Actor
-from . import UI
+from . import ui
 
 @bxt.types.gameobject('start', 'stop', 'pulse', prefix='')
 class Timer(bxt.types.ProxyGameObject):
@@ -67,7 +67,7 @@ class Timer(bxt.types.ProxyGameObject):
 		self.rem_state(self.S_RUNNING)
 		
 		if 'Style' in self:
-			gauge = UI.HUD().GetGauge(self['Style'])
+			gauge = ui.HUD().GetGauge(self['Style'])
 			if gauge:
 				gauge.Hide()
 
@@ -87,7 +87,7 @@ class Timer(bxt.types.ProxyGameObject):
 		fraction = self.tics / self.targetTics
 		
 		if 'Style' in self:
-			gauge = UI.HUD().GetGauge(self['Style'])
+			gauge = ui.HUD().GetGauge(self['Style'])
 			if gauge:
 				gauge.SetFraction(1.0 - fraction)
 				gauge.Show()

@@ -34,7 +34,7 @@ from . import Actor
 MAX_SPEED = 3.0
 MIN_SPEED = -3.0
 
-DEBUG = False
+DEBUG = True
 
 #
 # States for main snail object. The commented-out ones aren't currently used
@@ -60,7 +60,7 @@ S_ARM_POP        = 16
 S_ARM_ENTER      = 17
 S_ARM_EXIT       = 18
 
-class SnailSegment:
+class SnailSegment(bxt.types.ProxyGameObject):
 	def __init__(self, owner, parent):
 		self.Parent  = parent # SnailSegment or None
 		self.Child   = None   # SnailSegment or None
@@ -75,27 +75,28 @@ class SnailSegment:
 			return True
 		elif (type == "SnailSegment"):
 			if (self.Child):
-				print("Segment %s already has a child." % self.owner.name)
+				print("Segment %s already has a child." % self.name)
 			self.Child = SnailSegment(child, self)
 			return True
 		elif (type == "SegmentChildPivot"):
 			if (self.Child):
-				print("Segment %s already has a child." % self.owner.name)
+				print("Segment %s already has a child." % self.name)
 			self.Child = SegmentChildPivot(child)
 			return True
 		elif (type == "Fulcrum"):
 			if (self.Fulcrum):
-				print("Segment %s already has a fulcrum." % self.owner.name)
+				print("Segment %s already has a fulcrum." % self.name)
 			self.Fulcrum = child
 			return True
 		else:
 			return False
 
 	def orient(self, parentOrnMat, armature):
-		if (self.Parent):
-			right = self.Parent.owner.getAxisVect(bxt.math.XAXIS)
+		#!!!!!!!!! Use ProxyGameObject.find_child
+		if self.parent and self.parent.parent:
+			right = self.parent.parent.getAxisVect(bxt.math.XAXIS)
 			self.owner.alignAxisToVect(right, 0)
-		
+
 		_, p1, _ = self.Parent.Rays['Right'].getHitPosition()
 		_, p2, _ = self.Parent.Rays['Left'].getHitPosition()
 		p3 = self.Parent.Fulcrum.worldPosition
@@ -154,9 +155,9 @@ class Snail(SnailSegment, Actor.Actor):
 		# FIXME: This derives from two classes, and both set the Owner property.
 		Actor.Actor.__init__(self, owner)
 		Actor.Director().setMainCharacter(self)
-		
-		self.Head = None
-		self.Tail = None
+
+		self.Head = self.find_child([('Type', 'AppendageRoot'), ('Location', 'Fore')])
+		self.Tail = self.find_child([('Type', 'AppendageRoot'), ('Location', 'Aft')])
 		self.CargoHold = cargoHold
 		self.getAttachPoints()['CargoHold'] = cargoHold
 		self.EyeRayL = eyeRayL
@@ -178,7 +179,7 @@ class Snail(SnailSegment, Actor.Actor):
 		if not self.Shockwave:
 			raise Exception("No Shockwave defined.")
 		self.setHealth(7.0)
-		
+
 		if DEBUG:
 			self.eyeMarkerL = bxt.utils.add_object('AxisMarker', 0)
 			bxt.math.copy_transform(eyeLocL, self.eyeMarkerL)
@@ -186,6 +187,9 @@ class Snail(SnailSegment, Actor.Actor):
 			self.eyeMarkerR = bxt.utils.add_object('AxisMarker', 0)
 			bxt.math.copy_transform(eyeLocR, self.eyeMarkerR)
 			self.eyeMarkerR.setParent(eyeLocR)
+
+		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
+		bxt.utils.EventBus().notify(evt)
 	
 	def getTouchedObject(self):
 		return self.TouchedObject
@@ -699,93 +703,17 @@ class Snail(SnailSegment, Actor.Actor):
 	def getCloseCamera(self):
 		return self.camera
 
-class ArcRay:
-	'''Like a Ray sensor, but the detection is done along an arc. The arc
-	rotates around the y-axis, starting from the positive z-axis and sweeping
-	around to the positive x-axis.'''
-	
-	RADIUS = 2.0
-	ANGLE = 180.0
-	RESOLUTION = 6
-	PROP = 'Ground'
-	
-	def __init__(self, owner):
-		self.owner = owner
-		self._createPoints()
-		self.lastHitPoint = bxt.math.ORIGIN.copy()
-		self.lastHitNorm = bxt.math.ZAXIS.copy()
-		self.prop = ArcRay.PROP
-		if hasattr(owner, 'prop'):
-			self.prop = owner['prop']
-		
-		if DEBUG:
-			self.marker = bxt.utils.add_object('PointMarker', 0)
-	
-	def _createPoints(self):
-		'''Generate an arc of line segments to cast rays along.'''
-		self.path = []
-		
-		endAngle = ArcRay.ANGLE
-		if hasattr(self.owner, 'angle'):
-			endAngle = self.owner['angle']
-		revolutions = endAngle / 360.0
-		endAngle = math.radians(endAngle)
-		
-		res = ArcRay.RESOLUTION
-		if hasattr(self.owner, 'resolution'):
-			res = self.owner['resolution']
-		numSegments = int(math.ceil(revolutions * res))
-		
-		increment = endAngle / numSegments
-		
-		radius = ArcRay.RADIUS
-		if hasattr(self.owner, 'radius'):
-			radius = self.owner['radius']
-		
-		for i in range(numSegments + 1):
-			angle = increment * i
-			point = mathutils.Vector()
-			point.x = math.sin(angle) * radius
-			point.z = math.cos(angle) * radius
-			self.path.append(point)
-
-	def getHitPosition(self):
-		"""Return the hit point of the first child ray that hits.
-		If none hit, the default value of the first ray is returned."""
-		ob = None
-		norm = None
-		for A, B in zip(self.path, self.path[1:]):
-			A = bxt.math.to_world(self.owner, A)
-			B = bxt.math.to_world(self.owner, B)
-			ob, p, norm = bxt.math.ray_cast_p2p(B, A, prop = self.prop)
-			if ob:
-				self.lastHitPoint = bxt.math.to_local(self.owner, p)
-				self.lastHitNorm = bxt.math.to_local_vec(self.owner, norm)
-				if DEBUG:
-					render.drawLine(A, p, bxt.render.ORANGE.xyz)
-				break
-			else:
-				if DEBUG:
-					render.drawLine(A, B, bxt.render.YELLOW.xyz)
-		
-		wp = bxt.math.to_world(self.owner, self.lastHitPoint)
-		wn = bxt.math.to_world_vec(self.owner, self.lastHitNorm)
-		if DEBUG:
-			self.marker.worldPosition = wp
-			
-		return ob, wp, wn
-
 class SnailTrail:
 	S_NORMAL = 2
 	S_SLOW = 3
 	S_FAST = 4
 	
 	def __init__(self, owner, snail):
-		self.LastMinorPos = owner.worldPosition.copy()
-		self.LastMajorPos = self.LastMinorPos.copy()
-		self.Paused = False
+		self.lastMinorPos = owner.worldPosition.copy()
+		self.lastMajorPos = self.lastMinorPos.copy()
+		self.paused = False
 		self.TrailSpots = []
-		self.SpotIndex = 0
+		self.spotIndex = 0
 		self.Snail = snail
 		self.owner = owner
 		Utilities.parseChildren(self, owner)
@@ -805,10 +733,10 @@ class SnailTrail:
 		@param speedStyle: The style to apply to the new spot. One of [S_SLOW,
 			S_NORMAL, S_FAST].
 		'''
-		self.SpotIndex = (self.SpotIndex + 1) % len(self.TrailSpots)
+		self.spotIndex = (self.spotIndex + 1) % len(self.TrailSpots)
 		
 		scene = logic.getCurrentScene()
-		spot = self.TrailSpots[self.SpotIndex]
+		spot = self.TrailSpots[self.spotIndex]
 		spotI = scene.addObject(spot, self.owner)
 		
 		#
@@ -822,17 +750,17 @@ class SnailTrail:
 	def onSnailMoved(self, speedMultiplier):
 		pos = self.owner.worldPosition
 		
-		distMajor = (pos - self.LastMajorPos).magnitude
+		distMajor = (pos - self.lastMajorPos).magnitude
 		if distMajor > self.Snail.owner['TrailSpacingMajor']:
-			self.LastMajorPos = pos.copy()
-			self.Paused = not self.Paused
+			self.lastMajorPos = pos.copy()
+			self.paused = not self.paused
 		
-		if self.Paused:
+		if self.paused:
 			return
 		
-		distMinor = (pos - self.LastMinorPos).magnitude
+		distMinor = (pos - self.lastMinorPos).magnitude
 		if distMinor > self.Snail.owner['TrailSpacingMinor']:
-			self.LastMinorPos = pos.copy()
+			self.lastMinorPos = pos.copy()
 			speedStyle = SnailTrail.S_NORMAL
 			if speedMultiplier > (1.0 + bxt.math.EPSILON):
 				speedStyle = SnailTrail.S_FAST

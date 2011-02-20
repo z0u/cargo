@@ -99,7 +99,7 @@ def updateBlinkenlights(o):
 class Worm(Character):
 	def __init__(self, owner):
 		Character.__init__(self, owner)
-		UI.HUD().ShowLoadingScreen(self)
+		ui.HUD().ShowLoadingScreen(self)
 
 	def CreateSteps(self):
 		#
@@ -137,7 +137,7 @@ class Worm(Character):
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActHideDialogue())
-		step.AddAction(ActGeneric(UI.HUD().HideLoadingScreen, self))
+		step.AddAction(ActGeneric(ui.HUD().HideLoadingScreen, self))
 		step.AddAction(ActGenericContext(SprayDirt, 10, 15.0))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 		

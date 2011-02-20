@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2010 Alex Fraser <alex@phatcore.com>
+# Copyright 2009 - 2011, Alex Fraser <alex@phatcore.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,12 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
-from . import Utilities
-from . import Actor
-from . import UI
 from bge import logic
 import weakref
+
+import bxt
+from . import ui
 
 DEBUG = False
 
@@ -37,7 +36,7 @@ class CameraObserver:
 	def on_camera_moved(self, autoCamera):
 		pass
 
-@bxt.types.singleton('set_camera', 'update', 'add_goal', 'remove_goal',
+@bxt.utils.singleton('set_camera', 'update', 'add_goal', 'remove_goal',
 					prefix='AC_')
 class AutoCamera:
 	'''Manages the transform of the camera, and provides transitions between
@@ -74,7 +73,7 @@ class AutoCamera:
 			return None
 		else:
 			return self.camera()
-	
+
 	def update(self):
 		'''Update the location of the camera. observers will be notified. The
 		camera should have a controller set up to call this once per frame.
@@ -173,79 +172,28 @@ class AutoCamera:
 	def remove_observer(self, camObserver):
 		self.observers.remove(camObserver)
 
-def add_goal_if_main_char():
-	'''
-	Add the owner of this controller as a goal if the main actor has been hit.
-	
-	@see Actor._hitMainCharacter.
-	'''
-	if not Actor._hitMainCharacter():
-		return
-
-	AutoCamera().add_goal()
-
-def remove_goal_if_not_main_char():
-	if Actor._hitMainCharacter():
-		return
-
-	AutoCamera().remove_goal()
-
-@bxt.types.singleton('set_active', prefix='CCM_')
-class CloseCameraManager(Actor.DirectorListener):
-	'''Switches to a secondary camera, e.g. from 3rd person to 1st person
-	view.'''
-
-	def __init__(self):
-		Actor.Director().addListener(self)
-		self.active = False
-
-	def directorMainCharacterChanged(self, oldActor, newActor):
-		if oldActor == None:
-			return
-
-		closeCam = oldActor.getCloseCamera()
-		if closeCam != None:
-			AutoCamera().remove_goal(closeCam)
-			self.active = False
-
-	def toggleCloseMode(self):
-		actor = Actor.Director().getMainCharacter()
-		closeCam = actor.getCloseCamera()
-		if closeCam == None:
-			return
-
-		if self.active:
-			AutoCamera().remove_goal(closeCam)
-			self.active = False
-		else:
-			AutoCamera().add_goal(closeCam)
-			self.active = True
-
-	def set_active(self):
-		if self.active != bxt.utils.allSensorsPositive():
-			self.toggleCloseMode()
 
 @bxt.types.gameobject('update', prefix='CP_')
-class CameraPath(bxt.types.ProxyGameObject):
+class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
 	'''A camera goal that follows the active player. It tries to follow the same
 	path as the player, so that it avoids static scenery.
 	'''
 
 	# The maximum number of nodes to track. Once this number is reached, the
 	# oldest nodes will be removed.
-	MAX_NODES = 50
+	MAX_NODES = 20
 	# The minimum distance to leave between nodes. 
-	MIN_DIST = 1.0
+	MIN_DIST = 3.0
 
 	ACCELERATION = 0.01
-	DAMPING = 0.1
+	DAMPING = 0.2
 
 	# The preferred distance from the target (a point above the actor).
 	# Note that this mill change depending on the situation; e.g. it becomes
 	# lower when the ceiling is low.
 	REST_DISTANCE = 5.0
 	# The amount to expand the radius when it is safe to do so.
-	EXPAND_FACTOR = 4.0
+	EXPAND_FACTOR = 2.0
 	# The amount to expand the radius when no other factors are at play. Ideally
 	# REST_DISTANCE would just be increased, but in practice the contraction
 	# factor is never below about 1.5 - so a similar value is used for
@@ -255,7 +203,7 @@ class CameraPath(bxt.types.ProxyGameObject):
 	# The distance above the actor that the camera should aim for. Actually, the
 	# camera will aim for a point ZOFFSET * CEILING_AVOIDANCE_BIAS away from the
 	# actor.
-	ZOFFSET = 10.0
+	ZOFFSET = 5.0
 	CEILING_AVOIDANCE_BIAS = 0.5
 	# The maximum height difference between two consecutive targets. This
 	# smoothes off the path as the actor goes under a ceiling.
@@ -266,13 +214,13 @@ class CameraPath(bxt.types.ProxyGameObject):
 	NODE_DELAY = 2
 	# The number of frames to wait before deciding that the predictive node is
 	# obscured.
-	EXPAND_ON_WAIT = 20
-	EXPAND_OFF_WAIT = 15
+	EXPAND_ON_WAIT = 10
+	EXPAND_OFF_WAIT = 5
 	# Responsiveness of the radius adjustment.
 	RADIUS_SPEED = 0.1
 	# Responsiveness of the camera orientation.
-	ALIGN_Y_SPEED = 0.05
-	ALIGN_Z_SPEED = 1.0
+	ALIGN_Y_SPEED = 0.3
+	ALIGN_Z_SPEED = 0.5
 	# Distance to project predictive node.
 	PREDICT_FWD = 20.0
 	PREDICT_UP = 50.0
@@ -338,12 +286,33 @@ class CameraPath(bxt.types.ProxyGameObject):
 		self.radMult = 1.0
 		self.expand = bxt.utils.FuzzySwitch(CameraPath.EXPAND_ON_WAIT,
 										CameraPath.EXPAND_OFF_WAIT, True)
+		self.target = None
 
 		AutoCamera().add_goal(self)
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'MainCharacterSet')
 
 		if DEBUG:
 			self.targetVis = bxt.utils.add_object('DebugReticule')
 			self.predictVis = bxt.utils.add_object('DebugReticule')
+
+	@bxt.utils.owner_cls
+	def set_target(self, target):
+		def auto_unset_target(ref):
+			if ref == self.target:
+				self.target = None
+		wrapper = bxt.types.wrap(target)
+		self.target = weakref.ref(wrapper, auto_unset_target)
+
+	def get_target(self):
+		if self.target == None:
+			return None
+		else:
+			return self.target()
+
+	def onEvent(self, event):
+		if event.message == 'MainCharacterSet':
+			self.set_target(event.body)
 
 	def update(self):
 		self.updateWayPoints()
@@ -356,7 +325,7 @@ class CameraPath(bxt.types.ProxyGameObject):
 		#
 		# Get the vector from the camera to the target.
 		#
-		actor = Actor.Director().getMainCharacter()
+		actor = self.get_target()
 		if actor == None:
 			return
 
@@ -404,14 +373,14 @@ class CameraPath(bxt.types.ProxyGameObject):
 		self.worldPosition = self.worldPosition + self.linV
 
 		# Align the camera's Y-axis with the global Z, and align
-		# its Z-axis with the direction to the target.
-		look = actor.owner.worldPosition - self.worldPosition
+		# its Z-axis with the direction to the target. The alignment with Y is
+		# modulated by how horizontal the camera is right now - this prevents
+		# the camera from spinning too rapidly when pointing up.
+		look = dirWay.copy()
 		look.negate()
-		if actor.useLocalCoordinates():
-			axis = node.owner.getAxisVect(bxt.math.ZAXIS)
-			self.alignAxisToVect(axis, 1, CameraPath.ALIGN_Y_SPEED)
-		else:
-			self.alignAxisToVect(bxt.math.ZAXIS, 1, 0.5)
+		yfac = 1 - abs(self.getAxisVect(bxt.math.ZAXIS).dot(bxt.math.ZAXIS))
+		yfac *= CameraPath.ALIGN_Y_SPEED
+		self.alignAxisToVect(bxt.math.ZAXIS, 1, yfac)
 		self.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
 
 		if DEBUG: self.targetVis.worldPosition = target
@@ -536,35 +505,29 @@ class CameraPath(bxt.types.ProxyGameObject):
 		return node, distance
 
 	def updateWayPoints(self):
-		actor = Actor.Director().getMainCharacter()
+		actor = self.get_target()
 		if actor == None:
 			return
 
-		if actor.useLocalCoordinates():
-			bxt.math.copy_transform(actor.owner, self.pathHead.owner)
-		else:
-			self.pathHead.owner.worldPosition = actor.owner.worldPosition
-			bxt.math.reset_orientation(self.pathHead.owner)
+		self.pathHead.owner.worldPosition = actor.worldPosition
+		bxt.math.reset_orientation(self.pathHead.owner)
 
 		# Add a new node if the actor has moved far enough.
 		addNew = False
 		if len(self.path) == 0:
 			addNew = True
 		else:
-			currentPos = actor.owner.worldPosition
+			currentPos = actor.worldPosition
 			vec = currentPos - self.path[0].owner.worldPosition
 			if vec.magnitude > self.MIN_DIST:
 				addNew = True
 
 		if addNew:
 			node = CameraPath.CameraNode()
-			if actor.useLocalCoordinates():
-				bxt.math.copy_transform(actor.owner, node.owner)
-			else:
-				node.owner.worldPosition = actor.owner.worldPosition
+			node.owner.worldPosition = actor.worldPosition
 			self.path.insert(0, node)
-			if actor.getTouchedObject() != None:
-				node.owner.setParent(actor.getTouchedObject(), False)
+#			if actor.getTouchedObject() != None:
+#				node.owner.setParent(actor.getTouchedObject(), False)
 			if len(self.path) > self.MAX_NODES:
 				# Delete the oldest node.
 				self.path.pop().destroy()
@@ -625,11 +588,9 @@ class CameraCollider(CameraObserver, bxt.types.ProxyGameObject):
 				inside = True
 
 		if inside:
-			if not '_VolColCache' in ob:
-				ob['_VolColCache'] = bxt.render.parse_colour(ob['VolumeCol'])
-			UI.HUD().showFilter(ob['_VolColCache'])
+			ui.HUD().showFilter()
 		else:
-			UI.HUD().hideFilter()
+			ui.HUD().hide_filter()
 
 #
 # camera for viewing the background scene

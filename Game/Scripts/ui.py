@@ -20,7 +20,7 @@ from bge import logic
 from . import Utilities
 from . import Actor
 
-@bxt.types.singleton()
+@bxt.utils.singleton()
 class HUD(Actor.DirectorListener, Actor.ActorListener):
 	'''The head-up display manages the 2D user interface that is drawn over the
 	3D scene. This is a Singleton (see HUD instance below). This object
@@ -59,10 +59,10 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 		                  have a Name property to distinguish itself from other
 		                  gauges.'''
 		Utilities.parseChildren(self, owner)
-		self._UpdateDialogue()
-		self._UpdateLoadingScreen()
-		self._updateHealthGauge()
-		self._updateFilter()
+		self._update_dialogue()
+		self._update_loading_screen()
+		self._update_health_gauge()
+		self._update_filter()
 	
 	def OnSceneEnd(self):
 		self.__init__()
@@ -115,7 +115,7 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 		
 		self.MessageBox['Content'] = message
 	
-	def _UpdateDialogue(self):
+	def _update_dialogue(self):
 		if self.DialogueText == "":
 			if self.DialogueBox['Content'] != "":
 				self.DialogueBox['Content'] = ""
@@ -140,12 +140,12 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 		'''
 		self.DialogueText = message
 		if self.DialogueBox:
-			self._UpdateDialogue()
+			self._update_dialogue()
 	
 	def HideDialogue(self):
 		self.DialogueText = ""
 		if self.DialogueBox:
-			self._UpdateDialogue()
+			self._update_dialogue()
 	
 	def GetGauge(self, name):
 		if name in self.Gauges:
@@ -153,7 +153,7 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 		else:
 			return None
 	
-	def _UpdateLoadingScreen(self):
+	def _update_loading_screen(self):
 		if self.LoadingScreenVisible:
 			bxt.utils.set_state(self.LoadingScreen, 1)
 		else:
@@ -164,7 +164,7 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 		if len(self.LoadingScreenCallers) == 0:
 			self.LoadingScreenVisible = True
 			if self.LoadingScreen:
-				self._UpdateLoadingScreen()
+				self._update_loading_screen()
 		self.LoadingScreenCallers.add(caller)
 	
 	def HideLoadingScreen(self, caller):
@@ -174,9 +174,9 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 		if len(self.LoadingScreenCallers) == 0:
 			self.LoadingScreenVisible = False
 			if self.LoadingScreen:
-				self._UpdateLoadingScreen()
+				self._update_loading_screen()
 	
-	def _updateHealthGauge(self):
+	def _update_health_gauge(self):
 		gauge = self.GetGauge("Health")
 		if gauge == None:
 			return
@@ -194,19 +194,19 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 			oldActor.removeListener(self)
 		if newActor != None:
 			newActor.addListener(self)  
-			self._updateHealthGauge()
+			self._update_health_gauge()
 			
 	def actorHealthChanged(self, actor):
-		self._updateHealthGauge()
+		self._update_health_gauge()
 		
 	def actorOxygenChanged(self, actor):
-		self._updateHealthGauge()
+		self._update_health_gauge()
 	
 	def actorRespawned(self, actor, reason):
 		if reason != None:
 			self.showMessage(reason)
 	
-	def _updateFilter(self):
+	def _update_filter(self):
 		if self.filter == None:
 			return
 		if self.filterColour == None:
@@ -214,13 +214,13 @@ class HUD(Actor.DirectorListener, Actor.ActorListener):
 		else:
 			self.filter.show(self.filterColour)
 	
-	def showFilter(self, colour):
+	def show_filter(self, colour):
 		self.filterColour = colour
-		self._updateFilter()
+		self._update_filter()
 	
-	def hideFilter(self):
+	def hide_filter(self):
 		self.filterColour = None
-		self._updateFilter()
+		self._update_filter()
 
 @bxt.utils.owner
 def CreateHUD(o):

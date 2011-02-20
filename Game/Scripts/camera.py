@@ -19,7 +19,7 @@ from bge import logic
 import weakref
 
 import bxt
-from . import ui
+from . import ui, director
 
 DEBUG = False
 
@@ -609,3 +609,50 @@ class BackgroundCamera(CameraObserver, bxt.types.ProxyCamera):
 	def on_camera_moved(self, autoCamera):
 		self.worldOrientation = autoCamera.get_camera().worldOrientation
 		self.lens = autoCamera.get_camera().lens
+
+@bxt.utils.singleton('set_active', prefix='CCM_')
+class CloseCameraManager(bxt.utils.EventListener):
+	def __init__(self):
+		self.current = None
+		self.active = False
+
+	def _set_current(self, object):
+		def autoremove(ref):
+			self._current = None
+		if object == None:
+			self._current = None
+		else:
+			self._current = weakref.ref(object, autoremove)
+	def _get_current(self):
+		if self._current != None:
+			return self._current()
+		else:
+			return None
+	current = property(_get_current, _set_current)
+
+	def onEvent(self, event):
+		if event.message == 'MainCharacterSet':
+			if self.current:
+				self.toggle_close_mode()
+
+	def toggle_close_mode(self):
+		actor = director.Director().mainCharacter
+		if actor == None:
+			return
+
+		closeCam = actor.closeCamera
+		if closeCam == None:
+			return
+
+		if self.active:
+			AutoCamera().remove_goal(closeCam)
+			self.active = False
+		else:
+			AutoCamera().add_goal(closeCam)
+			self.active = True
+
+	def set_active(self):
+		if self.active != bxt.utils.allSensorsPositive():
+			self.toggle_close_mode()
+
+CloseCameraManager()

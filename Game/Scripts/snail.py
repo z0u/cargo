@@ -24,9 +24,10 @@ from bge import logic
 import bxt
 from . import director
 
-@bxt.types.gameobject('orient', 'look', 'save_location', 'modify_speed',
+@bxt.types.gameobject('update', 'look', 'save_location', 'modify_speed',
 		'start_crawling', prefix='')
 class Snail(bxt.types.ProxyGameObject, director.Actor):
+	# Snail states
 	#S_INIT     = 1
 	S_CRAWLING = 2
 	S_FALLING  = 3
@@ -41,15 +42,33 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 	#S_REINCARNATE = 29
 	#S_DROWNING    = 30
 
+	# Armature states
+	S_ARM_CRAWL      = 1
+	S_ARM_LOCOMOTION = 2
+	S_ARM_POP        = 16
+	S_ARM_ENTER      = 17
+	S_ARM_EXIT       = 18
+
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
 
 	def __init__(self, owner):
 		bxt.types.ProxyGameObject.__init__(self, owner)
 		self.touchedObject = None
+		self.eyeRayL = self.childrenRecursive['EyeRay.L']
+		self.eyeRayR = self.childrenRecursive['EyeRay.R']
+		self.eyeLocL = self.childrenRecursive['EyeLoc.L']
+		self.eyeLocR = self.childrenRecursive['EyeLoc.R']
+		self.armature = self.children['SnailArmature']
+		self.closeCamera = self.childrenRecursive['SnailCam']
+		self.localCoordinates = True
 
 		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
 		bxt.utils.EventBus().notify(evt)
+
+	def update(self):
+		self.orient()
+		self.update_eye_length()
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
@@ -116,7 +135,7 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 		fulcrum = pivot.children['Fulcrum_%s.%d' % (name, i)]
 		segment = pivot.children['%s.%d' % (name, i)]
 
-		#segment.alignAxisToVect(parentSegment.getAxisVect(bxt.math.XAXIS), 0)
+#		segment.alignAxisToVect(parentSegment.getAxisVect(bxt.math.XAXIS), 0)
 
 		_, p1, _ = rayR.getHitPosition()
 		_, p2, _ = rayL.getHitPosition()
@@ -143,12 +162,39 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 		parentInverse = parentSegment.worldOrientation.copy()
 		parentInverse.invert()
 		localOrnMat = parentInverse * segment.worldOrientation
-		channel = self.children['SnailArmature'].channels[segment['Channel']]
+		channel = self.armature.channels[segment['Channel']]
 		channel.rotation_quaternion = localOrnMat.to_quat()
 
 		# Recurse
 		if len(segment.children) > 0:
 			self.orient_segment(segment)
+
+	def update_eye_length(self):
+		def update_single(eyeRayOb):
+			restLength = self['EyeRestLen']
+			channel = self.armature.channels[eyeRayOb['channel']]
+
+			vect = eyeRayOb.getAxisVect(bxt.math.ZAXIS) * restLength
+			through = eyeRayOb.worldPosition + vect
+			hitOb, hitPos, _ = bxt.math.ray_cast_p2p(through, eyeRayOb,
+					prop = 'Ground')
+
+			targetLength = vect.magnitude
+			if hitOb:
+				targetLength = (hitPos - eyeRayOb.worldPosition).magnitude
+				targetLength *= 0.9
+			targetProportion = (targetLength / restLength)
+
+			currentProportion = channel.scale.y
+			if (currentProportion >= targetProportion):
+				targetProportion *= 0.5
+			else:
+				targetProportion = bxt.math.lerp(currentProportion,
+						targetProportion, self['EyeLenFac'])
+
+			channel.scale = (1.0, targetProportion, 1.0)
+		update_single(self.eyeRayL)
+		update_single(self.eyeRayR)
 
 	def _get_touched_object(self):
 		if self._touchedObject == None:
@@ -162,11 +208,53 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 		self._touchedObject = object
 	touchedObject = property(_get_touched_object, _set_touched_object)
 
-	def look(self):
-		pass
+	@bxt.utils.controller_cls
+	def look(self, c):
+		'''
+		Turn the eyes to face the nearest object in targetList. Objects with a
+		higher priority will always be preferred. In practice, the targetList
+		is provided by a Near sensor, so it won't include every object in the
+		scene. Objects with a LookAt priority of less than zero will be ignored.
+		'''
 
-	def save_location(self):
-		pass
+		def look(eye, target):
+			channel = self.armature.channels[eye['channel']]
+			_, gVec, _ = eye.getVectTo(target)
+			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.math.ZAXIS), 2)
+			eye.alignAxisToVect(gVec, 1)
+			orn = eye.localOrientation.to_quat()
+			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
+			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
+
+		def resetOrn(eye):
+			channel = self.armature.channels[eye['channel']]
+			orn = mathutils.Quaternion()
+			orn.identity()
+			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
+			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
+
+		targetList = c.sensors['sLookAt'].hitObjectList
+
+		nearest = None
+		minDist = None
+		maxPriority = 0
+
+		for target in targetList:
+			if target['LookAt'] < maxPriority:
+				continue
+			dist = self.getDistanceTo(target)
+			if nearest == None or dist < minDist:
+				nearest = target
+				minDist = dist
+				maxPriority = target['LookAt']
+
+		if not nearest:
+			resetOrn(self.eyeLocL)
+			resetOrn(self.eyeLocR)
+			return
+
+		look(self.eyeLocL, nearest)
+		look(self.eyeLocR, nearest)
 
 	def modify_speed(self):
 		pass
@@ -185,8 +273,6 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 		'''
 		if not self.has_state(Snail.S_CRAWLING):
 			return
-
-		armature = self.children['SnailArmature']
 
 		#
 		# Decide which direction to move in on the Y-axis.
@@ -230,16 +316,16 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 			# Moving forward.
 			#
 			targetBendAngleAft = targetBendAngleFore
-			armature['LocomotionFrame'] = (
-				armature['LocomotionFrame'] + locomotionStep)
+			self.armature['LocomotionFrame'] = (
+				self.armature['LocomotionFrame'] + locomotionStep)
 		elif fwdSign < 0:
 			#
 			# Reversing: invert rotation direction.
 			#
 			targetBendAngleAft = targetBendAngleFore
 			targetRot = 0.0 - targetRot
-			armature['LocomotionFrame'] = (
-				armature['LocomotionFrame'] - locomotionStep)
+			self.armature['LocomotionFrame'] = (
+				self.armature['LocomotionFrame'] - locomotionStep)
 		else:
 			#
 			# Stationary. Only bend the head.
@@ -247,8 +333,8 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 			targetBendAngleAft = 0.0
 			targetRot = 0.0
 
-		armature['LocomotionFrame'] = (
-			armature['LocomotionFrame'] % 19)
+		self.armature['LocomotionFrame'] = (
+			self.armature['LocomotionFrame'] % 19)
 
 		#
 		# Rotate the snail.

@@ -24,11 +24,127 @@ import bxt.utils
 
 class Actor:
 	def __init__(self):
-		self.safePosition = self.worldPosition
+		self.save_location()
+		self.Velocity1 = bxt.math.MINVECTOR.copy()
+		self.Velocity2 = bxt.math.MINVECTOR.copy()
+		self.set_default_prop('Health', 1.0)
+		self.closeCamera = None
+		self.localCoordinates = False
 		Director().add_actor(self)
 
-	def restore_location(self):
+	def save_location(self):
+		'''Save the location of the owner for later. This may happen when the
+		object touches a safe point.'''
+		self.safePosition = self.worldPosition
+		self.safeOrientation = self.worldOrientation
+
+	def respawn(self, reason = None):
 		self.worldPosition = self.safePosition
+		self.worldOrientation = self.safeOrientation
+		self.setLinearVelocity(bxt.math.MINVECTOR)
+		self.setAngularVelocity(bxt.math.MINVECTOR)
+
+	def drown(self):
+		'''Called when the Actor is fully submerged in water, and its Oxigen
+		property reaches zero.
+		'''
+		if self.parent != None:
+			return False
+
+		self.respawn("You drowned! Try again.")
+		self.damage(1.0, shock = False)
+
+	def record_velocity(self):
+		'''Store the velocity of this object for one frame. See
+		GetLastLinearVelocity.'''
+		self.Velocity2 = self.Velocity1
+		self.Velocity1 = self.getLinearVelocity()
+
+	def get_last_linear_velocity(self):
+		'''Get the second-last velocity of this actor. This is useful in touch
+		handlers, because the object's energy is absorbed by the time the
+		handler is called.'''
+		return self.Velocity2
+
+	def get_health(self):
+		return self['Health']
+
+	def set_health(self, value):
+		self['Health'] = value
+		for l in self.getListeners().copy():
+			l.actorHealthChanged(self)
+		print(self['Health'])
+
+	def damage(self, amount, shock):
+		self['Health'] -= amount
+		if self['Health'] < 0.0:
+			self.endObject()
+
+	def is_inside_world(self):
+		'''Make sure the actor is in a sensible place. This searches for objects
+		with the 'Ground' property directly above and directly below the actor.
+		A free actor is considered to be outside the world if:
+		 - No ground is found.
+		 - Ground is found but the actor is on the wrong side of it, i.e. the
+		   surface normal is facing away from the actor.
+		Otherwise, the actor is inside the world.
+		
+		If the actor is the child of another object, it is always considered to
+		be inside the world.
+		
+		Returns True if the object seems to be inside the world; False
+		otherwise.
+		'''
+		if self.parent != None:
+			# Responsibility delegated to parent.
+			return True
+
+		foundGround = False
+		outsideGround = True
+
+		# First, look up.
+		origin = self.worldPosition.copy()
+		vec = bxt.math.ZAXIS.copy()
+		through = origin + vec
+		ob, _, normal = self.rayCast(
+			through,             # to
+			origin,              # from
+			Director.SANITY_RAY_LENGTH,   # dist
+			'Ground',            # prop
+			1,                   # face
+			1                    # xray
+		)
+
+		if ob != None:
+			# Found some ground. Are we outside of it?
+			foundGround = True
+			if (ob):
+				if normal.dot(vec) > 0.0:
+					# Hit was from inside.
+					outsideGround = False
+
+		# Now look down.
+		vec = bxt.math.ZAXIS.copy()
+		vec.negate()
+		through = origin + vec
+		ob, _, normal = self.rayCast(
+			through,             # to
+			origin,              # from
+			Director.SANITY_RAY_LENGTH,   # dist
+			'Ground',            # prop
+			1,                   # face
+			1                    # xray
+		)
+
+		if ob != None:
+			# Found some ground. Are we outside of it?
+			foundGround = True
+			if (ob):
+				if normal.dot(vec) > 0.0:
+					# Hit was from inside.
+					outsideGround = False
+
+		return foundGround and outsideGround
 
 @bxt.utils.singleton('update', 'on_movement_impulse', 'on_button1',
 		'on_button2', prefix='')
@@ -53,75 +169,9 @@ class Director(bxt.utils.EventListener):
 	def update(self):
 		'''Make sure all actors are within the world.'''
 		for actor in self.actors:
-			if not self.is_inside_world(actor):
-				actor.restore_location("Ouch! You got squashed.")
-			actor.RecordVelocity()
-
-	def is_inside_world(self, actor):
-		'''Make sure the actor is in a sensible place. This searches for objects
-		with the 'Ground' property directly above and directly below the actor.
-		A free actor is considered to be outside the world if:
-		 - No ground is found.
-		 - Ground is found but the actor is on the wrong side of it, i.e. the
-		   surface normal is facing away from the actor.
-		Otherwise, the actor is inside the world.
-		
-		If the actor is the child of another object, it is always considered to
-		be inside the world.
-		
-		Returns True if the object seems to be inside the world; False
-		otherwise.
-		'''
-		if actor.parent != None:
-			# Responsibility delegated to parent.
-			return True
-
-		foundGround = False
-		outsideGround = True
-
-		# First, look up.
-		origin = actor.worldPosition.copy()
-		vec = bxt.math.ZAXIS.copy()
-		through = origin + vec
-		ob, _, normal = self.owner.rayCast(
-			through,             # to
-			origin,              # from
-			Director.SANITY_RAY_LENGTH,   # dist
-			'Ground',            # prop
-			1,                   # face
-			1                    # xray
-		)
-
-		if ob != None:
-			# Found some ground. Are we outside of it?
-			foundGround = True
-			if (ob):
-				if normal.dot(vec) > 0.0:
-					# Hit was from inside.
-					outsideGround = False
-
-		# Now look down.
-		vec = bxt.math.ZAXIS.copy()
-		vec.negate()
-		through = origin + vec
-		ob, _, normal = self.owner.rayCast(
-			through,             # to
-			origin,              # from
-			Director.SANITY_RAY_LENGTH,   # dist
-			'Ground',            # prop
-			1,                   # face
-			1                    # xray
-		)
-
-		if ob != None:
-			# Found some ground. Are we outside of it?
-			foundGround = True
-			if (ob):
-				if normal.dot(vec) > 0.0:
-					# Hit was from inside.
-					outsideGround = False
-
-		return foundGround and outsideGround
+			if not actor.is_inside_world(actor):
+				actor.respawn("Ouch! You got squashed.")
+			actor.record_velocity()
 
 	@bxt.utils.controller_cls
 	def on_movement_impulse(self, c):

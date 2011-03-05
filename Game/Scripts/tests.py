@@ -16,71 +16,9 @@
 #
 
 import unittest
-from bge import logic
+import bge
 import bxt
 import weakref
-
-class ProxyGameObjectTest(unittest.TestCase):
-	'''bxt.types.ProxyGameObject'''
-
-	class GOSubclass(bxt.types.ProxyGameObject):
-		def __init__(self, owner):
-			bxt.types.ProxyGameObject.__init__(self, owner)
-			self.callback = None
-
-		def setCallback(self, callback):
-			self.callback = callback
-
-		def setParent(self, *args, **kwargs):
-			self.callback()
-			bxt.types.ProxyGameObject.setParent(self, *args, **kwargs)
-
-	def setUp(self):
-		self.o1 = bxt.types.get_wrapper(logic.getCurrentScene().objects['pt.1'])
-		self.o2 = bxt.types.get_wrapper(logic.getCurrentScene().objects['pt.2'])
-
-	def test_0_unwrap(self):
-		self.assertEquals(self.o1.unwrap().__class__.__name__, 'KX_GameObject')
-
-	def test_function(self):
-		vw = self.o1.getVelocity()
-		v = self.o1.unwrap().getVelocity()
-		self.assertEqual(vw, v)
-
-	def test_property_get(self):
-		pw = self.o1.worldPosition
-		p = self.o1.unwrap().worldPosition
-		self.assertEqual(pw, p)
-
-	def test_property_set(self):
-		wp = self.o1.unwrap().worldPosition.copy()
-		wp.y = 5.0
-		self.o1.worldPosition = wp
-		
-		pw = self.o1.worldPosition
-		p = self.o1.unwrap().worldPosition
-		self.assertEqual(pw, p)
-		self.assertEqual(pw.y, 5.0)
-
-	def test_game_property(self):
-		self.o1['Foo'] = 'foo'
-		self.assertTrue('foo' in self.o1.unwrap())
-		self.assertEqual(self.o1['Foo'], 'foo')
-
-	def test_parent(self):
-		self.o1.setParent(self.o2)
-		self.assertTrue(self.o1 in self.o2.children)
-		self.assertTrue(self.o1.unwrap() in self.o2.unwrap().children)
-
-	def test_subclass(self):
-		mutation = ['TestFailed']
-		def callback():
-			mutation[0] = 'TestPassed'
-
-		o3 = ProxyGameObjectTest.GOSubclass(logic.getCurrentScene().objects['pt.3'])
-		o3.setCallback(callback)
-		o3.setParent(self.o2)
-		self.assertTrue(mutation[0] == 'TestPassed')
 
 class PriorityQueueTest(unittest.TestCase):
 	'''bxt.utils.PriorityQueue'''
@@ -175,7 +113,6 @@ class FuzzySwitchTest(unittest.TestCase):
 
 def run_tests():
 	suite = unittest.TestSuite()
-	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(ProxyGameObjectTest))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(PriorityQueueTest))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(FuzzySwitchTest))
 	unittest.TextTestRunner(verbosity=2).run(suite)
@@ -185,20 +122,20 @@ def run_tests():
 # Non-standard unit tests
 #########################
 
+@bxt.types.weakprops('wp')
+class WeakrefTest:
+	pass
+
 # Weak reference testing for ProxyGameObjects
 
-wref = None
+wt = WeakrefTest()
 wrefCountdown = 3
 wrefPass = True
 
 def weakref_init():
-	global wref
-
-	def callback(ref):
-		print("Info: Weak reference is dying.")
-
-	o = bxt.types.get_wrapper(logic.getCurrentScene().objects['weakref'])
-	wref = weakref.ref(o, callback)
+	o = bge.logic.getCurrentScene().objects['weakref']
+	# This is actually stored as a weakref, due to the weakprops decorator.
+	wt.wp = o
 
 def weakref_test():
 	global wrefCountdown
@@ -206,13 +143,13 @@ def weakref_test():
 
 	wrefCountdown -= 1
 
-	if wrefCountdown > 0 and wref() == None:
+	if wrefCountdown > 0 and wt.wp == None:
 		print("Info: Weak reference died before it was due to.")
 		wrefPass = False
 	elif wrefCountdown == 1:
-		wref().endObject()
+		wt.wp.endObject()
 	elif wrefCountdown == 0:
-		if wref() != None:
+		if wt.wp != None:
 			wrefPass = False
 			print("Info: Weak reference did not die on time.")
 
@@ -224,22 +161,3 @@ def weakref_test():
 			print("weakref_test ... FAIL")
 			print("\n----------------------------------------------------------------------")
 			print("FAIL")
-
-################
-# Demonstrations
-################
-
-@bxt.types.gameobject('update', prefix='ED_')
-class ExtensionDemo(bxt.types.ProxyGameObject):
-	'''Demonstrates:
-	 - Input filtering (makes sure all sensors are positive).
-	 - Promotion of methods to top-level functions, so they may be called from
-	   a Python controller in the game engine.
-	 - Using KX_GameObject attributes as though they belong to this class.'''
-
-	@bxt.utils.all_sensors_positive
-	def update(self):
-		currentpos = self.worldPosition.x
-		currentpos += 1.0
-		currentpos %= 5.0
-		self.worldPosition.x = currentpos

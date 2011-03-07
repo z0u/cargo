@@ -123,7 +123,7 @@ class SnailSegment(bxt.types.ProxyGameObject):
 		parentInverse.invert()
 		localOrnMat = parentInverse * self.owner.worldOrientation
 		channel = armature.channels[self.owner['Channel']]
-		channel.rotation_quaternion = localOrnMat.to_quat()
+		channel.rotation_quaternion = localOrnMat.to_quaternion()
 		
 		if (self.Child):
 			self.Child.orient(self.owner.worldOrientation, armature)
@@ -330,7 +330,7 @@ class Snail(SnailSegment, Actor.Actor):
 			_, gVec, _ = eye.getVectTo(target)
 			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.math.ZAXIS), 2)
 			eye.alignAxisToVect(gVec, 1)
-			orn = eye.localOrientation.to_quat()
+			orn = eye.localOrientation.to_quaternion()
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
 			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
 		

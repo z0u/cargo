@@ -663,7 +663,7 @@ class MenuSnail(bxt.types.ProxyGameObject):
 			_, gVec, _ = bone.getVectTo(bxt.types.unwrap(target))
 			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.math.ZAXIS), 2)
 			bone.alignAxisToVect(gVec, 1)
-			orn = bone.localOrientation.to_quat()
+			orn = bone.localOrientation.to_quaternion()
 			
 			if restOrn:
 				orn = orn.slerp(restOrn, 0.6)

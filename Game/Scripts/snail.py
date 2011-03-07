@@ -22,11 +22,11 @@ from bge import render
 from bge import logic
 
 import bxt
+import bge
 from . import director
 
-@bxt.types.gameobject('update', 'look', 'save_location', 'modify_speed',
-		'start_crawling', prefix='')
-class Snail(bxt.types.ProxyGameObject, director.Actor):
+@bxt.types.expose('update', 'look', 'modify_speed', 'start_crawling', prefix='')
+class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	# Snail states
 	#S_INIT     = 1
 	S_CRAWLING = 2
@@ -52,9 +52,11 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
 
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
-		self.touchedObject = None
+	def __init__(self, *args):
+		bge.types.KX_GameObject.__init__(self)
+		bxt.types.BX_GameObject.__init__(self)
+		director.Actor.__init__(self)
+
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
 		self.eyeRayR = self.childrenRecursive['EyeRay.R']
 		self.eyeLocL = self.childrenRecursive['EyeLoc.L']
@@ -163,7 +165,7 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 		parentInverse.invert()
 		localOrnMat = parentInverse * segment.worldOrientation
 		channel = self.armature.channels[segment['Channel']]
-		channel.rotation_quaternion = localOrnMat.to_quat()
+		channel.rotation_quaternion = localOrnMat.to_quaternion()
 
 		# Recurse
 		if len(segment.children) > 0:
@@ -196,18 +198,6 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 		update_single(self.eyeRayL)
 		update_single(self.eyeRayR)
 
-	def _get_touched_object(self):
-		if self._touchedObject == None:
-			return None
-		elif self._touchedObject.invalid:
-			self._touchedObject = None
-			return None
-		else:
-			return self._touchedObject
-	def _set_touched_object(self, object):
-		self._touchedObject = object
-	touchedObject = property(_get_touched_object, _set_touched_object)
-
 	@bxt.utils.controller_cls
 	def look(self, c):
 		'''
@@ -222,7 +212,7 @@ class Snail(bxt.types.ProxyGameObject, director.Actor):
 			_, gVec, _ = eye.getVectTo(target)
 			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.math.ZAXIS), 2)
 			eye.alignAxisToVect(gVec, 1)
-			orn = eye.localOrientation.to_quat()
+			orn = eye.localOrientation.to_quaternion()
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
 			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
 

@@ -22,7 +22,10 @@ import mathutils
 import bxt.types
 import bxt.utils
 
+@bxt.types.weakprops('touchedObject', 'closeCamera')
 class Actor:
+	SANITY_RAY_LENGTH = 10000.0
+
 	def __init__(self):
 		self.save_location()
 		self.Velocity1 = bxt.math.MINVECTOR.copy()
@@ -30,6 +33,7 @@ class Actor:
 		self.set_default_prop('Health', 1.0)
 		self.closeCamera = None
 		self.localCoordinates = False
+		self.touchedObject = None
 		Director().add_actor(self)
 
 	def save_location(self):
@@ -109,7 +113,7 @@ class Actor:
 		ob, _, normal = self.rayCast(
 			through,             # to
 			origin,              # from
-			Director.SANITY_RAY_LENGTH,   # dist
+			Actor.SANITY_RAY_LENGTH,   # dist
 			'Ground',            # prop
 			1,                   # face
 			1                    # xray
@@ -130,7 +134,7 @@ class Actor:
 		ob, _, normal = self.rayCast(
 			through,             # to
 			origin,              # from
-			Director.SANITY_RAY_LENGTH,   # dist
+			Actor.SANITY_RAY_LENGTH,   # dist
 			'Ground',            # prop
 			1,                   # face
 			1                    # xray
@@ -149,7 +153,6 @@ class Actor:
 @bxt.utils.singleton('update', 'on_movement_impulse', 'on_button1',
 		'on_button2', prefix='')
 class Director(bxt.utils.EventListener):
-	SANITY_RAY_LENGTH = 10000.0
 
 	def __init__(self):
 		self.mainCharacter = None
@@ -169,7 +172,7 @@ class Director(bxt.utils.EventListener):
 	def update(self):
 		'''Make sure all actors are within the world.'''
 		for actor in self.actors:
-			if not actor.is_inside_world(actor):
+			if not actor.is_inside_world():
 				actor.respawn("Ouch! You got squashed.")
 			actor.record_velocity()
 

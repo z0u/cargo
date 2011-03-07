@@ -21,7 +21,7 @@ import weakref
 import bxt
 from . import ui, director
 
-DEBUG = False
+DEBUG = True
 
 def hasLineOfSight(ob, other):
 	hitOb, _, _ = bxt.math.ray_cast_p2p(other, ob, prop = 'Ray')
@@ -380,7 +380,14 @@ class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
 		look.negate()
 		yfac = 1 - abs(self.getAxisVect(bxt.math.ZAXIS).dot(bxt.math.ZAXIS))
 		yfac *= CameraPath.ALIGN_Y_SPEED
+
+# TODO: reinstate
 		self.alignAxisToVect(bxt.math.ZAXIS, 1, yfac)
+#		if actor.localCoordinates:
+#			axis = node.owner.getAxisVect(bxt.math.ZAXIS)
+#			self.alignAxisToVect(axis, 1, yfac)
+#		else:
+#			self.alignAxisToVect(bxt.math.ZAXIS, 1, yfac)
 		self.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
 
 		if DEBUG: self.targetVis.worldPosition = target
@@ -509,6 +516,13 @@ class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
 		if actor == None:
 			return
 
+# TODO: reinstate
+#		if actor.localCoordinates:
+#			bxt.math.copy_transform(actor, self.pathHead.owner)
+#		else:
+#			self.pathHead.owner.worldPosition = actor.worldPosition
+#			bxt.math.reset_orientation(self.pathHead.owner)
+
 		self.pathHead.owner.worldPosition = actor.worldPosition
 		bxt.math.reset_orientation(self.pathHead.owner)
 
@@ -524,10 +538,16 @@ class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
 
 		if addNew:
 			node = CameraPath.CameraNode()
+
+# TODO: reinstate
+#			if actor.localCoordinates:
+#				bxt.math.copy_transform(actor, node.owner)
+#			else:
+#				node.owner.worldPosition = actor.worldPosition
 			node.owner.worldPosition = actor.worldPosition
 			self.path.insert(0, node)
-#			if actor.getTouchedObject() != None:
-#				node.owner.setParent(actor.getTouchedObject(), False)
+			if actor.touchedObject != None:
+				node.owner.setParent(actor.touchedObject, False)
 			if len(self.path) > self.MAX_NODES:
 				# Delete the oldest node.
 				self.path.pop().destroy()

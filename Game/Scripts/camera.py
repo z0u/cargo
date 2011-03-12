@@ -22,7 +22,7 @@ import weakref
 import bxt
 from . import ui, director
 
-DEBUG = True
+DEBUG = False
 
 def hasLineOfSight(ob, other):
 	hitOb, _, _ = bxt.math.ray_cast_p2p(other, ob, prop = 'Ray')
@@ -148,7 +148,7 @@ class AutoCamera:
 	def remove_observer(self, camObserver):
 		self.observers.remove(camObserver)
 
-
+@bxt.types.weakprops('target')
 class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A camera goal that follows the active player. It tries to follow the same
 	path as the player, so that it avoids static scenery.
@@ -160,7 +160,7 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 	# oldest nodes will be removed.
 	MAX_NODES = 50
 	# The minimum distance to leave between nodes. 
-	MIN_DIST = 1.0
+	MIN_DIST = 0.5
 
 	ACCELERATION = 0.01
 	DAMPING = 0.2
@@ -240,7 +240,7 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 			else:
 				self.setCeilingHeight(CameraPath.ZOFFSET)
 
-		def getTarget(self):
+		def get_target(self):
 			bias = self.ceilingHeight / CameraPath.ZOFFSET
 			bias *= CameraPath.CEILING_AVOIDANCE_BIAS
 			return bxt.math.lerp(self.owner.worldPosition, self.target, bias)
@@ -251,7 +251,7 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 
 		def setCeilingHeight(self, height):
 			self.ceilingHeight = height
-			if DEBUG: self.marker.worldPosition = self.getTarget()
+			if DEBUG: self.marker.worldPosition = self.get_target()
 
 	def __init__(self, old_owner):
 		# A list of CameraNodes.
@@ -272,22 +272,9 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 			self.targetVis = bxt.utils.add_object('DebugReticule')
 			self.predictVis = bxt.utils.add_object('DebugReticule')
 
-	@bxt.utils.owner_cls
-	def set_target(self, target):
-		def auto_unset_target(ref):
-			if ref == self.target:
-				self.target = None
-		self.target = weakref.ref(target, auto_unset_target)
-
-	def get_target(self):
-		if self.target == None:
-			return None
-		else:
-			return self.target()
-
 	def onEvent(self, event):
 		if event.message == 'MainCharacterSet':
-			self.set_target(event.body)
+			self.target = event.body
 
 	@bxt.types.expose_fun
 	def update(self):
@@ -301,13 +288,13 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		#
 		# Get the vector from the camera to the target.
 		#
-		actor = self.get_target()
+		actor = self.target
 		if actor == None:
 			return
 
 		# Get the vector from the camera to the next way point.
 		node, pathLength = self._getNextWayPoint()
-		target = node.getTarget()
+		target = node.get_target()
 		dirWay = target - self.worldPosition
 		dirWay.normalize()
 
@@ -357,13 +344,11 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		yfac = 1 - abs(self.getAxisVect(bxt.math.ZAXIS).dot(bxt.math.ZAXIS))
 		yfac *= CameraPath.ALIGN_Y_SPEED
 
-# TODO: reinstate
-		self.alignAxisToVect(bxt.math.ZAXIS, 1, yfac)
-#		if actor.localCoordinates:
-#			axis = node.owner.getAxisVect(bxt.math.ZAXIS)
-#			self.alignAxisToVect(axis, 1, yfac)
-#		else:
-#			self.alignAxisToVect(bxt.math.ZAXIS, 1, yfac)
+		if actor.localCoordinates:
+			axis = node.owner.getAxisVect(bxt.math.ZAXIS)
+			self.alignAxisToVect(axis, 1, yfac)
+		else:
+			self.alignAxisToVect(bxt.math.ZAXIS, 1, yfac)
 		self.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
 
 		if DEBUG: self.targetVis.worldPosition = target
@@ -460,7 +445,7 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		# Try to go straight to the actor.
 		nFound = 0
 		node = self.pathHead
-		target = node.getTarget()
+		target = node.get_target()
 		if (hasLineOfSight(self, node.owner) and
 			hasLineOfSight(self, target)):
 			return node, 0.0
@@ -470,7 +455,7 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		for currentNode in self.path:
 			nSearched += 1
 
-			currentTarget = currentNode.getTarget()
+			currentTarget = currentNode.get_target()
 
 			if (not hasLineOfSight(self, currentNode.owner) or
 				not hasLineOfSight(self, currentTarget)):
@@ -488,19 +473,15 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		return node, distance
 
 	def updateWayPoints(self):
-		actor = self.get_target()
+		actor = self.target
 		if actor == None:
 			return
 
-# TODO: reinstate
-#		if actor.localCoordinates:
-#			bxt.math.copy_transform(actor, self.pathHead.owner)
-#		else:
-#			self.pathHead.owner.worldPosition = actor.worldPosition
-#			bxt.math.reset_orientation(self.pathHead.owner)
-
-		self.pathHead.owner.worldPosition = actor.worldPosition
-		bxt.math.reset_orientation(self.pathHead.owner)
+		if actor.localCoordinates:
+			bxt.math.copy_transform(actor, self.pathHead.owner)
+		else:
+			self.pathHead.owner.worldPosition = actor.worldPosition
+			bxt.math.reset_orientation(self.pathHead.owner)
 
 		# Add a new node if the actor has moved far enough.
 		addNew = False
@@ -515,11 +496,10 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		if addNew:
 			node = CameraPath.CameraNode()
 
-# TODO: reinstate
-#			if actor.localCoordinates:
-#				bxt.math.copy_transform(actor, node.owner)
-#			else:
-#				node.owner.worldPosition = actor.worldPosition
+			if actor.localCoordinates:
+				bxt.math.copy_transform(actor, node.owner)
+			else:
+				node.owner.worldPosition = actor.worldPosition
 			node.owner.worldPosition = actor.worldPosition
 			self.path.insert(0, node)
 			if actor.touchedObject != None:

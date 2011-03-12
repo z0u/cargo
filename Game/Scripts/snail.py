@@ -135,7 +135,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		fulcrum = pivot.children['Fulcrum_%s.%d' % (name, i)]
 		segment = pivot.children['%s.%d' % (name, i)]
 
-#		segment.alignAxisToVect(parentSegment.getAxisVect(bxt.math.XAXIS), 0)
+		segment.alignAxisToVect(pivot.getAxisVect(bxt.math.XAXIS), 0)
 
 		_, p1, _ = rayR.getHitPosition()
 		_, p2, _ = rayL.getHitPosition()
@@ -151,9 +151,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			# Don't use a factor of 0.5: potential for normal to average out
 			# to be (0,0,0)
 			#
-			orientation = segment.getAxisVect(bxt.math.ZAXIS)
-			orientation = bxt.math.lerp(normal, orientation, 0.4)
-			segment.alignAxisToVect(orientation, 2)
+			segment.alignAxisToVect(normal, 2, 0.4)
 
 		#
 		# Make orientation available to armature. Use the inverse of the

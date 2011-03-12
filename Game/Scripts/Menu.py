@@ -18,8 +18,7 @@
 import bxt
 from . import Store
 
-from bge import logic
-from bge import render
+import bge
 import mathutils
 
 import weakref
@@ -47,7 +46,7 @@ class SessionManager(bxt.utils.EventListener):
 		
 		elif event.message == 'startGame':
 			# Load the level indicated in the save game.
-			logic.startGame(Store.get('/game/level', 'Outdoors.blend'))
+			bge.logic.startGame(Store.get('/game/level', 'Outdoors.blend'))
 		
 		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.
@@ -57,7 +56,7 @@ class SessionManager(bxt.utils.EventListener):
 			bxt.utils.EventBus().notify(evt)
 		
 		elif event.message == 'quit':
-			logic.endGame()
+			bge.logic.endGame()
 
 @bxt.utils.singleton('focusNext', 'focusPrevious', 'focusUp', 'focusDown',
 					'focusLeft', 'focusRight', 'mouseMove', 'mouseButton',
@@ -113,9 +112,6 @@ class InputHandler(bxt.utils.EventListener):
 			if 'Widget' in newFocus:
 				break
 			newFocus = newFocus.parent
-
-		if newFocus != None:
-			newFocus = bxt.types.get_wrapper(newFocus)
 
 		if newFocus == self.current:
 			return
@@ -232,7 +228,7 @@ class AsyncAdoptionHelper:
 @bxt.utils.controller
 def controllerInit(c):
 	'''Initialise the menu'''
-	render.showMouse(True)
+	bge.render.showMouse(True)
 	mOver = c.sensors['sMouseOver']
 	mOver.usePulseFocus = True
 
@@ -311,11 +307,12 @@ screens.append(Screen('ConfirmationDialogue', 'Confirm'))
 bxt.utils.EventBus().notify(
 		bxt.utils.Event('showScreen', 'LoadingScreen'))
 
-@bxt.types.gameobject('update', prefix='cam_')
-class Camera(bxt.utils.EventListener, bxt.types.ProxyGameObject):
+class Camera(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''A camera that adjusts its position depending on which screen is
 	visible.'''
-	
+
+	_prefix = 'cam_'
+
 	FRAME_MAP = {'OptionsScreen': 1.0,
 				 'LoadingScreen': 9.0,
 				 'CreditsScreen': 17.0}
@@ -323,17 +320,17 @@ class Camera(bxt.utils.EventListener, bxt.types.ProxyGameObject):
 	nominated frame numbers when the screen changes. Set the animation using
 	an f-curve.'''
 		
-	FRAME_RATE = 25.0 / logic.getLogicTicRate()
+	FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
 	
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
+	def __init__(self, old_owner):
 		bxt.utils.EventBus().addListener(self)
 		bxt.utils.EventBus().replayLast(self, 'showScreen')
 	
 	def onEvent(self, event):
 		if event.message == 'showScreen' and event.body in Camera.FRAME_MAP:
 			self['targetFrame'] = Camera.FRAME_MAP[event.body]
-	
+
+	@bxt.types.expose_fun
 	def update(self):
 		'''Update the camera animation frame. Should be called once per frame
 		when targetFrame != frame.'''
@@ -346,21 +343,20 @@ class Camera(bxt.utils.EventListener, bxt.types.ProxyGameObject):
 			frame = max(frame - Camera.FRAME_RATE, targetFrame)
 		self['frame'] = frame
 
-@bxt.types.gameobject('update')
-class Widget(UIObject, bxt.types.ProxyGameObject):
+class Widget(UIObject, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''An interactive UIObject. Has various states (e.g. focused, up, down) to
 	facilitate interaction. Some of the states map to a frame to allow a
 	visual progression.'''
-	
+
 	S_FOCUS = 2
 	S_DEFOCUS = 3
 	S_DOWN = 4
 	S_UP = 5
 	S_HIDDEN = 6
 	S_VISIBLE = 7
-	
-	FRAME_RATE = 25.0 / logic.getLogicTicRate()
-	
+
+	FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
+
 	# These should be matched to the FCurve or action of the object associated
 	# with this widget. The animation is not actually driven by this script; it
 	# just sets the object's 'frame' property, which should be observed by an
@@ -369,9 +365,9 @@ class Widget(UIObject, bxt.types.ProxyGameObject):
 	IDLE_FRAME = 5.0
 	FOCUS_FRAME = 9.0
 	ACTIVE_FRAME = 12.0
-	
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
+
+	def __init__(self, old_owner):
+		UIObject.__init__(self)
 		self.sensitive = True
 		self.active = False
 		self['Widget'] = True
@@ -444,6 +440,7 @@ class Widget(UIObject, bxt.types.ProxyGameObject):
 			targetFrame = Widget.IDLE_FRAME
 		self['targetFrame'] = targetFrame
 	
+	@bxt.types.expose_fun
 	def update(self):
 		targetFrame = self['targetFrame']
 		frame = self['frame']
@@ -459,7 +456,7 @@ class Widget(UIObject, bxt.types.ProxyGameObject):
 		elif oldFrame == 1.0:
 			self.updateVisibility(True)
 
-		c = logic.getCurrentController()
+		c = bge.logic.getCurrentController()
 		c.activate(c.actuators[0])
 	
 	def updateVisibility(self, visible):
@@ -472,26 +469,23 @@ class Widget(UIObject, bxt.types.ProxyGameObject):
 			evt = bxt.utils.Event('sensitivityChanged', self.sensitive)
 			bxt.utils.EventBus().notify(evt)
 
-@bxt.types.gameobject()
 class Button(Widget):
 	# A Widget has everything needed for a simple button.
-	def __init__(self, owner):
-		Widget.__init__(self, owner)
+	def __init__(self, old_owner):
+		Widget.__init__(self, old_owner)
 
-@bxt.types.gameobject()
 class SaveButton(Button):
-	def __init__(self, owner):
-		Button.__init__(self, owner)
+	def __init__(self, old_owner):
+		Button.__init__(self, old_owner)
 		self.id = 0
 		
 	def updateVisibility(self, visible):
 		super(SaveButton, self).updateVisibility(visible)
 		self.children['IDCanvas'].setVisible(visible, True)
 
-@bxt.types.gameobject()
 class Checkbox(Button):
-	def __init__(self, owner):
-		Button.__init__(self, owner)
+	def __init__(self, old_owner):
+		Button.__init__(self, old_owner)
 		self.checked = False
 		if 'dataBinding' in self:
 			self.checked = Store.get(self['dataBinding'], self['dataDefault'])
@@ -524,10 +518,9 @@ class Checkbox(Button):
 		self.children['CheckOff']['frame'] = self['frame']
 		self.children['CheckOn']['frame'] = self['frame']
 
-@bxt.types.gameobject()
-class ConfirmationPage(Widget, bxt.utils.EventListener):
-	def __init__(self, owner):
-		Widget.__init__(self, owner)
+class ConfirmationPage(bxt.utils.EventListener, Widget):
+	def __init__(self, old_owner):
+		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 		
 		self.lastScreen = ''
@@ -566,12 +559,11 @@ class ConfirmationPage(Widget, bxt.utils.EventListener):
 				bxt.utils.EventBus().notify(evt)
 				self.children['ConfirmText']['Content'] = ""
 
-@bxt.types.gameobject()
 class GameDetailsPage(Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to
 	mouse events.'''
-	def __init__(self, owner):
-		Widget.__init__(self, owner)
+	def __init__(self, old_owner):
+		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 	
 	def updateVisibility(self, visible):
@@ -585,35 +577,35 @@ class GameDetailsPage(Widget):
 			self.children['StoryDetails']['Content'] = Store.get(
 				'/game/storySummary', 'Start a new game.')
 
-@bxt.types.gameobject('draw')
 class CreditsPage(Widget):
 	'''Controls the display of credits.'''
 	DELAY = 180
 	
-	def __init__(self, owner):
-		Widget.__init__(self, owner)
+	def __init__(self, old_owner):
+		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 		self.index = 0
 		self.delayTimer = 0
-	
+
 	def updateVisibility(self, visible):
 		super(CreditsPage, self).updateVisibility(visible)
 		for child in self.children:
 			child.setVisible(visible, True)
-		
+
 		if not visible:
 			self.children['Role']['Content'] = ""
 			self.children['People']['Content'] = ""
 			self.index = 0
 			self.delayTimer = 0
-	
+
 	def drawNext(self):
 		role, people = CREDITS[self.index]
 		self.children['Role']['Content'] = role
 		self.children['People']['Content'] = people
 		self.index += 1
 		self.index %= len(CREDITS)
-	
+
+	@bxt.types.expose_fun
 	def draw(self):
 		if self.children['People']['Rendering'] or self.children['Role']['Rendering']:
 			self.delayTimer = CreditsPage.DELAY
@@ -622,10 +614,8 @@ class CreditsPage(Widget):
 			if self.delayTimer <= 0:
 				self.drawNext()
 
-@bxt.types.gameobject()
-class Subtitle(bxt.utils.EventListener, bxt.types.ProxyGameObject):
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
+class Subtitle(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	def __init__(self, old_owner):
 		bxt.utils.EventBus().addListener(self)
 		bxt.utils.EventBus().replayLast(self, 'screenShown')
 	
@@ -633,10 +623,8 @@ class Subtitle(bxt.utils.EventListener, bxt.types.ProxyGameObject):
 		if event.message == 'screenShown':
 			self['Content'] = event.body
 
-@bxt.types.gameobject('update')
-class MenuSnail(bxt.types.ProxyGameObject):
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
+class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	def __init__(self, old_owner):
 		self.armature = self.children['SnailArm_Min']
 		self.EyeLocL = self.armature.children['Eyeref_L']
 		self.EyeLocR = self.armature.children['Eyeref_R']
@@ -646,11 +634,12 @@ class MenuSnail(bxt.types.ProxyGameObject):
 		# turning.
 		self.HeadLoc_rest = mathutils.Quaternion(self.armature.channels[
 				self.HeadLoc['channel']].rotation_quaternion)
-	
+
+	@bxt.types.expose_fun
 	def update(self):
 		target = InputHandler().current
 		if not target:
-			target = logic.getCurrentScene().objects['Camera']
+			target = bge.logic.getCurrentScene().objects['Camera']
 		self.lookAt(target)
 	
 	def lookAt(self, target):
@@ -660,7 +649,7 @@ class MenuSnail(bxt.types.ProxyGameObject):
 
 		def look(bone, target, restOrn = None):
 			channel = self.armature.channels[bone['channel']]
-			_, gVec, _ = bone.getVectTo(bxt.types.unwrap(target))
+			_, gVec, _ = bone.getVectTo(target)
 			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.math.ZAXIS), 2)
 			bone.alignAxisToVect(gVec, 1)
 			orn = bone.localOrientation.to_quaternion()

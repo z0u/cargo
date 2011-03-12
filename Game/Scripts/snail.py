@@ -25,8 +25,9 @@ import bxt
 import bge
 from . import director
 
-@bxt.types.expose('update', 'look', 'modify_speed', 'start_crawling', prefix='')
 class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = ''
+
 	# Snail states
 	#S_INIT     = 1
 	S_CRAWLING = 2
@@ -53,8 +54,6 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	MIN_SPEED = -3.0
 
 	def __init__(self, old_owner):
-#		director.Actor.__init__(self)
-
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
 		self.eyeRayR = self.childrenRecursive['EyeRay.R']
 		self.eyeLocL = self.childrenRecursive['EyeLoc.L']
@@ -66,6 +65,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
 		bxt.utils.EventBus().notify(evt)
 
+	@bxt.types.expose_fun
 	def update(self):
 		self.orient()
 		self.update_eye_length()
@@ -196,6 +196,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		update_single(self.eyeRayL)
 		update_single(self.eyeRayR)
 
+	@bxt.types.expose_fun
 	@bxt.utils.controller_cls
 	def look(self, c):
 		'''
@@ -244,9 +245,11 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		look(self.eyeLocL, nearest)
 		look(self.eyeLocR, nearest)
 
+	@bxt.types.expose_fun
 	def modify_speed(self):
 		pass
 
+	@bxt.types.expose_fun
 	def start_crawling(self):
 		'''Called when the snail enters its crawling state.'''
 		#

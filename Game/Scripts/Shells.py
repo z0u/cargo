@@ -37,7 +37,7 @@ class ShellBase(Actor.Actor):
 	def __init__(self, owner):
 		Actor.Actor.__init__(self, owner)
 		
-		self.Snail = None
+		self.snail = None
 		self.CargoHook = None
 		
 		Utilities.parseChildren(self, owner)
@@ -80,7 +80,7 @@ class ShellBase(Actor.Actor):
 	
 	def OnPickedUp(self, snail, animate):
 		'''Called when a snail picks up this shell.'''
-		self.Snail = snail
+		self.snail = snail
 		self.owner['Carried'] = True
 		bxt.utils.set_state(self.owner, S_CARRIED)
 		bxt.utils.add_state(self.owner, S_ALWAYS)
@@ -94,7 +94,7 @@ class ShellBase(Actor.Actor):
 	
 	def OnDropped(self):
 		'''Called when a snail drops this shell.'''
-		self.Snail = None
+		self.snail = None
 		self.owner['Carried'] = False
 		bxt.utils.set_state(self.owner, S_IDLE)
 		bxt.utils.add_state(self.owner, S_ALWAYS)
@@ -135,24 +135,24 @@ class ShellBase(Actor.Actor):
 			return
 		
 		if positive and triggered:
-			self.Snail.exitShell(animate = True)
+			self.snail.exitShell(animate = True)
 		
 	def restore_location(self, reason = None):
 		Actor.Actor.restore_location(self, reason)
 		if bxt.utils.has_state(self.owner, S_OCCUPIED):
-			self.Snail.exitShell(False)
+			self.snail.exitShell(False)
 	
 	def getHealth(self):
 		if (bxt.utils.has_state(self.owner, S_CARRIED) or
 		    bxt.utils.has_state(self.owner, S_OCCUPIED)):
-			return self.Snail.getHealth()
+			return self.snail.getHealth()
 		else:
 			return Actor.Actor.getHealth(self)
 	
 	def setHealth(self, value):
 		if (bxt.utils.has_state(self.owner, S_CARRIED) or
 		    bxt.utils.has_state(self.owner, S_OCCUPIED)):
-			return self.Snail.setHealth(value)
+			return self.snail.setHealth(value)
 		else:
 			return Actor.Actor.setHealth(self, value)
 		

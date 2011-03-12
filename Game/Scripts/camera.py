@@ -158,9 +158,9 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 
 	# The maximum number of nodes to track. Once this number is reached, the
 	# oldest nodes will be removed.
-	MAX_NODES = 20
+	MAX_NODES = 50
 	# The minimum distance to leave between nodes. 
-	MIN_DIST = 3.0
+	MIN_DIST = 1.0
 
 	ACCELERATION = 0.01
 	DAMPING = 0.2

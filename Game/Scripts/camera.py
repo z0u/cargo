@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bge
 from bge import logic
 import weakref
 
@@ -63,8 +64,7 @@ class AutoCamera:
 			if ref == self.camera:
 				self.camera = None
 
-		wrapper = bxt.types.wrap(camera, bxt.types.ProxyCamera)
-		self.camera = weakref.ref(wrapper, auto_unset_camera)
+		self.camera = weakref.ref(camera, auto_unset_camera)
 		self.defaultLens = camera.lens
 		logic.getCurrentScene().active_camera = camera
 
@@ -115,28 +115,15 @@ class AutoCamera:
 		RemoveGoal to restore the previous relationship. The camera position
 		isn't changed until update is called.
 		'''
-
-		# Wrap the goal in a proxy object, if it doesn't already have one.
-		wrapper = None
-		if bxt.types.has_wrapper(goal):
-			wrapper = bxt.types.get_wrapper(goal)
-		elif bxt.types.is_wrapper(goal):
-			wrapper = goal
-		else:
-			if hasattr(goal, 'lens'):
-				wrapper = bxt.types.ProxyCamera(goal)
-			else:
-				wrapper = bxt.types.ProxyGameObject(goal)
-
 		# Set some defaults for properties.
-		wrapper.set_default_prop('SlowFac', 0.1)
-		wrapper.set_default_prop('InstantCut', False)
-		wrapper.set_default_prop('Priority', 1)
+		bxt.utils.set_default_prop(goal, 'SlowFac', 0.1)
+		bxt.utils.set_default_prop(goal, 'InstantCut', False)
+		bxt.utils.set_default_prop(goal, 'Priority', 1)
 
 		# Add the goal to the queue.
-		self.queue.push(wrapper, wrapper['Priority'])
+		self.queue.push(goal, goal['Priority'])
 
-		if self.queue.top() == wrapper['InstantCut']:
+		if self.queue.top() == goal['InstantCut']:
 			# Goal is on top of the stack: it will be switched to next
 			self.instantCut = True
 
@@ -146,25 +133,14 @@ class AutoCamera:
 		will switch to follow the next one on the stack. The transform isn't
 		changed until update is called.
 		'''
-
-		wrapper = None
-		if bxt.types.has_wrapper(goal):
-			wrapper = bxt.types.get_wrapper(goal)
-		elif bxt.types.is_wrapper(goal):
-			wrapper = goal
-		else:
-			# add_goal would have added a wrapper, so this object can't be in
-			# the queue.
+		if not goal in self.queue:
 			return
 
-		if not wrapper in self.queue:
-			return
-
-		if self.queue.top() == wrapper and wrapper['InstantCut']:
+		if self.queue.top() == goal and goal['InstantCut']:
 			# Goal is on top of the stack: it's in use!
 			self.instantCut = True
 
-		self.queue.discard(wrapper)
+		self.queue.discard(goal)
 	
 	def add_observer(self, camObserver):
 		self.observers.add(camObserver)
@@ -173,11 +149,12 @@ class AutoCamera:
 		self.observers.remove(camObserver)
 
 
-@bxt.types.gameobject('update', prefix='CP_')
-class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
+class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A camera goal that follows the active player. It tries to follow the same
 	path as the player, so that it avoids static scenery.
 	'''
+
+	_prefix = 'CP_'
 
 	# The maximum number of nodes to track. Once this number is reached, the
 	# oldest nodes will be removed.
@@ -276,8 +253,7 @@ class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
 			self.ceilingHeight = height
 			if DEBUG: self.marker.worldPosition = self.getTarget()
 
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
+	def __init__(self, old_owner):
 		# A list of CameraNodes.
 		self.path = []
 		self.pathHead = CameraPath.CameraNode()
@@ -301,8 +277,7 @@ class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
 		def auto_unset_target(ref):
 			if ref == self.target:
 				self.target = None
-		wrapper = bxt.types.wrap(target)
-		self.target = weakref.ref(wrapper, auto_unset_target)
+		self.target = weakref.ref(target, auto_unset_target)
 
 	def get_target(self):
 		if self.target == None:
@@ -314,6 +289,7 @@ class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
 		if event.message == 'MainCharacterSet':
 			self.set_target(event.body)
 
+	@bxt.types.expose_fun
 	def update(self):
 		self.updateWayPoints()
 		self.advanceGoal()
@@ -581,16 +557,14 @@ class CameraPath(bxt.types.ProxyGameObject, bxt.utils.EventListener):
 # Helper for sensing when camera is inside something.
 #
 
-@bxt.types.gameobject()
-class CameraCollider(CameraObserver, bxt.types.ProxyGameObject):
+class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Helper for sensing when camera is inside something. This senses when the
 	camera touches a volumetric object, and then tracks to see when the camera
 	enters and leaves that object, adjusting the screen filter appropriately.'''
 
 	MAX_DIST = 1000.0
 
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
+	def __init__(self, old_owner):
 		AutoCamera().add_observer(self)
 
 	def on_camera_moved(self, autoCamera):
@@ -616,14 +590,12 @@ class CameraCollider(CameraObserver, bxt.types.ProxyGameObject):
 # camera for viewing the background scene
 #
 
-@bxt.types.gameobject()
-class BackgroundCamera(CameraObserver, bxt.types.ProxyCamera):
+class BackgroundCamera(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''Links a second camera to the main 3D camera. This second, background
 	camera will always match the orientation and zoom of the main camera. It is
 	guaranteed to update after the main one.'''
 
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
+	def __init__(self, old_owner):
 		AutoCamera().add_observer(self)
 
 	def on_camera_moved(self, autoCamera):

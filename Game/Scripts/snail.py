@@ -52,10 +52,8 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
 
-	def __init__(self, *args):
-		bge.types.KX_GameObject.__init__(self)
-		bxt.types.BX_GameObject.__init__(self)
-		director.Actor.__init__(self)
+	def __init__(self, old_owner):
+#		director.Actor.__init__(self)
 
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
 		self.eyeRayR = self.childrenRecursive['EyeRay.R']
@@ -381,14 +379,12 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			if self.has_state(Snail.S_HASSHELL):
 				self.dropShell(animate = True)
 
-@bxt.types.gameobject()
-class Trail(bxt.types.ProxyGameObject):
+class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2
 	S_SLOW = 3
 	S_FAST = 4
 	
-	def __init__(self, owner):
-		bxt.types.ProxyGameObject.__init__(self, owner)
+	def __init__(self, old_owner):
 		self.lastMinorPos = self.worldPosition.copy()
 		self.lastMajorPos = self.lastMinorPos.copy()
 		self.paused = False
@@ -407,7 +403,7 @@ class Trail(bxt.types.ProxyGameObject):
 		
 		scene = logic.getCurrentScene()
 		spot = self.children[self.spotIndex]
-		spotI = scene.addObject(spot, self.unwrap())
+		spotI = scene.addObject(spot, self)
 		
 		#
 		# Attach the spot to the object that the snail is crawling on.
@@ -419,15 +415,15 @@ class Trail(bxt.types.ProxyGameObject):
 	
 	def moved(self, speedMultiplier, touchedObject):
 		pos = self.worldPosition
-		
+
 		distMajor = (pos - self.lastMajorPos).magnitude
 		if distMajor > self['TrailSpacingMajor']:
 			self.lastMajorPos = pos.copy()
 			self.paused = not self.paused
-		
+
 		if self.paused:
 			return
-		
+
 		distMinor = (pos - self.lastMinorPos).magnitude
 		if distMinor > self['TrailSpacingMinor']:
 			self.lastMinorPos = pos.copy()

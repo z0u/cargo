@@ -43,7 +43,8 @@ class ShellBase(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject
 
 		bxt.utils.set_state(self.occupier, 1)
 
-		self['LookAt'] = True
+		self.set_default_prop('LookAt', 10)
+		self['_DefaultLookAt'] = self['LookAt']
 		self.set_state(ShellBase.S_IDLE)
 		self.add_state(ShellBase.S_ALWAYS)
 
@@ -54,7 +55,8 @@ class ShellBase(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject
 		self.set_state(ShellBase.S_CARRIED)
 		self.add_state(ShellBase.S_ALWAYS)
 		self['NoPickupAnim'] = not animate
-		self['LookAt'] = False
+		self['_DefaultLookAt'] = self['LookAt']
+		self['LookAt'] = -1
 
 	def on_dropped(self):
 		'''Called when a snail drops this shell.'''
@@ -62,7 +64,8 @@ class ShellBase(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject
 		self['Carried'] = False
 		self.set_state(ShellBase.S_IDLE)
 		self.add_state(ShellBase.S_ALWAYS)
-		self['LookAt'] = True
+		self.localScale = (1.0, 1.0, 1.0)
+		self['LookAt'] = self['_DefaultLookAt']
 
 	def on_pre_enter(self):
 		'''Called when the snail starts to enter this shell. This may happen
@@ -84,6 +87,7 @@ class ShellBase(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject
 		control is transferred).'''
 		self.set_state(ShellBase.S_CARRIED)
 		self.add_state(ShellBase.S_ALWAYS)
+		self.localScale = (1.0, 1.0, 1.0)
 		self['CurrentBuoyancy'] = self['Buoyancy']
 		if self.occupier:
 			bxt.utils.set_state(self.occupier, 1)

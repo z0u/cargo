@@ -25,7 +25,7 @@ import bxt
 import bge
 from . import director
 
-@bxt.types.weakprops('shell')
+@bxt.types.weakprops('shell', 'nearestPickup')
 class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = ''
 
@@ -67,6 +67,9 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.closeCamera = self.childrenRecursive['SnailCam']
 		self.localCoordinates = True
 		self.shell = None
+		self.nearestPickup = None
+
+		self.frameCounter = 0
 
 		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
 		bxt.utils.EventBus().notify(evt)
@@ -81,24 +84,22 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		counter = bxt.utils.Counter()
 		avNormal = bxt.math.ZEROVEC.copy()
 		ob0, p0, n0 = self.children['ArcRay_Root.0'].getHitPosition()
-		avNormal += n0
 		if ob0:
+			avNormal += n0
 			counter.add(ob0)
 		ob1, p1, n1 = self.children['ArcRay_Root.1'].getHitPosition()
-		avNormal += n1
 		if ob1:
+			avNormal += n1
 			counter.add(ob1)
 		ob2, p2, n2 = self.children['ArcRay_Root.2'].getHitPosition()
-		avNormal += n2
 		if ob2:
+			avNormal += n2
 			counter.add(ob2)
 		ob3, p3, n3 = self.children['ArcRay_Root.3'].getHitPosition()
-		avNormal += n3
 		if ob3:
+			avNormal += n3
 			counter.add(ob3)
 
-		avNormal /= 4.0
-		
 		#
 		# Inherit the angular velocity of a nearby surface. The object that was
 		# hit by the most rays (above) is used.
@@ -111,25 +112,35 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			if angV.magnitude < bxt.math.EPSILON:
 				angV = bxt.math.MINVECTOR
 			self.setAngularVelocity(angV)
-		
+
 		#
 		# Set property on object so it knows whether it's falling. This is used
 		# to detect when to transition from S_FALLING to S_CRAWLING.
 		#
 		self['nHit'] = counter.n
-		
-		#
-		# Derive normal from hit points and update orientation. This gives a
-		# smoother transition than just averaging the normals returned by the
-		# rays.
-		#
-		normal = bxt.math.quadNormal(p0, p1, p2, p3)
-		if normal.dot(avNormal) < 0.0:
-			normal.negate()
-		self.alignAxisToVect(normal, 2)
+
+		if counter.n > 0:
+			avNormal /= counter.n
+
+		if counter.n == 1:
+			# Only one ray hit; use it to try to snap to a sane orientation.
+			# Subsequent frames should then have more rays hit.
+			self.alignAxisToVect(avNormal, 2)
+		elif counter.n > 1:
+			#
+			# Derive normal from hit points and update orientation. This gives a
+			# smoother transition than just averaging the normals returned by the
+			# rays. Rays that didn't hit will use their last known value.
+			#
+			normal = bxt.math.quadNormal(p0, p1, p2, p3)
+			if normal.dot(avNormal) < 0.0:
+				normal.negate()
+			self.alignAxisToVect(normal, 2)
 		
 		self.orient_segment(self.children['Head.0'])
 		self.orient_segment(self.children['Tail.0'])
+
+		self.frameCounter += 1
 
 	def orient_segment(self, parentSegment):
 		name = parentSegment.name[:-2]
@@ -255,19 +266,24 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		bxt.math.set_rel_pos(shell, self.cargoHold, referential)
 		shell.setParent(self.cargoHold)
 
-	def _get_nearest_shell(self, shells):
+	def _get_nearest_pickup(self, obs):
 		'''Find the nearest shell that isn't being carried.'''
-		for shell in sorted(shells, key=bxt.math.DistanceKey(self)):
-			if not shell['Carried']:
-				return shell
+		for ob in sorted(obs, key=bxt.math.DistanceKey(self)):
+			if not ob['Carried']:
+				return ob
 		return None
 
 	@bxt.types.expose_fun
 	@bxt.utils.controller_cls
-	def set_shell_c(self, controller):
-		shells = controller.sensors['sShellPickup'].hitObjectList
-		shell = self._get_nearest_shell(shells)
-		self.set_shell(shell, True)
+	def scan_pickups(self, controller):
+		obs = controller.sensors['sPickup'].hitObjectList
+		for ob in sorted(obs, key=bxt.math.DistanceKey(self)):
+			if not ob['Carried']:
+				self.nearestPickup = ob
+				break
+
+		if self.frameCounter < 5:
+			self.set_shell(self.nearestPickup, False)
 
 	def set_shell(self, shell, animate):
 		'''
@@ -295,10 +311,40 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.shockwave.worldOrientation = shell.worldOrientation
 			bxt.utils.set_state(self.shockwave, 2)
 
+	def drop_shell(self, animate):
+		'''Causes the snail to drop its shell, if it is carrying one.'''
+		if not self.has_state(Snail.S_HASSHELL):
+			return
+
+		self.rem_state(Snail.S_HASSHELL)
+		self.add_state(Snail.S_POPPING)
+		bxt.utils.add_state(self.armature, Snail.S_ARM_POP)
+		self.armature['NoTransition'] = not animate
+
+	@bxt.types.expose_fun
+	def on_drop_shell(self):
+		'''Unhooks the current shell by un-setting its parent.'''
+		if not self.has_state(Snail.S_POPPING):
+			return
+
+		self.rem_state(Snail.S_POPPING)
+		self.add_state(Snail.S_NOSHELL)
+
+		self.shell.removeParent()
+		velocity = bxt.math.ZAXIS.copy()
+		velocity.x += 0.5 - bge.logic.getRandomFloat()
+		velocity = self.getAxisVect(velocity)
+		velocity *= self['ShellPopForce']
+		self.shell.setLinearVelocity(velocity)
+		self['HasShell'] = 0
+		self['DynamicMass'] = self['DynamicMass'] - self.shell['DynamicMass']
+		self.shell.on_dropped()
+		self.shell = None
+
 	def enter_shell(self, animate):
 		'''
 		Starts the snail entering the shell. Shell.on_pre_enter will be called
-		immediately; Snail.onShellEnter and Shell.on_entered will be called
+		immediately; Snail.on_enter_shell and Shell.on_entered will be called
 		later, at the appropriate point in the animation.
 		'''
 		if not self.has_state(Snail.S_HASSHELL):
@@ -313,6 +359,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.shell.on_pre_enter()
 
 	@bxt.types.expose_fun
+	@bxt.utils.all_sensors_positive
 	def on_enter_shell(self):
 		'''Transfers control of the character to the shell. The snail must have
 		a shell.'''
@@ -327,7 +374,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		angV = self.getAngularVelocity()
 
 		self.shell.removeParent()
-		self.setVisible(0, 1)
+		self.armature.setVisible(0, 1)
 		self.localScale = (0.01, 0.01, 0.01)
 		self.setParent(self.shell)
 
@@ -367,7 +414,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.localScale = (1.0, 1.0, 1.0)
 		if self.shell['ExitCentre']:
 			self.worldPosition = self.shell.worldPosition
-		self.setVisible(True, True)
+		self.armature.setVisible(True, True)
 		self._stow_shell(self.shell)
 
 		self.setLinearVelocity(linV)
@@ -527,13 +574,13 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			elif self.has_state(Snail.S_HASSHELL):
 				self.enter_shell(animate = True)
 			elif self.has_state(Snail.S_NOSHELL):
-				if self.NearestShell:
-					self.set_shell(self.NearestShell, animate = True)
+				if self.nearestPickup:
+					self.set_shell(self.nearestPickup, animate = True)
 
 	def on_button2(self, positive, triggered):
 		if positive and triggered:
 			if self.has_state(Snail.S_HASSHELL):
-				self.dropShell(animate = True)
+				self.drop_shell(animate = True)
 
 class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2

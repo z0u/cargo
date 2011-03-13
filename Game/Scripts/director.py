@@ -17,6 +17,7 @@
 
 import weakref
 
+import bge
 import mathutils
 
 import bxt.types
@@ -27,7 +28,6 @@ class Actor:
 	SANITY_RAY_LENGTH = 10000.0
 
 	def __init__(self):
-		print('Actor.__init__', self)
 		self.save_location()
 		self.Velocity1 = bxt.math.MINVECTOR.copy()
 		self.Velocity2 = bxt.math.MINVECTOR.copy()
@@ -153,14 +153,16 @@ class Actor:
 
 @bxt.types.weakprops('mainCharacter')
 @bxt.utils.singleton('update', 'on_movement_impulse', 'on_button1',
-		'on_button2', prefix='')
+		'on_button2', 'toggle_suspended', 'slow_motion_pulse', prefix='')
 class Director(bxt.utils.EventListener):
+	SLOW_TICS_PER_FRAME = 10
 
 	def __init__(self):
 		self.mainCharacter = None
 		self.actors = weakref.WeakSet()
 		bxt.utils.EventBus().addListener(self)
 		bxt.utils.EventBus().replayLast(self, 'MainCharacterSet')
+		self.slowMotionCount = 0
 
 	def add_actor(self, actor):
 		self.actors.add(actor)
@@ -199,5 +201,36 @@ class Director(bxt.utils.EventListener):
 		s = c.sensors[0]
 		if self.mainCharacter:
 			self.mainCharacter.on_button2(s.positive, s.triggered)
+
+	def _get_main_scene(self):
+		if self.mainCharacter == None:
+			return None
+		for s in bge.logic.getSceneList():
+			if self.mainCharacter in s.objects:
+				return s
+		return None
+
+	@bxt.utils.all_sensors_positive
+	@bxt.utils.controller_cls
+	def toggle_suspended(self, c):
+		if self.mainCharacter == None:
+			return
+
+		scene = self._get_main_scene()
+
+		if scene.suspended:
+			scene.resume()
+		else:
+			scene.suspend()
+
+	def slow_motion_pulse(self):
+		self.slowMotionCount += 1
+		if self.slowMotionCount == self.SLOW_TICS_PER_FRAME:
+			scene = self._get_main_scene()
+			scene.resume()
+		elif self.slowMotionCount > self.SLOW_TICS_PER_FRAME:
+			scene = self._get_main_scene()
+			scene.suspend()
+			self.slowMotionCount = 0
 
 Director()

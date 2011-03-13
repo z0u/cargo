@@ -160,9 +160,9 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 	# oldest nodes will be removed.
 	MAX_NODES = 50
 	# The minimum distance to leave between nodes. 
-	MIN_DIST = 0.5
+	MIN_DIST = 2
 
-	ACCELERATION = 0.01
+	ACCELERATION = 0.05
 	DAMPING = 0.2
 
 	# The preferred distance from the target (a point above the actor).
@@ -170,7 +170,7 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 	# lower when the ceiling is low.
 	REST_DISTANCE = 5.0
 	# The amount to expand the radius when it is safe to do so.
-	EXPAND_FACTOR = 2.0
+	EXPAND_FACTOR = 4.0
 	# The amount to expand the radius when no other factors are at play. Ideally
 	# REST_DISTANCE would just be increased, but in practice the contraction
 	# factor is never below about 1.5 - so a similar value is used for
@@ -196,7 +196,7 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 	# Responsiveness of the radius adjustment.
 	RADIUS_SPEED = 0.1
 	# Responsiveness of the camera orientation.
-	ALIGN_Y_SPEED = 0.3
+	ALIGN_Y_SPEED = 0.05
 	ALIGN_Z_SPEED = 0.5
 	# Distance to project predictive node.
 	PREDICT_FWD = 20.0
@@ -342,6 +342,7 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		look = dirWay.copy()
 		look.negate()
 		yfac = 1 - abs(self.getAxisVect(bxt.math.ZAXIS).dot(bxt.math.ZAXIS))
+		yfac = (yfac * 0.5) + 0.5
 		yfac *= CameraPath.ALIGN_Y_SPEED
 
 		if actor.localCoordinates:

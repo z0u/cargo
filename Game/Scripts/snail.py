@@ -78,7 +78,6 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
-		print('--- Orient ---')
 		counter = bxt.utils.Counter()
 		avNormal = bxt.math.ZEROVEC.copy()
 		ob0, p0, n0 = self.children['ArcRay_Root.0'].getHitPosition()

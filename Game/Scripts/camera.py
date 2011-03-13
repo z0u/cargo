@@ -562,7 +562,7 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 				inside = True
 
 		if inside:
-			ui.HUD().showFilter()
+			ui.HUD().show_filter(ob['VolumeCol'])
 		else:
 			ui.HUD().hide_filter()
 

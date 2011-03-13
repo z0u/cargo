@@ -15,154 +15,117 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
-from . import Actor
-from . import camera
+import bge
 import mathutils
+
+import bxt
+from . import director
+from . import camera
 from . import Utilities
 
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
 
-#
-# States.
-#
-S_INIT     = 1
-S_IDLE     = 2
-S_CARRIED  = 3
-S_OCCUPIED = 4
-S_ALWAYS   = 16
+@bxt.types.weakprops('snail')
+class ShellBase(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	S_INIT     = 1
+	S_IDLE     = 2
+	S_CARRIED  = 3
+	S_OCCUPIED = 4
+	S_ALWAYS   = 16
 
-class ShellBase(Actor.Actor):
-	def __init__(self, owner):
-		Actor.Actor.__init__(self, owner)
-		
+	def __init__(self, old_owner):
+		director.Actor.__init__(self)
+
 		self.snail = None
-		self.CargoHook = None
-		
-		Utilities.parseChildren(self, owner)
-		
-		#
-		# A cargo hook is required.
-		#
-		if not self.CargoHook:
-			raise Utilities.SemanticException(
-				"Warning: Shell %s has no cargo hook." % self.owner.name)
-		
-		if self.Occupier:
-			self.Occupier.state = 1<<0 # state 1
-		
-		self.LookAt = -1
-		bxt.utils.set_state(self.owner, S_IDLE)
-		bxt.utils.add_state(self.owner, S_ALWAYS)
-	
-	def parseChild(self, child, t):
-		if t == 'CargoHook':
-			self.CargoHook = child
-			return True
-		elif t == 'Occupier':
-			self.Occupier = child
-			return True
-		else:
-			return False
-	
-	def CanSuspend(self):
-		'''Only suspend if this shell is currently dynamic.
-		No attached snail -> Dynamic.
-		Being carried by snail -> Not dynamic.
-		Occupied by snail -> Dynamic.'''
-		if self.owner['Carried']:
-			return False
-		elif self.owner['Occupied']:
-			return True
-		else:
-			return True
-	
-	def OnPickedUp(self, snail, animate):
+		self.cargoHook = self.find_descendant([('Type', 'CargoHook')])
+		self.occupier = self.find_descendant([('Type', 'Occupier')])
+
+		bxt.utils.set_state(self.occupier, 1)
+
+		self['LookAt'] = True
+		self.set_state(ShellBase.S_IDLE)
+		self.add_state(ShellBase.S_ALWAYS)
+
+	def on_picked_up(self, snail, animate):
 		'''Called when a snail picks up this shell.'''
 		self.snail = snail
-		self.owner['Carried'] = True
-		bxt.utils.set_state(self.owner, S_CARRIED)
-		bxt.utils.add_state(self.owner, S_ALWAYS)
-		self.owner['NoPickupAnim'] = not animate
-		
-		try:
-			self.LookAt = self.owner['LookAt']
-			self.owner['LookAt'] = -1
-		except KeyError:
-			self.owner['LookAt'] = -1
-	
-	def OnDropped(self):
+		self['Carried'] = True
+		self.set_state(ShellBase.S_CARRIED)
+		self.add_state(ShellBase.S_ALWAYS)
+		self['NoPickupAnim'] = not animate
+		self['LookAt'] = False
+
+	def on_dropped(self):
 		'''Called when a snail drops this shell.'''
 		self.snail = None
-		self.owner['Carried'] = False
-		bxt.utils.set_state(self.owner, S_IDLE)
-		bxt.utils.add_state(self.owner, S_ALWAYS)
-		
-		self.owner['LookAt'] = self.LookAt
-	
-	def OnPreEnter(self):
+		self['Carried'] = False
+		self.set_state(ShellBase.S_IDLE)
+		self.add_state(ShellBase.S_ALWAYS)
+		self['LookAt'] = True
+
+	def on_pre_enter(self):
 		'''Called when the snail starts to enter this shell. This may happen
-		seveal frames before control is passed, but may be on the same frame.'''
-		if self.Occupier:
-			self.Occupier.state = 1<<1 # state 2
-	
-	def OnEntered(self):
+		several frames before control is passed, but may be on the same frame.'''
+		if self.occupier:
+			bxt.utils.set_state(self.occupier, 2)
+
+	def on_entered(self):
 		'''Called when a snail enters this shell (just after
 		control is transferred).'''
-		bxt.utils.set_state(self.owner, S_OCCUPIED)
-		bxt.utils.add_state(self.owner, S_ALWAYS)
-	
-	def OnExited(self):
+		self.set_state(ShellBase.S_OCCUPIED)
+		self.add_state(ShellBase.S_ALWAYS)
+
+		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
+		bxt.utils.EventBus().notify(evt)
+
+	def on_exited(self):
 		'''Called when a snail exits this shell (just after
 		control is transferred).'''
-		bxt.utils.set_state(self.owner, S_CARRIED)
-		bxt.utils.add_state(self.owner, S_ALWAYS)
-		self.owner['CurrentBuoyancy'] = self.owner['Buoyancy']
-		if self.Occupier:
-			self.Occupier.state = 1<<0 # state 1
-	
-	def OnPostExit(self):
+		self.set_state(ShellBase.S_CARRIED)
+		self.add_state(ShellBase.S_ALWAYS)
+		self['CurrentBuoyancy'] = self['Buoyancy']
+		if self.occupier:
+			bxt.utils.set_state(self.occupier, 1)
+
+	def on_post_exit(self):
 		'''Called when the snail has finished its exit shell
 		animation.'''
 		pass
-	
-	def IsCarried(self):
-		return self.owner['Carried']
-	
-	def OnButton1(self, positive, triggered):
-		if not bxt.utils.has_state(self.owner, S_OCCUPIED):
+
+	def on_button1(self, positive, triggered):
+		if not self.has_state(ShellBase.S_OCCUPIED):
 			return
-		
+
 		if positive and triggered:
-			self.snail.exitShell(animate = True)
-		
+			self.snail.exit_shell(animate = True)
+
 	def restore_location(self, reason = None):
-		Actor.Actor.restore_location(self, reason)
-		if bxt.utils.has_state(self.owner, S_OCCUPIED):
-			self.snail.exitShell(False)
-	
-	def getHealth(self):
-		if (bxt.utils.has_state(self.owner, S_CARRIED) or
-		    bxt.utils.has_state(self.owner, S_OCCUPIED)):
-			return self.snail.getHealth()
+		super(ShellBase, self).restore_location(reason)
+		if self.has_state(ShellBase.S_OCCUPIED):
+			self.snail.exit_shell(False)
+
+	def get_health(self):
+		if (self.has_state(ShellBase.S_CARRIED) or
+		    self.has_state(ShellBase.S_OCCUPIED)):
+			return self.snail.get_health()
 		else:
-			return Actor.Actor.getHealth(self)
-	
-	def setHealth(self, value):
-		if (bxt.utils.has_state(self.owner, S_CARRIED) or
-		    bxt.utils.has_state(self.owner, S_OCCUPIED)):
-			return self.snail.setHealth(value)
+			return super(ShellBase, self).get_health()
+
+	def set_health(self, value):
+		if (self.has_state(ShellBase.S_CARRIED) or
+		    self.has_state(ShellBase.S_OCCUPIED)):
+			return self.snail.set_health(value)
 		else:
-			return Actor.Actor.setHealth(self, value)
-		
+			return super(ShellBase, self).set_health(value)
+
 
 class Shell(ShellBase):
-	def OnMovementImpulse(self, fwd, back, left, right):
+	def on_movement_impulse(self, fwd, back, left, right):
 		'''Make the shell roll around based on user input.'''
-		if not self.owner['OnGround']:
+		if not self['OnGround']:
 			return
-		
+
 		#
 		# Decide which direction to roll in on the two axes.
 		#
@@ -176,51 +139,51 @@ class Shell(ShellBase):
 			leftMagnitude = leftMagnitude + 1.0
 		if right:
 			leftMagnitude = leftMagnitude - 1.0
-		
+
 		#
 		# Get the vectors to apply force along.
 		#
-		p1 = camera.AutoCamera().get_camera().worldPosition
-		p2 = self.owner.worldPosition
+		p1 = bge.logic.getCurrentScene().active_camera.worldPosition
+		p2 = self.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.normalize()
 		leftVec = ZAXIS.cross(fwdVec)
-		
+
 		#
 		# Set the direction of the vectors.
 		#
 		fwdVec = fwdVec * fwdMagnitude
 		leftVec = leftVec * leftMagnitude
-		finalVec = (fwdVec + leftVec) * self.owner['Power']
-		
+		finalVec = (fwdVec + leftVec) * self['Power']
+
 		#
 		# Apply the force.
 		#
-		self.owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
+		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
 class Wheel(ShellBase):
-	def __init__(self, owner):
-		ShellBase.__init__(self, owner)
-		self._ResetSpeed()
-	
-	def Orient(self):
+	def __init__(self, old_owner):
+		ShellBase.__init__(self, old_owner)
+		self._reset_speed()
+
+	def orient(self):
 		'''Try to make the wheel sit upright.'''
-		vec = self.owner.getAxisVect(ZAXIS)
+		vec = self.getAxisVect(ZAXIS)
 		vec.z = 0.0
 		vec.normalize
-		self.owner.alignAxisToVect(vec, 2, self.owner['OrnFac'])
-	
-	def _ResetSpeed(self):
-		self.CurrentRotSpeed = 0.0
-		self.CurrentTurnSpeed = 0.0
-	
-	def OnPreEnter(self):
-		ShellBase.OnPreEnter(self)
-		self._ResetSpeed()
-	
-	def OnMovementImpulse(self, fwd, back, left, right):
-		self.Orient()
-		
+		self.alignAxisToVect(vec, 2, self['OrnFac'])
+
+	def _reset_speed(self):
+		self.currentRotSpeed = 0.0
+		self.currentTurnSpeed = 0.0
+
+	def on_pre_enter(self):
+		ShellBase.on_pre_enter(self)
+		self._reset_speed()
+
+	def on_movement_impulse(self, fwd, back, left, right):
+		self.orient()
+
 		#
 		# Decide which direction to roll or turn.
 		#
@@ -229,63 +192,60 @@ class Wheel(ShellBase):
 			leftMagnitude = leftMagnitude + 1.0
 		if right:
 			leftMagnitude = leftMagnitude - 1.0
-		
+
 		#
 		# Turn (steer).
 		#
-		self.CurrentTurnSpeed = bxt.math.lerp(
-			self.CurrentTurnSpeed,
-			self.owner['TurnSpeed'] * leftMagnitude,
-			self.owner['SpeedFac'])
-		self.owner.applyRotation(
-			ZAXIS * self.CurrentTurnSpeed, False)
-		
+		self.currentTurnSpeed = bxt.math.lerp(self.currentTurnSpeed,
+				self['TurnSpeed'] * leftMagnitude, self['SpeedFac'])
+		self.applyRotation(
+				ZAXIS * self.currentTurnSpeed, False)
+
 		#
 		# Apply acceleration. The speed will be influenced by the rate that
 		# the wheel is being steered at (above).
 		#
-		turnStrength = abs(self.CurrentTurnSpeed) / self.owner['TurnSpeed']
-		targetRotSpeed = self.owner['RotSpeed'] * bxt.math.safe_invert(
-			turnStrength, self.owner['TurnInfluence'])
-		
-		self.CurrentRotSpeed = bxt.math.lerp(
-			self.CurrentRotSpeed,
-			targetRotSpeed,
-			self.owner['SpeedFac'])
-		self.owner.setAngularVelocity(ZAXIS * self.CurrentRotSpeed, True)
+		turnStrength = abs(self.currentTurnSpeed) / self['TurnSpeed']
+		targetRotSpeed = self['RotSpeed'] * bxt.math.safe_invert(
+				turnStrength, self['TurnInfluence'])
+
+		self.currentRotSpeed = bxt.math.lerp(self.currentRotSpeed,
+				targetRotSpeed, self['SpeedFac'])
+		self.setAngularVelocity(ZAXIS * self.currentRotSpeed, True)
 
 class Nut(ShellBase):
-	pass
+	def on_movement_impulse(self, fwd, back, left, right):
+		# Can't move!
+		pass
 
 class BottleCap(ShellBase):
-	def Orient(self):
+	def orient(self):
 		'''Try to make the cap sit upright, and face the direction of travel.'''
 		vec = ZAXIS.copy()
 		vec.negate()
-		self.owner.alignAxisToVect(vec, 2, self.owner['OrnFac'])
-		
-		facing = self.owner.getLinearVelocity(False)
+		self.alignAxisToVect(vec, 2, self['OrnFac'])
+
+		facing = self.getLinearVelocity(False)
 		facing.z = 0.0
 		if facing.magnitude > EPSILON:
-			self.owner.alignAxisToVect(
-				facing, 1, self.owner['TurnFac'] * facing.magnitude)
-	
-	def OnMovementImpulse(self, fwd, back, left, right):
+			self.alignAxisToVect(facing, 1, self['TurnFac'] * facing.magnitude)
+
+	def on_movement_impulse(self, fwd, back, left, right):
 		'''Make the cap jump around around based on user input.'''
-		self.Orient()
-		
-		if not self.Occupier['JumpReady']:
+		self.orient()
+
+		if not self.occupier['JumpReady']:
 			return
-		
-		if not self.owner['OnGround']:
+
+		if not self['OnGround']:
 			return
-		
+
 		if fwd or back or left or right:
-			self.Occupier.state = self.Occupier.state | 1<<2 # Plus state 3
-		
-		if not self.Occupier['JumpNow']:
+			bxt.utils.add_state(self.occupier, 3)
+
+		if not self.occupier['JumpNow']:
 			return
-		
+
 		#
 		# Decide which direction to jump on the two axes.
 		#
@@ -299,52 +259,36 @@ class BottleCap(ShellBase):
 			leftMagnitude = 1.0
 		elif right and not left:
 			leftMagnitude = -1.0
-		
+
 		#
 		# Get the vectors to apply force along.
 		#
 		p1 = camera.AutoCamera().get_camera().worldPosition
-		p2 = self.owner.worldPosition
+		p2 = self.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.z = 0.0
 		fwdVec.normalize()
 		leftVec = ZAXIS.cross(fwdVec)
-		
+
 		#
 		# Set the direction of the vectors.
 		#
 		fwdVec = fwdVec * fwdMagnitude
 		leftVec = leftVec * leftMagnitude
 		finalVec = fwdVec + leftVec
-		finalVec.z = self.owner['Lift']
+		finalVec.z = self['Lift']
 		finalVec.normalize()
-		finalVec = finalVec * self.owner['Power']
-		
+		finalVec = finalVec * self['Power']
+
 		#
 		# Apply the force.
 		#
-		self.owner.applyImpulse((0.0, 0.0, 0.0), finalVec)
-		self.Occupier['JumpNow'] = False
-	
-	def OnExited(self):
+		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
+		self.occupier['JumpNow'] = False
+
+	def on_exited(self):
 		'''Called when control is transferred to the snail. Reset propulsion.'''
-		ShellBase.OnExited(self)
+		ShellBase.on_exited(self)
 		self.FwdMagnitude = 0.0
 		self.LeftMagnitude = 0.0
-		self.Occupier['JumpFrame'] = 0
-
-@bxt.utils.owner
-def CreateShell(o):
-	Shell(o)
-
-@bxt.utils.owner
-def CreateNut(o):
-	Nut(o)
-
-@bxt.utils.owner
-def CreateWheel(o):
-	Wheel(o)
-
-@bxt.utils.owner
-def CreateBottleCap(o):
-	BottleCap(o)
+		self.occupier['JumpFrame'] = 0

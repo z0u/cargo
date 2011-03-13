@@ -25,6 +25,7 @@ import bxt
 import bge
 from . import director
 
+@bxt.types.weakprops('shell')
 class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = ''
 
@@ -54,13 +55,18 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	MIN_SPEED = -3.0
 
 	def __init__(self, old_owner):
+		director.Actor.__init__(self)
+
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
 		self.eyeRayR = self.childrenRecursive['EyeRay.R']
 		self.eyeLocL = self.childrenRecursive['EyeLoc.L']
 		self.eyeLocR = self.childrenRecursive['EyeLoc.R']
 		self.armature = self.children['SnailArmature']
+		self.cargoHold = self.childrenRecursive['CargoHold']
+		self.shockwave = self.childrenRecursive['Shockwave']
 		self.closeCamera = self.childrenRecursive['SnailCam']
 		self.localCoordinates = True
+		self.shell = None
 
 		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
 		bxt.utils.EventBus().notify(evt)
@@ -72,6 +78,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
+		print('--- Orient ---')
 		counter = bxt.utils.Counter()
 		avNormal = bxt.math.ZEROVEC.copy()
 		ob0, p0, n0 = self.children['ArcRay_Root.0'].getHitPosition()
@@ -204,7 +211,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		scene. Objects with a LookAt priority of less than zero will be ignored.
 		'''
 
-		def look(eye, target):
+		def look_single(eye, target):
 			channel = self.armature.channels[eye['channel']]
 			_, gVec, _ = eye.getVectTo(target)
 			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.math.ZAXIS), 2)
@@ -213,7 +220,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
 			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
 
-		def resetOrn(eye):
+		def reset_orn(eye):
 			channel = self.armature.channels[eye['channel']]
 			orn = mathutils.Quaternion()
 			orn.identity()
@@ -236,12 +243,161 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				maxPriority = target['LookAt']
 
 		if not nearest:
-			resetOrn(self.eyeLocL)
-			resetOrn(self.eyeLocR)
+			reset_orn(self.eyeLocL)
+			reset_orn(self.eyeLocR)
 			return
 
-		look(self.eyeLocL, nearest)
-		look(self.eyeLocR, nearest)
+		look_single(self.eyeLocL, nearest)
+		look_single(self.eyeLocR, nearest)
+
+	def _stow_shell(self, shell):
+		referential = shell.cargoHook
+		bxt.math.set_rel_orn(shell, self.cargoHold, referential)
+		bxt.math.set_rel_pos(shell, self.cargoHold, referential)
+		shell.setParent(self.cargoHold)
+
+	def _get_nearest_shell(self, shells):
+		'''Find the nearest shell that isn't being carried.'''
+		for shell in sorted(shells, key=bxt.math.DistanceKey(self)):
+			if not shell['Carried']:
+				return shell
+		return None
+
+	@bxt.types.expose_fun
+	@bxt.utils.controller_cls
+	def set_shell_c(self, controller):
+		shells = controller.sensors['sShellPickup'].hitObjectList
+		shell = self._get_nearest_shell(shells)
+		self.set_shell(shell, True)
+
+	def set_shell(self, shell, animate):
+		'''
+		Add the shell as a descendant of the snail. It will be
+		made a child of the CargoHold. If the shell has a child
+		of type "CargoHook", that will be used as the
+		referential (offset). Otherwise, the shell will be
+		positioned with its own origin at the same location as
+		the CargoHold.
+
+		Adding the shell as a child prevents collision with the
+		parent. The shell's inactive state will also be set.
+		'''
+		self.rem_state(Snail.S_NOSHELL)
+		self.add_state(Snail.S_HASSHELL)
+
+		self._stow_shell(shell)
+
+		self.shell = shell
+		self['HasShell'] = 1
+		self['DynamicMass'] = self['DynamicMass'] + shell['DynamicMass']
+		self.shell.on_picked_up(self, animate)
+		if animate:
+			self.shockwave.worldPosition = shell.worldPosition
+			self.shockwave.worldOrientation = shell.worldOrientation
+			bxt.utils.set_state(self.shockwave, 2)
+
+	def enter_shell(self, animate):
+		'''
+		Starts the snail entering the shell. Shell.on_pre_enter will be called
+		immediately; Snail.onShellEnter and Shell.on_entered will be called
+		later, at the appropriate point in the animation.
+		'''
+		if not self.has_state(Snail.S_HASSHELL):
+			return
+
+		self.rem_state(Snail.S_HASSHELL)
+		self.add_state(Snail.S_ENTERING)
+		bxt.utils.rem_state(self.armature, Snail.S_ARM_CRAWL)
+		bxt.utils.rem_state(self.armature, Snail.S_ARM_LOCOMOTION)
+		bxt.utils.add_state(self.armature, Snail.S_ARM_ENTER)
+		self.armature['NoTransition'] = not animate
+		self.shell.on_pre_enter()
+
+	@bxt.types.expose_fun
+	def on_enter_shell(self):
+		'''Transfers control of the character to the shell. The snail must have
+		a shell.'''
+		if not self.has_state(Snail.S_ENTERING):
+			return
+
+		self.rem_state(Snail.S_CRAWLING)
+		self.rem_state(Snail.S_ENTERING)
+		self.add_state(Snail.S_INSHELL)
+
+		linV = self.getLinearVelocity()
+		angV = self.getAngularVelocity()
+
+		self.shell.removeParent()
+		self.setVisible(0, 1)
+		self.localScale = (0.01, 0.01, 0.01)
+		self.setParent(self.shell)
+
+		self.shell.setLinearVelocity(linV)
+		self.shell.setAngularVelocity(angV)
+
+		#
+		# Swap mass with shell so the shell can influence bendy leaves properly
+		#
+		dm = self.shell['DynamicMass']
+		self.shell['DynamicMass'] = self['DynamicMass']
+		self['DynamicMass'] = dm
+
+		self['InShell'] = 1
+		self.shell.on_entered()
+
+	def exit_shell(self, animate):
+		'''
+		Tries to make the snail exit the shell. If possible, control will be
+		transferred to the snail. The snail must currently be in a shell.
+		'''
+		if not self.has_state(Snail.S_INSHELL):
+			return
+
+		self.rem_state(Snail.S_INSHELL)
+		self.add_state(Snail.S_EXITING)
+		self.add_state(Snail.S_FALLING)
+		bxt.utils.add_state(self.armature, Snail.S_ARM_EXIT)
+		bxt.utils.add_state(self.armature, Snail.S_ARM_CRAWL)
+		bxt.utils.add_state(self.armature, Snail.S_ARM_LOCOMOTION)
+		self.armature['NoTransition'] = not animate
+
+		linV = self.shell.getLinearVelocity()
+		angV = self.shell.getAngularVelocity()
+
+		self.removeParent()
+		self.localScale = (1.0, 1.0, 1.0)
+		if self.shell['ExitCentre']:
+			self.worldPosition = self.shell.worldPosition
+		self.setVisible(True, True)
+		self._stow_shell(self.shell)
+
+		self.setLinearVelocity(linV)
+		self.setAngularVelocity(angV)
+
+		#
+		# Swap mass with shell so the body can influence bendy leaves properly
+		#
+		dm = self.shell['DynamicMass']
+		self.shell['DynamicMass'] = self['DynamicMass']
+		self['DynamicMass'] = dm
+
+		self['InShell'] = 0
+		self.shell.on_exited()
+
+		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
+		bxt.utils.EventBus().notify(evt)
+
+	@bxt.types.expose_fun
+	def on_post_exit_shell(self):
+		'''Called when the snail has finished its exit shell
+		animation (several frames after control has been
+		transferred).'''
+		if not self.has_state(Snail.S_EXITING):
+			return
+
+		self.rem_state(Snail.S_EXITING)
+		self.add_state(Snail.S_HASSHELL)
+		self.shell.on_post_exit()
 
 	@bxt.types.expose_fun
 	def modify_speed(self):
@@ -346,7 +502,7 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		                                        targetBendAngleAft,
 		                                        self['BendFactor'])
 
-		if (fwd or back):
+		if self.touchedObject != None and (fwd or back):
 			self.children['Trail'].moved(self['SpeedMultiplier'], self.touchedObject)
 
 	def set_speed_multiplier(self, mult):
@@ -356,25 +512,25 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		'''Bring the speed of the snail one step closer to normal speed.'''
 		dr = self['SpeedDecayRate']
 		mult = self['SpeedMultiplier']
-		
+
 		if mult == 1.0:
 			return
 		elif mult > 1.0:
 			self['SpeedMultiplier'] = max(mult - dr, 1.0)
 		else:
 			self['SpeedMultiplier'] = min(mult + dr, 1.0)
-	
+
 	def on_button1(self, positive, triggered):
 		if positive and triggered:
-			
+
 			if self.has_state(Snail.S_INSHELL):
-				self.exitShell(animate = True)
+				self.exit_shell(animate = True)
 			elif self.has_state(Snail.S_HASSHELL):
-				self.enterShell(animate = True)
+				self.enter_shell(animate = True)
 			elif self.has_state(Snail.S_NOSHELL):
 				if self.NearestShell:
-					self.setShell(self.NearestShell, animate = True)
-	
+					self.set_shell(self.NearestShell, animate = True)
+
 	def on_button2(self, positive, triggered):
 		if positive and triggered:
 			if self.has_state(Snail.S_HASSHELL):

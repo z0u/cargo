@@ -107,11 +107,11 @@ class Worm(Character):
 		#
 		def SleepSnail(c, animate):
 			snail = c.sensors['sNearSnail'].hitObject['Actor']
-			snail.enterShell(animate)
+			snail.enter_shell(animate)
 		
 		def WakeSnail(c, animate):
 			snail = c.sensors['sNearSnail'].hitObject['Actor']
-			snail.exitShell(animate)
+			snail.exit_shell(animate)
 		
 		def SprayDirt(c, number, maxSpeed):
 			o = c.sensors['sParticleHook'].owner

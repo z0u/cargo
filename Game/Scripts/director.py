@@ -27,6 +27,7 @@ class Actor:
 	SANITY_RAY_LENGTH = 10000.0
 
 	def __init__(self):
+		print('Actor.__init__', self)
 		self.save_location()
 		self.Velocity1 = bxt.math.MINVECTOR.copy()
 		self.Velocity2 = bxt.math.MINVECTOR.copy()
@@ -150,6 +151,7 @@ class Actor:
 
 		return foundGround and outsideGround
 
+@bxt.types.weakprops('mainCharacter')
 @bxt.utils.singleton('update', 'on_movement_impulse', 'on_button1',
 		'on_button2', prefix='')
 class Director(bxt.utils.EventListener):
@@ -197,20 +199,5 @@ class Director(bxt.utils.EventListener):
 		s = c.sensors[0]
 		if self.mainCharacter:
 			self.mainCharacter.on_button2(s.positive, s.triggered)
-
-	def _set_main_character(self, object):
-		def autorelease(ref):
-			self._mainCharacter = None
-
-		if object != None:
-			self._mainCharacter = weakref.ref(object, autorelease)
-		else:
-			self._mainCharacter = None
-	def _get_main_character(self):
-		if self._mainCharacter == None:
-			return None
-		else:
-			return self._mainCharacter()
-	mainCharacter = property(_get_main_character, _set_main_character)
 
 Director()

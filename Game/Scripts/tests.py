@@ -126,7 +126,7 @@ def run_tests():
 class WeakrefTest:
 	pass
 
-# Weak reference testing for ProxyGameObjects
+# Weak reference testing for GameObjects
 
 wt = WeakrefTest()
 wrefCountdown = 3

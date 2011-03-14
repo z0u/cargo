@@ -15,20 +15,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bge
 from bge import logic
 import mathutils
-from . import Utilities
+
 import bxt
 
-@bxt.types.gameobject('on_touched', prefix='btn_')
-class Button(bxt.types.ProxyGameObject):
+from . import Utilities
+
+class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A generic 3D button that can be activated by objects in the scene. No
 	special object hierarchy is required. The button sends messages when it is
 	touched.'''
+
+	_prefix = 'btn_'
 	
-	def __init__(self, owner):
-		'''Create a new button and attach it to 'owner'.'''
-		bxt.types.ProxyGameObject.__init__(self, owner)
+	def __init__(self, old_owner):
 		self.down = False
 
 	def accept(self, ob):
@@ -36,6 +38,7 @@ class Button(bxt.types.ProxyGameObject):
 		Override this to filter out other objects.'''
 		return True
 
+	@bxt.types.expose_fun
 	def on_touched(self):
 		'''Called when this button is touched.
 		
@@ -79,7 +82,6 @@ class Button(bxt.types.ProxyGameObject):
 		called.'''
 		logic.sendMessage('ButtonUp', '', '', self.name)
 
-@bxt.types.gameobject()
 class ToughButton(Button):
 	'''A button that filters objects by their speed: only fast objects will
 	trigger this button. This button only works with Actors.'''

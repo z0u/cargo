@@ -15,13 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
-from . import Store
+import weakref
 
 import bge
 import mathutils
 
-import weakref
+import bxt
+from . import Store
+from . import ui
 
 CREDITS = [
 	("Most Things", "Alex Fraser"),
@@ -490,8 +491,8 @@ class Checkbox(Button):
 		if 'dataBinding' in self:
 			self.checked = Store.get(self['dataBinding'], self['dataDefault'])
 		self.updateCheckFace()
-		self.children['Canvas']['Content'] = self['label']
-		self.children['Canvas']['colour'] = self['colour']
+		self.children['CheckBoxCanvas']['Content'] = self['label']
+		self.children['CheckBoxCanvas']['colour'] = self['colour']
 	
 	def click(self):
 		self.checked = not self.checked
@@ -502,7 +503,7 @@ class Checkbox(Button):
 	
 	def updateVisibility(self, visible):
 		super(Checkbox, self).updateVisibility(visible)
-		self.children['Canvas'].setVisible(visible, True)
+		self.children['CheckBoxCanvas'].setVisible(visible, True)
 		self.updateCheckFace()
 	
 	def updateCheckFace(self):
@@ -522,15 +523,14 @@ class ConfirmationPage(bxt.utils.EventListener, Widget):
 	def __init__(self, old_owner):
 		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
-		
 		self.lastScreen = ''
 		self.currentScreen = ''
 		self.onConfirm = ''
 		self.onConfirmBody = ''
-		
+
 		bxt.utils.EventBus().addListener(self)
 		bxt.utils.EventBus().replayLast(self, 'showScreen')
-	
+
 	def onEvent(self, event):
 		super(ConfirmationPage, self).onEvent(event)
 		if event.message == 'showScreen':
@@ -538,19 +538,19 @@ class ConfirmationPage(bxt.utils.EventListener, Widget):
 			if self.currentScreen != event.body:
 				self.lastScreen = self.currentScreen
 				self.currentScreen = event.body
-		
+
 		elif event.message == 'confirmation':
 			text, self.onConfirm, self.onConfirmBody = event.body.split('::')
 			self.children['ConfirmText']['Content'] = text
 			evt = bxt.utils.Event('showScreen', 'ConfirmationDialogue')
 			bxt.utils.EventBus().notify(evt)
-			
+
 		elif event.message == 'cancel':
 			if self.visible:
 				evt = bxt.utils.Event('showScreen', self.lastScreen)
 				bxt.utils.EventBus().notify(evt)
 				self.children['ConfirmText']['Content'] = ""
-		
+
 		elif event.message == 'confirm':
 			if self.visible:
 				evt = bxt.utils.Event('showScreen', self.lastScreen)
@@ -618,10 +618,10 @@ class Subtitle(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Ga
 	def __init__(self, old_owner):
 		bxt.utils.EventBus().addListener(self)
 		bxt.utils.EventBus().replayLast(self, 'screenShown')
-	
+
 	def onEvent(self, event):
 		if event.message == 'screenShown':
-			self['Content'] = event.body
+			self.children['SubtitleCanvas']['Content'] = event.body
 
 class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):

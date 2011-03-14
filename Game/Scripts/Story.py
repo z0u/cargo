@@ -104,7 +104,7 @@ class ActShowMessage:
 		self.Message = message
 	
 	def Execute(self, c):
-		ui.HUD().showMessage(self.Message)
+		ui.HUD().show_message(self.Message)
 
 class ActSetCamera:
 	def __init__(self, camName):

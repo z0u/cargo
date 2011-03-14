@@ -15,242 +15,107 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
+import weakref
+
+import bge
 from bge import logic
-from . import Utilities
-from . import Actor
+
+import bxt
 
 @bxt.utils.singleton()
-class HUD(Actor.DirectorListener, Actor.ActorListener):
-	'''The head-up display manages the 2D user interface that is drawn over the
-	3D scene. This is a Singleton (see HUD instance below). This object
-	maintains is state even if no HUD objects are attached to it.'''
-
+class HUDState(bxt.utils.EventListener):
 	def __init__(self):
-		'''Reset the internal state and detach all UI elements.'''
-		self.DialogueText = ""
-		self.DialogueBox = None
-		self.CausedSuspension = False
-		
-		self.MessageBox = None
-		
-		self.LoadingScreenVisible = True
-		self.LoadingScreen = None
-		self.LoadingScreenCallers = set()
-		
-		self.Gauges = {}
-		self.filter = None
-		self.filterColour = None
-		
-		Utilities.SceneManager().Subscribe(self)
-		Actor.Director().addListener(self)
-	
-	def Attach(self, owner):
-		'''Attach a new user interface, e.g. at the start of a new scene.
-		
-		Hierarchy:
-		 - Owner: The root of the HUD.
-		   - DialogueBox: An object to display text on. Must have a Content
-		                  property (String).
-		   - LoadingScreen: The object to display when the game is loading. This
-		                  must be visible by default. In state 1 it will show
-		                  itself; in state 2 it will hide itself.
-		   - Gauge:       Any number of gauge objects (see Gauge, below). Must
-		                  have a Name property to distinguish itself from other
-		                  gauges.'''
-		Utilities.parseChildren(self, owner)
-		self._update_dialogue()
-		self._update_loading_screen()
-		self._update_health_gauge()
-		self._update_filter()
-	
-	def OnSceneEnd(self):
-		self.__init__()
-	
-	def parseChild(self, child, type):
-		if type == "DialogueBox":
-			if self.DialogueBox:
-				print("Warning: HUD already has a dialogue box.")
-				return False
-			self.DialogueBox = child
-			return True
-		if type == "MessageBox":
-			if self.MessageBox:
-				print("Warning: HUD already has a message box.")
-				return False
-			self.MessageBox = child
-			return True
-		elif type == "LoadingScreen":
-			if self.LoadingScreen:
-				print("Warning: HUD already has a loading screen.")
-				return False
-			self.LoadingScreen = child
-			return True
-		elif type == "Gauge":
-			name = child['Name']
-			if name in self.Gauges:
-				print("Warning: duplicate gauge '%s'" % name)
-				return False
-			self.Gauges[name] = Gauge(child)
-			return True
-		elif type == 'Filter':
-			if self.filter:
-				print("Warning: HUD already has a filter.")
-				return False
-			self.filter = Filter(child)
-			return True
-		return False
-	
-	def showMessage(self, message):
-		'''
-		Display a message. This is non-modal: game play is not suspended, and
-		return does not need to be pressed. The message will disappear after a
-		short time.
+		self.loaders = weakref.WeakSet()
+		bxt.utils.EventBus().addListener(self)
 
-		Parameters:
-		message: The message to show.
-		'''
-		if self.MessageBox == None:
-			return
-		
-		self.MessageBox['Content'] = message
-	
-	def _update_dialogue(self):
-		if self.DialogueText == "":
-			if self.DialogueBox['Content'] != "":
-				self.DialogueBox['Content'] = ""
-				if self.CausedSuspension:
-					Actor.Director().ResumeUserInput()
+	def onEvent(self, evt):
+		if evt.message == "StartLoading":
+			self.loaders.add(evt.body)
+		if evt.message == "FinishLoading":
+			self.loaders.remove(evt.body)
+
+	def getNumLoaders(self):
+		return len(self.loaders)
+
+class MessageBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	def __init__(self, old_owner):
+		self.canvas = self.find_descendant([('template', 'TextCanvas_T')])
+		if self.canvas.__class__ != Text:
+			self.canvas = Text(self.canvas)
+
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'ShowMessage')
+
+	def onEvent(self, evt):
+		if evt.message == 'ShowMessage':
+			self.setText(evt.body)
+
+	def setText(self, text):
+		if self['Content'] != text:
+			self['Content'] = text
+			self.canvas['Content'] = text
+
+class DialogueBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	def __init__(self, old_owner):
+		self.canvas = self.find_descendant([('template', 'TextCanvas_T')])
+		if self.canvas.__class__ != Text:
+			self.canvas = Text(self.canvas)
+
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'ShowDialogue')
+
+	def onEvent(self, evt):
+		if evt.message == 'ShowDialogue':
+			self.setText(evt.body)
+
+	def setText(self, text):
+		if self['Content'] != text:
+			self['Content'] = text
+			self.canvas['Content'] = text
+
+		if self['Content'] != text:
+			if text == "":
+				evt = bxt.utils.Event("ResumePlay")
+				bxt.utils.EventBus().notify(evt)
+			else:
+				evt = bxt.utils.Event("SuspendPlay")
+				bxt.utils.EventBus().notify(evt)
+
+class LoadingScreen(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefx = 'LS_'
+
+	def __init__(self, old_owner):
+		pass
+
+	@bxt.types.expose_fun
+	def update(self):
+		if HUDState().getNumLoaders() > 0:
+			bxt.utils.set_state(self.loadingScreen, 1)
 		else:
-			self.DialogueBox['Content'] = self.DialogueText
-			if not Actor.Director().InputSuspended:
-				Actor.Director().SuspendUserInput()
-				self.CausedSuspension = True
+			bxt.utils.set_state(self.loadingScreen, 2)
 
-	def ShowDialogue(self, message):
-		'''
-		Display a message. A button will be shown to encourage
-		the player to press Return. No events are hooked up to
-		the Return key, however: you must call HideDialogue
-		manually.
-
-		Parameters:
-		message: The message to show. An empty string causes the box to be
-		         hidden.
-		'''
-		self.DialogueText = message
-		if self.DialogueBox:
-			self._update_dialogue()
-	
-	def HideDialogue(self):
-		self.DialogueText = ""
-		if self.DialogueBox:
-			self._update_dialogue()
-	
-	def GetGauge(self, name):
-		if name in self.Gauges:
-			return self.Gauges[name]
-		else:
-			return None
-	
-	def _update_loading_screen(self):
-		if self.LoadingScreenVisible:
-			bxt.utils.set_state(self.LoadingScreen, 1)
-		else:
-			bxt.utils.set_state(self.LoadingScreen, 2)
-	
-	def ShowLoadingScreen(self, caller):
-		print("%s started loading." % caller)
-		if len(self.LoadingScreenCallers) == 0:
-			self.LoadingScreenVisible = True
-			if self.LoadingScreen:
-				self._update_loading_screen()
-		self.LoadingScreenCallers.add(caller)
-	
-	def HideLoadingScreen(self, caller):
-		self.LoadingScreenCallers.discard(caller)
-		print("%s finished loading. %d remaining." % (caller,
-			len(self.LoadingScreenCallers)))
-		if len(self.LoadingScreenCallers) == 0:
-			self.LoadingScreenVisible = False
-			if self.LoadingScreen:
-				self._update_loading_screen()
-	
-	def _update_health_gauge(self):
-		gauge = self.GetGauge("Health")
-		if gauge == None:
-			return
-		
-		actor = Actor.Director().getMainCharacter()
-		if actor != None:
-			gauge.Show()
-			#gauge.SetFraction(actor.getHealth())
-			gauge.SetFraction(actor.getOxygen(), 'Oxygen')
-		else:
-			gauge.Hide()
-	
-	def directorMainCharacterChanged(self, oldActor, newActor):
-		if oldActor != None:
-			oldActor.removeListener(self)
-		if newActor != None:
-			newActor.addListener(self)  
-			self._update_health_gauge()
-			
-	def actorHealthChanged(self, actor):
-		self._update_health_gauge()
-		
-	def actorOxygenChanged(self, actor):
-		self._update_health_gauge()
-	
-	def actorRespawned(self, actor, reason):
-		if reason != None:
-			self.showMessage(reason)
-	
-	def _update_filter(self):
-		if self.filter == None:
-			return
-		if self.filterColour == None:
-			self.filter.hide()
-		else:
-			self.filter.show(self.filterColour)
-	
-	def show_filter(self, colour):
-		self.filterColour = colour
-		self._update_filter()
-	
-	def hide_filter(self):
-		self.filterColour = None
-		self._update_filter()
-
-@bxt.utils.owner
-def CreateHUD(o):
-	HUD().Attach(o)
-
-@bxt.utils.owner
-def ShowLoadingScreen(o):
-	HUD().ShowLoadingScreen(o)
-
-@bxt.utils.owner
-def HideLoadingScreen(o):
-	HUD().HideLoadingScreen(o)
-
-class Filter(Actor.Actor):
+class Filter(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 1
 	S_SHOW = 2
 	
 	def __init__(self, owner):
-		Actor.Actor.__init__(self, owner)
-	
-	def hide(self):
-		self.owner.visible = False
-	
-	def show(self, colour):
-		self.owner.color = colour
-		self.owner.visible = True
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'ShowFilter')
 
-class Gauge(Actor.Actor):
-	'''
-	Displays a value on the screen between 0 and 1.
+	def onEvent(self, evt):
+		if evt.message == 'ShowFilter':
+			self.show(evt.body)
+
+	def show(self, colourString):
+		if colourString == "" or colourString == None:
+			self.owner.visible = False
+		else:
+			colour = bxt.render.parse_colour(colourString)
+			self.owner.color = colour
+			self.owner.visible = True
+
+class Gauge(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''Displays a value on the screen between 0 and 1.
 	
 	Hierarchy:
 	Owner
@@ -273,89 +138,113 @@ class Gauge(Actor.Actor):
 	S_VISIBLE = 2
 	S_HIDING  = 3
 	
-	class Indicator:
-		def __init__(self, owner):
-			self.Fraction = 0.0
-			self.TargetFraction = 0.0
-			self.owner = owner
+	class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+		def __init__(self, old_owner):
+			self.fraction = 0.0
+			self.targetFraction = 0.0
 		
 		def update(self):
-			self.Fraction = bxt.math.lerp(self.Fraction, self.TargetFraction,
-				self.owner['Speed'])
-			self.owner['Frame'] = self.Fraction * 100.0
+			self.fraction = bxt.math.lerp(self.fraction, self.targetFraction,
+				self['Speed'])
+			self['Frame'] = self.fraction * 100.0
 
-	def __init__(self, owner):
-		Actor.Actor.__init__(self, owner)
-		self.Indicators = {}
-		Utilities.parseChildren(self, owner)
+	def __init__(self, old_owner):
+		self.indicators = weakref.WeakValueDictionary()
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'UpdateGauge')
+
+	def onEvent(self, evt):
+		if evt.message == 'UpdateGauge':
+			indicatorName, fraction = evt.body.split(':')
+			fraction = float(fraction)
+			self.set_fraction(indicatorName, fraction)
+
+	def set_fraction(self, indicatorName, value):
+		if indicatorName in self.indicators:
+			self.indicators[indicatorName].targetFraction = value
+
+		maximum = 0.0
+		for indicator in self.indicators:
+			maximum = max(maximum, indicator.targetFraction)
+
+		if maximum > 0.0:
+			self.show()
+		else:
+			self.hide()
+
+	def show(self):
+		if not self.has_state(self.S_VISIBLE):
+			self.set_state(self.S_VISIBLE)
 	
-	def parseChild(self, child, type):
-		if type == "Indicator":
-			if 'Name' in child:
-				self.Indicators[child['Name']] = self.Indicator(child)
-			else:
-				self.Indicators[None] = self.Indicator(child)
-			return True
-		return False
-	
-	def OnSceneEnd(self):
-		for i in list(self.Indicators.values()):
-			i.owner = None
-		Actor.Actor.OnSceneEnd(self)
-	
-	def Show(self):
-		bxt.utils.set_state(self.owner, self.S_VISIBLE)
-	
-	def Hide(self):
-		bxt.utils.set_state(self.owner, self.S_HIDING)
-	
-	def SetFraction(self, fraction, name = None):
-		self.Indicators[name].TargetFraction = fraction
-	
-	def Update(self, c):
-		for i in list(self.Indicators.values()):
+	def hide(self):
+		if self.has_state(self.S_VISIBLE):
+			self.set_state(self.S_HIDING)
+
+	@bxt.types.expose_fun
+	@bxt.utils.controller_cls
+	def update(self, c):
+		for i in list(self.indicators.values()):
 			i.update()
 		for a in c.actuators:
 			c.activate(a)
 
-@bxt.utils.controller
-def UpdateGauge(c):
+class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''
-	Update the indicators of a gauge. This sets the Frame property of each
-	indicator, and instructs them to update.
+	A TextRenderer is used to render glyphs from a Font. The object nominated as
+	the owner is the canvas. The canvas can be any KX_GameObject: the glyphs
+	will be drawn onto the canvas' XY-plane.
 	
-	Sensors:
-	<any>: Should be in pulse mode.
+	Canvas properties:
+	str   Content:   The text to draw.
+	str   Font:      The name of the font to use.
+	float LineWidth  The width of the canvas in Blender units.
 	
-	Actuators:
-	<any>: Update the indicator animation according to the indicator's Frame
-		property.
+	Call render_text to draw the Content to the screen. Set Content to "" before
+	rendering to clear the canvas.
 	'''
-	gauge = c.owner['Actor']
-	gauge.Update(c)
 
-class Font:
-	GlyphDict = None
-	Owner = None
-	LineHeight = 0.0
-	TypingSpeed = 0.0
-	KeyError = KeyError
-	len = len
-	
-	def __init__(self, owner):
-		self.owner = owner
-		self.GlyphDict = {}
-		for child in self.owner.children:
-			charWidth = child['Width']
-			self.GlyphDict[child['char']] = (child, charWidth)
-		self.LineHeight = owner['LineHeight']
-		self.baselineOffset = owner['baselineOffset']
-		self.bottomOffset = owner['bottomOffset']
-		self.TypingSpeed = owner['TypingSpeed']
-	
-	def DecodeEscapeSequence(self, text, start):
+	def __init__(self, old_owner):
+		self.set_default_prop('Content', '')
+		self.set_default_prop('colour', 'black')
+		self.set_default_prop('valign', 'bottom')
+		self.set_default_prop('LineWidth', 10.0)
+		self.set_default_prop('Rendering', False)
+		self.set_default_prop('Instant', False)
+		self.set_default_prop('Font', 'Sans')
+		self.lastHash = None
+		self.clear()
+
+	def clear(self):
+		for child in self.children:
+			child.endObject()
+
+		self.glyphString = []
+		self.delay = 0.0
+		self.currentChar = 0
+		self.lines = 0
+
+	def text_to_glyphs(self, text):
 		'''
-		Decode an escape sequence from a string. Escape sequences begin with
+		Convert a string of text into glyph tuples. Escape sequences are
+		converted. E.G the string '\[foo]' will be converted into one glyph with
+		the name 'foo'.
+		
+		Returns: a list of glyphs.
+		'''
+
+		glyphString = []
+		i = 0
+		while i < len(text):
+			char = text[i]
+			seqLen = 1
+			if char == '\\':
+				char, seqLen = self.decode_escape_sequence(text, i)
+			glyphString.append(self.get_glyph(char))
+			i = i + seqLen
+		return glyphString
+
+	def decode_escape_sequence(self, text, start):
+		'''Decode an escape sequence from a string. Escape sequences begin with
 		a backslash. '\\' is decoded into a single backslash. A backslash
 		followed by a pair of matching square brackets decodes into the string
 		between the brackets. Anything else is illegal, and the key 'undefined'
@@ -383,120 +272,59 @@ class Font:
 		else:
 			key = 'undefined'
 			seqLen = 1
-			
+
 		return key, seqLen
-	
-	def TextToGlyphTuples(self, text):
-		'''
-		Convert a string of text into glyph tuples. Escape sequences are
-		converted. E.G the string '\[foo]' will be converted into one glyph with
-		the name 'foo'.
-		
-		Returns: a list of glyph tuples.
-		'''
 
-		glyphString = []
-		i = 0
-		while i < self.len(text):
-			char = text[i]
-			seqLen = 1
-			if char == '\\':
-				char, seqLen = self.DecodeEscapeSequence(text, i)
-			glyphString.append(self.GetGlyph(char))
-			i = i + seqLen
-		return glyphString
-	
-	def GetGlyph(self, char):
-		'''
-		Return the glyph tuple that matches 'char'. If no match is found, the
+	def get_glyph(self, char):
+		'''Return the glyph tuple that matches 'char'. If no match is found, the
 		'undefined' glyph is returned (typically a box).
-		
-		Returns: (glyph object, width of glyph)
+
+		Returns: glyph object
 		'''
+		font = self.get_font()
+		glyphDict = font['_glyphDict']
 		try:
-			return self.GlyphDict[char]
-		except self.KeyError:
-			return self.GlyphDict['undefined']
+			return glyphDict[char]
+		except KeyError:
+			return glyphDict['undefined']
 
-_fonts = {}
+	def get_font(self):
+		font = logic.getCurrentScene().objectsInactive[self['Font']]
+		if not '_glyphDict' in font:
+			self.parse_font(font)
+		return font
 
-@bxt.utils.owner
-def CreateFont(o):
-	global _fonts
-	_fonts[o['FontName']] = Font(o)
+	def parse_font(self, font):
+		glyphDict = {}
+		for child in font.children:
+			glyphDict[child['char']] = child
+		font['_glyphDict'] = glyphDict
 
-class TextRenderer:
-	'''
-	A TextRenderer is used to render glyphs from a Font. The object nominated as
-	the owner is the canvas. The canvas can be any KX_GameObject: the glyphs
-	will be drawn onto the canvas' XY-plane.
-	
-	Canvas properties:
-	str   Content:   The text to draw.
-	str   Font:      The name of the font to use.
-	float LineWidth  The width of the canvas in Blender units.
-	
-	Call RenderText to draw the Content to the screen. Set Content to "" before
-	rendering to clear the canvas.
-	'''
-	
-	def __init__(self, canvas):
-		self.canvas = canvas
-		bxt.utils.set_default_prop(canvas, 'colour', 'black')
-		bxt.utils.set_default_prop(canvas, 'valign', 'bottom')
-		self.lastHash = None
-		self.Clear()
-		
-		Utilities.SceneManager().Subscribe(self)
-	
-	def OnSceneEnd(self):
-		self.canvas = None
-		Utilities.SceneManager().Unsubscribe(self)
-	
-	def Clear(self):
-		for child in self.canvas.children:
-			child.endObject()
-		
-		self.glyphString = []
-		self.font = None
-		self.delay = 0.0
-		self.currentChar = 0
-		self.lines = 0
-	
-	def GetFont(self, name):
-		try:
-			self.font = _fonts[name]
-		except AttributeError:
-			raise AttributeError("Error: Can't find font \"%s\". Ensure the " +
-				"font group is on a visible layer. Don't worry, it will hide " +
-				"itself." % name)
-	
-	def FindNextBreakableChar(self, glyphString, start):
+	def find_next_breakable_char(self, glyphString, start):
 		for i in range(start, len(glyphString)):
-			(glyph, width) = glyphString[i]
-			if self.IsWhitespace(glyph['char']):
+			if self.is_whitespace(glyphString[i]['char']):
 				return i
 		#
 		# No more breakable characters.
 		#
 		return len(glyphString)
-	
-	def FindNextBreakPoint(self, lineWidth, glyphString, start):
+
+	def find_next_break_point(self, lineWidth, glyphString, start):
 		"""Find the break point for a string of text. Always taken from
 		the start of the line (only call this when starting a new
 		line)."""
 		totalWidth = 0.0
 		for i in range(start, len(glyphString)):
-			(glyph, width) = glyphString[i]
-			totalWidth = totalWidth + width
+			glyph = glyphString[i]
+			totalWidth = totalWidth + glyph['Width']
 			if totalWidth > lineWidth or glyph['char'] == 'newline':
 				return i
 		#
 		# No break required: string is not long enough.
 		#
 		return len(glyphString)
-	
-	def IsWhitespace(self, char):
+
+	def is_whitespace(self, char):
 		"""Check whether a character is whitespace. Special characters
 		(like icons) are not considered to be whitespace."""
 		if char == 'newline':
@@ -505,75 +333,80 @@ class TextRenderer:
 			return True
 		else:
 			return False
-	
-	def layOutText(self, glyphString):
+
+	def lay_out_text(self, glyphString):
 		newLine = True
-		softBreakPoint = self.FindNextBreakableChar(glyphString, 0)
+		softBreakPoint = self.find_next_breakable_char(glyphString, 0)
 		hardBreakPoint = 0
 		self.glyphString = []
 		x = 0.0
 		y = 0.0
-		
-		for i, (glyph, width) in enumerate(glyphString):
+		font = self.get_font()
+
+		for i, glyph in enumerate(glyphString):
+			width = glyph['Width']
 			if newLine:
-				hardBreakPoint = self.FindNextBreakPoint(
-					self.canvas['LineWidth'], glyphString, i)
+				hardBreakPoint = self.find_next_break_point(
+					self['LineWidth'], glyphString, i)
 				newLine = False
 				self.lines += 1
-		
+
 			if i == softBreakPoint:
 				# This glyph can have a line break before it. If the next
 				# such character is beyond the end of the line, break now.
-				softBreakPoint = self.FindNextBreakableChar(glyphString,
+				softBreakPoint = self.find_next_breakable_char(glyphString,
 					i + 1)
 				if softBreakPoint > hardBreakPoint:
 					newLine = True
 			elif i == hardBreakPoint:
 				# This glyph is beyond the end of the line. Break now.
 				newLine = True
-				
+
 			if newLine:
 				# New line; carriage return.
 				x = 0.0
-				y = y - self.font.LineHeight
-				if self.IsWhitespace(glyph['char']):
+				y = y - font['lineHeight']
+				if self.is_whitespace(glyph['char']):
 					# Advance to next character.
 					continue
-			
+
 			gx = x + glyph['xOffset']
 			gy = y + glyph['yOffset']
-			if self.canvas['valign'] == 'baseline':
-				gy += self.font.baselineOffset
+			if self['valign'] == 'baseline':
+				gy += font['baselineOffset']
 			else:
-				gy += self.font.bottomOffset
+				gy += font['bottomOffset']
 			pos = (gx, gy)
 			self.glyphString.append((glyph, width, pos))
 			x += width
-		
-	def _RenderNextChar(self):
-		if not self.canvas['Rendering']:
+
+	def _render_next_char(self):
+		if not self['Rendering']:
 			return
-		
+
 		if self.currentChar >= len(self.glyphString):
-			self.canvas['Rendering'] = False
+			self['Rendering'] = False
 			return
-	
+
+		font = self.get_font()
+
 		glyph, width, pos = self.glyphString[self.currentChar]
-		
+
 		glyphInstance = logic.getCurrentScene().addObject(glyph,
-			self.canvas, 0)
-		glyphInstance.setParent(self.canvas)
-		glyphInstance.color = bxt.render.parse_colour(self.canvas['colour'])
+			self, 0)
+		glyphInstance.setParent(self)
+		glyphInstance.color = bxt.render.parse_colour(self['colour'])
 		glyphInstance.localPosition = [pos[0], pos[1], 0.0]
-		
-		if self.canvas['Instant']:
+
+		if self['Instant']:
 			bxt.utils.set_state(glyphInstance, 4)
 		else:
-			self.delay = (self.font.TypingSpeed * width *
+			self.delay = (font['typingSpeed'] * width *
 				glyph['DelayMultiplier'])
 			bxt.utils.set_state(glyphInstance, 3)
-	
-	def RenderNextChar(self):
+
+	@bxt.types.expose_fun
+	def render_next_char(self):
 		'''
 		Lay out a glyph. Each glyph accumulates a delay based on its width. This
 		should be called repeatedly until canvas['Rendering'] is False.
@@ -581,43 +414,26 @@ class TextRenderer:
 		if self.delay > 0:
 			self.delay = self.delay - 1
 			return
-		
+
 		try:
-			self._RenderNextChar()
+			self._render_next_char()
 		finally:
 			self.currentChar = self.currentChar + 1
-	
-	def RenderText(self):
-		'''
-		Render the content onto the canvas.
-		'''
-		h = hash(str(self.canvas['Content']))
+
+	@bxt.types.expose_fun
+	def render(self):
+		'''Render the content onto the canvas.'''
+
+		h = hash(str(self['Content']))
 		if h == self.lastHash:
 			return
 		self.lastHash = h
-		
-		self.Clear()
-		
-		self.GetFont(self.canvas['Font'])
-		self.layOutText(self.font.TextToGlyphTuples(self.canvas['Content']))
-		self.canvas['Rendering'] = True
-		
-		if self.canvas['Instant']:
-			while self.canvas['Rendering']:
-				self.RenderNextChar()
 
-@bxt.utils.owner
-def _getTextRenderer(o):
-	try:
-		tr = o['_TextRenderer']
-	except KeyError:
-		tr = TextRenderer(o)
-		o['_TextRenderer'] = tr
-	return tr
+		self.clear()
 
-def RenderText():
-	_getTextRenderer().RenderText()
+		self.lay_out_text(self.text_to_glyphs(self['Content']))
+		self['Rendering'] = True
 
-@bxt.utils.all_sensors_positive
-def RenderNextChar():
-	_getTextRenderer().RenderNextChar()
+		if self['Instant']:
+			while self['Rendering']:
+				self.render_next_char()

@@ -17,12 +17,9 @@
 
 import bxt
 from bge import logic
-from . import Utilities
-from . import Actor
 from . import ui
 
-@bxt.types.gameobject('start', 'stop', 'pulse', prefix='')
-class Timer(bxt.types.ProxyGameObject):
+class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A countdown timer actor. Uses a regular pulse to count down to zero over
 	a given duration. The remaining time may be shown on a gauge on-screen.
 	
@@ -38,18 +35,20 @@ class Timer(bxt.types.ProxyGameObject):
 	Hierarchy:
 	 - Owner: The base of the timer.
 	'''
-	
+
+	_prefix = ''
+
 	S_RUNNING = 2
 
-	def __init__(self, owner):
+	def __init__(self, old_owner):
 		'''Initialise a new timer.'''
-		bxt.types.ProxyGameObject.__init__(self, owner)
 		self.tics = 0.0
 		self.targetTics = 1.0
 		self.suspendStart = None
 		self.set_default_prop('Message', 'TimerFinished')
 		self.set_default_prop('Duration', 1.0)
-	
+
+	@bxt.types.expose_fun
 	@bxt.utils.all_sensors_positive
 	def start(self):
 		'''The the timer running for the duration specified by the owner.'''
@@ -60,6 +59,7 @@ class Timer(bxt.types.ProxyGameObject):
 		self.add_state(self.S_RUNNING)
 		self.pulse()
 
+	@bxt.types.expose_fun
 	@bxt.utils.all_sensors_positive
 	def stop(self):
 		'''Cancel the timer. The gauge will be hidden. No message will be sent.
@@ -71,6 +71,7 @@ class Timer(bxt.types.ProxyGameObject):
 			if gauge:
 				gauge.Hide()
 
+	@bxt.types.expose_fun
 	@bxt.utils.all_sensors_positive
 	def pulse(self):
 		'''Increase the elapsed time by one tic. This must be called once per

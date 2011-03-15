@@ -71,6 +71,10 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		self.frameCounter = 0
 
+		# Make sure the settings are right for a snail. Not the best place for
+		# this, as it has a global effect.
+		logic.setGravity([0.0, 0.0, -75.0])
+
 		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
 		bxt.utils.EventBus().notify(evt)
 

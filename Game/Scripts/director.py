@@ -160,8 +160,10 @@ class Director(bxt.utils.EventListener):
 	def __init__(self):
 		self.mainCharacter = None
 		self.actors = weakref.WeakSet()
+		self.inputSuspended = False
 		bxt.utils.EventBus().addListener(self)
 		bxt.utils.EventBus().replayLast(self, 'MainCharacterSet')
+		bxt.utils.EventBus().replayLast(self, 'SuspendInput')
 		self.slowMotionCount = 0
 
 	def add_actor(self, actor):
@@ -172,6 +174,8 @@ class Director(bxt.utils.EventListener):
 	def onEvent(self, event):
 		if event.message == 'MainCharacterSet':
 			self.mainCharacter = event.body
+		elif event.message == 'SuspendInput':
+			self.inputSuspended = event.body
 
 	def update(self):
 		'''Make sure all actors are within the world.'''
@@ -186,20 +190,20 @@ class Director(bxt.utils.EventListener):
 		back = c.sensors['sBackward']
 		left = c.sensors['sLeft']
 		right = c.sensors['sRight']
-		if self.mainCharacter:
+		if self.mainCharacter and not self.inputSuspended:
 			self.mainCharacter.on_movement_impulse(fwd.positive, back.positive,
 					left.positive, right.positive)
 
 	@bxt.utils.controller_cls
 	def on_button1(self, c):
 		s = c.sensors[0]
-		if self.mainCharacter:
+		if self.mainCharacter and not self.inputSuspended:
 			self.mainCharacter.on_button1(s.positive, s.triggered)
 
 	@bxt.utils.controller_cls
 	def on_button2(self, c):
 		s = c.sensors[0]
-		if self.mainCharacter:
+		if self.mainCharacter and not self.inputSuspended:
 			self.mainCharacter.on_button2(s.positive, s.triggered)
 
 	def _get_main_scene(self):

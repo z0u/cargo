@@ -16,7 +16,6 @@
 #
 
 import bxt
-from . import Utilities
 import mathutils
 from .Story import *
 

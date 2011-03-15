@@ -17,7 +17,6 @@
 #
 
 from bge import logic
-from . import Utilities
 import bxt.utils
 
 ACTIVATION_TIMEOUT = 120

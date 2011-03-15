@@ -38,6 +38,8 @@ class HUDState(bxt.utils.EventListener):
 		return len(self.loaders)
 
 class MessageBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'MB_'
+
 	def __init__(self, old_owner):
 		self.canvas = self.find_descendant([('template', 'TextCanvas_T')])
 		if self.canvas.__class__ != Text:
@@ -55,7 +57,14 @@ class MessageBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 			self['Content'] = text
 			self.canvas['Content'] = text
 
+	@bxt.types.expose_fun
+	def clear(self):
+		self['Content'] = ""
+		self.canvas['Content'] = ""
+
 class DialogueBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'DB_'
+
 	def __init__(self, old_owner):
 		self.canvas = self.find_descendant([('template', 'TextCanvas_T')])
 		if self.canvas.__class__ != Text:
@@ -69,6 +78,9 @@ class DialogueBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX
 			self.setText(evt.body)
 
 	def setText(self, text):
+		if text == None:
+			text = ""
+
 		if self['Content'] != text:
 			self['Content'] = text
 			self.canvas['Content'] = text
@@ -81,18 +93,32 @@ class DialogueBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX
 				evt = bxt.utils.Event("SuspendPlay")
 				bxt.utils.EventBus().notify(evt)
 
+	@bxt.types.expose_fun
+	def clear(self):
+		self['Content'] = ""
+		self.canvas['Content'] = ""
+
 class LoadingScreen(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
-	_prefx = 'LS_'
+	_prefix = 'LS_'
+
+	S_SHOW = 2
+	S_HIDE = 3
 
 	def __init__(self, old_owner):
-		pass
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'StartLoading')
+		self.set_state(LoadingScreen.S_SHOW)
+
+	def onEvent(self, evt):
+		if evt.message == 'StartLoading':
+			self.set_state(LoadingScreen.S_SHOW)
 
 	@bxt.types.expose_fun
 	def update(self):
 		if HUDState().getNumLoaders() > 0:
-			bxt.utils.set_state(self.loadingScreen, 1)
+			self.set_state(LoadingScreen.S_SHOW)
 		else:
-			bxt.utils.set_state(self.loadingScreen, 2)
+			self.set_state(LoadingScreen.S_HIDE)
 
 class Filter(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 1

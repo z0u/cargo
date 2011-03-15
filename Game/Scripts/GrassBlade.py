@@ -17,7 +17,6 @@
 
 import mathutils
 import bxt
-from . import Utilities
 
 ZERO2 = mathutils.Vector((0.0, 0.0))
 

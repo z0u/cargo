@@ -563,9 +563,11 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 				inside = True
 
 		if inside:
-			ui.HUD().show_filter(ob['VolumeCol'])
+			evt = bxt.utils.Event('ShowFilter', ob['VolumeCol'])
+			bxt.utils.EventBus().notify(evt)
 		else:
-			ui.HUD().hide_filter()
+			evt = bxt.utils.Event('ShowFilter', None)
+			bxt.utils.EventBus().notify(evt)
 
 #
 # camera for viewing the background scene

@@ -21,7 +21,6 @@ import mathutils
 import bxt
 from . import director
 from . import camera
-from . import Utilities
 
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001

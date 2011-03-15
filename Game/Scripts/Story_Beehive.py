@@ -15,18 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bge
+
 import bxt
+
+from . import director
 from . import ui
-from . import Actor
-from . import Utilities
 from . import camera
-from . import Snail
 from .Story import *
 
 class Intro(Character):
-	def __init__(self, owner):
-		Character.__init__(self, owner)
-		ui.HUD().ShowLoadingScreen(self)
+	def __init__(self, old_owner):
+		Character.__init__(self, old_owner)
+		evt = bxt.utils.WeakEvent('StartLoading', self)
+		bxt.utils.EventBus().notify(evt)
 	
 	def CreateSteps(self):
 		step = self.NewStep()
@@ -36,7 +38,7 @@ class Intro(Character):
 		
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
-		step.AddAction(ActGeneric(ui.HUD().HideLoadingScreen, self))
+		step.AddAction(ActEvent(bxt.utils.WeakEvent('FinishLoading', self)))
 		step.AddAction(ActActuate('aStartDungeonMusic'))
 		step.AddAction(ActShowDialogue("Welcome to the Cargo demo! This level is a short version of the main dungeon."))
 		
@@ -57,17 +59,13 @@ class Intro(Character):
 		step.AddAction(ActRemoveCamera('IntroCam'))
 		step.AddAction(ActResumeInput())
 		step.AddAction(ActHideDialogue())
-		step.AddAction(ActGeneric(Intro.Destroy, self))
-
-@bxt.utils.owner
-def createIntro(o):
-	Intro(o)
+		step.AddAction(ActGeneric(bge.types.KX_GameObject.endObject, self))
 
 class Extro(Character):
 	S_MUSIC = 3
 	
-	def __init__(self, owner):
-		Character.__init__(self, owner)
+	def __init__(self, old_owner):
+		Character.__init__(self, old_owner)
 	
 	def CreateSteps(self):
 		
@@ -83,7 +81,7 @@ class Extro(Character):
 		
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
-		step.AddAction(ActGeneric(ui.HUD().ShowLoadingScreen, self))
+		step.AddAction(ActEvent(bxt.utils.WeakEvent('StartLoading', self)))
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActActuate('aStartEndingMusic'))
 		
@@ -135,11 +133,8 @@ class Extro(Character):
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActShowDialogue("Press ESC to exit."))
 
-@bxt.utils.owner
-def createExtro(o):
-	Extro(o)
-
-class Bucket(Actor.Actor):
+@bxt.types.weakprops('camTop', 'camBottom')
+class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	DIR_UP = 1
 	DIR_DOWN = 2
 	
@@ -148,31 +143,31 @@ class Bucket(Actor.Actor):
 	
 	PROJECTION = [0.0, 0.0, 20.0]
 	
-	def __init__(self, owner, camTop, camBottom):
-		Actor.Actor.__init__(self, owner)
-		
-		scene = logic.getCurrentScene()
-		self.water = None
-		self.waterBallTemplate = scene.objectsInactive[owner['WaterBallTemplate']]
-		self.camTop = camTop
-		self.camBottom = camBottom
+	def __init__(self, old_owner):
+		scene = bge.logic.getCurrentScene()
+		self.water = self.find_descendant([('Type', 'BucketWater')])
+		self.camTop = scene.objects['BucketTopCam']
+		self.camBottom = scene.objects['BucketBottomCam']
 		self.currentCamera = None
 		
 		self.dir = Bucket.DIR_UP
 		self.loc = Bucket.LOC_BOTTOM
 		self.isTouchingPlayer = False
-		
-		Utilities.parseChildren(self, owner)
-	
-	def parseChild(self, child, type):
-		if type == 'BucketWater':
-			self.water = child
-			return True
-		return False
+
+	@bxt.types.expose_fun
+	@bxt.utils.controller_cls
+	def update(self, c):
+		sCollision = c.sensors['sPlayer']
+		self.frameChanged()
+
+		if director.Director().mainCharacter in sCollision.hitObjectList:
+			self.setTouchingPlayer(True)
+		else:
+			self.setTouchingPlayer(False)
 	
 	def spawnWaterBall(self):
-		scene = logic.getCurrentScene()
-		waterBall = scene.addObject(self.waterBallTemplate, self.water)
+		scene = bge.logic.getCurrentScene()
+		waterBall = scene.addObject(self['WaterBallTemplate'], self.water)
 		waterBall.setLinearVelocity(self.water.getAxisVect(Bucket.PROJECTION))
 	
 	def setDirection(self, dir):
@@ -198,7 +193,7 @@ class Bucket(Actor.Actor):
 		self.updateCamera()
 	
 	def frameChanged(self):
-		frame = self.owner['Frame']
+		frame = self['Frame']
 		if frame < 170:
 			self.setDirection(Bucket.DIR_UP)
 		else:
@@ -233,21 +228,7 @@ class Bucket(Actor.Actor):
 		
 		self.isTouchingPlayer = isTouchingPlayer
 		if isTouchingPlayer:
-			Actor.Director().SuspendUserInput()
+			bxt.utils.EventBus().notify(bxt.utils.Event('SuspendInput', True))
 		else:
-			Actor.Director().ResumeUserInput()
+			bxt.utils.EventBus().notify(bxt.utils.Event('SuspendInput', False))
 		self.updateCamera()
-
-@bxt.utils.controller
-def createBucket(c):
-	camTop = c.sensors['sCameraTop'].owner
-	camBottom = c.sensors['sCameraBottom'].owner
-	Bucket(c.owner, camTop, camBottom)
-
-@bxt.utils.controller
-def updateBucket(c):
-	bucket = c.owner['Actor']
-	bucket.frameChanged()
-	
-	sCollision = c.sensors['sPlayer']
-	bucket.setTouchingPlayer(Actor.isTouchingMainCharacter(sCollision))

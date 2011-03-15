@@ -15,10 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bge
+
 import bxt
-from . import Actor
+
 from . import ui
-from bge import logic
 from . import camera
 
 class StoryError(Exception):
@@ -48,11 +49,11 @@ class CondPropertyGE:
 #
 class ActSuspendInput:
 	def Execute(self, c):
-		Actor.Director().SuspendUserInput()
+		bxt.utils.EventBus().notify(bxt.utils.Event('SuspendPlay'))
 
 class ActResumeInput:
 	def Execute(self, c):
-		Actor.Director().ResumeUserInput()
+		bxt.utils.EventBus().notify(bxt.utils.Event('ResumePlay'))
 
 class ActActuate:
 	def __init__(self, actuatorName):
@@ -81,9 +82,9 @@ class ActActionPair:
 		aArm.frame = aMesh.frame = self.start
 		
 		if self.Loop:
-			aArm.mode = aMesh.mode = logic.KX_ACTIONACT_LOOPEND
+			aArm.mode = aMesh.mode = bge.logic.KX_ACTIONACT_LOOPEND
 		else:
-			aArm.mode = aMesh.mode = logic.KX_ACTIONACT_PLAY
+			aArm.mode = aMesh.mode = bge.logic.KX_ACTIONACT_PLAY
 		
 		c.activate(aArm)
 		c.activate(aMesh)
@@ -93,18 +94,21 @@ class ActShowDialogue:
 		self.Message = message
 	
 	def Execute(self, c):
-		ui.HUD().ShowDialogue(self.Message)
+		evt = bxt.utils.Event('ShowDialogue', self.Message)
+		bxt.utils.EventBus().notify(evt)
 
 class ActHideDialogue:
 	def Execute(self, c):
-		ui.HUD().HideDialogue()
+		evt = bxt.utils.Event('ShowDialogue', None)
+		bxt.utils.EventBus().notify(evt)
 
 class ActShowMessage:
 	def __init__(self, message):
 		self.Message = message
 	
 	def Execute(self, c):
-		ui.HUD().show_message(self.Message)
+		evt = bxt.utils.Event('ShowMessage', self.Message)
+		bxt.utils.EventBus().notify(evt)
 
 class ActSetCamera:
 	def __init__(self, camName):
@@ -112,7 +116,7 @@ class ActSetCamera:
 	
 	def Execute(self, c):
 		try:
-			cam = logic.getCurrentScene().objects[self.CamName]
+			cam = bge.logic.getCurrentScene().objects[self.CamName]
 		except KeyError:
 			print(("Warning: couldn't find camera %s. Not adding." %
 				self.CamName))
@@ -125,7 +129,7 @@ class ActRemoveCamera:
 	
 	def Execute(self, c):
 		try:
-			cam = logic.getCurrentScene().objects[self.CamName]
+			cam = bge.logic.getCurrentScene().objects[self.CamName]
 		except KeyError:
 			print(("Warning: couldn't find camera %s. Not removing." %
 				self.CamName))
@@ -149,6 +153,13 @@ class ActGenericContext(ActGeneric):
 			self.Function(c, *self.Closure)
 		except Exception as e:
 			raise StoryError("Error executing " + str(self.Function), e)
+
+class ActEvent:
+	def __init__(self, event):
+		self.event = event
+
+	def Execute(self, c):
+		bxt.utils.EventBus().notify(self.event)
 
 class ActDebug:
 	def __init__(self, message):
@@ -181,15 +192,16 @@ class Step:
 	def Execute(self, c):
 		for act in self.Actions:
 			try:
+				print(act)
 				act.Execute(c)
 			except Exception as e:
 				print("Warning: Action %s failed." % act)
 				print(e)
 
-class Character(Actor.Actor):
+class Character(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = ''
 
-	def __init__(self, owner):
-		Actor.Actor.__init__(self, owner)
+	def __init__(self, old_owner):
 		self.NextStep = 0
 		self.Steps = []
 		self.CreateSteps()
@@ -203,6 +215,8 @@ class Character(Actor.Actor):
 		self.Steps.append(step)
 		return step
 
+	@bxt.types.expose_fun
+	@bxt.utils.controller_cls
 	def Progress(self, controller):
 		if self.NextStep >= len(self.Steps):
 			if self.Cyclic:
@@ -213,15 +227,10 @@ class Character(Actor.Actor):
 				return
 		
 		step = self.Steps[self.NextStep]
+		print(step)
 		if step.CanExecute(controller):
 			step.Execute(controller)
 			self.NextStep = self.NextStep + 1
 	
 	def CreateSteps(self):
 		pass
-
-@bxt.utils.controller
-def Progress(c):
-	character = c.owner['Actor']
-	character.Progress(c)
-

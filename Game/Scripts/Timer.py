@@ -15,8 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bge
+
 import bxt
-from bge import logic
 from . import ui
 
 class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
@@ -53,7 +54,7 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def start(self):
 		'''The the timer running for the duration specified by the owner.'''
 		self.tics = 0.0
-		self.targetTics = self['Duration'] * logic.getLogicTicRate()
+		self.targetTics = self['Duration'] * bge.logic.getLogicTicRate()
 		if self.targetTics < 1.0:
 			self.targetTics = 1.0
 		self.add_state(self.S_RUNNING)
@@ -101,4 +102,4 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		'''Called when the timer has finished normally. This usually sends the
 		message specified by the 'Message' property. Override to change this
 		functionality.'''
-		logic.sendMessage(self['Message'])
+		bge.logic.sendMessage(self['Message'])

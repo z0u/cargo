@@ -21,8 +21,6 @@ import mathutils
 
 import bxt
 
-from . import Utilities
-
 class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A generic 3D button that can be activated by objects in the scene. No
 	special object hierarchy is required. The button sends messages when it is

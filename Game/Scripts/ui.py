@@ -134,11 +134,11 @@ class Filter(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Game
 
 	def show(self, colourString):
 		if colourString == "" or colourString == None:
-			self.owner.visible = False
+			self.visible = False
 		else:
 			colour = bxt.render.parse_colour(colourString)
-			self.owner.color = colour
-			self.owner.visible = True
+			self.color = colour
+			self.visible = True
 
 class Gauge(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Displays a value on the screen between 0 and 1.

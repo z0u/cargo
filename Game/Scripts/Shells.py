@@ -266,7 +266,7 @@ class BottleCap(ShellBase):
 		#
 		# Get the vectors to apply force along.
 		#
-		p1 = camera.AutoCamera().get_camera().worldPosition
+		p1 = camera.AutoCamera().camera.worldPosition
 		p2 = self.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.z = 0.0

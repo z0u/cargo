@@ -39,6 +39,7 @@ class CameraObserver:
 
 @bxt.utils.singleton('set_camera', 'update', 'add_goal', 'remove_goal',
 					prefix='AC_')
+@bxt.types.weakprops('camera', 'lastGoal')
 class AutoCamera:
 	'''Manages the transform of the camera, and provides transitions between
 	camera locations. To transition to a new location, call PushGoal. The
@@ -59,52 +60,47 @@ class AutoCamera:
 	@bxt.utils.owner_cls
 	def set_camera(self, camera):
 		'''Bind to a camera.'''
-
-		def auto_unset_camera(ref):
-			if ref == self.camera:
-				self.camera = None
-
-		self.camera = weakref.ref(camera, auto_unset_camera)
+		self.camera = camera
 		self.defaultLens = camera.lens
 		logic.getCurrentScene().active_camera = camera
-
-	def get_camera(self):
-		if self.camera == None:
-			return None
-		else:
-			return self.camera()
 
 	def update(self):
 		'''Update the location of the camera. observers will be notified. The
 		camera should have a controller set up to call this once per frame.
 		'''
 
-		if not self.get_camera() or len(self.queue) == 0:
+		if not self.camera or len(self.queue) == 0:
 			return
 
 		currentGoal = self.queue.top()
-		ref = weakref.ref(currentGoal)
-		if self.lastGoal != ref:
+		if self.lastGoal != currentGoal:
 			# Keeping track of goals being added and removed it very
 			# difficult, so we just consider the last action when deciding
 			# whether or not to cut instantly.
+			if not self.instantCut:
+				# Also cut instantly if there's an obstacle in the way.
+				ob, _, _ = bxt.math.ray_cast_p2p(currentGoal, self.camera,
+						prop = 'Ray')
+				if ob != None:
+					self.instantCut = True
+
 			if self.instantCut:
-				self.get_camera().worldPosition = currentGoal.worldPosition
-				self.get_camera().worldOrientation = currentGoal.worldOrientation
+				self.camera.worldPosition = currentGoal.worldPosition
+				self.camera.worldOrientation = currentGoal.worldOrientation
 				if hasattr(currentGoal, 'lens'):
-					self.get_camera().lens = currentGoal.lens
+					self.camera.lens = currentGoal.lens
 				self.instantCut = False
 
 		fac = currentGoal['SlowFac']
-		bxt.math.slow_copy_loc(self.get_camera(), currentGoal, fac)
-		bxt.math.slow_copy_rot(self.get_camera(), currentGoal, fac)
+		bxt.math.slow_copy_loc(self.camera, currentGoal, fac)
+		bxt.math.slow_copy_rot(self.camera, currentGoal, fac)
 
 		targetLens = self.defaultLens
 		if hasattr(currentGoal, 'lens'):
 			targetLens = currentGoal.lens
-		self.get_camera().lens = bxt.math.lerp(self.get_camera().lens, targetLens, fac)
+		self.camera.lens = bxt.math.lerp(self.camera.lens, targetLens, fac)
 
-		self.lastGoal = ref
+		self.lastGoal = currentGoal
 
 		for o in self.observers:
 			o.on_camera_moved(self)
@@ -147,6 +143,30 @@ class AutoCamera:
 	
 	def remove_observer(self, camObserver):
 		self.observers.remove(camObserver)
+
+class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
+	'''Adds self as a goal when an attached sensor is touched by the main
+	character.'''
+	_prefix = 'MCS_'
+
+	def __init__(self, old_owner):
+		self.attached = False
+
+	@bxt.types.expose_fun
+	@bxt.utils.controller_cls
+	def on_touched(self, c):
+		mainChar = director.Director().mainCharacter
+		shouldAttach = False
+		for s in c.sensors:
+			if mainChar in s.hitObjectList:
+				shouldAttach = True
+				break
+
+		if shouldAttach and not self.attached:
+			AutoCamera().add_goal(self)
+		elif not shouldAttach and self.attached:
+			AutoCamera().remove_goal(self)
+		self.attached = shouldAttach
 
 @bxt.types.weakprops('target')
 class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
@@ -549,8 +569,8 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 		AutoCamera().add_observer(self)
 
 	def on_camera_moved(self, autoCamera):
-		self.worldPosition = autoCamera.get_camera().worldPosition
-		pos = autoCamera.get_camera().worldPosition.copy()
+		self.worldPosition = autoCamera.camera.worldPosition
+		pos = autoCamera.camera.worldPosition.copy()
 		through = pos.copy()
 		through.z += CameraCollider.MAX_DIST
 		vec = through - pos
@@ -582,8 +602,8 @@ class BackgroundCamera(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_Cam
 		AutoCamera().add_observer(self)
 
 	def on_camera_moved(self, autoCamera):
-		self.worldOrientation = autoCamera.get_camera().worldOrientation
-		self.lens = autoCamera.get_camera().lens
+		self.worldOrientation = autoCamera.camera.worldOrientation
+		self.lens = autoCamera.camera.lens
 
 @bxt.utils.singleton('set_active', prefix='CCM_')
 class CloseCameraManager(bxt.utils.EventListener):

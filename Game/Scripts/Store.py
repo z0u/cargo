@@ -69,7 +69,7 @@ def set(path, value):
 def unset(path):
 	'''Delete a value from persistent storage.'''
 	global __dirty
-	
+
 	p = resolve(path)
 	if p in logic.globalDict:
 		del(logic.globalDict[p])
@@ -82,13 +82,13 @@ def list(path='/'):
 
 def _save():
 	global __dirty
-	
+
 	logic.saveGlobalDict()
 	__dirty = False
 
 def _load():
 	global __dirty
-	
+
 	logic.loadGlobalDict()
 	__dirty = False
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2010 Alex Fraser <alex@phatcore.com>
+# Copyright 2009-2011 Alex Fraser <alex@phatcore.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@ from bge import logic
 import mathutils
 
 import bxt
+
+from . import director
 
 class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A generic 3D button that can be activated by objects in the scene. No
@@ -85,9 +87,8 @@ class ToughButton(Button):
 	trigger this button. This button only works with Actors.'''
 	
 	def accept(self, ob):
-		if 'Actor' not in ob:
+		try:
+			vel = mathutils.Vector(ob.lastLinV)
+			return vel.magnitude >= self['MinSpeed']
+		except AttributeError:
 			return False
-		
-		actor = ob['Actor']
-		vel = mathutils.Vector(actor.GetLastLinearVelocity())
-		return vel.magnitude >= self['MinSpeed']

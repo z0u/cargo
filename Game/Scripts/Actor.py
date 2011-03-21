@@ -91,8 +91,8 @@ class Actor:
 		# changed by the time the impact is detected, these need to be updated
 		# every frame.
 		#
-		self.Velocity1 = [0.0, 0.0, 0.0]
-		self.Velocity2 = [0.0, 0.0, 0.0]
+		self._currentLinV = [0.0, 0.0, 0.0]
+		self.lastLinV = [0.0, 0.0, 0.0]
 		
 		self.Listeners = None # set
 		self.AttachPoints = None # {}
@@ -302,14 +302,14 @@ class Actor:
 	def RecordVelocity(self):
 		'''Store the velocity of this object for one frame. See
 		GetLastLinearVelocity.'''
-		self.Velocity2 = self.Velocity1
-		self.Velocity1 = self.owner.getLinearVelocity()
+		self.lastLinV = self._currentLinV
+		self._currentLinV = self.owner.getLinearVelocity()
 	
 	def GetLastLinearVelocity(self):
 		'''Get the second-last velocity of this actor. This is useful in touch
 		handlers, because the object's energy is absorbed by the time the
 		handler is called.'''
-		return self.Velocity2
+		return self.lastLinV
 	
 	def getHealth(self):
 		return self.owner['Health']

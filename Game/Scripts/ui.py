@@ -25,14 +25,14 @@ import bxt
 @bxt.utils.singleton()
 class HUDState(bxt.utils.EventListener):
 	def __init__(self):
-		self.loaders = weakref.WeakSet()
+		self.loaders = bxt.utils.GameObjectSet()
 		bxt.utils.EventBus().addListener(self)
 
 	def onEvent(self, evt):
 		if evt.message == "StartLoading":
 			self.loaders.add(evt.body)
 		if evt.message == "FinishLoading":
-			self.loaders.remove(evt.body)
+			self.loaders.discard(evt.body)
 
 	def getNumLoaders(self):
 		return len(self.loaders)

@@ -133,7 +133,6 @@ class Extro(Character):
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActShowDialogue("Press ESC to exit."))
 
-@bxt.types.weakprops('camTop', 'camBottom')
 class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	DIR_UP = 1
 	DIR_DOWN = 2
@@ -142,6 +141,9 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	LOC_BOTTOM = 2
 	
 	PROJECTION = [0.0, 0.0, 20.0]
+
+	camTop = bxt.utils.weakprop('camTop')
+	camBottom = bxt.utils.weakprop('camBottom')
 	
 	def __init__(self, old_owner):
 		scene = bge.logic.getCurrentScene()

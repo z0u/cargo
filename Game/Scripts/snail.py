@@ -25,8 +25,7 @@ import bxt
 import bge
 from . import director
 
-@bxt.types.weakprops('shell', 'nearestPickup')
-class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Snail(director.Actor, bge.types.KX_GameObject):
 	_prefix = ''
 
 	# Snail states
@@ -54,9 +53,22 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
 
+	shell = bxt.utils.weakprop('shell')
+	nearestPickup = bxt.utils.weakprop('nearestPickup')
+	eyeRayL = bxt.utils.weakprop('eyeRayL')
+	eyeRayR = bxt.utils.weakprop('eyeRayR')
+	eyeLocL = bxt.utils.weakprop('eyeLocL')
+	eyeLocR = bxt.utils.weakprop('eyeLocR')
+	armature = bxt.utils.weakprop('armature')
+	cargoHold = bxt.utils.weakprop('cargoHold')
+	shockwave = bxt.utils.weakprop('shockwave')
+	closeCamera = bxt.utils.weakprop('closeCamera')
+
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)
 
+		self.shell = None
+		self.nearestPickup = None
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
 		self.eyeRayR = self.childrenRecursive['EyeRay.R']
 		self.eyeLocL = self.childrenRecursive['EyeLoc.L']
@@ -65,9 +77,8 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.cargoHold = self.childrenRecursive['CargoHold']
 		self.shockwave = self.childrenRecursive['Shockwave']
 		self.closeCamera = self.childrenRecursive['SnailCam']
+
 		self.localCoordinates = True
-		self.shell = None
-		self.nearestPickup = None
 
 		self.frameCounter = 0
 
@@ -448,6 +459,11 @@ class Snail(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.rem_state(Snail.S_EXITING)
 		self.add_state(Snail.S_HASSHELL)
 		self.shell.on_post_exit()
+
+	def respawn(self, reason):
+		if self.has_state(Snail.S_INSHELL):
+			self.exit_shell(False)
+		super(Snail, self).respawn(reason)
 
 	@bxt.types.expose_fun
 	def modify_speed(self):

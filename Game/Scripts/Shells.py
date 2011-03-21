@@ -25,13 +25,14 @@ from . import camera
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
 
-@bxt.types.weakprops('snail')
-class ShellBase(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class ShellBase(director.Actor, bge.types.KX_GameObject):
 	S_INIT     = 1
 	S_IDLE     = 2
 	S_CARRIED  = 3
 	S_OCCUPIED = 4
 	S_ALWAYS   = 16
+
+	snail = bxt.utils.weakprop('snail')
 
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)
@@ -103,10 +104,20 @@ class ShellBase(director.Actor, bxt.types.BX_GameObject, bge.types.KX_GameObject
 		if positive and triggered:
 			self.snail.exit_shell(animate = True)
 
-	def restore_location(self, reason = None):
-		super(ShellBase, self).restore_location(reason)
+	def save_location(self):
+		super(ShellBase, self).save_location()
+		if self.snail != None:
+			self.snail.save_location()
+
+	def respawn(self, reason = None):
 		if self.has_state(ShellBase.S_OCCUPIED):
-			self.snail.exit_shell(False)
+			self.snail.respawn(reason)
+		elif self.has_state(ShellBase.S_CARRIED):
+			# Do nothing: shell is being carried, but snail is still in control
+			# (so presumably the snail will be told to respawn too).
+			pass
+		else:
+			super(ShellBase, self).respawn(reason)
 
 	def get_health(self):
 		if (self.has_state(ShellBase.S_CARRIED) or

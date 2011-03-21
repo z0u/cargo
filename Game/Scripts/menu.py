@@ -66,7 +66,7 @@ class InputHandler(bxt.utils.EventListener):
 	'''Manages UI elements: focus and click events.'''
 	
 	def __init__(self):
-		self.widgets = weakref.WeakSet()
+		self.widgets = bxt.utils.GameObjectSet()
 		self._current = None
 		self._downCurrent = None
 
@@ -207,7 +207,7 @@ class AsyncAdoptionHelper:
 			container.addChild(child)
 		else:
 			if not parentName in self.pendingChildren:
-				self.pendingChildren[parentName] = weakref.WeakSet()
+				self.pendingChildren[parentName] = bxt.utils.GameObjectSet()
 			self.pendingChildren[parentName].add(child)
 	
 	def registerAdopter(self, parent):
@@ -253,7 +253,7 @@ class Container(UIObject):
 	'''Contains other UIObjects.'''
 	
 	def __init__(self, name):
-		self.children = weakref.WeakSet()
+		self.children = bxt.utils.GameObjectSet()
 		self.name = name
 		AsyncAdoptionHelper().registerAdopter(self)
 	

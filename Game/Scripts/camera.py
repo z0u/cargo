@@ -39,12 +39,14 @@ class CameraObserver:
 
 @bxt.utils.singleton('set_camera', 'update', 'add_goal', 'remove_goal',
 					prefix='AC_')
-@bxt.types.weakprops('camera', 'lastGoal')
 class AutoCamera:
 	'''Manages the transform of the camera, and provides transitions between
 	camera locations. To transition to a new location, call PushGoal. The
 	reverse transition can be performed by calling PopGoal.
 	'''
+
+	camera = bxt.utils.weakprop('camera')
+	lastGoal = bxt.utils.weakprop('lastGoal')
 
 	def __init__(self):
 		'''Create an uninitialised AutoCamera. Call SetCamera to bind it to a
@@ -55,7 +57,6 @@ class AutoCamera:
 		self.queue = bxt.utils.WeakPriorityQueue()
 		self.lastGoal = None
 		self.instantCut = False
-		self.observers = weakref.WeakSet()
 
 	@bxt.utils.owner_cls
 	def set_camera(self, camera):
@@ -102,8 +103,8 @@ class AutoCamera:
 
 		self.lastGoal = currentGoal
 
-		for o in self.observers:
-			o.on_camera_moved(self)
+		evt = bxt.utils.WeakEvent('CameraMoved', self)
+		bxt.utils.EventBus().notify(evt)
 
 	@bxt.utils.owner_cls
 	def add_goal(self, goal):
@@ -137,12 +138,6 @@ class AutoCamera:
 			self.instantCut = True
 
 		self.queue.discard(goal)
-	
-	def add_observer(self, camObserver):
-		self.observers.add(camObserver)
-	
-	def remove_observer(self, camObserver):
-		self.observers.remove(camObserver)
 
 class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''Adds self as a goal when an attached sensor is touched by the main
@@ -168,7 +163,6 @@ class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 			AutoCamera().remove_goal(self)
 		self.attached = shouldAttach
 
-@bxt.types.weakprops('target')
 class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A camera goal that follows the active player. It tries to follow the same
 	path as the player, so that it avoids static scenery.
@@ -272,6 +266,8 @@ class CameraPath(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		def setCeilingHeight(self, height):
 			self.ceilingHeight = height
 			if DEBUG: self.marker.worldPosition = self.get_target()
+
+	target = bxt.utils.weakprop('target')
 
 	def __init__(self, old_owner):
 		# A list of CameraNodes.
@@ -566,7 +562,11 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 	MAX_DIST = 1000.0
 
 	def __init__(self, old_owner):
-		AutoCamera().add_observer(self)
+		bxt.utils.EventBus().addListener(self)
+
+	def onEvent(self, evt):
+		if evt.message == 'CameraMoved':
+			self.on_camera_moved(evt.body)
 
 	def on_camera_moved(self, autoCamera):
 		self.worldPosition = autoCamera.camera.worldPosition
@@ -599,7 +599,11 @@ class BackgroundCamera(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_Cam
 	guaranteed to update after the main one.'''
 
 	def __init__(self, old_owner):
-		AutoCamera().add_observer(self)
+		bxt.utils.EventBus().addListener(self)
+
+	def onEvent(self, evt):
+		if evt.message == 'CameraMoved':
+			self.on_camera_moved(evt.body)
 
 	def on_camera_moved(self, autoCamera):
 		self.worldOrientation = autoCamera.camera.worldOrientation
@@ -607,23 +611,12 @@ class BackgroundCamera(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_Cam
 
 @bxt.utils.singleton('set_active', prefix='CCM_')
 class CloseCameraManager(bxt.utils.EventListener):
+
+	current = bxt.utils.weakprop('current')
+
 	def __init__(self):
 		self.current = None
 		self.active = False
-
-	def _set_current(self, object):
-		def autoremove(ref):
-			self._current = None
-		if object == None:
-			self._current = None
-		else:
-			self._current = weakref.ref(object, autoremove)
-	def _get_current(self):
-		if self._current != None:
-			return self._current()
-		else:
-			return None
-	current = property(_get_current, _set_current)
 
 	def onEvent(self, event):
 		if event.message == 'MainCharacterSet':

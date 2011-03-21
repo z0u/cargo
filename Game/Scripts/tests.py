@@ -122,20 +122,24 @@ def run_tests():
 # Non-standard unit tests
 #########################
 
-@bxt.types.weakprops('wp')
-class WeakrefTest:
-	pass
-
 # Weak reference testing for GameObjects
+
+class WeakrefTest:
+	wpNative = bxt.utils.weakprop('wpNative')
+	wpCustom = bxt.utils.weakprop('wpCustom')
 
 wt = WeakrefTest()
 wrefCountdown = 3
 wrefPass = True
 
+class WeakrefCustom(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	def __init__(self, old_owner):
+		wt.wpCustom = self
+
 def weakref_init():
 	o = bge.logic.getCurrentScene().objects['weakref']
-	# This is actually stored as a weakref, due to the weakprops decorator.
-	wt.wp = o
+	# This is actually stored as a weakref, due to weakprop.
+	wt.wpNative = o
 
 def weakref_test():
 	global wrefCountdown
@@ -143,15 +147,22 @@ def weakref_test():
 
 	wrefCountdown -= 1
 
-	if wrefCountdown > 0 and wt.wp == None:
-		print("Info: Weak reference died before it was due to.")
+	if wrefCountdown > 0 and wt.wpNative == None:
+		print("Info: Native weak reference died before it was due to.")
+		wrefPass = False
+	elif wrefCountdown > 0 and wt.wpCustom == None:
+		print("Info: Custom weak reference died before it was due to.")
 		wrefPass = False
 	elif wrefCountdown == 1:
-		wt.wp.endObject()
+		wt.wpNative.endObject()
+		wt.wpCustom.endObject()
 	elif wrefCountdown == 0:
-		if wt.wp != None:
+		if wt.wpNative != None:
 			wrefPass = False
-			print("Info: Weak reference did not die on time.")
+			print("Info: Native weak reference did not die on time.")
+		if wt.wpCustom != None:
+			wrefPass = False
+			print("Info: Custom weak reference did not die on time.")
 
 		if wrefPass:
 			print("weakref_test ... ok")

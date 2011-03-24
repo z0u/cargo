@@ -54,7 +54,7 @@ class AutoCamera:
 		'''
 		self.camera = None
 		self.defaultLens = 22.0
-		self.queue = bxt.utils.WeakPriorityQueue()
+		self.queue = bxt.utils.GameObjectPriorityQueue()
 		self.lastGoal = None
 		self.instantCut = False
 
@@ -70,10 +70,15 @@ class AutoCamera:
 		camera should have a controller set up to call this once per frame.
 		'''
 
-		if not self.camera or len(self.queue) == 0:
+		if not self.camera:
+			return
+		currentGoal = None
+		try:
+			currentGoal = self.queue.top()
+		except IndexError:
+			print('Empty q')
 			return
 
-		currentGoal = self.queue.top()
 		if self.lastGoal != currentGoal:
 			# Keeping track of goals being added and removed it very
 			# difficult, so we just consider the last action when deciding

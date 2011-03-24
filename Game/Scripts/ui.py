@@ -140,58 +140,43 @@ class Filter(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Game
 			self.color = colour
 			self.visible = True
 
-class Gauge(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
-	'''Displays a value on the screen between 0 and 1.
-	
-	Hierarchy:
-	Owner
-	  - Indicator
-	
-	Owner properties:
-	Type: 'Gauge'
-	Name: Key for accessing gauge through HUD().getGauge.
-	
-	Indicator properties:
-	Type: 'Indicator'
-	Name: Key for accessing indicator through SetFraction. If not set, the
-		indicator can be accessed using the key None.
-	Speed: The responsiveness to changes in value. 0 <= Speed <= 1.
-	Frame [out]: The animation frame that displays a fraction, as a percentage.
-		0 <= Frame <= 100.
-	'''
-	
+class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	def __init__(self, old_owner):
+		self.fraction = 0.0
+		self.targetFraction = 0.0
+
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, self['event'])
+
+	def onEvent(self, evt):
+		if evt.message == self['event']:
+			self.targetFraction = evt.body
+#			try:
+			self.parent.indicatorChanged()
+#			except:
+#				print('Warning: indicator %s is not attached to a gauge.' %
+#						self.name)
+
+	@bxt.types.expose_fun
+	def update(self):
+		self.fraction = bxt.math.lerp(self.fraction, self.targetFraction,
+			self['Speed'])
+		self['Frame'] = self.fraction * 100.0
+
+class Gauge(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):	
 	S_HIDDEN  = 1
 	S_VISIBLE = 2
 	S_HIDING  = 3
-	
-	class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
-		def __init__(self, old_owner):
-			self.fraction = 0.0
-			self.targetFraction = 0.0
-		
-		def update(self):
-			self.fraction = bxt.math.lerp(self.fraction, self.targetFraction,
-				self['Speed'])
-			self['Frame'] = self.fraction * 100.0
 
 	def __init__(self, old_owner):
-		self.indicators = weakref.WeakValueDictionary()
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'UpdateGauge')
+		for child in self.children:
+			Indicator(child)
 
-	def onEvent(self, evt):
-		if evt.message == 'UpdateGauge':
-			indicatorName, fraction = evt.body.split(':')
-			fraction = float(fraction)
-			self.set_fraction(indicatorName, fraction)
-
-	def set_fraction(self, indicatorName, value):
-		if indicatorName in self.indicators:
-			self.indicators[indicatorName].targetFraction = value
-
+	def indicatorChanged(self):
 		maximum = 0.0
-		for indicator in self.indicators:
-			maximum = max(maximum, indicator.targetFraction)
+		for child in self.children:
+			if child.__class__ == Indicator:
+				maximum = max(maximum, child.targetFraction)
 
 		if maximum > 0.0:
 			self.show()
@@ -205,14 +190,6 @@ class Gauge(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameO
 	def hide(self):
 		if self.has_state(self.S_VISIBLE):
 			self.set_state(self.S_HIDING)
-
-	@bxt.types.expose_fun
-	@bxt.utils.controller_cls
-	def update(self, c):
-		for i in list(self.indicators.values()):
-			i.update()
-		for a in c.actuators:
-			c.activate(a)
 
 class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''

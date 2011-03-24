@@ -188,40 +188,6 @@ class InputHandler(bxt.utils.EventListener):
 		# TODO
 		pass
 
-@bxt.utils.singleton()
-class AsyncAdoptionHelper:
-	'''Creates parent-child relationships between widgets asynchronously. This
-	is required because the order that widgets are created in is undefined.'''
-	
-	def __init__(self):
-		self.pendingChildren = {}
-		self.containers = weakref.WeakValueDictionary()
-	
-	def requestAdoption(self, child, parentName):
-		'''Add a child to the registry. If the child's parent is already
-		registered, the hierarchy will be implemented immediately. Otherwise,
-		the child will be attached later, when the parent registers.'''
-		
-		if parentName in self.containers:
-			container = self.containers[parentName]
-			container.addChild(child)
-		else:
-			if not parentName in self.pendingChildren:
-				self.pendingChildren[parentName] = bxt.utils.GameObjectSet()
-			self.pendingChildren[parentName].add(child)
-	
-	def registerAdopter(self, parent):
-		'''Add a parent to the registry. Any children pendingChildren for this parent
-		will be attached.'''
-		
-		self.containers[parent.name] = parent
-		
-		# Assign all children pendingChildren on this container.
-		if parent.name in self.pendingChildren:
-			for child in self.pendingChildren[parent.name]:
-				parent.addChild(child)
-			del self.pendingChildren[parent.name]
-
 ################
 # Global sensors
 ################
@@ -237,76 +203,7 @@ def controllerInit(c):
 # Widget classes
 ################
 
-class UIObject:
-	'''A visual object that has some dynamic properties.'''
-	
-	def __init__(self):
-		self.show()
-	
-	def show(self):
-		self.visible = True
-	
-	def hide(self):
-		self.visible = False
-
-class Container(UIObject):
-	'''Contains other UIObjects.'''
-	
-	def __init__(self, name):
-		self.children = bxt.utils.GameObjectSet()
-		self.name = name
-		AsyncAdoptionHelper().registerAdopter(self)
-	
-	def addChild(self, uiObject):
-		'''Adds a child to this container. Usually you should use the
-		asyncAdoptionHandler instead of calling this directly.'''
-		self.children.add(uiObject)
-		if self.visible:
-			uiObject.show()
-		else:
-			uiObject.hide()
-	
-	def show(self):
-		super(Container, self).show()
-		for child in self.children:
-			child.show()
-	
-	def hide(self):
-		super(Container, self).hide()
-		for child in self.children:
-			child.hide()
-
-class Screen(Container, bxt.utils.EventListener):
-	'''A collection of UIObjects. Only one screen can be visible at a time. To
-	display a Screen, send a showScreen message on the EventBus.'''
-	
-	def __init__(self, name, title):
-		Container.__init__(self, name)
-		bxt.utils.EventBus().addListener(self)
-		self.title = title
-	
-	def onEvent(self, event):
-		if event.message == 'showScreen':
-			if event.body == self.name:
-				self.show()
-				evt = bxt.utils.Event('screenShown', self.getTitle())
-				bxt.utils.EventBus().notify(evt)
-			else:
-				self.hide()
-	
-	def getTitle(self):
-		return self.title
-
-# These need to be stored in a list - the EventBus only keeps weak references to
-# listeners.
-screens = []
-screens.append(Screen('LoadingScreen', 'Load'))
-screens.append(Screen('LoadDetailsScreen', ''))
-screens.append(Screen('OptionsScreen', 'Options'))
-screens.append(Screen('CreditsScreen', 'Credits'))
-screens.append(Screen('ConfirmationDialogue', 'Confirm'))
-bxt.utils.EventBus().notify(
-		bxt.utils.Event('showScreen', 'LoadingScreen'))
+bxt.utils.EventBus().notify(bxt.utils.Event('showScreen', 'LoadingScreen'))
 
 class Camera(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''A camera that adjusts its position depending on which screen is
@@ -344,7 +241,7 @@ class Camera(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Came
 			frame = max(frame - Camera.FRAME_RATE, targetFrame)
 		self['frame'] = frame
 
-class Widget(UIObject, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''An interactive UIObject. Has various states (e.g. focused, up, down) to
 	facilitate interaction. Some of the states map to a frame to allow a
 	visual progression.'''
@@ -368,16 +265,14 @@ class Widget(UIObject, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	ACTIVE_FRAME = 12.0
 
 	def __init__(self, old_owner):
-		UIObject.__init__(self)
 		self.sensitive = True
 		self.active = False
 		self['Widget'] = True
 		self.show()
-		
-		if 'parentName' in self:
-			AsyncAdoptionHelper().requestAdoption(self, self['parentName'])
 
 		InputHandler().addWidget(self)
+		bxt.utils.EventBus().addListener(self)
+		bxt.utils.EventBus().replayLast(self, 'showScreen')
 	
 	def enter(self):
 		if not self.sensitive:
@@ -413,9 +308,18 @@ class Widget(UIObject, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				body = self['onClickBody']
 			evt = bxt.utils.Event(msg, body)
 			bxt.utils.EventBus().notify(evt)
-	
+
+	def onEvent(self, evt):
+		if evt.message == 'showScreen':
+			if not 'screenName' in self:
+				self.show()
+			elif evt.body == self['screenName']:
+				self.show()
+			else:
+				self.hide()
+
 	def hide(self):
-		UIObject.hide(self)
+		self.setVisible(False, False)
 		self.add_state(Widget.S_HIDDEN)
 		self.rem_state(Widget.S_VISIBLE)
 		self.rem_state(Widget.S_DOWN)
@@ -423,7 +327,7 @@ class Widget(UIObject, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.updateTargetFrame()
 	
 	def show(self):
-		UIObject.show(self)
+		self.setVisible(True, False)
 		self.add_state(Widget.S_VISIBLE)
 		self.rem_state(Widget.S_HIDDEN)
 		self.updateTargetFrame()
@@ -521,15 +425,12 @@ class Checkbox(Button):
 
 class ConfirmationPage(bxt.utils.EventListener, Widget):
 	def __init__(self, old_owner):
-		Widget.__init__(self, old_owner)
-		self.setSensitive(False)
 		self.lastScreen = ''
 		self.currentScreen = ''
 		self.onConfirm = ''
 		self.onConfirmBody = ''
-
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'showScreen')
+		Widget.__init__(self, old_owner)
+		self.setSensitive(False)
 
 	def onEvent(self, event):
 		super(ConfirmationPage, self).onEvent(event)
@@ -615,13 +516,26 @@ class CreditsPage(Widget):
 				self.drawNext()
 
 class Subtitle(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	SCREENMAP = {
+			'LoadingScreen': 'Load',
+			'LoadDetailsScreen': '',
+			'OptionsScreen': 'Options',
+			'CreditsScreen': 'Credits',
+			'ConfirmationDialogue': 'Confirm'
+		}
+
 	def __init__(self, old_owner):
 		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'screenShown')
+		bxt.utils.EventBus().replayLast(self, 'showScreen')
 
 	def onEvent(self, event):
-		if event.message == 'screenShown':
-			self.children['SubtitleCanvas']['Content'] = event.body
+		if event.message == 'showScreen':
+			text = ""
+			try:
+				text = Subtitle.SCREENMAP[event.body]
+			except KeyError:
+				text = ""
+			self.children['SubtitleCanvas']['Content'] = text
 
 class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):

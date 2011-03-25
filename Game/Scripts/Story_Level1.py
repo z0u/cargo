@@ -18,16 +18,16 @@
 import bxt
 import mathutils
 from .Story import *
+from . import director
 
-class Blinkenlights:
+class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''
 	
-	def __init__(self, owner):
+	def __init__(self, old_owner):
 		'''Create a new Blinkenlights object.
 		
-		Parameters:
-		owner: The 'string' holding up the lights. This object should have the
-			following children:
+		The owner should be the 'string' holding up the lights. This object
+		should have the following children:
 			 - One lamp.
 			 - Any number of mesh objects. These must have a keyed object
 			   colour.
@@ -39,28 +39,28 @@ class Blinkenlights:
 			3, lights will have the pattern [on, off, off, etc.]
 		frames: The number of impulses to wait before moving stepping to the
 			next state.'''
-		
-		self.owner = owner
+
 		self.step = 0
-		
+
 		def isLamp(x): return hasattr(x, 'energy')
-		
+
 		# Sort lights by distance from cord origin.
 		self.lights = []
 		self.lamp = None
-		for ob in self.owner.children:
+		for ob in self.children:
 			if isLamp(ob):
 				self.lamp = ob
 			else:
 				self.lights.append(ob)
-		self.lights.sort(key=bxt.math.DistanceKey(owner))
-		
+		self.lights.sort(key=bxt.math.DistanceKey(self))
+
 		self.cols = list(map(lambda x: x.color.copy(), self.lights))
 		self.targetCols = list(self.cols)
 		self.targetLampCol = bxt.render.BLACK.copy()
-	
+
+	@bxt.types.expose_fun
 	def blink(self):
-		stringLen = self.owner['cycleLen']
+		stringLen = self['cycleLen']
 		self.step = (self.step + 1) % stringLen
 		self.targetLampCol = bxt.render.BLACK.copy()
 		for i, col in enumerate(self.cols):
@@ -71,34 +71,22 @@ class Blinkenlights:
 			else:
 				target = col * 0.3
 			self.targetCols[i] = target
-	
+
+	@bxt.types.expose_fun
 	def update(self):
 		for light, targetCol in zip(self.lights, self.targetCols):
 			light.color = bxt.math.lerp(light.color, targetCol, 0.1)
 		
 		currentLampCol = mathutils.Vector(self.lamp.color)
 		lampCol = self.targetLampCol.copy()
-		lampCol.resize3D()
+		lampCol.resize_3d()
 		self.lamp.color =  bxt.math.lerp(currentLampCol, lampCol, 0.1)
 
-@bxt.utils.owner
-def createBlinkenlights(o):
-	o['Actor'] = Blinkenlights(o)
-
-@bxt.utils.owner
-def blinkBlinkenlights(o):
-	bl = o['Actor']
-	bl.blink()
-
-@bxt.utils.owner
-def updateBlinkenlights(o):
-	bl = o['Actor']
-	bl.update()
-
 class Worm(Character):
-	def __init__(self, owner):
-		Character.__init__(self, owner)
-		ui.HUD().ShowLoadingScreen(self)
+	def __init__(self, old_owner):
+		Character.__init__(self, old_owner)
+		evt = bxt.utils.WeakEvent('StartLoading', self)
+		bxt.utils.EventBus().notify(evt)
 
 	def CreateSteps(self):
 		#
@@ -136,7 +124,7 @@ class Worm(Character):
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActHideDialogue())
-		step.AddAction(ActGeneric(ui.HUD().HideLoadingScreen, self))
+		step.AddAction(ActEvent(bxt.utils.WeakEvent('FinishLoading', self)))
 		step.AddAction(ActGenericContext(SprayDirt, 10, 15.0))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 		
@@ -293,11 +281,6 @@ class Worm(Character):
 	
 	def isInsideWorld(self):
 		return True
-
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
-def CreateWorm(o):
-	Worm(o)
 
 @bxt.utils.controller
 def wormKnockSound(c):

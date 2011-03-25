@@ -137,20 +137,20 @@ class ActRemoveCamera:
 		camera.AutoCamera().remove_goal(cam)
 
 class ActGeneric:
-	def __init__(self, f, *closure):
+	def __init__(self, f, *args):
 		self.Function = f
-		self.Closure = closure
+		self.args = args
 	
 	def Execute(self, c):
 		try:
-			self.Function(*self.Closure)
+			self.Function(*self.args)
 		except Exception as e:
 			raise StoryError("Error executing " + str(self.Function), e)
 
 class ActGenericContext(ActGeneric):
 	def Execute(self, c):
 		try:
-			self.Function(c, *self.Closure)
+			self.Function(c, *self.args)
 		except Exception as e:
 			raise StoryError("Error executing " + str(self.Function), e)
 

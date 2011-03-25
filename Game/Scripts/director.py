@@ -43,7 +43,6 @@ class Actor(bxt.types.BX_GameObject):
 	def save_location(self):
 		'''Save the location of the owner for later. This may happen when the
 		object touches a safe point.'''
-		print(self.name, "saving location")
 		self.safePosition = self.worldPosition.copy()
 		self.safeOrientation = self.worldOrientation.copy()
 

@@ -49,11 +49,11 @@ class CondPropertyGE:
 #
 class ActSuspendInput:
 	def Execute(self, c):
-		bxt.utils.EventBus().notify(bxt.utils.Event('SuspendPlay'))
+		bxt.types.EventBus().notify(bxt.types.Event('SuspendPlay'))
 
 class ActResumeInput:
 	def Execute(self, c):
-		bxt.utils.EventBus().notify(bxt.utils.Event('ResumePlay'))
+		bxt.types.EventBus().notify(bxt.types.Event('ResumePlay'))
 
 class ActActuate:
 	def __init__(self, actuatorName):
@@ -94,21 +94,21 @@ class ActShowDialogue:
 		self.Message = message
 	
 	def Execute(self, c):
-		evt = bxt.utils.Event('ShowDialogue', self.Message)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.Event('ShowDialogue', self.Message)
+		bxt.types.EventBus().notify(evt)
 
 class ActHideDialogue:
 	def Execute(self, c):
-		evt = bxt.utils.Event('ShowDialogue', None)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.Event('ShowDialogue', None)
+		bxt.types.EventBus().notify(evt)
 
 class ActShowMessage:
 	def __init__(self, message):
 		self.Message = message
 	
 	def Execute(self, c):
-		evt = bxt.utils.Event('ShowMessage', self.Message)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.Event('ShowMessage', self.Message)
+		bxt.types.EventBus().notify(evt)
 
 class ActSetCamera:
 	def __init__(self, camName):
@@ -159,7 +159,7 @@ class ActEvent:
 		self.event = event
 
 	def Execute(self, c):
-		bxt.utils.EventBus().notify(self.event)
+		bxt.types.EventBus().notify(self.event)
 
 class ActDebug:
 	def __init__(self, message):
@@ -215,7 +215,7 @@ class Character(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.Steps.append(step)
 		return step
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def Progress(self, controller):
 		if self.NextStep >= len(self.Steps):

@@ -38,7 +38,7 @@ class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		Override this to filter out other objects.'''
 		return True
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def on_touched(self):
 		'''Called when this button is touched.
 		

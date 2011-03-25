@@ -22,11 +22,10 @@ from bge import logic
 
 import bxt
 
-@bxt.utils.singleton()
-class HUDState(bxt.utils.EventListener):
+class HUDState(metaclass=bxt.types.Singleton):
 	def __init__(self):
-		self.loaders = bxt.utils.GameObjectSet()
-		bxt.utils.EventBus().addListener(self)
+		self.loaders = bxt.types.GameObjectSet()
+		bxt.types.EventBus().addListener(self)
 
 	def onEvent(self, evt):
 		if evt.message == "StartLoading":
@@ -37,7 +36,7 @@ class HUDState(bxt.utils.EventListener):
 	def getNumLoaders(self):
 		return len(self.loaders)
 
-class MessageBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'MB_'
 
 	def __init__(self, old_owner):
@@ -45,8 +44,8 @@ class MessageBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 		if self.canvas.__class__ != Text:
 			self.canvas = Text(self.canvas)
 
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'ShowMessage')
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, 'ShowMessage')
 
 	def onEvent(self, evt):
 		if evt.message == 'ShowMessage':
@@ -57,12 +56,12 @@ class MessageBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_
 			self['Content'] = text
 			self.canvas['Content'] = text
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def clear(self):
 		self['Content'] = ""
 		self.canvas['Content'] = ""
 
-class DialogueBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'DB_'
 
 	def __init__(self, old_owner):
@@ -70,8 +69,8 @@ class DialogueBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX
 		if self.canvas.__class__ != Text:
 			self.canvas = Text(self.canvas)
 
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'ShowDialogue')
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, 'ShowDialogue')
 
 	def onEvent(self, evt):
 		if evt.message == 'ShowDialogue':
@@ -87,46 +86,46 @@ class DialogueBox(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX
 
 		if self['Content'] != text:
 			if text == "":
-				evt = bxt.utils.Event("ResumePlay")
-				bxt.utils.EventBus().notify(evt)
+				evt = bxt.types.Event("ResumePlay")
+				bxt.types.EventBus().notify(evt)
 			else:
-				evt = bxt.utils.Event("SuspendPlay")
-				bxt.utils.EventBus().notify(evt)
+				evt = bxt.types.Event("SuspendPlay")
+				bxt.types.EventBus().notify(evt)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def clear(self):
 		self['Content'] = ""
 		self.canvas['Content'] = ""
 
-class LoadingScreen(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class LoadingScreen(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'LS_'
 
 	S_SHOW = 2
 	S_HIDE = 3
 
 	def __init__(self, old_owner):
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'StartLoading')
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, 'StartLoading')
 		self.set_state(LoadingScreen.S_SHOW)
 
 	def onEvent(self, evt):
 		if evt.message == 'StartLoading':
 			self.set_state(LoadingScreen.S_SHOW)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def update(self):
 		if HUDState().getNumLoaders() > 0:
 			self.set_state(LoadingScreen.S_SHOW)
 		else:
 			self.set_state(LoadingScreen.S_HIDE)
 
-class Filter(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 1
 	S_SHOW = 2
 	
 	def __init__(self, owner):
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'ShowFilter')
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, 'ShowFilter')
 
 	def onEvent(self, evt):
 		if evt.message == 'ShowFilter':
@@ -145,8 +144,8 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.fraction = 0.0
 		self.targetFraction = 0.0
 
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, self['event'])
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, self['event'])
 
 	def onEvent(self, evt):
 		if evt.message == self['event']:
@@ -157,13 +156,13 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 #				print('Warning: indicator %s is not attached to a gauge.' %
 #						self.name)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def update(self):
 		self.fraction = bxt.math.lerp(self.fraction, self.targetFraction,
 			self['Speed'])
 		self['Frame'] = self.fraction * 100.0
 
-class Gauge(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):	
+class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):	
 	S_HIDDEN  = 1
 	S_VISIBLE = 2
 	S_HIDING  = 3
@@ -408,7 +407,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				glyph['DelayMultiplier'])
 			bxt.utils.set_state(glyphInstance, 3)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def render_next_char(self):
 		'''
 		Lay out a glyph. Each glyph accumulates a delay based on its width. This
@@ -423,7 +422,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		finally:
 			self.currentChar = self.currentChar + 1
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def render(self):
 		'''Render the content onto the canvas.'''
 

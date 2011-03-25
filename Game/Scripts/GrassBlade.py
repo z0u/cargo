@@ -59,7 +59,7 @@ class GrassBlade:
 			self.Segments.append(p)
 		
 		self.LastBaseFrame = ZERO2.copy()
-		
+
 		Utilities.SceneManager().Subscribe(self)
 	
 	def OnSceneEnd(self):

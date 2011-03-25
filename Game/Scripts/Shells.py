@@ -32,7 +32,7 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 	S_OCCUPIED = 4
 	S_ALWAYS   = 16
 
-	snail = bxt.utils.weakprop('snail')
+	snail = bxt.types.weakprop('snail')
 
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)
@@ -79,8 +79,8 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 		self.set_state(ShellBase.S_OCCUPIED)
 		self.add_state(ShellBase.S_ALWAYS)
 
-		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.WeakEvent('MainCharacterSet', self)
+		bxt.types.EventBus().notify(evt)
 
 	def on_exited(self):
 		'''Called when a snail exits this shell (just after

@@ -58,7 +58,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.targetCols = list(self.cols)
 		self.targetLampCol = bxt.render.BLACK.copy()
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def blink(self):
 		stringLen = self['cycleLen']
 		self.step = (self.step + 1) % stringLen
@@ -72,7 +72,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				target = col * 0.3
 			self.targetCols[i] = target
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def update(self):
 		for light, targetCol in zip(self.lights, self.targetCols):
 			light.color = bxt.math.lerp(light.color, targetCol, 0.1)
@@ -85,8 +85,8 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 class Worm(Character):
 	def __init__(self, old_owner):
 		Character.__init__(self, old_owner)
-		evt = bxt.utils.WeakEvent('StartLoading', self)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.WeakEvent('StartLoading', self)
+		bxt.types.EventBus().notify(evt)
 
 	def CreateSteps(self):
 		#
@@ -124,7 +124,7 @@ class Worm(Character):
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActHideDialogue())
-		step.AddAction(ActEvent(bxt.utils.WeakEvent('FinishLoading', self)))
+		step.AddAction(ActEvent(bxt.types.WeakEvent('FinishLoading', self)))
 		step.AddAction(ActGenericContext(SprayDirt, 10, 15.0))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 		

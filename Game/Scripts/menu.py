@@ -32,18 +32,17 @@ CREDITS = [
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
 	("Made With", "Blender, Bullet, The GIMP and Inkscape")]
 
-@bxt.utils.singleton()
-class SessionManager(bxt.utils.EventListener):
+class SessionManager(metaclass=bxt.types.Singleton):
 	'''Responds to some high-level messages.'''
 	
 	def __init__(self):
-		bxt.utils.EventBus().addListener(self)
+		bxt.types.EventBus().addListener(self)
 	
 	def onEvent(self, event):
 		if event.message == 'showSavedGameDetails':
 			Store.setSessionId(event.body)
-			evt = bxt.utils.Event('showScreen', 'LoadDetailsScreen')
-			bxt.utils.EventBus().notify(evt)
+			evt = bxt.types.Event('showScreen', 'LoadDetailsScreen')
+			bxt.types.EventBus().notify(evt)
 		
 		elif event.message == 'startGame':
 			# Load the level indicated in the save game.
@@ -53,20 +52,19 @@ class SessionManager(bxt.utils.EventListener):
 			# Remove all stored items that match the current path.
 			for key in Store.list('/game'):
 				Store.unset(key)
-			evt = bxt.utils.Event('showScreen', 'LoadingScreen')
-			bxt.utils.EventBus().notify(evt)
+			evt = bxt.types.Event('showScreen', 'LoadingScreen')
+			bxt.types.EventBus().notify(evt)
 		
 		elif event.message == 'quit':
 			bge.logic.endGame()
 
-@bxt.utils.singleton('focusNext', 'focusPrevious', 'focusUp', 'focusDown',
-					'focusLeft', 'focusRight', 'mouseMove', 'mouseButton',
-					prefix='IH_')
-class InputHandler(bxt.utils.EventListener):
+class InputHandler(metaclass=bxt.types.Singleton):
 	'''Manages UI elements: focus and click events.'''
+
+	_prefix = 'IH_'
 	
 	def __init__(self):
-		self.widgets = bxt.utils.GameObjectSet()
+		self.widgets = bxt.types.GameObjectSet()
 		self._current = None
 		self._downCurrent = None
 
@@ -99,12 +97,14 @@ class InputHandler(bxt.utils.EventListener):
 	def addWidget(self, widget):
 		self.widgets.add(widget)
 
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	@bxt.utils.controller_cls
 	def mouseMove(self, c):
 		mOver = c.sensors['sMouseOver']
 		InputHandler().mouseOver(mOver)
 
+	@bxt.types.expose
 	def mouseOver(self, mOver):
 		newFocus = mOver.hitObject
 
@@ -123,13 +123,14 @@ class InputHandler(bxt.utils.EventListener):
 			newFocus.enter()
 		self.current = newFocus
 
+	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def mouseButton(self, c):
 		if bxt.utils.someSensorPositive():
 			InputHandler().mouseDown()
 		else:
 			InputHandler().mouseUp()
-	
+
 	def mouseDown(self):
 		'''Send a mouse down event to the widget under the cursor.'''
 		if self.current:
@@ -145,43 +146,49 @@ class InputHandler(bxt.utils.EventListener):
 			if self.current == self.downCurrent:
 				self.downCurrent.click()
 		self.downCurrent = None
-	
+
 	def onEvent(self, event):
 		if event.message == 'sensitivityChanged':
 			# Not implemented. Eventually, this should update the visual state
 			# of the current button.
 			pass
 
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def focusNext(self):
 		'''Switch to the next widget according to tab-order.'''
 		# TODO
 		pass
 
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def focusPrevious(self):
 		'''Switch to the previous widget according to tab-order.'''
 		# TODO
 		pass
 
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def focusLeft(self):
 		'''Switch to the widget to the left of current.'''
 		# TODO
 		pass
 
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def focusRight(self):
 		'''Switch to the widget to the right of current.'''
 		# TODO
 		pass
 
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def focusUp(self):
 		'''Switch to the widget above current.'''
 		# TODO
 		pass
 
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def focusDown(self):
 		'''Switch to the widget below current.'''
@@ -203,9 +210,9 @@ def controllerInit(c):
 # Widget classes
 ################
 
-bxt.utils.EventBus().notify(bxt.utils.Event('showScreen', 'LoadingScreen'))
+bxt.types.EventBus().notify(bxt.types.Event('showScreen', 'LoadingScreen'))
 
-class Camera(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Camera):
+class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''A camera that adjusts its position depending on which screen is
 	visible.'''
 
@@ -221,14 +228,14 @@ class Camera(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Came
 	FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
 	
 	def __init__(self, old_owner):
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'showScreen')
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, 'showScreen')
 	
 	def onEvent(self, event):
 		if event.message == 'showScreen' and event.body in Camera.FRAME_MAP:
 			self['targetFrame'] = Camera.FRAME_MAP[event.body]
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def update(self):
 		'''Update the camera animation frame. Should be called once per frame
 		when targetFrame != frame.'''
@@ -271,8 +278,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.show()
 
 		InputHandler().addWidget(self)
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'showScreen')
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, 'showScreen')
 	
 	def enter(self):
 		if not self.sensitive:
@@ -306,8 +313,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			body = ''
 			if 'onClickBody' in self:
 				body = self['onClickBody']
-			evt = bxt.utils.Event(msg, body)
-			bxt.utils.EventBus().notify(evt)
+			evt = bxt.types.Event(msg, body)
+			bxt.types.EventBus().notify(evt)
 
 	def onEvent(self, evt):
 		if evt.message == 'showScreen':
@@ -345,7 +352,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			targetFrame = Widget.IDLE_FRAME
 		self['targetFrame'] = targetFrame
 	
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def update(self):
 		targetFrame = self['targetFrame']
 		frame = self['frame']
@@ -371,8 +378,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		oldv = self.sensitive
 		self.sensitive = sensitive
 		if oldv != sensitive:
-			evt = bxt.utils.Event('sensitivityChanged', self.sensitive)
-			bxt.utils.EventBus().notify(evt)
+			evt = bxt.types.Event('sensitivityChanged', self.sensitive)
+			bxt.types.EventBus().notify(evt)
 
 class Button(Widget):
 	# A Widget has everything needed for a simple button.
@@ -423,7 +430,7 @@ class Checkbox(Button):
 		self.children['CheckOff']['frame'] = self['frame']
 		self.children['CheckOn']['frame'] = self['frame']
 
-class ConfirmationPage(bxt.utils.EventListener, Widget):
+class ConfirmationPage(Widget):
 	def __init__(self, old_owner):
 		self.lastScreen = ''
 		self.currentScreen = ''
@@ -443,21 +450,21 @@ class ConfirmationPage(bxt.utils.EventListener, Widget):
 		elif event.message == 'confirmation':
 			text, self.onConfirm, self.onConfirmBody = event.body.split('::')
 			self.children['ConfirmText']['Content'] = text
-			evt = bxt.utils.Event('showScreen', 'ConfirmationDialogue')
-			bxt.utils.EventBus().notify(evt)
+			evt = bxt.types.Event('showScreen', 'ConfirmationDialogue')
+			bxt.types.EventBus().notify(evt)
 
 		elif event.message == 'cancel':
 			if self.visible:
-				evt = bxt.utils.Event('showScreen', self.lastScreen)
-				bxt.utils.EventBus().notify(evt)
+				evt = bxt.types.Event('showScreen', self.lastScreen)
+				bxt.types.EventBus().notify(evt)
 				self.children['ConfirmText']['Content'] = ""
 
 		elif event.message == 'confirm':
 			if self.visible:
-				evt = bxt.utils.Event('showScreen', self.lastScreen)
-				bxt.utils.EventBus().notify(evt)
-				evt = bxt.utils.Event(self.onConfirm, self.onConfirmBody)
-				bxt.utils.EventBus().notify(evt)
+				evt = bxt.types.Event('showScreen', self.lastScreen)
+				bxt.types.EventBus().notify(evt)
+				evt = bxt.types.Event(self.onConfirm, self.onConfirmBody)
+				bxt.types.EventBus().notify(evt)
 				self.children['ConfirmText']['Content'] = ""
 
 class GameDetailsPage(Widget):
@@ -506,7 +513,7 @@ class CreditsPage(Widget):
 		self.index += 1
 		self.index %= len(CREDITS)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def draw(self):
 		if self.children['People']['Rendering'] or self.children['Role']['Rendering']:
 			self.delayTimer = CreditsPage.DELAY
@@ -515,7 +522,7 @@ class CreditsPage(Widget):
 			if self.delayTimer <= 0:
 				self.drawNext()
 
-class Subtitle(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Subtitle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	SCREENMAP = {
 			'LoadingScreen': 'Load',
 			'LoadDetailsScreen': '',
@@ -525,8 +532,8 @@ class Subtitle(bxt.utils.EventListener, bxt.types.BX_GameObject, bge.types.KX_Ga
 		}
 
 	def __init__(self, old_owner):
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'showScreen')
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, 'showScreen')
 
 	def onEvent(self, event):
 		if event.message == 'showScreen':
@@ -549,7 +556,7 @@ class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.HeadLoc_rest = mathutils.Quaternion(self.armature.channels[
 				self.HeadLoc['channel']].rotation_quaternion)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def update(self):
 		target = InputHandler().current
 		if not target:

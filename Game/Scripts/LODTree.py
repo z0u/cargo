@@ -17,7 +17,8 @@
 #
 
 from bge import logic
-import bxt.utils
+
+import bxt.types
 
 ACTIVATION_TIMEOUT = 120
 
@@ -38,10 +39,9 @@ NS_VISIBLE_DESCENDANT = 1
 NS_VISIBLE            = 2
 NS_IMPLICIT           = 3
 
-@bxt.utils.singleton()
-class LODManager:
+class LODManager(metaclass=bxt.types.Singleton):
 	'''A registrar of LODTrees. Each tree adds itself to this manager
-	(singleton; instance created below). Other scripts then have a central place
+	Other scripts then have a central place
 	to access LODTrees, such as the module function ActivateRange, below.'''
 	def __init__(self):
 		self.Trees = set()

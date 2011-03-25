@@ -27,8 +27,8 @@ from .Story import *
 class Intro(Character):
 	def __init__(self, old_owner):
 		Character.__init__(self, old_owner)
-		evt = bxt.utils.WeakEvent('StartLoading', self)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.WeakEvent('StartLoading', self)
+		bxt.types.EventBus().notify(evt)
 	
 	def CreateSteps(self):
 		step = self.NewStep()
@@ -38,7 +38,7 @@ class Intro(Character):
 		
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
-		step.AddAction(ActEvent(bxt.utils.WeakEvent('FinishLoading', self)))
+		step.AddAction(ActEvent(bxt.types.WeakEvent('FinishLoading', self)))
 		step.AddAction(ActActuate('aStartDungeonMusic'))
 		step.AddAction(ActShowDialogue("Welcome to the Cargo demo! This level is a short version of the main dungeon."))
 		
@@ -81,7 +81,7 @@ class Extro(Character):
 		
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
-		step.AddAction(ActEvent(bxt.utils.WeakEvent('StartLoading', self)))
+		step.AddAction(ActEvent(bxt.types.WeakEvent('StartLoading', self)))
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActActuate('aStartEndingMusic'))
 		
@@ -142,8 +142,8 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	
 	PROJECTION = [0.0, 0.0, 20.0]
 
-	camTop = bxt.utils.weakprop('camTop')
-	camBottom = bxt.utils.weakprop('camBottom')
+	camTop = bxt.types.weakprop('camTop')
+	camBottom = bxt.types.weakprop('camBottom')
 	
 	def __init__(self, old_owner):
 		scene = bge.logic.getCurrentScene()
@@ -156,7 +156,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.loc = Bucket.LOC_BOTTOM
 		self.isTouchingPlayer = False
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def update(self, c):
 		sCollision = c.sensors['sPlayer']
@@ -230,7 +230,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		
 		self.isTouchingPlayer = isTouchingPlayer
 		if isTouchingPlayer:
-			bxt.utils.EventBus().notify(bxt.utils.Event('SuspendInput', True))
+			bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', True))
 		else:
-			bxt.utils.EventBus().notify(bxt.utils.Event('SuspendInput', False))
+			bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', False))
 		self.updateCamera()

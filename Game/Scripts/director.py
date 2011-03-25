@@ -26,8 +26,8 @@ import bxt.utils
 class Actor(bxt.types.BX_GameObject):
 	SANITY_RAY_LENGTH = 10000.0
 
-	touchedObject = bxt.utils.weakprop('touchedObject')
-	closeCamera = bxt.utils.weakprop('closeCamera')
+	touchedObject = bxt.types.weakprop('touchedObject')
+	closeCamera = bxt.types.weakprop('closeCamera')
 
 	def __init__(self):
 		self.save_location()
@@ -39,7 +39,7 @@ class Actor(bxt.types.BX_GameObject):
 		self.touchedObject = None
 		Director().add_actor(self)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def save_location(self):
 		'''Save the location of the owner for later. This may happen when the
 		object touches a safe point.'''
@@ -53,8 +53,8 @@ class Actor(bxt.types.BX_GameObject):
 		self.setLinearVelocity(bxt.math.MINVECTOR)
 		self.setAngularVelocity(bxt.math.MINVECTOR)
 		if reason != None:
-			evt = bxt.utils.Event('ShowMessage', reason)
-			bxt.utils.EventBus().notify(evt)
+			evt = bxt.types.Event('ShowMessage', reason)
+			bxt.types.EventBus().notify(evt)
 
 	def drown(self):
 		'''Called when the Actor is fully submerged in water, and its Oxigen
@@ -162,8 +162,8 @@ class Actor(bxt.types.BX_GameObject):
 class ActorTest(Actor, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		Actor.__init__(self)
-		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.WeakEvent('MainCharacterSet', self)
+		bxt.types.EventBus().notify(evt)
 	def on_movement_impulse(self, left, right, fwd, back):
 		pass
 	def on_button1(self, pos, trig):
@@ -171,20 +171,20 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 	def on_button2(self, pos, trig):
 		pass
 
-@bxt.utils.singleton('update', 'on_movement_impulse', 'on_button1',
-		'on_button2', 'toggle_suspended', 'slow_motion_pulse', prefix='')
-class Director(bxt.utils.EventListener):
+class Director(metaclass=bxt.types.Singleton):
+	_prefix = ''
+	
 	SLOW_TICS_PER_FRAME = 10
 
-	mainCharacter = bxt.utils.weakprop('mainCharacter')
+	mainCharacter = bxt.types.weakprop('mainCharacter')
 
 	def __init__(self):
 		self.mainCharacter = None
-		self.actors = bxt.utils.GameObjectSet()
+		self.actors = bxt.types.GameObjectSet()
 		self.inputSuspended = False
-		bxt.utils.EventBus().addListener(self)
-		bxt.utils.EventBus().replayLast(self, 'MainCharacterSet')
-		bxt.utils.EventBus().replayLast(self, 'SuspendInput')
+		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().replayLast(self, 'MainCharacterSet')
+		bxt.types.EventBus().replayLast(self, 'SuspendInput')
 		self.slowMotionCount = 0
 
 	def add_actor(self, actor):
@@ -198,6 +198,7 @@ class Director(bxt.utils.EventListener):
 		elif event.message == 'SuspendInput':
 			self.inputSuspended = event.body
 
+	@bxt.types.expose
 	def update(self):
 		'''Make sure all actors are within the world.'''
 		for actor in self.actors:
@@ -205,6 +206,7 @@ class Director(bxt.utils.EventListener):
 				actor.respawn("Ouch! You got squashed.")
 			actor.record_velocity()
 
+	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def on_movement_impulse(self, c):
 		fwd = c.sensors['sForward']
@@ -215,12 +217,14 @@ class Director(bxt.utils.EventListener):
 			self.mainCharacter.on_movement_impulse(fwd.positive, back.positive,
 					left.positive, right.positive)
 
+	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def on_button1(self, c):
 		s = c.sensors[0]
 		if self.mainCharacter != None and not self.inputSuspended:
 			self.mainCharacter.on_button1(s.positive, s.triggered)
 
+	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def on_button2(self, c):
 		s = c.sensors[0]
@@ -235,6 +239,7 @@ class Director(bxt.utils.EventListener):
 				return s
 		return None
 
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	@bxt.utils.controller_cls
 	def toggle_suspended(self, c):
@@ -250,6 +255,7 @@ class Director(bxt.utils.EventListener):
 		else:
 			scene.suspend()
 
+	@bxt.types.expose
 	def slow_motion_pulse(self):
 		scene = self._get_main_scene()
 		if scene == None:

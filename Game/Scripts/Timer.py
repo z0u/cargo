@@ -49,7 +49,7 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.set_default_prop('Message', 'TimerFinished')
 		self.set_default_prop('Duration', 1.0)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def start(self):
 		'''The the timer running for the duration specified by the owner.'''
@@ -60,7 +60,7 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.add_state(self.S_RUNNING)
 		self.pulse()
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def stop(self):
 		'''Cancel the timer. The gauge will be hidden. No message will be sent.
@@ -72,7 +72,7 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			if gauge:
 				gauge.Hide()
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def pulse(self):
 		'''Increase the elapsed time by one tic. This must be called once per

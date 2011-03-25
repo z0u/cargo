@@ -53,16 +53,16 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
 
-	shell = bxt.utils.weakprop('shell')
-	nearestPickup = bxt.utils.weakprop('nearestPickup')
-	eyeRayL = bxt.utils.weakprop('eyeRayL')
-	eyeRayR = bxt.utils.weakprop('eyeRayR')
-	eyeLocL = bxt.utils.weakprop('eyeLocL')
-	eyeLocR = bxt.utils.weakprop('eyeLocR')
-	armature = bxt.utils.weakprop('armature')
-	cargoHold = bxt.utils.weakprop('cargoHold')
-	shockwave = bxt.utils.weakprop('shockwave')
-	closeCamera = bxt.utils.weakprop('closeCamera')
+	shell = bxt.types.weakprop('shell')
+	nearestPickup = bxt.types.weakprop('nearestPickup')
+	eyeRayL = bxt.types.weakprop('eyeRayL')
+	eyeRayR = bxt.types.weakprop('eyeRayR')
+	eyeLocL = bxt.types.weakprop('eyeLocL')
+	eyeLocR = bxt.types.weakprop('eyeLocR')
+	armature = bxt.types.weakprop('armature')
+	cargoHold = bxt.types.weakprop('cargoHold')
+	shockwave = bxt.types.weakprop('shockwave')
+	closeCamera = bxt.types.weakprop('closeCamera')
 
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)
@@ -86,17 +86,17 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		# this, as it has a global effect.
 		logic.setGravity([0.0, 0.0, -75.0])
 
-		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.WeakEvent('MainCharacterSet', self)
+		bxt.types.EventBus().notify(evt)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def update(self):
 		self.orient()
 		self.update_eye_length()
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
-		counter = bxt.utils.Counter()
+		counter = bxt.types.Counter()
 		avNormal = bxt.math.ZEROVEC.copy()
 		ob0, p0, n0 = self.children['ArcRay_Root.0'].getHitPosition()
 		if ob0:
@@ -226,7 +226,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		update_single(self.eyeRayL)
 		update_single(self.eyeRayR)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def look(self, c):
 		'''
@@ -288,7 +288,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 				return ob
 		return None
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def scan_pickups(self, controller):
 		obs = controller.sensors['sPickup'].hitObjectList
@@ -336,7 +336,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		bxt.utils.add_state(self.armature, Snail.S_ARM_POP)
 		self.armature['NoTransition'] = not animate
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
 		if not self.has_state(Snail.S_POPPING):
@@ -373,7 +373,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.armature['NoTransition'] = not animate
 		self.shell.on_pre_enter()
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	def on_enter_shell(self):
 		'''Transfers control of the character to the shell. The snail must have
@@ -445,10 +445,10 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self['InShell'] = 0
 		self.shell.on_exited()
 
-		evt = bxt.utils.WeakEvent('MainCharacterSet', self)
-		bxt.utils.EventBus().notify(evt)
+		evt = bxt.types.WeakEvent('MainCharacterSet', self)
+		bxt.types.EventBus().notify(evt)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def on_post_exit_shell(self):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
@@ -465,11 +465,11 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 			self.exit_shell(False)
 		super(Snail, self).respawn(reason)
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def modify_speed(self):
 		pass
 
-	@bxt.types.expose_fun
+	@bxt.types.expose
 	def start_crawling(self):
 		'''Called when the snail enters its crawling state.'''
 		#

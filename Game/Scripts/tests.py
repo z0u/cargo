@@ -73,14 +73,14 @@ class PriorityQueueTest(unittest.TestCase):
 		self.assertEquals(len(self.queue), 0)
 
 class FuzzySwitchTest(unittest.TestCase):
-	'''bxt.utils.FuzzySwitch'''
+	'''bxt.types.FuzzySwitch'''
 
 	def test_init(self):
-		self.sw = bxt.utils.FuzzySwitch(5, 10, False)
+		self.sw = bxt.types.FuzzySwitch(5, 10, False)
 		self.assertFalse(self.sw.is_on())
 
 	def test_on(self):
-		self.sw = bxt.utils.FuzzySwitch(3, 4, False)
+		self.sw = bxt.types.FuzzySwitch(3, 4, False)
 		self.sw.turn_on()
 		self.assertFalse(self.sw.is_on())
 		self.sw.turn_on()
@@ -89,7 +89,7 @@ class FuzzySwitchTest(unittest.TestCase):
 		self.assertTrue(self.sw.is_on())
 
 	def test_off(self):
-		self.sw = bxt.utils.FuzzySwitch(3, 4, True)
+		self.sw = bxt.types.FuzzySwitch(3, 4, True)
 		self.sw.turn_off()
 		self.assertTrue(self.sw.is_on())
 		self.sw.turn_off()
@@ -100,7 +100,7 @@ class FuzzySwitchTest(unittest.TestCase):
 		self.assertFalse(self.sw.is_on())
 
 	def test_both(self):
-		self.sw = bxt.utils.FuzzySwitch(2, 2, False)
+		self.sw = bxt.types.FuzzySwitch(2, 2, False)
 		self.sw.turn_on()
 		self.assertFalse(self.sw.is_on())
 		self.sw.turn_off()
@@ -125,8 +125,8 @@ def run_tests():
 # Weak reference testing for GameObjects
 
 class WeakrefTest:
-	wpNative = bxt.utils.weakprop('wpNative')
-	wpCustom = bxt.utils.weakprop('wpCustom')
+	wpNative = bxt.types.weakprop('wpNative')
+	wpCustom = bxt.types.weakprop('wpCustom')
 
 wt = WeakrefTest()
 wrefCountdown = 3

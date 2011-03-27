@@ -25,6 +25,8 @@ import bxt
 import bge
 from . import director
 
+GRAVITY = 75.0
+
 class Snail(director.Actor, bge.types.KX_GameObject):
 	_prefix = ''
 
@@ -84,7 +86,8 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 
 		# Make sure the settings are right for a snail. Not the best place for
 		# this, as it has a global effect.
-		logic.setGravity([0.0, 0.0, -75.0])
+		logic.setGravity([0.0, 0.0, 0 - GRAVITY])
+		self.actuators['aAntiGravity'].force = [0, 0, GRAVITY]
 
 		evt = bxt.types.WeakEvent('MainCharacterSet', self)
 		bxt.types.EventBus().notify(evt)

@@ -46,7 +46,8 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.tics = 0.0
 		self.targetTics = 1.0
 		self.suspendStart = None
-		self.set_default_prop('Message', 'TimerFinished')
+		self.set_default_prop('EndMessage', 'TimeUp')
+		self.set_default_prop('PulseMessage', 'TimeSet')
 		self.set_default_prop('Duration', 1.0)
 
 	@bxt.types.expose
@@ -66,11 +67,10 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		'''Cancel the timer. The gauge will be hidden. No message will be sent.
 		'''
 		self.rem_state(self.S_RUNNING)
-		
-		if 'Style' in self:
-			gauge = ui.HUD().GetGauge(self['Style'])
-			if gauge:
-				gauge.Hide()
+
+		if 'PulseMessage' in self:
+			evt = bxt.types.Event(self['PulseMessage'], 0.0)
+			bxt.types.EventBus().notify(evt)
 
 	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
@@ -84,22 +84,25 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				return
 			elif self['Paused'] == 'Yes':
 				return
-		
+
 		self.tics = self.tics + 1.0
 		fraction = self.tics / self.targetTics
-		
-		if 'Style' in self:
-			gauge = ui.HUD().GetGauge(self['Style'])
-			if gauge:
-				gauge.SetFraction(1.0 - fraction)
-				gauge.Show()
-		
+
+		if 'PulseMessage' in self:
+			evt = bxt.types.Event(self['PulseMessage'], 1.0 - fraction)
+			bxt.types.EventBus().notify(evt)
+
 		if fraction >= 1.0:
 			self.stop()
 			self.OnFinished()
 	
 	def OnFinished(self):
 		'''Called when the timer has finished normally. This usually sends the
-		message specified by the 'Message' property. Override to change this
+		message specified by the 'EndMessage' property. Override to change this
 		functionality.'''
-		bge.logic.sendMessage(self['Message'])
+
+		if 'EndMessage' in self:
+			evt = bxt.types.Event(self['EndMessage'])
+			bxt.types.EventBus().notify(evt)
+			# Send over two channels!
+			bge.logic.sendMessage(self['EndMessage'])

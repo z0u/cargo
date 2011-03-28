@@ -88,6 +88,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		# this, as it has a global effect.
 		logic.setGravity([0.0, 0.0, 0 - GRAVITY])
 		self.actuators['aAntiGravity'].force = [0, 0, GRAVITY]
+		self.actuators['aArtificialGravity'].force = [0, 0, 0 - GRAVITY]
 
 		evt = bxt.types.WeakEvent('MainCharacterSet', self)
 		bxt.types.EventBus().notify(evt)

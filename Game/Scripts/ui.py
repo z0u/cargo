@@ -150,11 +150,11 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def onEvent(self, evt):
 		if evt.message == self['event']:
 			self.targetFraction = evt.body
-#			try:
-			self.parent.indicatorChanged()
-#			except:
-#				print('Warning: indicator %s is not attached to a gauge.' %
-#						self.name)
+			try:
+				self.parent.indicatorChanged()
+			except:
+				print('Warning: indicator %s is not attached to a gauge.' %
+						self.name)
 
 	@bxt.types.expose
 	def update(self):

@@ -22,7 +22,7 @@ import bxt
 from . import director
 from . import ui
 from . import camera
-from .Story import *
+from .story import *
 
 class Intro(Character):
 	def __init__(self, old_owner):

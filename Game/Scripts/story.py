@@ -29,6 +29,7 @@ class StoryError(Exception):
 # Step progression conditions. These determine whether a step may execute.
 #
 class CondSensor:
+	'''Allow the story to progress when a particular sensor is true.'''
 	def __init__(self, name):
 		self.Name = name
 	
@@ -37,6 +38,8 @@ class CondSensor:
 		return s.positive and s.triggered
 
 class CondPropertyGE:
+	'''Allow the story to progress when a property matches an inequality. In
+	this case, when the property is greater than or equal to the given value.'''
 	def __init__(self, name, value):
 		self.Name = name
 		self.Value = value
@@ -48,14 +51,17 @@ class CondPropertyGE:
 # Actions. These belong to and are executed by steps.
 #
 class ActSuspendInput:
+	'''Prevent the player from moving around.'''
 	def Execute(self, c):
 		bxt.types.EventBus().notify(bxt.types.Event('SuspendPlay'))
 
 class ActResumeInput:
+	'''Let the player move around.'''
 	def Execute(self, c):
 		bxt.types.EventBus().notify(bxt.types.Event('ResumePlay'))
 
 class ActActuate:
+	'''Activate an actuator.'''
 	def __init__(self, actuatorName):
 		self.ActuatorName = actuatorName
 	
@@ -63,6 +69,7 @@ class ActActuate:
 		c.activate(c.actuators[self.ActuatorName])
 
 class ActActionPair:
+	'''Play an armature action and an IPO at the same time.'''
 	def __init__(self, aArmName, aMeshName, actionPrefix, start, end, loop = False):
 		self.aArmName = aArmName
 		self.aMeshName = aMeshName
@@ -111,6 +118,7 @@ class ActShowMessage:
 		bxt.types.EventBus().notify(evt)
 
 class ActSetCamera:
+	'''Switch to a named camera.'''
 	def __init__(self, camName):
 		self.CamName = camName
 	
@@ -137,6 +145,7 @@ class ActRemoveCamera:
 		camera.AutoCamera().remove_goal(cam)
 
 class ActGeneric:
+	'''Run any function.'''
 	def __init__(self, f, *args):
 		self.Function = f
 		self.args = args
@@ -148,6 +157,8 @@ class ActGeneric:
 			raise StoryError("Error executing " + str(self.Function), e)
 
 class ActGenericContext(ActGeneric):
+	'''Run any function, passing in the current controller as the first
+	argument.'''
 	def Execute(self, c):
 		try:
 			self.Function(c, *self.args)
@@ -155,6 +166,7 @@ class ActGenericContext(ActGeneric):
 			raise StoryError("Error executing " + str(self.Function), e)
 
 class ActEvent:
+	'''Fire an event.'''
 	def __init__(self, event):
 		self.event = event
 
@@ -162,6 +174,7 @@ class ActEvent:
 		bxt.types.EventBus().notify(self.event)
 
 class ActDebug:
+	'''Print a debugging message to the console.'''
 	def __init__(self, message):
 		self.Message = message
 	
@@ -173,6 +186,10 @@ class ActDebug:
 # are at the front of the queue.
 #
 class Step:
+	'''A collection of Conditions and Actions. This should be placed in a queue
+	(see Character.NewStep()). When this step is at the front of the queue, its
+	actions will be executed when all conditions are true.'''
+
 	def __init__(self):
 		self.Conditions = []
 		self.Actions = []
@@ -199,6 +216,10 @@ class Step:
 				print(e)
 
 class Character(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''Embodies a story in the scene. Subclass this to define the story
+	(override CreateSteps). Then call Progress on each frame to allow the steps
+	to be executed.'''
+
 	_prefix = ''
 
 	def __init__(self, old_owner):

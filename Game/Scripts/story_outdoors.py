@@ -17,7 +17,7 @@
 
 import bxt
 import mathutils
-from .Story import *
+from .story import *
 from . import director
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):

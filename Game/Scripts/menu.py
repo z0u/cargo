@@ -21,7 +21,7 @@ import bge
 import mathutils
 
 import bxt
-from . import Store
+from . import store
 from . import ui
 
 CREDITS = [
@@ -40,18 +40,18 @@ class SessionManager(metaclass=bxt.types.Singleton):
 	
 	def onEvent(self, event):
 		if event.message == 'showSavedGameDetails':
-			Store.setSessionId(event.body)
+			store.setSessionId(event.body)
 			evt = bxt.types.Event('showScreen', 'LoadDetailsScreen')
 			bxt.types.EventBus().notify(evt)
 		
 		elif event.message == 'startGame':
 			# Load the level indicated in the save game.
-			bge.logic.startGame(Store.get('/game/level', 'Dungeon.blend'))
+			bge.logic.startGame(store.get('/game/level', 'Dungeon.blend'))
 		
 		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.
-			for key in Store.list('/game'):
-				Store.unset(key)
+			for key in store.list('/game'):
+				store.unset(key)
 			evt = bxt.types.Event('showScreen', 'LoadingScreen')
 			bxt.types.EventBus().notify(evt)
 		
@@ -400,7 +400,7 @@ class Checkbox(Button):
 		Button.__init__(self, old_owner)
 		self.checked = False
 		if 'dataBinding' in self:
-			self.checked = Store.get(self['dataBinding'], self['dataDefault'])
+			self.checked = store.get(self['dataBinding'], self['dataDefault'])
 		self.updateCheckFace()
 		self.children['CheckBoxCanvas']['Content'] = self['label']
 		self.children['CheckBoxCanvas']['colour'] = self['colour']
@@ -409,7 +409,7 @@ class Checkbox(Button):
 		self.checked = not self.checked
 		self.updateCheckFace()
 		if 'dataBinding' in self:
-			Store.set(self['dataBinding'], self.checked)
+			store.set(self['dataBinding'], self.checked)
 		super(Checkbox, self).click()
 	
 	def updateVisibility(self, visible):
@@ -480,9 +480,9 @@ class GameDetailsPage(Widget):
 			child.setVisible(visible, True)
 		
 		if visible:
-			self.children['GameName']['Content'] = Store.get(
-				'/game/title', 'Game %d' % (Store.getSessionId() + 1))
-			self.children['StoryDetails']['Content'] = Store.get(
+			self.children['GameName']['Content'] = store.get(
+				'/game/title', 'Game %d' % (store.getSessionId() + 1))
+			self.children['StoryDetails']['Content'] = store.get(
 				'/game/storySummary', 'Start a new game.')
 
 class CreditsPage(Widget):

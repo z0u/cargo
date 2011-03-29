@@ -1,6 +1,6 @@
 import bpy
 
-pattern = "Timer"
+pattern = "Shells."
 replace = None
 
 def get_path(ob):

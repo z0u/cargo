@@ -20,7 +20,10 @@ from bge import logic
 
 import bxt.types
 
+from . import director
+
 ACTIVATION_TIMEOUT = 120
+DEBUG = False
 
 #
 # Node states, from weakest to strongest. In a path from the root to any leaf,
@@ -48,68 +51,88 @@ class LODManager(metaclass=bxt.types.Singleton):
 
 	def __init__(self):
 		self.trees = set()
-		self.colliders = bxt.types.GameObjectSet()
+
+		if DEBUG:
+			self.leavesVisible = 0
+			self.branchesVisible = 0
+			self.originalObjects = set(logic.getCurrentScene().objects)
+			self.currentObjects = self.originalObjects.copy()
 
 	def add_tree(self, tree):
 		self.trees.add(tree)
 
 	def remove_tree(self, tree):
-		self.trees.remove(tree)
-
-	def add_collider(self, actor):
-		self.colliders.add(actor)
-
-	def remove_collider(self, actor):
-		self.colliders.remove(actor)
+		self.trees.discard(tree)
 
 	@bxt.types.expose
-	def activate(self):
-		'''update which blades of grass are active. Call this once per frame.'''
+	def update(self):
+		'''Update which blades of grass are active. Call this once per frame.'''
 		boundsList = []
-		for c in self.colliders:
-			boundsList.append(Cube(c.owner.worldPosition, c.owner['LODRadius']))
-		for t in self.trees:
-			t.activate_range(boundsList)
+		deadTrees = []
 
-class Cube:
+		# Collect colliders
+		for actor in director.Director().actors:
+			radius = 1.0
+			try:
+				radius = actor['LODRadius']
+			except KeyError:
+				actor['LODRadius'] = 1.0
+			boundsList.append(KCube(actor.worldPosition, radius))
+
+		# Collide with trees
+		for t in self.trees:
+			try:
+				t.activate_range(boundsList)
+			except SystemError:
+				deadTrees.append(t)
+
+		# Expunge dead trees
+		for t in deadTrees:
+			self.remove_tree(t)
+
+		if DEBUG:
+			currentObjects = set()
+			currentObjects.update(logic.getCurrentScene().objects)
+			newObjects = currentObjects.difference(self.currentObjects)
+			deadObjects = self.currentObjects.difference(currentObjects)
+			if len(newObjects) != 0 or len(deadObjects) != 0:
+				print('Objects', len(logic.getCurrentScene().objects),
+					'Leaves:', self.leavesVisible,
+					'Branches:', self.branchesVisible)
+				self.currentObjects = currentObjects
+
+class KCube:
 	'''A bounding cube with arbitrary dimensions, defined by its centre
 	and radius.'''
-	
+
 	def __init__(self, centre, radius):
-		self.LowerBound = []
-		self.UpperBound = []
+		self.lowerBound = []
+		self.upperBound = []
 		for component in centre:
-			self.LowerBound.append(component - radius)
-			self.UpperBound.append(component + radius)
-	
+			self.lowerBound.append(component - radius)
+			self.upperBound.append(component + radius)
+
 	def is_in_range(self, point):
 		'''Tests whether a point is inside the cube.
 		Returns: False if the point is outside; True otherwise.'''
 		for i in range(len(point)):
-			if point[i] < self.LowerBound[i]:
+			if point[i] < self.lowerBound[i]:
 				return False
-			elif point[i] > self.UpperBound[i]:
+			elif point[i] > self.upperBound[i]:
 				return False
 		return True
 
 class LODTree:
 	'''A KD-tree of game objects for hierarchical LOD management.'''
-	
+
 	def __init__(self, root):
 		'''Create a new LODTree.
 		Parameters:
 		root: The root LODNode of the tree.'''
-		
+
 		self.root = root
 		LODManager().add_tree(self)
-		
-		Utilities.SceneManager().Subscribe(self)
-	
-	def OnSceneEnd(self):
-		LODManager().remove_tree(self)
-		self.root = None
-		Utilities.SceneManager().Unsubscribe(self)
-	
+
 	def activate_range(self, boundsList):
 		'''
 		Traverse the tree to make the leaves that are in range 'active' - i.e.
@@ -181,6 +204,9 @@ class LODBranch(LODNode):
 	right. The left subtree contains all elements whose location on the axis is
 	less than the medianValue. The right subtree contains all the other
 	elements.'''
+
+	# Don't really need a weakprop here, as these objects are carefully managed.
+	#objectInstance = bxt.types.weakprop('objectInstance')
 	
 	def __init__(self, obName, left, right, axis, medianValue):
 		'''
@@ -229,8 +255,8 @@ class LODBranch(LODNode):
 		# need to be hidden after pulse is called if their sibling has since
 		# become hidden.
 		#
-		leftInRange = [b for b in boundsList if self.medianValue > b.LowerBound[self.axis]]
-		rightInRange = [b for b in boundsList if self.medianValue < b.UpperBound[self.axis]]
+		leftInRange = [b for b in boundsList if self.medianValue > b.lowerBound[self.axis]]
+		rightInRange = [b for b in boundsList if self.medianValue < b.upperBound[self.axis]]
 		
 		if len(leftInRange) > 0:
 			left.activate_range(leftInRange)
@@ -311,13 +337,19 @@ class LODBranch(LODNode):
 	
 	def update(self):
 		'''Apply any changes that have been made to this node.'''
+		# A branch can only ever be implicitly visible, or hidden (i.e. only
+		# leaves can be explicitly visible).
 		if self.visible == NS_IMPLICIT:
-			if not self.objectInstance:
+			if self.objectInstance == None:
 				self.objectInstance = logic.getCurrentScene().addObject(self.owner, self.owner)
+				if DEBUG:
+					LODManager().branchesVisible += 1
 		else:
-			if self.objectInstance:
+			if self.objectInstance != None:
 				self.objectInstance.endObject()
 				self.objectInstance = None
+				if DEBUG:
+					LODManager().branchesVisible -= 1
 	
 	def verify(self, anscestorVisible):
 		LODNode.verify(self, anscestorVisible)
@@ -369,14 +401,17 @@ class LODLeaf(LODNode):
 			oMesh = oPos
 			if 'LODObject' in oPos:
 				oMesh = sceneObs[oPos['LODObject']]
-			
+
 			#
 			# Parents just cause problems with visibility.
 			#
 			oPos.removeParent()
 			self.objectPairs.append((oPos, oMesh))
-		
-		self.objectInstances = []
+
+		self.lastFrameVisible = False
+		# No fancy sets here; just be really careful!
+		#self.objectInstances = bxt.types.GameObjectSet()
+		self.objectInstances = set()
 		
 		self.numFramesActive = -1
 	
@@ -411,15 +446,26 @@ class LODLeaf(LODNode):
 	def update(self):
 		'''Apply any changes that have been made to this node.'''
 		if self.visible:
-			if len(self.objectInstances) == 0:
-				scene = logic.getCurrentScene()
-				for (oPos, oMesh) in self.objectPairs:
-					self.objectInstances.append(scene.addObject(oMesh, oPos))
+			if not self.lastFrameVisible:
+				try:
+					scene = logic.getCurrentScene()
+					for (oPos, oMesh) in self.objectPairs:
+						o = bxt.types.add_and_mutate_object(scene, oMesh, oPos)
+						self.objectInstances.add(o)
+				finally:
+					self.lastFrameVisible = True
+					if DEBUG:
+						LODManager().leavesVisible += 1
 		else:
-			if len(self.objectInstances) > 0:
-				for oInst in self.objectInstances:
-					oInst.endObject()
-				self.objectInstances = []
+			if self.lastFrameVisible:
+				try:
+					for oInst in self.objectInstances:
+						oInst.endObject()
+					self.objectInstances.clear()
+				finally:
+					self.lastFrameVisible = False
+					if DEBUG:
+						LODManager().leavesVisible -= 1
 	
 	def verify(self, anscestorVisible = None):
 		LODNode.verify(self, anscestorVisible)

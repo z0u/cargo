@@ -189,6 +189,7 @@ class Director(metaclass=bxt.types.Singleton):
 
 	def add_actor(self, actor):
 		self.actors.add(actor)
+
 	def rem_actor(self, actor):
 		self.actors.discard(actor)
 

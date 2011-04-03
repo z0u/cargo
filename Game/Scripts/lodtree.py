@@ -138,7 +138,7 @@ class LODTree:
 		Traverse the tree to make the leaves that are in range 'active' - i.e.
 		make their constituent parts visible, hiding the low-LOD clusters that
 		would be shown otherwise.
-		
+
 		Parameters:
 		bounds: The bounding cube to search for elements in.
 		'''
@@ -146,42 +146,42 @@ class LODTree:
 		if not self.root.visible:
 			self.root.visible = NS_IMPLICIT
 		self.root.update()
-	
+
 	def pretty_print(self):
 		self.root.pretty_print('', False)
 
 class LODNode:
 	'''A node in an LODTree. This is an abstract class; see LODBranch and
 	LODLeaf.'''
-	
+
 	def __init__(self):
 		self.visible = NS_HIDDEN
 		self.name = None
-	
+
 	def activate_range(self, boundsList):
 		pass
-	
+
 	def pulse(self, maxAge):
 		'''
 		Traverse the tree to cause active subtrees to age.
-		
+
 		Parameters:
 		maxAge: Any subtree that has been visible for longer than this number of
 		        frames will be deactivated.
 		'''
 		pass
-	
+
 	def update(self):
 		'''Apply any changes that have been made to this node.'''
 		pass
-	
+
 	def verify(self, anscestorVisible):
 		if anscestorVisible:
 			assert not bool(self.visible in (NS_VISIBLE, NS_IMPLICIT)), 'Error: path includes more than one visible node.'
-	
+
 	def deep_verify(self, anscestorVisible):
 		self.verify(self, anscestorVisible)
-	
+
 	def pretty_print(self, indent, anscestorVisible):
 		state = ""
 		if self.visible == NS_HIDDEN:
@@ -193,7 +193,7 @@ class LODNode:
 		elif self.visible == NS_IMPLICIT:
 			state = "NS_IMPLICIT"
 		print(indent + ('          state=%s' % state))
-		
+
 		try:
 			self.verify(anscestorVisible)
 		except AssertionError as e:
@@ -207,11 +207,11 @@ class LODBranch(LODNode):
 
 	# Don't really need a weakprop here, as these objects are carefully managed.
 	#objectInstance = bxt.types.weakprop('objectInstance')
-	
+
 	def __init__(self, obName, left, right, axis, medianValue):
 		'''
 		Create a new LODBranch node.
-		
+
 		Parameters:
 		obName:      The name of the object that represents this node. It should
 		             be the sum of all the descendants. It must be on a hidden
@@ -222,9 +222,9 @@ class LODBranch(LODNode):
 		medianValue: The location of the median element (of all the leaves) on
 		             the given axis.
 		'''
-		
+
 		LODNode.__init__(self)
-		
+
 		self.owner = logic.getCurrentScene().objectsInactive[obName]
 		#
 		# Parents just cause problems with visibility.
@@ -232,7 +232,7 @@ class LODBranch(LODNode):
 		self.owner.removeParent()
 		self.objectInstance = None
 		self.name = obName
-		
+
 		#
 		# The number of dimensions do not need to be known, because each node
 		# explicitely stores its axis.
@@ -241,11 +241,11 @@ class LODBranch(LODNode):
 		self.axis = axis
 		self.left = left
 		self.right = right
-	
+
 	def activate_range(self, boundsList):
 		left = self.left
 		right = self.right
-		
+
 		#
 		# Activate the branches if they are not out of bounds on the current
 		# axis. If they are out of bounds but were previously active, descend in
@@ -257,17 +257,17 @@ class LODBranch(LODNode):
 		#
 		leftInRange = [b for b in boundsList if self.medianValue > b.lowerBound[self.axis]]
 		rightInRange = [b for b in boundsList if self.medianValue < b.upperBound[self.axis]]
-		
+
 		if len(leftInRange) > 0:
 			left.activate_range(leftInRange)
 		elif left.visible:
 			left.pulse(ACTIVATION_TIMEOUT)
-		
+
 		if len(rightInRange) > 0:
 			right.activate_range(rightInRange)
 		elif right.visible:
 			right.pulse(ACTIVATION_TIMEOUT)
-		
+
 		#
 		# If either branch contains visible nodes, make sure the other branch is
 		# shown too.
@@ -276,7 +276,7 @@ class LODBranch(LODNode):
 			right.visible = NS_IMPLICIT
 		if right.visible and not left.visible:
 			left.visible = NS_IMPLICIT
-		
+
 		#
 		# Set own visibility based on descendants'.
 		#
@@ -284,13 +284,13 @@ class LODBranch(LODNode):
 			self.visible = NS_VISIBLE_DESCENDANT
 		else:
 			self.visible = NS_HIDDEN
-		
+
 		#
 		# Render children.
 		#
 		left.update()
 		right.update()
-	
+
 	def pulse(self, maxAge):
 		if self.visible == NS_IMPLICIT:
 			#
@@ -303,15 +303,15 @@ class LODBranch(LODNode):
 			#
 			self.visible = NS_HIDDEN
 			return
-		
+
 		left = self.left
 		right = self.right
-		
+
 		if left.visible:
 			left.pulse(maxAge)
 		if right.visible:
 			right.pulse(maxAge)
-		
+
 		#
 		# If either branch contains visible nodes, make sure the other branch is
 		# shown too.
@@ -320,7 +320,7 @@ class LODBranch(LODNode):
 			right.visible = NS_IMPLICIT
 		if right.visible and not left.visible:
 			left.visible = NS_IMPLICIT
-		
+
 		#
 		# Set own visibility based on descendants'.
 		#
@@ -328,13 +328,13 @@ class LODBranch(LODNode):
 			self.visible = NS_VISIBLE_DESCENDANT
 		else:
 			self.visible = NS_HIDDEN
-		
+
 		#
 		# Render children.
 		#
 		left.update()
 		right.update()
-	
+
 	def update(self):
 		'''Apply any changes that have been made to this node.'''
 		# A branch can only ever be implicitly visible, or hidden (i.e. only
@@ -350,24 +350,24 @@ class LODBranch(LODNode):
 				self.objectInstance = None
 				if DEBUG:
 					LODManager().branchesVisible -= 1
-	
+
 	def verify(self, anscestorVisible):
 		LODNode.verify(self, anscestorVisible)
 		assert bool(self.left.visible) == bool(self.right.visible), 'Children have unbalanced visibility.'
 		assert bool(self.objectInstance) == (self.visible in (NS_VISIBLE, NS_IMPLICIT)), 'object visibility doesn\'t match node state.'
-	
+
 	def deep_verify(self, anscestorVisible):
 		LODNode.verify(self, anscestorVisible)
 		if self.visible in (NS_VISIBLE, NS_IMPLICIT):
 			anscestorVisible = True
 		self.left.deep_verify(anscestorVisible)
 		self.right.deep_verify(anscestorVisible)
-	
+
 	def pretty_print(self, indent, anscestorVisible):
 		print(indent + ('LODBranch: %s, axis=%d, median=%f' % (self.owner.name, self.axis, self.medianValue)))
-		
+
 		LODNode.pretty_print(self, indent, anscestorVisible)
-		
+
 		if self.visible > NS_VISIBLE_DESCENDANT:
 			anscestorVisible = True
 		self.left.pretty_print(indent + ' L ', anscestorVisible)
@@ -376,17 +376,17 @@ class LODBranch(LODNode):
 class LODLeaf(LODNode):
 	'''A leaf node in an LODTree. A leaf is the bottom of the tree, but it can
 	still have multiple children.'''
-	
+
 	def __init__(self, obNames):
 		'''
 		Create a new LODLeaf node.
-		
+
 		Parameters:
 		obNames: A list of objects that this node represents. These must be on
 		         a hidden layer.
 		'''
 		LODNode.__init__(self)
-		
+
 		#
 		# objectPairs is a list of tuples: (positionObject, meshObject). When
 		# this node is activated, meshObject will be instantiated in the same
@@ -412,9 +412,9 @@ class LODLeaf(LODNode):
 		# No fancy sets here; just be really careful!
 		#self.objectInstances = bxt.types.GameObjectSet()
 		self.objectInstances = set()
-		
+
 		self.numFramesActive = -1
-	
+
 	def activate_range(self, boundsList):
 		'''Search the objects owned by this node. If any of them are within
 		range, this node will be shown.'''
@@ -424,7 +424,7 @@ class LODLeaf(LODNode):
 					self.visible = NS_VISIBLE
 					self.numFramesActive = 0
 					return
-	
+
 	def pulse(self, maxAge):
 		'''Make this node age by one frame. If it has been visible for too long
 		it will be hidden.'''
@@ -438,11 +438,11 @@ class LODLeaf(LODNode):
 			#
 			self.visible = NS_HIDDEN
 			return
-		
+
 		self.numFramesActive = self.numFramesActive + 1
 		if self.numFramesActive > maxAge:
 			self.visible = NS_HIDDEN
-	
+
 	def update(self):
 		'''Apply any changes that have been made to this node.'''
 		if self.visible:
@@ -466,11 +466,11 @@ class LODLeaf(LODNode):
 					self.lastFrameVisible = False
 					if DEBUG:
 						LODManager().leavesVisible -= 1
-	
+
 	def verify(self, anscestorVisible = None):
 		LODNode.verify(self, anscestorVisible)
 		assert (len(self.objectInstances) > 0) == (self.visible in (NS_VISIBLE, NS_IMPLICIT)), 'object visibility doesn\'t match node state.'
-	
+
 	def pretty_print(self, indent, anscestorVisible):
 		print(indent + 'LODLeaf: age=%d children=' % self.numFramesActive, end=' ')
 		print(self.name)

@@ -122,7 +122,7 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 1
 	S_SHOW = 2
-	
+
 	def __init__(self, owner):
 		bxt.types.EventBus().addListener(self)
 		bxt.types.EventBus().replayLast(self, 'ShowFilter')
@@ -185,7 +185,7 @@ class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def show(self):
 		if not self.has_state(self.S_VISIBLE):
 			self.set_state(self.S_VISIBLE)
-	
+
 	def hide(self):
 		if self.has_state(self.S_VISIBLE):
 			self.set_state(self.S_HIDING)
@@ -195,12 +195,12 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	A TextRenderer is used to render glyphs from a Font. The object nominated as
 	the owner is the canvas. The canvas can be any KX_GameObject: the glyphs
 	will be drawn onto the canvas' XY-plane.
-	
+
 	Canvas properties:
 	str   Content:   The text to draw.
 	str   Font:      The name of the font to use.
 	float LineWidth  The width of the canvas in Blender units.
-	
+
 	Call render_text to draw the Content to the screen. Set Content to "" before
 	rendering to clear the canvas.
 	'''
@@ -230,7 +230,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		Convert a string of text into glyph tuples. Escape sequences are
 		converted. E.G the string '\[foo]' will be converted into one glyph with
 		the name 'foo'.
-		
+
 		Returns: a list of glyphs.
 		'''
 

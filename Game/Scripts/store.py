@@ -41,13 +41,13 @@ def get(path, defaultValue = None):
 			  E.g. if the current session is game 0, /game == /savedGames/0.
 	These conventions will not change, so you can use them in scripts or bind
 	them to Blender objects.
-	
+
 	Parameters:
 	defaultValue: The value to return if 'path' can't be found. Remember that
 		None, zero, empty strings and empty lists all evaluate as False. Most
 		other things evaluate as True.
 	'''
-	
+
 	p = resolve(path)
 	try:
 		return logic.globalDict[p]
@@ -60,7 +60,7 @@ def set(path, value):
 	'''Set a value in persistent storage. The data will be saved to file the
 	next time save() is called.'''
 	global __dirty
-	
+
 	p = resolve(path)
 	if (not p in logic.globalDict) or (not logic.globalDict[p] == value):
 		logic.globalDict[p] = value

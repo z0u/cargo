@@ -23,7 +23,7 @@ from . import ui
 class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A countdown timer actor. Uses a regular pulse to count down to zero over
 	a given duration. The remaining time may be shown on a gauge on-screen.
-	
+
 	Owner properties:
 	 - Message: The subject of the message that will be sent to other objects
 	            when the time is up. Defaults to 'TimerFinished' if not
@@ -32,7 +32,7 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	 - Style:   The name of the gauge to show in the UI. If this property is not
 	            present, or if the gauge can't be found, no gauge will be shown.
 	            The related property on the gauge is called 'Name'.
-	
+
 	Hierarchy:
 	 - Owner: The base of the timer.
 	'''
@@ -95,7 +95,7 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if fraction >= 1.0:
 			self.stop()
 			self.OnFinished()
-	
+
 	def OnFinished(self):
 		'''Called when the timer has finished normally. This usually sends the
 		message specified by the 'EndMessage' property. Override to change this

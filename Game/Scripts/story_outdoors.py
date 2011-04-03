@@ -22,10 +22,10 @@ from . import director
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''
-	
+
 	def __init__(self, old_owner):
 		'''Create a new Blinkenlights object.
-		
+
 		The owner should be the 'string' holding up the lights. This object
 		should have the following children:
 			 - One lamp.
@@ -33,7 +33,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			   colour.
 		The mesh children will have their luminance cycled. The lamp will be
 		given the colour of the lights that are on.
-		
+
 		Owner properties:
 		cycleLen: The number of lights in a pattern. E.g. with a cycle length of
 			3, lights will have the pattern [on, off, off, etc.]
@@ -76,7 +76,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def update(self):
 		for light, targetCol in zip(self.lights, self.targetCols):
 			light.color = bxt.math.lerp(light.color, targetCol, 0.1)
-		
+
 		currentLampCol = mathutils.Vector(self.lamp.color)
 		lampCol = self.targetLampCol.copy()
 		lampCol.resize_3d()
@@ -95,16 +95,16 @@ class Worm(Character):
 		def SleepSnail(c, animate):
 			snail = c.sensors['sNearSnail'].hitObject['Actor']
 			snail.enter_shell(animate)
-		
+
 		def WakeSnail(c, animate):
 			snail = c.sensors['sNearSnail'].hitObject['Actor']
 			snail.exit_shell(animate)
-		
+
 		def SprayDirt(c, number, maxSpeed):
 			o = c.sensors['sParticleHook'].owner
 			o['nParticles'] = o['nParticles'] + number
 			o['maxSpeed'] = maxSpeed
-			
+
 		def CleanUp(c):
 			worm = c.owner['Actor']
 			worm.Destroy()
@@ -112,12 +112,12 @@ class Worm(Character):
 		step = self.NewStep()
 		step.AddAction(ActGenericContext(SleepSnail, False))
 		step.AddAction(ActSuspendInput())
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sSnailAsleep'))
 		step.AddAction(ActSetCamera('WormCamera_Enter'))
 		step.AddAction(ActShowDialogue("Press Return to start."))
-		
+
 		#
 		# Peer out of ground
 		#
@@ -127,11 +127,11 @@ class Worm(Character):
 		step.AddAction(ActEvent(bxt.types.WeakEvent('FinishLoading', self)))
 		step.AddAction(ActGenericContext(SprayDirt, 10, 15.0))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 75.0))
 		step.AddAction(ActShowDialogue("Cargo?"))
-		
+
 		#
 		# Get out of the ground
 		#
@@ -141,19 +141,19 @@ class Worm(Character):
 		step.AddAction(ActRemoveCamera('WormCamera_Enter'))
 		step.AddAction(ActSetCamera('WormCamera_Converse'))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 75.0, 186.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 115))
 		step.AddAction(ActGenericContext(SprayDirt, 3, 10.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 147))
 		step.AddAction(ActGenericContext(SprayDirt, 5, 10.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 153))
 		step.AddAction(ActGenericContext(SprayDirt, 5, 10.0))
-		
+
 		#
 		# Knock on shell
 		#
@@ -162,15 +162,15 @@ class Worm(Character):
 		step.AddAction(ActSetCamera('WormCamera_Knock', instantCut = True))
 		step.AddAction(ActShowDialogue("Wake up, Cargo!"))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 185.0, 198.0, True))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 185.0, 220.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 200.0))
 		step.AddAction(ActRemoveCamera('WormCamera_Knock'))
-	
+
 		#
 		# Wake / chastise
 		#	
@@ -178,15 +178,15 @@ class Worm(Character):
 		step.AddCondition(CondPropertyGE('ActionFrame', 205.0))
 		step.AddAction(ActGenericContext(WakeSnail, True))
 		step.AddAction(ActHideDialogue())
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sSnailAwake'))
 		step.AddAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActShowDialogue("I have something for you!"))
-		
+
 		#
 		# Dig up letter
 		#
@@ -195,35 +195,35 @@ class Worm(Character):
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActActuate('aParticleEmitMove'))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 220.0, 280.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 235))
 		step.AddAction(ActGenericContext(SprayDirt, 3, 10.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 241))
 		step.AddAction(ActGenericContext(SprayDirt, 3, 7.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 249))
 		step.AddAction(ActGenericContext(SprayDirt, 3, 7.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 257))
 		step.AddAction(ActGenericContext(SprayDirt, 3, 7.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 265))
 		step.AddAction(ActGenericContext(SprayDirt, 3, 7.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 275.0))
 		step.AddAction(ActSetCamera('WormCamera_Envelope', instantCut = True))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 280.0))
 		step.AddAction(ActShowDialogue("Ta-da! Please deliver this letter for me."))
-		
+
 		#
 		# Give letter
 		#
@@ -232,12 +232,12 @@ class Worm(Character):
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActRemoveCamera('WormCamera_Envelope'))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 290.0, 330.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 315.0))
 		step.AddAction(ActActuate('aHideLetter'))
 		step.AddAction(ActShowDialogue("Is that OK?"))
-		
+
 		#
 		# Point to lighthouse
 		#
@@ -245,24 +245,24 @@ class Worm(Character):
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActShowDialogue("Great! Please take it to the lighthouse keeper."))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 330.0, 395.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 360.0))
 		step.AddAction(ActSetCamera('WormCamera_Lighthouse', fac = 0.01))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 395.0))
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActRemoveCamera('WormCamera_Lighthouse'))
 		step.AddAction(ActShowDialogue("See you later!"))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 395.0, 420.0))
-		
+
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 420.0))
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 420.0, 540.0))
-		
+
 		#
 		# Return to game
 		#
@@ -271,14 +271,14 @@ class Worm(Character):
 		step.AddAction(ActActuate('aFadeSods'))
 		step.AddAction(ActResumeInput())
 		step.AddAction(ActRemoveCamera('WormCamera_Converse'))
-		
+
 		#
 		# Clean up. At this point, the worm is completely hidden and the sods have faded.
 		#
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 540.0))
 		step.AddAction(ActGenericContext(CleanUp))
-	
+
 	def isInsideWorld(self):
 		return True
 

@@ -38,9 +38,9 @@ def BendLeaf(c):
 			continue
 		for ob in s.hitObjectList:
 			hitObs.add(ob)
-	
+
 	o['Hit'] = len(hitObs) > 0
-	
+
 	#
 	# Pass two: add up the effect of all touching objects.
 	#
@@ -55,7 +55,7 @@ def BendLeaf(c):
 			influence = influence * ob['DynamicMass']
 			totalInfluence = totalInfluence + influence
 		totalInfluence = totalInfluence * o['InfluenceMultiplier']
-		
+
 		bendAngle = o['RestAngle'] + totalInfluence * o['MaxAngle']
 		if bendAngle > o['MaxAngle']:
 			bendAngle = o['MaxAngle']
@@ -63,13 +63,13 @@ def BendLeaf(c):
 			bendAngle = o['MinAngle']
 	else:
 		bendAngle = o['RestAngle']
-	
+
 	#
 	# Interpolate to target angle.
 	#
 	o['CurrentDelta'], o['BendAngle'] = bxt.math.smerp(o['CurrentDelta'],
 		o['BendAngle'], bendAngle, o['SpeedFactor'], o['Responsiveness'])
-	
+
 	#
 	# Apply deformation.
 	#

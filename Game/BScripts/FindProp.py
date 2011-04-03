@@ -20,4 +20,3 @@ for o in bpy.data.objects:
             o.game.properties[name].name = newName
         else:
             print('\tValue = %s' % str(o.game.properties[name].value))
-

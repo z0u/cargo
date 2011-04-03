@@ -29,7 +29,7 @@ class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	touched.'''
 
 	_prefix = 'btn_'
-	
+
 	def __init__(self, old_owner):
 		self.down = False
 
@@ -41,7 +41,7 @@ class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	@bxt.types.expose
 	def on_touched(self):
 		'''Called when this button is touched.
-		
+
 		Parameters:
 		 - obsTouch: The objects touching this button.
 		 - obsReset: The objects that are close enough to keep the button
@@ -52,30 +52,30 @@ class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		obsReset = c.sensors['sTouchReset'].hitObjectList
 
 		down = False
-		
+
 		obs = set(obsTouch)
 		if self.down:
 			obs.update(obsReset)
-		
+
 		for ob in obs:
 			if self.accept(ob):
 				down = True
 				break
-		
+
 		if self.down == down:
 			return
-		
+
 		self.down = down
 		if down:
 			self.on_down()
 		else:
 			self.on_up()
-	
+
 	def on_down(self):
 		'''Called when at least one object has triggered this button. Sends a
 		message to the scene with the subject 'ButtonDown'.'''
 		logic.sendMessage('ButtonDown', '', '', self.name)
-	
+
 	def on_up(self):
 		'''Called when no objects are triggering the button. Sends a message to
 		the scene with the subject 'ButtonUp'. This only happens after on_down is
@@ -85,7 +85,7 @@ class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 class ToughButton(Button):
 	'''A button that filters objects by their speed: only fast objects will
 	trigger this button. This button only works with Actors.'''
-	
+
 	def accept(self, ob):
 		try:
 			vel = mathutils.Vector(ob.lastLinV)

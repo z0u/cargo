@@ -107,7 +107,7 @@ class FuzzySwitchTest(unittest.TestCase):
 		self.assertFalse(self.sw.is_on())
 		self.sw.turn_on()
 		self.assertFalse(self.sw.is_on())
-		
+
 		self.sw.turn_on()
 		self.assertTrue(self.sw.is_on())
 
@@ -116,7 +116,6 @@ def run_tests():
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(PriorityQueueTest))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(FuzzySwitchTest))
 	unittest.TextTestRunner(verbosity=2).run(suite)
-
 
 #########################
 # Non-standard unit tests

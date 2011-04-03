@@ -32,7 +32,7 @@ class CondSensor:
 	'''Allow the story to progress when a particular sensor is true.'''
 	def __init__(self, name):
 		self.Name = name
-	
+
 	def Evaluate(self, c):
 		s = c.sensors[self.Name]
 		return s.positive and s.triggered
@@ -43,7 +43,7 @@ class CondPropertyGE:
 	def __init__(self, name, value):
 		self.Name = name
 		self.Value = value
-	
+
 	def Evaluate(self, c):
 		return c.owner[self.Name] >= self.Value
 
@@ -64,7 +64,7 @@ class ActActuate:
 	'''Activate an actuator.'''
 	def __init__(self, actuatorName):
 		self.ActuatorName = actuatorName
-	
+
 	def Execute(self, c):
 		c.activate(c.actuators[self.ActuatorName])
 
@@ -77,31 +77,31 @@ class ActActionPair:
 		self.start = start
 		self.End = end
 		self.Loop = loop
-		
+
 	def Execute(self, c):
 		aArm = c.actuators[self.aArmName]
 		aMesh = c.actuators[self.aMeshName]
 		aArm.action = self.ActionPrefix
 		aMesh.action = self.ActionPrefix + '_S'
-		
+
 		aArm.frameStart = aMesh.frameStart = self.start
 		aArm.frameEnd = aMesh.frameEnd = self.End
 		aArm.frame = aMesh.frame = self.start
-		
+
 		if self.Loop:
 			aArm.mode = aMesh.mode = bge.logic.KX_ACTIONACT_LOOPEND
 		else:
 			aArm.mode = aMesh.mode = bge.logic.KX_ACTIONACT_PLAY
-		
+
 		c.activate(aArm)
 		c.activate(aMesh)
 
 class ActShowDialogue:
 	def __init__(self, message):
-		self.Message = message
-	
+		self.message = message
+
 	def Execute(self, c):
-		evt = bxt.types.Event('ShowDialogue', self.Message)
+		evt = bxt.types.Event('ShowDialogue', self.message)
 		bxt.types.EventBus().notify(evt)
 
 class ActHideDialogue:
@@ -111,17 +111,17 @@ class ActHideDialogue:
 
 class ActShowMessage:
 	def __init__(self, message):
-		self.Message = message
-	
+		self.message = message
+
 	def Execute(self, c):
-		evt = bxt.types.Event('ShowMessage', self.Message)
+		evt = bxt.types.Event('ShowMessage', self.message)
 		bxt.types.EventBus().notify(evt)
 
 class ActSetCamera:
 	'''Switch to a named camera.'''
 	def __init__(self, camName):
 		self.CamName = camName
-	
+
 	def Execute(self, c):
 		try:
 			cam = bge.logic.getCurrentScene().objects[self.CamName]
@@ -134,7 +134,7 @@ class ActSetCamera:
 class ActRemoveCamera:
 	def __init__(self, camName):
 		self.CamName = camName
-	
+
 	def Execute(self, c):
 		try:
 			cam = bge.logic.getCurrentScene().objects[self.CamName]
@@ -149,7 +149,7 @@ class ActGeneric:
 	def __init__(self, f, *args):
 		self.Function = f
 		self.args = args
-	
+
 	def Execute(self, c):
 		try:
 			self.Function(*self.args)
@@ -176,10 +176,10 @@ class ActEvent:
 class ActDebug:
 	'''Print a debugging message to the console.'''
 	def __init__(self, message):
-		self.Message = message
-	
+		self.message = message
+
 	def Execute(self, c):
-		print(self.Message)
+		print(self.message)
 
 #
 # Steps. These are executed by Characters when their conditions are met and they
@@ -193,19 +193,19 @@ class Step:
 	def __init__(self):
 		self.Conditions = []
 		self.Actions = []
-	
+
 	def AddAction(self, action):
 		self.Actions.append(action)
-	
+
 	def AddCondition(self, cond):
 		self.Conditions.append(cond)
-	
+
 	def CanExecute(self, c):
 		for condition in self.Conditions:
 			if not condition.Evaluate(c):
 				return False
 		return True
-	
+
 	def Execute(self, c):
 		for act in self.Actions:
 			try:
@@ -227,10 +227,10 @@ class Character(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.Steps = []
 		self.CreateSteps()
 		self.setCyclic(False)
-	
+
 	def setCyclic(self, value):
 		self.Cyclic = value
-	
+
 	def NewStep(self):
 		step = Step()
 		self.Steps.append(step)
@@ -246,12 +246,12 @@ class Character(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			else:
 				# Finished.
 				return
-		
+
 		step = self.Steps[self.NextStep]
 		print(step)
 		if step.CanExecute(controller):
 			step.Execute(controller)
 			self.NextStep = self.NextStep + 1
-	
+
 	def CreateSteps(self):
 		pass

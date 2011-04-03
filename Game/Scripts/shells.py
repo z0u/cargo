@@ -133,7 +133,6 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 		else:
 			return super(ShellBase, self).set_health(value)
 
-
 class Shell(ShellBase):
 	def on_movement_impulse(self, fwd, back, left, right):
 		'''Make the shell roll around based on user input.'''

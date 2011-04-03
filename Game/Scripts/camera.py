@@ -27,7 +27,7 @@ DEBUG = False
 def hasLineOfSight(ob, other):
 	hitOb, _, _ = bxt.math.ray_cast_p2p(other, ob, prop = 'Ray')
 	return hitOb == None
-	
+
 class CameraObserver:
 	'''
 	An observer of AutoCameras. One use for this is cameras in other scenes.

@@ -101,10 +101,10 @@ class Actor(bxt.types.BX_GameObject):
 		 - Ground is found but the actor is on the wrong side of it, i.e. the
 		   surface normal is facing away from the actor.
 		Otherwise, the actor is inside the world.
-		
+
 		If the actor is the child of another object, it is always considered to
 		be inside the world.
-		
+
 		Returns True if the object seems to be inside the world; False
 		otherwise.
 		'''
@@ -173,7 +173,7 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 
 class Director(metaclass=bxt.types.Singleton):
 	_prefix = ''
-	
+
 	SLOW_TICS_PER_FRAME = 10
 
 	mainCharacter = bxt.types.weakprop('mainCharacter')

@@ -155,7 +155,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 			if normal.dot(avNormal) < 0.0:
 				normal.negate()
 			self.alignAxisToVect(normal, 2)
-		
+
 		self.orient_segment(self.children['Head.0'])
 		self.orient_segment(self.children['Tail.0'])
 
@@ -610,36 +610,36 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2
 	S_SLOW = 3
 	S_FAST = 4
-	
+
 	def __init__(self, old_owner):
 		self.lastMinorPos = self.worldPosition.copy()
 		self.lastMajorPos = self.lastMinorPos.copy()
 		self.paused = False
 		self.spotIndex = 0
-	
+
 	def add_spot(self, speedStyle, touchedObject):
 		'''
 		Add a spot where the snail is now. Actually, this only adds a spot half
 		the time: gaps will be left in the trail, like so:
 		    -----     -----     -----     -----     -----
-		
+
 		@param speedStyle: The style to apply to the new spot. One of [S_SLOW,
 			S_NORMAL, S_FAST].
 		'''
 		self.spotIndex = (self.spotIndex + 1) % len(self.children)
-		
+
 		scene = logic.getCurrentScene()
 		spot = self.children[self.spotIndex]
 		spotI = scene.addObject(spot, self)
-		
+
 		#
 		# Attach the spot to the object that the snail is crawling on.
 		#
 		if touchedObject != None:
 			spotI.setParent(touchedObject)
-		
+
 		bxt.utils.set_state(spotI, speedStyle)
-	
+
 	def moved(self, speedMultiplier, touchedObject):
 		pos = self.worldPosition
 

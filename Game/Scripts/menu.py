@@ -34,27 +34,27 @@ CREDITS = [
 
 class SessionManager(metaclass=bxt.types.Singleton):
 	'''Responds to some high-level messages.'''
-	
+
 	def __init__(self):
 		bxt.types.EventBus().addListener(self)
-	
+
 	def onEvent(self, event):
 		if event.message == 'showSavedGameDetails':
 			store.setSessionId(event.body)
 			evt = bxt.types.Event('showScreen', 'LoadDetailsScreen')
 			bxt.types.EventBus().notify(evt)
-		
+
 		elif event.message == 'startGame':
 			# Load the level indicated in the save game.
 			bge.logic.startGame(store.get('/game/level', 'Dungeon.blend'))
-		
+
 		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.
 			for key in store.list('/game'):
 				store.unset(key)
 			evt = bxt.types.Event('showScreen', 'LoadingScreen')
 			bxt.types.EventBus().notify(evt)
-		
+
 		elif event.message == 'quit':
 			bge.logic.endGame()
 
@@ -62,7 +62,7 @@ class InputHandler(metaclass=bxt.types.Singleton):
 	'''Manages UI elements: focus and click events.'''
 
 	_prefix = 'IH_'
-	
+
 	def __init__(self):
 		self.widgets = bxt.types.GameObjectSet()
 		self._current = None
@@ -136,7 +136,7 @@ class InputHandler(metaclass=bxt.types.Singleton):
 		if self.current:
 			self.current.down()
 			self.downCurrent = self.current
-	
+
 	def mouseUp(self):
 		'''Send a mouse up event to the widget under the cursor. If that widget
 		also received the last mouse down event, it will be sent a click event
@@ -224,13 +224,13 @@ class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''A simple mapping is used here. The camera will interpolate between the
 	nominated frame numbers when the screen changes. Set the animation using
 	an f-curve.'''
-		
+
 	FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
-	
+
 	def __init__(self, old_owner):
 		bxt.types.EventBus().addListener(self)
 		bxt.types.EventBus().replayLast(self, 'showScreen')
-	
+
 	def onEvent(self, event):
 		if event.message == 'showScreen' and event.body in Camera.FRAME_MAP:
 			self['targetFrame'] = Camera.FRAME_MAP[event.body]
@@ -239,7 +239,7 @@ class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	def update(self):
 		'''Update the camera animation frame. Should be called once per frame
 		when targetFrame != frame.'''
-		
+
 		targetFrame = self['targetFrame']
 		frame = self['frame']
 		if frame < targetFrame:
@@ -280,31 +280,31 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		InputHandler().addWidget(self)
 		bxt.types.EventBus().addListener(self)
 		bxt.types.EventBus().replayLast(self, 'showScreen')
-	
+
 	def enter(self):
 		if not self.sensitive:
 			return
 		self.add_state(Widget.S_FOCUS)
 		self.rem_state(Widget.S_DEFOCUS)
 		self.updateTargetFrame()
-	
+
 	def exit(self):
 		self.add_state(Widget.S_DEFOCUS)
 		self.rem_state(Widget.S_FOCUS)
 		self.updateTargetFrame()
-	
+
 	def down(self):
 		if not self.sensitive:
 			return
 		self.add_state(Widget.S_DOWN)
 		self.rem_state(Widget.S_UP)
 		self.updateTargetFrame()
-	
+
 	def up(self):
 		self.add_state(Widget.S_UP)
 		self.rem_state(Widget.S_DOWN)
 		self.updateTargetFrame()
-	
+
 	def click(self):
 		if not self.sensitive:
 			return
@@ -332,13 +332,13 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.rem_state(Widget.S_DOWN)
 		self.rem_state(Widget.S_FOCUS)
 		self.updateTargetFrame()
-	
+
 	def show(self):
 		self.setVisible(True, False)
 		self.add_state(Widget.S_VISIBLE)
 		self.rem_state(Widget.S_HIDDEN)
 		self.updateTargetFrame()
-	
+
 	def updateTargetFrame(self):
 		targetFrame = Widget.IDLE_FRAME
 		if self.has_state(Widget.S_HIDDEN):
@@ -351,7 +351,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		else:
 			targetFrame = Widget.IDLE_FRAME
 		self['targetFrame'] = targetFrame
-	
+
 	@bxt.types.expose
 	def update(self):
 		targetFrame = self['targetFrame']
@@ -362,7 +362,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		else:
 			frame = max(frame - Widget.FRAME_RATE, targetFrame)
 		self['frame'] = frame
-		
+
 		if frame == 1.0:
 			self.updateVisibility(False)
 		elif oldFrame == 1.0:
@@ -370,10 +370,10 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		c = bge.logic.getCurrentController()
 		c.activate(c.actuators[0])
-	
+
 	def updateVisibility(self, visible):
 		self.setVisible(visible, True)
-	
+
 	def setSensitive(self, sensitive):
 		oldv = self.sensitive
 		self.sensitive = sensitive
@@ -390,7 +390,7 @@ class SaveButton(Button):
 	def __init__(self, old_owner):
 		Button.__init__(self, old_owner)
 		self.id = 0
-		
+
 	def updateVisibility(self, visible):
 		super(SaveButton, self).updateVisibility(visible)
 		self.children['IDCanvas'].setVisible(visible, True)
@@ -404,19 +404,19 @@ class Checkbox(Button):
 		self.updateCheckFace()
 		self.children['CheckBoxCanvas']['Content'] = self['label']
 		self.children['CheckBoxCanvas']['colour'] = self['colour']
-	
+
 	def click(self):
 		self.checked = not self.checked
 		self.updateCheckFace()
 		if 'dataBinding' in self:
 			store.set(self['dataBinding'], self.checked)
 		super(Checkbox, self).click()
-	
+
 	def updateVisibility(self, visible):
 		super(Checkbox, self).updateVisibility(visible)
 		self.children['CheckBoxCanvas'].setVisible(visible, True)
 		self.updateCheckFace()
-	
+
 	def updateCheckFace(self):
 		if self.visible:
 			self.children['CheckOff'].setVisible(not self.checked, True)
@@ -424,7 +424,7 @@ class Checkbox(Button):
 		else:
 			self.children['CheckOff'].setVisible(False, True)
 			self.children['CheckOn'].setVisible(False, True)
-	
+
 	def update(self):
 		super(Checkbox, self).update()
 		self.children['CheckOff']['frame'] = self['frame']
@@ -473,12 +473,12 @@ class GameDetailsPage(Widget):
 	def __init__(self, old_owner):
 		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
-	
+
 	def updateVisibility(self, visible):
 		super(GameDetailsPage, self).updateVisibility(visible)
 		for child in self.children:
 			child.setVisible(visible, True)
-		
+
 		if visible:
 			self.children['GameName']['Content'] = store.get(
 				'/game/title', 'Game %d' % (store.getSessionId() + 1))
@@ -488,7 +488,7 @@ class GameDetailsPage(Widget):
 class CreditsPage(Widget):
 	'''Controls the display of credits.'''
 	DELAY = 180
-	
+
 	def __init__(self, old_owner):
 		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
@@ -562,7 +562,7 @@ class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if not target:
 			target = bge.logic.getCurrentScene().objects['Camera']
 		self.lookAt(target)
-	
+
 	def lookAt(self, target):
 		'''Turn the eyes to face the target.'''
 		# This code is similar to Snail.Snail.lookAt. But there's probably not
@@ -574,15 +574,15 @@ class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.math.ZAXIS), 2)
 			bone.alignAxisToVect(gVec, 1)
 			orn = bone.localOrientation.to_quaternion()
-			
+
 			if restOrn:
 				orn = orn.slerp(restOrn, 0.6)
-			
+
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
 			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
-		
+
 		look(self.EyeLocL, target)
 		look(self.EyeLocR, target)
 		look(self.HeadLoc, target, self.HeadLoc_rest)
-		
+
 		self.armature.update()

@@ -36,9 +36,9 @@ class SessionManager(metaclass=bxt.types.Singleton):
 	'''Responds to some high-level messages.'''
 
 	def __init__(self):
-		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().add_listener(self)
 
-	def onEvent(self, event):
+	def on_event(self, event):
 		if event.message == 'showSavedGameDetails':
 			store.setSessionId(event.body)
 			evt = bxt.types.Event('showScreen', 'LoadDetailsScreen')
@@ -147,7 +147,7 @@ class InputHandler(metaclass=bxt.types.Singleton):
 				self.downCurrent.click()
 		self.downCurrent = None
 
-	def onEvent(self, event):
+	def on_event(self, event):
 		if event.message == 'sensitivityChanged':
 			# Not implemented. Eventually, this should update the visual state
 			# of the current button.
@@ -228,10 +228,10 @@ class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'showScreen')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'showScreen')
 
-	def onEvent(self, event):
+	def on_event(self, event):
 		if event.message == 'showScreen' and event.body in Camera.FRAME_MAP:
 			self['targetFrame'] = Camera.FRAME_MAP[event.body]
 
@@ -278,8 +278,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.show()
 
 		InputHandler().addWidget(self)
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'showScreen')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'showScreen')
 
 	def enter(self):
 		if not self.sensitive:
@@ -316,7 +316,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			evt = bxt.types.Event(msg, body)
 			bxt.types.EventBus().notify(evt)
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == 'showScreen':
 			if not 'screenName' in self:
 				self.show()
@@ -439,8 +439,8 @@ class ConfirmationPage(Widget):
 		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
-	def onEvent(self, event):
-		super(ConfirmationPage, self).onEvent(event)
+	def on_event(self, event):
+		super(ConfirmationPage, self).on_event(event)
 		if event.message == 'showScreen':
 			# Store the last screen name so it can be restored later.
 			if self.currentScreen != event.body:
@@ -532,10 +532,10 @@ class Subtitle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		}
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'showScreen')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'showScreen')
 
-	def onEvent(self, event):
+	def on_event(self, event):
 		if event.message == 'showScreen':
 			text = ""
 			try:

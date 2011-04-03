@@ -182,9 +182,9 @@ class Director(metaclass=bxt.types.Singleton):
 		self.mainCharacter = None
 		self.actors = bxt.types.GameObjectSet()
 		self.inputSuspended = False
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'MainCharacterSet')
-		bxt.types.EventBus().replayLast(self, 'SuspendInput')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')
+		bxt.types.EventBus().replay_last(self, 'SuspendInput')
 		self.slowMotionCount = 0
 
 	def add_actor(self, actor):
@@ -193,7 +193,7 @@ class Director(metaclass=bxt.types.Singleton):
 	def rem_actor(self, actor):
 		self.actors.discard(actor)
 
-	def onEvent(self, event):
+	def on_event(self, event):
 		if event.message == 'MainCharacterSet':
 			self.mainCharacter = event.body
 		elif event.message == 'SuspendInput':

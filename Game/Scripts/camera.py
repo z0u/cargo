@@ -289,14 +289,14 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.target = None
 
 		AutoCamera().add_goal(self)
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'MainCharacterSet')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')
 
 		if DEBUG:
 			self.targetVis = bxt.utils.add_object('DebugReticule')
 			self.predictVis = bxt.utils.add_object('DebugReticule')
 
-	def onEvent(self, event):
+	def on_event(self, event):
 		if event.message == 'MainCharacterSet':
 			self.target = event.body
 
@@ -570,9 +570,9 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 	MAX_DIST = 1000.0
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().add_listener(self)
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == 'CameraMoved':
 			self.on_camera_moved(evt.body)
 
@@ -607,9 +607,9 @@ class BackgroundCamera(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_Cam
 	guaranteed to update after the main one.'''
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().add_listener(self)
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == 'CameraMoved':
 			self.on_camera_moved(evt.body)
 
@@ -626,7 +626,7 @@ class CloseCameraManager(metaclass=bxt.types.Singleton):
 		self.current = None
 		self.active = False
 
-	def onEvent(self, event):
+	def on_event(self, event):
 		if event.message == 'MainCharacterSet':
 			if self.current:
 				self.toggle_close_mode()

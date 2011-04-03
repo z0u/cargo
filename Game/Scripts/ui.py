@@ -25,9 +25,9 @@ import bxt
 class HUDState(metaclass=bxt.types.Singleton):
 	def __init__(self):
 		self.loaders = bxt.types.GameObjectSet()
-		bxt.types.EventBus().addListener(self)
+		bxt.types.EventBus().add_listener(self)
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == "StartLoading":
 			self.loaders.add(evt.body)
 		if evt.message == "FinishLoading":
@@ -44,10 +44,10 @@ class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if self.canvas.__class__ != Text:
 			self.canvas = Text(self.canvas)
 
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'ShowMessage')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'ShowMessage')
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == 'ShowMessage':
 			self.setText(evt.body)
 
@@ -69,10 +69,10 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if self.canvas.__class__ != Text:
 			self.canvas = Text(self.canvas)
 
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'ShowDialogue')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'ShowDialogue')
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == 'ShowDialogue':
 			self.setText(evt.body)
 
@@ -104,11 +104,11 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 3
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'StartLoading')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'StartLoading')
 		self.set_state(LoadingScreen.S_SHOW)
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == 'StartLoading':
 			self.set_state(LoadingScreen.S_SHOW)
 
@@ -124,10 +124,10 @@ class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_SHOW = 2
 
 	def __init__(self, owner):
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, 'ShowFilter')
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'ShowFilter')
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == 'ShowFilter':
 			self.show(evt.body)
 
@@ -144,10 +144,10 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.fraction = 0.0
 		self.targetFraction = 0.0
 
-		bxt.types.EventBus().addListener(self)
-		bxt.types.EventBus().replayLast(self, self['event'])
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, self['event'])
 
-	def onEvent(self, evt):
+	def on_event(self, evt):
 		if evt.message == self['event']:
 			self.targetFraction = evt.body
 			try:

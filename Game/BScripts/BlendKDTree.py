@@ -176,6 +176,9 @@ class KDTree:
 		tBuf.write('assert(len(LQ) == 0)\n')
 		tBuf.write('assert(len(RQ) == 0)\n')
 
+	def get_tbuf_name(self):
+		return 'LODTree_%s' % self.groupName
+
 class KDNode:
 	def __init__(self, depth, tree):
 		self.tree = tree
@@ -444,6 +447,7 @@ def make_lod_trees():
 		return ('LODDupli' in ob.game.properties and
 			'LODGroup' in ob.game.properties)
 	sourceObs = list(filter(is_lodsource, bpy.context.scene.objects))
+	trees = []
 	for sourceOb in sourceObs:
 		groupName = sourceOb.game.properties['LODGroup'].value
 		print('Creating LOD tree "%s"' % groupName)
@@ -467,12 +471,42 @@ def make_lod_trees():
 		lodObs = []
 
 		# Serialise to text buffer.
-		tBuf = bpy.data.texts.new(name='LODTree_%s' % groupName)
+		tBuf = bpy.data.texts.new(name=tree.get_tbuf_name())
 		tree.serialise_to_lod_tree(tBuf)
+		trees.append(tree)
 
 		print('Tree created. Saved to text buffer %s.' % tBuf.name)
 
 	set_layers_visible(original_layers)
+	return trees
+
+def create_controller(trees):
+	bpy.ops.object.add(type='EMPTY')
+	o = bpy.context.object
+	o.name = 'LODController'
+
+	# Two sensors: one that fires once, and one that fires always.
+	bpy.ops.logic.sensor_add(type='ALWAYS', name='sOnce')
+	bpy.ops.logic.sensor_add(type='ALWAYS', name='sAlways')
+	o.game.sensors['sAlways'].use_pulse_true_level = True
+
+	# One controller that runs on every frame, to update the trees.
+	bpy.ops.logic.controller_add(type='PYTHON', name='update')
+	c = o.game.controllers['update']
+	c.mode = 'MODULE'
+	c.module = 'Scripts.lodtree.update'
+	s = o.game.sensors['sAlways']
+	s.link(c)
+
+	# Several controllers, one to initialise each tree.
+	s = o.game.sensors['sOnce']
+	for tree in trees:
+		name = 'init' + tree.groupName
+		bpy.ops.logic.controller_add(type='PYTHON', name=name)
+		c = o.game.controllers[name]
+		c.mode = 'SCRIPT'
+		c.text = bpy.data.texts[tree.get_tbuf_name()]
+		s.link(c)
 
 def save_file(fileName):
 	print('Saving file to', fileName)
@@ -481,7 +515,8 @@ def save_file(fileName):
 if __name__ == '__main__':
 	try:
 		options = parse_options()
-		make_lod_trees()
+		trees = make_lod_trees()
+		create_controller(trees)
 		save_file(options['outfile'])
 	except Exception:
 		traceback.print_exc()

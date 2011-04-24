@@ -18,7 +18,9 @@
 
 from optparse import OptionParser
 from sys import stdout
+import sys
 import time
+import traceback
 
 import bpy
 import mathutils
@@ -49,7 +51,10 @@ class Progress:
 
 	def set_value(self, value):
 		self.currentValue = value
-		self.currentFraction = float(value) / float(self.upper)
+		try:
+			self.currentFraction = float(value) / float(self.upper)
+		except ZeroDivisionError:
+			self.currentFraction = 0.0
 		currentTime = time.time()
 
 		if (self.currentFraction <= 0.0 or
@@ -407,12 +412,33 @@ class KDLeaf(KDNode):
 		tBuf.write(indent + (format % expr) + (' # %d' % self.depth)  + '\n')
 		self.tree.on_node_serialised(self)
 
-if __name__ == '__main__':
+def parse_options():
+	splitterIndex = -1
+	for i, arg in enumerate(sys.argv):
+		if arg == '--':
+			splitterIndex = i
+			break
+
+	options = {}
+	try:
+		options['outfile'] = sys.argv[splitterIndex + 1]
+	except IndexError:
+		raise Exception('Invalid arguments.')
+
+	return options
+
+def set_layers_visible(layers):
+	for i, value in enumerate(layers):
+		bpy.context.scene.layers[i] = value
+
+def make_lod_trees():
 	'''Create clusters and a serialised LOD tree from marked objects. To mark an
 	object as a source for an LOD tree, add two game properties to it:
 	 - LODDupli (any type), and
 	 - LODGroup (string; all derived objects will be added to a group with this
 	   name).'''
+
+	original_layers = list(bpy.context.scene.layers)
 
 	def is_lodsource(ob):
 		return ('LODDupli' in ob.game.properties and
@@ -423,15 +449,18 @@ if __name__ == '__main__':
 		print('Creating LOD tree "%s"' % groupName)
 
 		# Make dupli-objects (e.g. particle instances) real, and select them.
+		set_layers_visible(sourceOb.layers)
 		bpy.ops.object.select_all(action='DESELECT')
-		bpy.context.scene.active = sourceOb
+		bpy.context.scene.objects.active = sourceOb
 		sourceOb.select = True
+		print(sourceOb)
+		print(list(bpy.context.selected_objects))
 		bpy.ops.object.duplicates_make_real()
 		sourceOb.select = False
 
 		# Make KD tree and clusters from duplicated objects.
 		lodObs = list(bpy.context.selected_objects)
-		tree = KDTree(obs, groupName, groupName[0:2], dimensions=2, leafSize=4)
+		tree = KDTree(lodObs, groupName, groupName[0:2], dimensions=2, leafSize=4)
 		tree.create_cluster_hierarchy()
 
 		# Delete original duplis.
@@ -444,3 +473,18 @@ if __name__ == '__main__':
 		tree.serialise_to_lod_tree(tBuf)
 
 		print('Tree created. Saved to text buffer %s.' % tBuf.name)
+
+	set_layers_visible(original_layers)
+
+def save_file(fileName):
+	pass
+
+if __name__ == '__main__':
+	try:
+		options = parse_options()
+		make_lod_trees()
+		save_file(options['outfile'])
+	except Exception:
+		traceback.print_exc()
+		print('Usage:\n\tblender -P BScripts/BlendKDTree.py <infile.blend> -- <outfile.blend>')
+		sys.exit(1)

@@ -1,6 +1,9 @@
 # Compiled scripts
 *.pyc
 
+# Compiled assets
+*._compiled.blend
+
 # IDE metadata
 .metadata
 .project

@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2010 Alex Fraser <alex@phatcore.com>
+# Copyright 2009-2011 Alex Fraser <alex@phatcore.com>
 # Copyright 2009 Mark Triggs <mst@dishevelled.net>
 #
 # This program is free software: you can redistribute it and/or modify

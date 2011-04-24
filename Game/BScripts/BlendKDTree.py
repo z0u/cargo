@@ -1,5 +1,5 @@
 #
-# Copyright 2009 Alex Fraser <alex@phatcore.com>
+# Copyright 2009-2011 Alex Fraser <alex@phatcore.com>
 # Copyright 2009 Mark Triggs <mst@dishevelled.net>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+from optparse import OptionParser
+from sys import stdout
+import time
 
 import bpy
 import mathutils
@@ -35,8 +39,9 @@ class Progress:
 		self.message = message
 		self.currentValue = 0
 		self.currentFraction = 0.0
-		self.lastFraction = 0.0
 		self.updateStep = updateStep
+		self.startTime = time.time()
+		self.lastTime = self.startTime
 		self.set_value(0.0)
 
 	def increment(self, value):
@@ -45,18 +50,42 @@ class Progress:
 	def set_value(self, value):
 		self.currentValue = value
 		self.currentFraction = float(value) / float(self.upper)
-		if (self.currentFraction > (self.lastFraction + self.updateStep) or
-		    self.currentFraction <= 0.0 or
-		    self.currentFraction >= 1.0):
+		currentTime = time.time()
+
+		if (self.currentFraction <= 0.0 or
+		    self.currentFraction >= 1.0 or
+		    currentTime > (self.lastTime + 1.0)):
+
 			self.update()
+			self.lastTime = currentTime
 
 	def update(self):
 		'''Show the status to the user.'''
 		pass
 
 class ConsoleProgress(Progress):
+	def format_time(self):
+		if self.currentFraction <= 0.0 or self.currentFraction >= 1.0:
+			return '               '
+
+		elapsedTime = time.time() - self.startTime
+		estimatedDuration = elapsedTime / self.currentFraction
+		remainingTime = estimatedDuration - elapsedTime
+
+		if remainingTime > 60 * 60:
+			return '(T-%2.1fh)     ' % (remainingTime / (60 * 60))
+		elif remainingTime > 60:
+			return '(T-%2.1fmin)   ' % (remainingTime / 60)
+		else:
+			return '(T-%2.0fs)     ' % remainingTime
+
 	def update(self):
-		print('%s: %2.0f' % (self.message, self.currentFraction * 100))
+		stdout.write('\r%s: %3.0f%%' % (self.message, self.currentFraction * 100))
+		stdout.write(' ' + self.format_time())
+		stdout.flush()
+
+		if self.currentFraction >= 1.0:
+			print()
 
 class WindowProgress(Progress):
 	def update(self):
@@ -68,13 +97,15 @@ class WindowProgress(Progress):
 progressFactory = ConsoleProgress
 
 class KDTree:
-	def __init__(self, objects, dimensions, leafSize = 4):
+	def __init__(self, objects, groupName, shortName, dimensions, leafSize=4):
 		self.leafSize = leafSize
 		self.dimensions = dimensions
 		self.maxDepth = 0
 		self._depthIPOs = []
 		self.nNodes = 0
 		self.nObs = len(objects)
+		self.groupName = groupName
+		self.shortName = shortName
 
 		self.progress = progressFactory('1/3: Constructing KDTree', len(objects))
 
@@ -127,13 +158,8 @@ class KDTree:
 		'''
 		self.progress = progressFactory('3/3: Serialising KDTree', self.nNodes)
 
-		#
-		# Deselect the objects: they will be selected again on serialisation.
-		#
-		bpy.ops.object.select_all(action='DESELECT')
-
 		tBuf.write('#\n# A serialised LODTree, created by BlendKDTree in the BScripts directory.\n#\n')
-		tBuf.write('# This tree contains %d leaf objects, supported by %d nodes in %d levels\n#\n' %
+		tBuf.write('# This tree contains %d leaf objects, supported by %d KD-tree nodes in %d levels\n#\n' %
 				(self.nObs, self.nNodes, self.maxDepth))
 		tBuf.write('import Scripts.lodtree\n')
 		tBuf.write('br = Scripts.lodtree.LODBranch\n')
@@ -160,10 +186,10 @@ class KDBranch(KDNode):
 		#
 		# Sort the objects along the current axis.
 		#
-		def dk(ob):
+		def dimension_key(ob):
 			return ob.location[self.axis]
 
-		os = objects.sort(key=dk)
+		os = objects.sort(key=dimension_key)
 
 		#
 		# The median value is the location of the middle element on the current
@@ -211,11 +237,22 @@ class KDBranch(KDNode):
 		#
 		# Create a new, empty object.
 		#
-		name = 'LOD_%d%s' % (self.depth, side)
+		name = 'LOD_%s%d%s' % (self.tree.shortName, self.depth, side)
 		bpy.ops.object.add(type='MESH')
 		ob = bpy.context.object
 		ob.name = name
 		ob.data.name = name
+
+		#
+		# Add to nominated group
+		#
+		if self.tree.groupName != None:
+			if not self.tree.groupName in bpy.data.groups:
+				bpy.data.groups.new(self.tree.groupName)
+			bpy.ops.object.select_all(action='DESELECT')
+			bpy.context.scene.objects.active = ob
+			ob.select = True
+			bpy.ops.object.group_link(group=self.tree.groupName)
 
 		#
 		# Set the location. For location, localspace == worldspace: the new
@@ -317,7 +354,7 @@ class KDLeaf(KDNode):
 				#
 				bpy.ops.object.add(type='EMPTY')
 				e = bpy.context.object
-				e.name = 'E' + o.game.properties['LODObject'].value
+				e.name = 'E%s%s' % (self.tree.shortName, o.game.properties['LODObject'].value)
 
 				e.matrix_world = o.matrix_world
 
@@ -371,9 +408,39 @@ class KDLeaf(KDNode):
 		self.tree.on_node_serialised(self)
 
 if __name__ == '__main__':
-	'''Create clusters and a serialised LOD tree from the selected objects.'''
-	obs = bpy.context.selected_objects
-	tree = KDTree(obs, dimensions = 2, leafSize = 4)
-	tBuf = bpy.data.texts.new(name='LODTree_Serialised')
-	tree.serialise_to_lod_tree(tBuf)
-	print('Tree created.%t|' + ('Saved to text buffer %s.' % tBuf.name))
+	'''Create clusters and a serialised LOD tree from marked objects. To mark an
+	object as a source for an LOD tree, add two game properties to it:
+	 - LODDupli (any type), and
+	 - LODGroup (string; all derived objects will be added to a group with this
+	   name).'''
+
+	def is_lodsource(ob):
+		return ('LODDupli' in ob.game.properties and
+			'LODGroup' in ob.game.properties)
+	sourceObs = list(filter(is_lodsource, bpy.context.scene.objects))
+	for sourceOb in sourceObs:
+		groupName = sourceOb.game.properties['LODGroup'].value
+		print('Creating LOD tree "%s"' % groupName)
+
+		# Make dupli-objects (e.g. particle instances) real, and select them.
+		bpy.ops.object.select_all(action='DESELECT')
+		bpy.context.scene.active = sourceOb
+		sourceOb.select = True
+		bpy.ops.object.duplicates_make_real()
+		sourceOb.select = False
+
+		# Make KD tree and clusters from duplicated objects.
+		lodObs = list(bpy.context.selected_objects)
+		tree = KDTree(obs, groupName, groupName[0:2], dimensions=2, leafSize=4)
+		tree.create_cluster_hierarchy()
+
+		# Delete original duplis.
+		for lodOb in lodObs:
+			bpy.context.scene.objects.unlink(lodOb)
+		lodObs = []
+
+		# Serialise to text buffer.
+		tBuf = bpy.data.texts.new(name='LODTree_%s' % groupName)
+		tree.serialise_to_lod_tree(tBuf)
+
+		print('Tree created. Saved to text buffer %s.' % tBuf.name)

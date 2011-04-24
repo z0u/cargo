@@ -453,8 +453,6 @@ def make_lod_trees():
 		bpy.ops.object.select_all(action='DESELECT')
 		bpy.context.scene.objects.active = sourceOb
 		sourceOb.select = True
-		print(sourceOb)
-		print(list(bpy.context.selected_objects))
 		bpy.ops.object.duplicates_make_real()
 		sourceOb.select = False
 
@@ -477,7 +475,8 @@ def make_lod_trees():
 	set_layers_visible(original_layers)
 
 def save_file(fileName):
-	pass
+	print('Saving file to', fileName)
+	bpy.ops.wm.save_as_mainfile(filepath=fileName)
 
 if __name__ == '__main__':
 	try:

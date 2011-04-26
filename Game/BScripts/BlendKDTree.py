@@ -437,6 +437,9 @@ def parse_options():
 			splitterIndex = i
 			break
 
+	if splitterIndex == -1:
+		raise Exception('Invalid arguments.')
+
 	options = {}
 	try:
 		options['outfile'] = sys.argv[splitterIndex + 1]
@@ -445,9 +448,25 @@ def parse_options():
 
 	return options
 
-def set_layers_visible(layers):
-	for i, value in enumerate(layers):
-		bpy.context.scene.layers[i] = value
+def show_layers(layers=None):
+	'''Show only the layers specified in a collection. If 'layers' is None, show
+	all layers.'''
+	if layers == None:
+		for i in range(len(bpy.context.scene.layers)):
+			bpy.context.scene.layers[i] = True
+	else:
+		for i in range(len(bpy.context.scene.layers)):
+			bpy.context.scene.layers[i] = i in layers
+
+def set_layers(object, layers=None):
+	'''Moves an object to the layers specified in a collection. If 'layers' is
+	None, the object will be moved to all layers.'''
+	if layers == None:
+		for i in range(len(bpy.context.scene.layers)):
+			object.layers[i] = True
+	else:
+		for i in range(len(bpy.context.scene.layers)):
+			object.layers[i] = i in layers
 
 def make_lod_trees():
 	'''Create clusters and a serialised LOD tree from marked objects. To mark an
@@ -456,7 +475,7 @@ def make_lod_trees():
 	 - LODGroup (string; all derived objects will be added to a group with this
 	   name).'''
 
-	original_layers = list(bpy.context.scene.layers)
+	show_layers()
 
 	def is_lodsource(ob):
 		return ('LODDupli' in ob.game.properties and
@@ -468,7 +487,6 @@ def make_lod_trees():
 		print('Creating LOD tree "%s"' % groupName)
 
 		# Make dupli-objects (e.g. particle instances) real, and select them.
-		set_layers_visible(sourceOb.layers)
 		bpy.ops.object.select_all(action='DESELECT')
 		bpy.context.scene.objects.active = sourceOb
 		sourceOb.select = True
@@ -480,11 +498,6 @@ def make_lod_trees():
 		tree = KDTree(lodObs, groupName, groupName[0:2], dimensions=2, leafSize=4)
 		tree.create_cluster_hierarchy()
 
-		# Delete original duplis.
-		for lodOb in lodObs:
-			bpy.context.scene.objects.unlink(lodOb)
-		lodObs = []
-
 		# Serialise to text buffer.
 		tBuf = bpy.data.texts.new(name=tree.get_tbuf_name())
 		tree.serialise_to_lod_tree(tBuf)
@@ -492,18 +505,33 @@ def make_lod_trees():
 
 		print('Tree created. Saved to text buffer %s.' % tBuf.name)
 
-	set_layers_visible(original_layers)
 	return trees
 
 def cleanup(keepGroups):
 	'''Delete all objects in the scene that aren't in one of the listed
 	groups.'''
+	print('Deleting unused objects')
+
 	keepObs = set()
 	for groupName in keepGroups:
 		keepObs.update(bpy.data.groups[groupName].objects)
-	for ob in list(bpy.context.scene.objects):
+
+	show_layers()
+	bpy.ops.object.select_all(action='DESELECT')
+	for ob in bpy.context.scene.objects:
 		if not ob in keepObs:
-			bpy.context.scene.objects.unlink(ob)
+			ob.select = True
+	bpy.ops.object.delete()
+
+	# Move the remaining objects to layer 2.
+	bpy.ops.object.select_all(action='DESELECT')
+	for ob in bpy.context.scene.objects:
+		ob.select = True
+	bpy.ops.object.move_to_layer(layers=(
+		False, True,  False, False, False, False, False, False, False, False,
+		False, False, False, False, False, False, False, False, False, False))
+	# Show the first layer (i.e. the one with nothing on it).
+	show_layers((0,))
 
 def create_controller(trees):
 	bpy.ops.object.add(type='EMPTY')

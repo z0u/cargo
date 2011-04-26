@@ -349,7 +349,8 @@ class KDLeaf(KDNode):
 		         to this list.
 		posObs:  Objects that should be stored in the hierarchy will be appended
 		         to this list. In the case of KDLeaf, the objects will be
-		         empties. Each empty will have a property that 
+		         empties. Each empty will have a property that tells lodtree.py
+		         which dynamic object to use in its place.
 		'''
 		if len(self.serialisableObs) > 0:
 			raise StateError('Tried to create cluster twice.')
@@ -384,6 +385,20 @@ class KDLeaf(KDNode):
 				meshObs.append(o)
 				posObs.append(o)
 				self.serialisableObs.append(o)
+
+		#
+		# Add to nominated group. We only need to do this for the positional
+		# objects: the mesh objects are only used to form clusters in the
+		# branches, and will not be included in the final tree.
+		#
+		if self.tree.groupName != None:
+			if not self.tree.groupName in bpy.data.groups:
+				bpy.data.groups.new(self.tree.groupName)
+			for ob in posObs:
+				bpy.ops.object.select_all(action='DESELECT')
+				bpy.context.scene.objects.active = ob
+				ob.select = True
+				bpy.ops.object.group_link(group=self.tree.groupName)
 
 		self.tree.on_cluster_created(self)
 
@@ -480,6 +495,16 @@ def make_lod_trees():
 	set_layers_visible(original_layers)
 	return trees
 
+def cleanup(keepGroups):
+	'''Delete all objects in the scene that aren't in one of the listed
+	groups.'''
+	keepObs = set()
+	for groupName in keepGroups:
+		keepObs.update(bpy.data.groups[groupName].objects)
+	for ob in list(bpy.context.scene.objects):
+		if not ob in keepObs:
+			bpy.context.scene.objects.unlink(ob)
+
 def create_controller(trees):
 	bpy.ops.object.add(type='EMPTY')
 	o = bpy.context.object
@@ -516,6 +541,11 @@ if __name__ == '__main__':
 	try:
 		options = parse_options()
 		trees = make_lod_trees()
+		groups = []
+		for tree in trees:
+			if tree.groupName != None:
+				groups.append(tree.groupName)
+		cleanup(keepGroups=groups)
 		create_controller(trees)
 		save_file(options['outfile'])
 	except Exception:

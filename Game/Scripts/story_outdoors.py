@@ -26,7 +26,13 @@ from . import store
 
 def init():
 	if store.get('/opt/foliage', True):
-		bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene')
+		try:
+			bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene')
+		except ValueError:
+			print('Could not load foliage. Try reinstalling the game.')
+			evt = bxt.types.Event('ShowMessage',
+				'Could not load foliage. Try reinstalling the game.')
+			bxt.types.EventBus().notify(evt)
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''

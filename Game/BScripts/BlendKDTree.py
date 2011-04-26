@@ -564,6 +564,9 @@ def create_controller(trees):
 def save_file(fileName):
 	print('Saving file to', fileName)
 	bpy.ops.wm.save_as_mainfile(filepath=fileName)
+	for lib in bpy.data.libraries:
+		lib.filepath = bpy.path.relpath(lib.filepath)
+	bpy.ops.wm.save_as_mainfile(filepath=fileName)
 
 if __name__ == '__main__':
 	try:

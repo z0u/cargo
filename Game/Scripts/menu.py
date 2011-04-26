@@ -46,7 +46,7 @@ class SessionManager(metaclass=bxt.types.Singleton):
 
 		elif event.message == 'startGame':
 			# Load the level indicated in the save game.
-			bge.logic.startGame(store.get('/game/level', 'Dungeon.blend'))
+			bge.logic.startGame(store.get('/game/level', 'Outdoors.blend'))
 
 		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.

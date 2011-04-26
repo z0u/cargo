@@ -15,10 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
+import bge
 import mathutils
+
+import bxt
+
 from .story import *
 from . import director
+from . import store
+
+def init():
+	if store.get('/opt/foliage', True):
+		bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene')
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''

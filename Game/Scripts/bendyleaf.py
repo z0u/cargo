@@ -46,6 +46,7 @@ def BendLeaf(c):
 	#
 	origin = mathutils.Vector(o.worldPosition)
 	distRange = o['MaxDist'] - o['MinDist']
+	targetCol = 1.0
 	if len(hitObs) > 0:
 		totalInfluence = 0.0
 		for ob in hitObs:
@@ -57,10 +58,8 @@ def BendLeaf(c):
 		totalInfluence = totalInfluence * o['InfluenceMultiplier']
 
 		bendAngle = o['RestAngle'] + totalInfluence * o['MaxAngle']
-		if bendAngle > o['MaxAngle']:
-			bendAngle = o['MaxAngle']
-		elif bendAngle < o['MinAngle']:
-			bendAngle = o['MinAngle']
+		bendAngle = bxt.math.clamp(o['MinAngle'], o['MaxAngle'], bendAngle)
+		targetCol = bxt.math.clamp(0.0, 1.0, 1.0 - totalInfluence)
 	else:
 		bendAngle = o['RestAngle']
 
@@ -69,9 +68,14 @@ def BendLeaf(c):
 	#
 	o['CurrentDelta'], o['BendAngle'] = bxt.math.smerp(o['CurrentDelta'],
 		o['BendAngle'], bendAngle, o['SpeedFactor'], o['Responsiveness'])
+	currentCol = o.children['BendyLeafSkin'].color.y
+	currentCol = bxt.math.lerp(currentCol, targetCol, o['SpeedFactor'])
+	o.children['BendyLeafSkin'].color.y = currentCol
+	o.children['BendyLeafSkin'].color.z = currentCol
 
 	#
 	# Apply deformation.
 	#
 	actuator = c.actuators['aBend']
 	c.activate(actuator)
+

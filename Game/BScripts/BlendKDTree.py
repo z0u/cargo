@@ -32,6 +32,9 @@ import mathutils
 #INDENT_STEP = '    '
 INDENT_STEP = ''
 
+DEFAULT_DIMENSIONS = 2
+DEFAULT_LEAF_SIZE = 2
+
 class StateError(Exception):
 	pass
 
@@ -102,7 +105,8 @@ class WindowProgress(Progress):
 progressFactory = ConsoleProgress
 
 class KDTree:
-	def __init__(self, objects, groupName, shortName, dimensions, leafSize=4):
+	def __init__(self, objects, groupName, shortName,
+		     dimensions=DEFAULT_DIMENSIONS, leafSize=DEFAULT_LEAF_SIZE):
 		self.leafSize = leafSize
 		self.dimensions = dimensions
 		self.maxDepth = 0
@@ -495,7 +499,7 @@ def make_lod_trees():
 
 		# Make KD tree and clusters from duplicated objects.
 		lodObs = list(bpy.context.selected_objects)
-		tree = KDTree(lodObs, groupName, groupName[0:2], dimensions=2, leafSize=4)
+		tree = KDTree(lodObs, groupName, groupName[0:2])
 		tree.create_cluster_hierarchy()
 
 		# Serialise to text buffer.

@@ -46,6 +46,7 @@ class SBParticle:
 class GrassBlade(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = 'GB_'
 
+	@bxt.types.profile('Scripts.foliage.GrassBlade.__init__')
 	def __init__(self, old_owner):
 		self.bbox = bxt.math.Box2D(
 				0.0 - self['GrassRadY'], 0.0 - self['GrassRadZ'],

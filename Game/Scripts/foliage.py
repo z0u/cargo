@@ -114,7 +114,7 @@ class GrassBlade(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		for col in s.hitObjectList:
 			vec = vec + self.get_collision_force(col)
 		self['BladeXBase'] = vec.x
-		self['BladeYBase'] = vec.x
+		self['BladeYBase'] = vec.y
 
 		linkDisplacement = vec - self.LastBaseFrame
 		self.LastBaseFrame = vec

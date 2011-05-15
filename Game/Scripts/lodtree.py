@@ -22,7 +22,7 @@ import bxt.types
 
 from . import director
 
-ACTIVATION_TIMEOUT = 120
+ACTIVATION_TIMEOUT = 30
 DEBUG = False
 
 #

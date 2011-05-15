@@ -42,6 +42,7 @@ NS_VISIBLE_DESCENDANT = 1
 NS_VISIBLE            = 2
 NS_IMPLICIT           = 3
 
+
 class LODManager(metaclass=bxt.types.Singleton):
 	'''A registrar of LODTrees. Each tree adds itself to this manager
 	Other scripts then have a central place
@@ -53,6 +54,7 @@ class LODManager(metaclass=bxt.types.Singleton):
 		self.trees = set()
 
 		if DEBUG:
+			self.nodes_updated = 0
 			self.leavesVisible = 0
 			self.branchesVisible = 0
 			self.originalObjects = set(logic.getCurrentScene().objects)
@@ -79,6 +81,9 @@ class LODManager(metaclass=bxt.types.Singleton):
 				actor['LODRadius'] = 1.0
 			boundsList.append(KCube(actor.worldPosition, radius))
 
+		if DEBUG:
+			self.nodes_updated = 0
+		
 		# Collide with trees
 		for t in self.trees:
 			try:
@@ -91,6 +96,7 @@ class LODManager(metaclass=bxt.types.Singleton):
 			self.remove_tree(t)
 
 		if DEBUG:
+			print('LOD tree: updated %d nodes.' % self.nodes_updated)
 			currentObjects = set()
 			currentObjects.update(logic.getCurrentScene().objects)
 			newObjects = currentObjects.difference(self.currentObjects)
@@ -350,6 +356,8 @@ class LODBranch(LODNode):
 				self.objectInstance = None
 				if DEBUG:
 					LODManager().branchesVisible -= 1
+		if DEBUG:
+			LODManager().nodes_updated += 1
 
 	def verify(self, anscestorVisible):
 		LODNode.verify(self, anscestorVisible)
@@ -418,6 +426,7 @@ class LODLeaf(LODNode):
 	def activate_range(self, boundsList):
 		'''Search the objects owned by this node. If any of them are within
 		range, this node will be shown.'''
+#		self.visible = NS_VISIBLE
 		for (oPos, _) in self.objectPairs:
 			for bounds in boundsList:
 				if bounds.is_in_range(oPos.worldPosition):
@@ -456,6 +465,8 @@ class LODLeaf(LODNode):
 					self.lastFrameVisible = True
 					if DEBUG:
 						LODManager().leavesVisible += 1
+#			for o in self.objectInstances:
+#				o.collide()
 		else:
 			if self.lastFrameVisible:
 				try:
@@ -466,6 +477,8 @@ class LODLeaf(LODNode):
 					self.lastFrameVisible = False
 					if DEBUG:
 						LODManager().leavesVisible -= 1
+		if DEBUG:
+			LODManager().nodes_updated += 1
 
 	def verify(self, anscestorVisible = None):
 		LODNode.verify(self, anscestorVisible)

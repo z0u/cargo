@@ -3,7 +3,7 @@ all: foliage
 foliage: OutdoorsGrass_compiled.blend
 
 OutdoorsGrass_compiled.blend: OutdoorsGrass.blend Level1.blend GrassBlade.blend BScripts/BlendKDTree.py
-	blender --factory-startup -b OutdoorsGrass.blend -P BScripts/BlendKDTree.py -- OutdoorsGrass_compiled.blend
+	blender --factory-startup -b OutdoorsGrass.blend -P BScripts/BlendKDTree.py -- OutdoorsGrass_compiled_temp.blend
 
 SCRIPT_CACHE=bxt/*.pyc\
 	bxt/__pycache__\

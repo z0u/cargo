@@ -20,6 +20,8 @@ import mathutils
 
 import bxt
 
+DEBUG = True
+
 ZERO2 = mathutils.Vector((0.0, 0.0))
 
 class SBParticle:
@@ -58,6 +60,10 @@ class GrassBlade(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			self.Segments.append(p)
 
 		self.LastBaseFrame = ZERO2.copy()
+
+		if DEBUG:
+			for child in self.children:
+				child.color = bxt.render.BLACK
 
 	def get_collision_force(self, collider):
 		#

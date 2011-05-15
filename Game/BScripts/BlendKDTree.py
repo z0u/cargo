@@ -484,11 +484,13 @@ def make_lod_trees():
 	def is_lodsource(ob):
 		return ('LODDupli' in ob.game.properties and
 			'LODGroup' in ob.game.properties)
-	sourceObs = list(filter(is_lodsource, bpy.context.scene.objects))
-	trees = []
-	for sourceOb in sourceObs:
+	sourceObs = {}
+	for sourceOb in bpy.context.scene.objects:
+		if not is_lodsource(sourceOb):
+			continue
 		groupName = sourceOb.game.properties['LODGroup'].value
-		print('Creating LOD tree "%s"' % groupName)
+		if not groupName in sourceObs:
+			sourceObs[groupName] = []
 
 		# Make dupli-objects (e.g. particle instances) real, and select them.
 		bpy.ops.object.select_all(action='DESELECT')
@@ -498,7 +500,11 @@ def make_lod_trees():
 		sourceOb.select = False
 
 		# Make KD tree and clusters from duplicated objects.
-		lodObs = list(bpy.context.selected_objects)
+		sourceObs[groupName].extend(bpy.context.selected_objects)
+
+	trees = []
+	for groupName, lodObs in sourceObs.items():
+		print('Creating LOD tree "%s"' % groupName)
 		tree = KDTree(lodObs, groupName, groupName[0:2])
 		tree.create_cluster_hierarchy()
 

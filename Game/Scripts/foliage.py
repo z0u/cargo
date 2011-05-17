@@ -20,7 +20,7 @@ import mathutils
 
 import bxt
 
-DEBUG = True
+DEBUG = False
 
 ZERO2 = mathutils.Vector((0.0, 0.0))
 

@@ -610,6 +610,9 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 			if self.has_state(Snail.S_HASSHELL):
 				self.drop_shell(animate = True)
 
+	def on_view_button(self, pos, trig):
+		pass
+
 class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2
 	S_SLOW = 3

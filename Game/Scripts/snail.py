@@ -165,7 +165,11 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		name = parentSegment.name[:-2]
 		i = int(parentSegment.name[-1:]) + 1
 
-		pivot = parentSegment.children[0]
+		pivotName = 'ChildPivot_%s.%d' % (name, i)
+		if not pivotName in parentSegment.children:
+			return
+
+		pivot = parentSegment.children[pivotName]
 		rayL = pivot.children['ArcRay_%s.%d.L' % (name, i)]
 		rayR = pivot.children['ArcRay_%s.%d.R' % (name, i)]
 		fulcrum = pivot.children['Fulcrum_%s.%d' % (name, i)]

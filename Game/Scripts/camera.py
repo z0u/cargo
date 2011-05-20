@@ -98,14 +98,14 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 					self.camera.lens = currentGoal.lens
 				self.instantCut = False
 
-		fac = currentGoal['SlowFac']
-		bxt.math.slow_copy_loc(self.camera, currentGoal, fac)
-		bxt.math.slow_copy_rot(self.camera, currentGoal, fac)
+		bxt.math.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
+		bxt.math.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
 
 		targetLens = self.defaultLens
 		if hasattr(currentGoal, 'lens'):
 			targetLens = currentGoal.lens
-		self.camera.lens = bxt.math.lerp(self.camera.lens, targetLens, fac)
+		self.camera.lens = bxt.math.lerp(self.camera.lens, targetLens,
+				currentGoal['RotFac'])
 
 		self.lastGoal = currentGoal
 
@@ -120,7 +120,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		isn't changed until update is called.
 		'''
 		# Set some defaults for properties.
-		bxt.utils.set_default_prop(goal, 'SlowFac', 0.1)
+		bxt.utils.set_default_prop(goal, 'LocFac', 0.1)
+		bxt.utils.set_default_prop(goal, 'RotFac', 0.1)
 		bxt.utils.set_default_prop(goal, 'InstantCut', False)
 		bxt.utils.set_default_prop(goal, 'Priority', 1)
 

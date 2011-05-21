@@ -107,9 +107,6 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 	def on_button2(self, positive, triggered):
 		pass
 
-	def on_view_button(self, pos, trig):
-		pass
-
 	def save_location(self):
 		super(ShellBase, self).save_location()
 		if self.snail != None:

@@ -27,14 +27,12 @@ class Actor(bxt.types.BX_GameObject):
 	SANITY_RAY_LENGTH = 10000.0
 
 	touchedObject = bxt.types.weakprop('touchedObject')
-	closeCamera = bxt.types.weakprop('closeCamera')
 
 	def __init__(self):
 		self.save_location()
 		self._currentLinV = bxt.math.MINVECTOR.copy()
 		self.lastLinV = bxt.math.MINVECTOR.copy()
 		self.set_default_prop('Health', 1.0)
-		self.closeCamera = None
 		self.localCoordinates = False
 		self.touchedObject = None
 		Director().add_actor(self)
@@ -170,8 +168,6 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 		pass
 	def on_button2(self, pos, trig):
 		pass
-	def on_view_button(self, pos, trig):
-		pass
 
 class Director(metaclass=bxt.types.Singleton):
 	_prefix = ''
@@ -238,8 +234,9 @@ class Director(metaclass=bxt.types.Singleton):
 	@bxt.utils.controller_cls
 	def on_view_button(self, c):
 		s = c.sensors[0]
-		if self.mainCharacter != None and not self.inputSuspended:
-			self.mainCharacter.on_view_button(s.positive, s.triggered)
+		if s.positive and not self.inputSuspended:
+			evt = bxt.types.Event('ResetCameraPos', None)
+			bxt.types.EventBus().notify(evt)
 
 	def _get_main_scene(self):
 		if self.mainCharacter == None:

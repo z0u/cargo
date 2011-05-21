@@ -57,19 +57,14 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 
 	shell = bxt.types.weakprop('shell')
 	nearestPickup = bxt.types.weakprop('nearestPickup')
-	eyeRayL = bxt.types.weakprop('eyeRayL')
-	eyeRayR = bxt.types.weakprop('eyeRayR')
-	eyeLocL = bxt.types.weakprop('eyeLocL')
-	eyeLocR = bxt.types.weakprop('eyeLocR')
-	armature = bxt.types.weakprop('armature')
-	cargoHold = bxt.types.weakprop('cargoHold')
-	shockwave = bxt.types.weakprop('shockwave')
 
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)
 
 		self.shell = None
 		self.nearestPickup = None
+		# Not weak props, but it should be OK because they will die in the same
+		# frame as the snail (this object).
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
 		self.eyeRayR = self.childrenRecursive['EyeRay.R']
 		self.eyeLocL = self.childrenRecursive['EyeLoc.L']
@@ -77,7 +72,6 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.armature = self.children['SnailArmature']
 		self.cargoHold = self.childrenRecursive['CargoHold']
 		self.shockwave = self.childrenRecursive['Shockwave']
-		self.closeCamera = self.childrenRecursive['SnailCam']
 
 		self.localCoordinates = True
 
@@ -616,9 +610,6 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		if positive and triggered:
 			if self.has_state(Snail.S_HASSHELL):
 				self.drop_shell(animate = True)
-
-	def on_view_button(self, pos, trig):
-		pass
 
 class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2

@@ -199,6 +199,11 @@ class MainGoalManager(metaclass=bxt.types.Singleton):
 					oldCamera.endObject()
 
 class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''Classic 3rd-person adventure camera. Tries to stay a constant distance
+	from the character, but does not always sit behind. Imagine a circle in the
+	air above the character: on each frame, the camera moves the shortest
+	distance possible to remain on that circle, unless it is blocked by a wall.
+	'''
 	_prefix = 'Orb_'
 
 	UP_DIST = 12.0
@@ -207,9 +212,9 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	EXPAND_FAC = 0.005
 
 	def __init__(self, old_owner):
-		self.currentUpDist = OrbitCamera.UP_DIST / 2.0
-		self.currentBackDist = OrbitCamera.BACK_DIST / 2.0
 		AutoCamera().add_goal(self)
+		self.reset = False
+		bxt.types.EventBus().add_listener(self)
 
 	@bxt.types.expose
 	def update(self):
@@ -229,6 +234,12 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		distBack = tangent.magnitude
 
 		upPos = self.cast_ray(origin, direction, distUp, OrbitCamera.UP_DIST)
+
+		if self.reset:
+			dirBack = mainChar.getAxisVect(bxt.math.YAXIS)
+			dirBack.negate()
+			self.worldPosition = upPos + dirBack * distBack
+			self.reset = False
 
 		vectTo = self.worldPosition - upPos
 		zcomponent = vectTo.project(zlocal)
@@ -271,6 +282,10 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		pos = origin + (direction * dist)
 		return pos
+
+	def on_event(self, evt):
+		if evt.message == 'ResetCameraPos':
+			self.reset = True
 
 class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A camera goal that follows the active player. It tries to follow the same

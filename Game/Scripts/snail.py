@@ -72,6 +72,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.armature = self.children['SnailArmature']
 		self.cargoHold = self.childrenRecursive['CargoHold']
 		self.shockwave = self.childrenRecursive['Shockwave']
+		self.cameraTrack = self.childrenRecursive['Head.2']
 
 		# For path camera
 		self.localCoordinates = True
@@ -612,6 +613,9 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		if positive and triggered:
 			if self.has_state(Snail.S_HASSHELL):
 				self.drop_shell(animate = True)
+
+	def get_camera_tracking_point(self):
+		return self.cameraTrack
 
 class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2

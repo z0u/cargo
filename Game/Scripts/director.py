@@ -157,6 +157,9 @@ class Actor(bxt.types.BX_GameObject):
 
 		return foundGround and outsideGround
 
+	def get_camera_tracking_point(self):
+		return self
+
 class ActorTest(Actor, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		Actor.__init__(self)

@@ -209,7 +209,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	BACK_DIST = 20.0
 	DIST_BIAS = 0.5
 	EXPAND_FAC = 0.005
-	ZALIGN_FAC = 0.05
+	ZALIGN_FAC = 0.025
 
 	def __init__(self, old_owner):
 		self.distUp = None
@@ -234,7 +234,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		mainChar = director.Director().mainCharacter
 		if mainChar == None:
 			return
-		target = mainChar
+		target = mainChar.get_camera_tracking_point()
 
 		if self.zlocal == None:
 			self._init(target)
@@ -265,9 +265,9 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		direction.normalize()
 		backPos, self.distBack = self.cast_ray(upPos, direction, self.distBack,
 				OrbitCamera.BACK_DIST)
+		self.worldPosition = backPos
 
 		# Orient the camera towards the target.
-		self.worldPosition = backPos
 		self.alignAxisToVect(zlocal, 1)
 		self.alignAxisToVect(direction, 2)
 

@@ -182,7 +182,6 @@ class MainGoalManager(metaclass=bxt.types.Singleton):
 
 	def on_event(self, evt):
 		if evt.message == 'SetCameraType':
-			print('MainGoalManager.on_event:SetCameraType', evt.body)
 			if (self.currentCamera == None or
 					self.cameraType != evt.body):
 				scene = bge.logic.getCurrentScene()
@@ -207,16 +206,27 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'Orb_'
 
 	UP_DIST = 12.0
-	BACK_DIST = 40.0
+	BACK_DIST = 20.0
 	DIST_BIAS = 0.5
 	EXPAND_FAC = 0.005
-	ZALIGN_FAC = 0.2
+	ZALIGN_FAC = 0.05
 
 	def __init__(self, old_owner):
-		AutoCamera().add_goal(self)
-		self.reset = False
-		bxt.types.EventBus().add_listener(self)
+		self.distUp = None
+		self.distBack = None
 		self.zlocal = None
+		self.reset = False
+		AutoCamera().add_goal(self)
+		bxt.types.EventBus().add_listener(self)
+
+	def _init(self, target):
+		'''Derive the distance up and back from the current camera location.'''
+		self.zlocal = target.getAxisVect(bxt.math.ZAXIS)
+		vectTo = self.worldPosition - target.worldPosition
+		zcomponent = vectTo.project(self.zlocal)
+		tangent = vectTo - zcomponent
+		self.distUp = zcomponent.magnitude
+		self.distBack = tangent.magnitude
 
 	@bxt.types.expose
 	def update(self):
@@ -227,35 +237,36 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		target = mainChar
 
 		if self.zlocal == None:
-			self.zlocal = target.getAxisVect(bxt.math.ZAXIS)
+			self._init(target)
 
-		origin = target.worldPosition
+		# Pivot around the target.
 		zlocal = bxt.math.lerp(self.zlocal,
 				target.getAxisVect(bxt.math.ZAXIS), OrbitCamera.ZALIGN_FAC)
 		zlocal.normalize()
 		self.zlocal = zlocal
 
+		# Look for the ceiling above the target.
 		direction = zlocal
-		vectTo = self.worldPosition - origin
-		zcomponent = vectTo.project(zlocal)
-		tangent = vectTo - zcomponent
-		distUp = zcomponent.magnitude
-		distBack = tangent.magnitude
+		upPos, self.distUp = self.cast_ray(target.worldPosition, direction,
+				self.distUp, OrbitCamera.UP_DIST)
 
-		upPos = self.cast_ray(origin, direction, distUp, OrbitCamera.UP_DIST)
-
+		# If the user requested a reset, apply it now: move the camera directly
+		# behind the target.
 		if self.reset:
 			dirBack = target.getAxisVect(bxt.math.YAXIS)
 			dirBack.negate()
-			self.worldPosition = upPos + dirBack * distBack
+			self.worldPosition = upPos + dirBack * self.distBack
 			self.reset = False
 
+		# Search backwards for a wall.
 		vectTo = self.worldPosition - upPos
 		zcomponent = vectTo.project(zlocal)
 		direction = vectTo - zcomponent
 		direction.normalize()
-		backPos = self.cast_ray(upPos, direction, distBack, OrbitCamera.BACK_DIST)
+		backPos, self.distBack = self.cast_ray(upPos, direction, self.distBack,
+				OrbitCamera.BACK_DIST)
 
+		# Orient the camera towards the target.
 		self.worldPosition = backPos
 		self.alignAxisToVect(zlocal, 1)
 		self.alignAxisToVect(direction, 2)
@@ -290,7 +301,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 					OrbitCamera.EXPAND_FAC)
 
 		pos = origin + (direction * dist)
-		return pos
+		return pos, dist
 
 	def on_event(self, evt):
 		if evt.message == 'ResetCameraPos':

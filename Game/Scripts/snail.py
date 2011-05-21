@@ -73,6 +73,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.cargoHold = self.childrenRecursive['CargoHold']
 		self.shockwave = self.childrenRecursive['Shockwave']
 
+		# For path camera
 		self.localCoordinates = True
 
 		self.frameCounter = 0
@@ -455,6 +456,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		bxt.types.EventBus().notify(evt)
 
 	@bxt.types.expose
+	@bxt.utils.all_sensors_positive
 	def on_post_exit_shell(self):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been

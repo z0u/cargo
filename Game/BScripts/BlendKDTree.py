@@ -67,6 +67,13 @@ class Progress:
 			self.update()
 			self.lastTime = currentTime
 
+	def get_remaining_time(self):
+		elapsedTime = time.time() - self.startTime
+		estimatedDuration = elapsedTime / self.currentFraction
+		remainingTime = estimatedDuration - elapsedTime
+		remainingTime *= 1 + (1 - self.currentFraction) # fudge factor :)
+		return remainingTime
+
 	def update(self):
 		'''Show the status to the user.'''
 		pass
@@ -76,9 +83,7 @@ class ConsoleProgress(Progress):
 		if self.currentFraction <= 0.0 or self.currentFraction >= 1.0:
 			return '               '
 
-		elapsedTime = time.time() - self.startTime
-		estimatedDuration = elapsedTime / self.currentFraction
-		remainingTime = estimatedDuration - elapsedTime
+		remainingTime = self.get_remaining_time()
 
 		if remainingTime > 60 * 60:
 			return '(T-%2.1fh)     ' % (remainingTime / (60 * 60))

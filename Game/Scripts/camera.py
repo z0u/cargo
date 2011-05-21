@@ -210,11 +210,13 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	BACK_DIST = 40.0
 	DIST_BIAS = 0.5
 	EXPAND_FAC = 0.005
+	ZALIGN_FAC = 0.2
 
 	def __init__(self, old_owner):
 		AutoCamera().add_goal(self)
 		self.reset = False
 		bxt.types.EventBus().add_listener(self)
+		self.zlocal = None
 
 	@bxt.types.expose
 	def update(self):
@@ -222,9 +224,16 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		mainChar = director.Director().mainCharacter
 		if mainChar == None:
 			return
+		target = mainChar
 
-		origin = mainChar.worldPosition
-		zlocal = mainChar.getAxisVect(bxt.math.ZAXIS)
+		if self.zlocal == None:
+			self.zlocal = target.getAxisVect(bxt.math.ZAXIS)
+
+		origin = target.worldPosition
+		zlocal = bxt.math.lerp(self.zlocal,
+				target.getAxisVect(bxt.math.ZAXIS), OrbitCamera.ZALIGN_FAC)
+		zlocal.normalize()
+		self.zlocal = zlocal
 
 		direction = zlocal
 		vectTo = self.worldPosition - origin
@@ -236,7 +245,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		upPos = self.cast_ray(origin, direction, distUp, OrbitCamera.UP_DIST)
 
 		if self.reset:
-			dirBack = mainChar.getAxisVect(bxt.math.YAXIS)
+			dirBack = target.getAxisVect(bxt.math.YAXIS)
 			dirBack.negate()
 			self.worldPosition = upPos + dirBack * distBack
 			self.reset = False

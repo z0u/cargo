@@ -64,7 +64,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	armature = bxt.types.weakprop('armature')
 	cargoHold = bxt.types.weakprop('cargoHold')
 	shockwave = bxt.types.weakprop('shockwave')
-	closeCamera = bxt.types.weakprop('closeCamera')
+	cameraType = 'OrbitCamera'
 
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)

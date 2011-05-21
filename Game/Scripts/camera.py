@@ -172,12 +172,115 @@ class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 			AutoCamera().remove_goal(self)
 		self.attached = shouldAttach
 
-class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class MainGoalManager(metaclass=bxt.types.Singleton):
+	currentCamera = bxt.types.weakprop('currentCamera')
+
+	def __init__(self):
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')
+		self.cameraType = None
+
+	def on_event(self, evt):
+		if evt.message == 'MainCharacterSet':
+			print('MainGoalManager.on_event:MainCharacterSet', director.Director().mainCharacter)
+			mainChar = director.Director().mainCharacter
+			if mainChar == None:
+				return
+			if (self.currentCamera == None or
+					self.cameraType != mainChar.cameraType):
+				scene = bge.logic.getCurrentScene()
+				oldCamera = self.currentCamera
+				self.currentCamera = bxt.types.add_and_mutate_object(scene,
+						mainChar.cameraType)
+
+				ac = AutoCamera().camera
+				if ac != None:
+					self.currentCamera.worldPosition = ac.worldPosition
+					self.currentCamera.worldOrientation = ac.worldOrientation
+				self.cameraType = mainChar.cameraType
+				if oldCamera != None:
+					oldCamera.endObject()
+
+class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'Orb_'
+
+	UP_DIST = 12.0
+	BACK_DIST = 40.0
+	DIST_BIAS = 0.5
+	EXPAND_FAC = 0.005
+
+	def __init__(self, old_owner):
+		self.currentUpDist = OrbitCamera.UP_DIST / 2.0
+		self.currentBackDist = OrbitCamera.BACK_DIST / 2.0
+		AutoCamera().add_goal(self)
+
+	@bxt.types.expose
+	def update(self):
+		# Project up.
+		mainChar = director.Director().mainCharacter
+		if mainChar == None:
+			return
+
+		origin = mainChar.worldPosition
+		zlocal = mainChar.getAxisVect(bxt.math.ZAXIS)
+
+		direction = zlocal
+		vectTo = self.worldPosition - origin
+		zcomponent = vectTo.project(zlocal)
+		tangent = vectTo - zcomponent
+		distUp = zcomponent.magnitude
+		distBack = tangent.magnitude
+
+		upPos = self.cast_ray(origin, direction, distUp, OrbitCamera.UP_DIST)
+
+		vectTo = self.worldPosition - upPos
+		zcomponent = vectTo.project(zlocal)
+		direction = vectTo - zcomponent
+		direction.normalize()
+		backPos = self.cast_ray(upPos, direction, distBack, OrbitCamera.BACK_DIST)
+
+		self.worldPosition = backPos
+		self.alignAxisToVect(zlocal, 1)
+		self.alignAxisToVect(direction, 2)
+
+	def cast_ray(self, origin, direction, dist, maxDist):
+		through = origin + direction
+
+		hitOb, hitPoint, hitNorm = self.rayCast(
+			through,		# obTo
+			origin,			# obFrom
+			maxDist,        # dist
+			'Ray',			# prop
+			1,				# face normal
+			1				# x-ray
+		)
+
+		targetDist = maxDist
+		if hitOb and (hitNorm.dot(direction) < 0):
+			#
+			# If dot > 0, the tracking object is inside another mesh.
+			# It's not perfect, but better not bring the camera forward
+			# in that case, or the camera will be inside too.
+			#
+			targetDist = (hitPoint - origin).magnitude
+
+		targetDist = targetDist * OrbitCamera.DIST_BIAS
+
+		if targetDist < dist:
+			dist = targetDist
+		else:
+			dist = bxt.math.lerp(dist, targetDist,
+					OrbitCamera.EXPAND_FAC)
+
+		pos = origin + (direction * dist)
+		return pos
+
+class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A camera goal that follows the active player. It tries to follow the same
 	path as the player, so that it avoids static scenery.
 	'''
 
-	_prefix = 'CP_'
+	_prefix = 'PC_'
 
 	# The maximum number of nodes to track. Once this number is reached, the
 	# oldest nodes will be removed.
@@ -231,7 +334,7 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		# Note: This class uses strong references, so it will hang around even
 		# when the associated game object dies. But that's OK, because the only
-		# class that uses this one is CameraPath, which should end with its
+		# class that uses this one is PathCamera, which should end with its
 		# object, thus releasing this one.
 
 		def __init__(self):
@@ -250,7 +353,7 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		def update(self):
 			self.target = bxt.math.ZAXIS.copy()
-			self.target *= CameraPath.ZOFFSET
+			self.target *= PathCamera.ZOFFSET
 			self.target = bxt.math.to_world(self.owner, self.target)
 			hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
 					self.target, # objto
@@ -261,11 +364,11 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				vec = hitPoint - self.owner.worldPosition
 				self.setCeilingHeight(vec.magnitude)
 			else:
-				self.setCeilingHeight(CameraPath.ZOFFSET)
+				self.setCeilingHeight(PathCamera.ZOFFSET)
 
 		def get_target(self):
-			bias = self.ceilingHeight / CameraPath.ZOFFSET
-			bias *= CameraPath.CEILING_AVOIDANCE_BIAS
+			bias = self.ceilingHeight / PathCamera.ZOFFSET
+			bias *= PathCamera.CEILING_AVOIDANCE_BIAS
 			return bxt.math.lerp(self.owner.worldPosition, self.target, bias)
 
 		def destroy(self):
@@ -281,12 +384,12 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		# A list of CameraNodes.
 		self.path = []
-		self.pathHead = CameraPath.CameraNode()
+		self.pathHead = PathCamera.CameraNode()
 		self.linV = bxt.math.ZEROVEC.copy()
 
 		self.radMult = 1.0
-		self.expand = bxt.types.FuzzySwitch(CameraPath.EXPAND_ON_WAIT,
-										CameraPath.EXPAND_OFF_WAIT, True)
+		self.expand = bxt.types.FuzzySwitch(PathCamera.EXPAND_ON_WAIT,
+										PathCamera.EXPAND_OFF_WAIT, True)
 		self.target = None
 
 		AutoCamera().add_goal(self)
@@ -325,7 +428,7 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		# Adjust preferred distance from actor based on current conditions.
 		contract = False
-		if node.ceilingHeight < CameraPath.ZOFFSET:
+		if node.ceilingHeight < PathCamera.ZOFFSET:
 			# Bring the camera closer when under a low ceiling or in a tunnel.
 			contract = True
 
@@ -337,13 +440,13 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		radMult = 1.0
 		if contract:
-			radMult = 1.0 + (node.ceilingHeight / CameraPath.ZOFFSET)
+			radMult = 1.0 + (node.ceilingHeight / PathCamera.ZOFFSET)
 		elif self.expand.is_on():
-			radMult = CameraPath.EXPAND_FACTOR
+			radMult = PathCamera.EXPAND_FACTOR
 		else:
-			radMult = CameraPath.REST_FACTOR
+			radMult = PathCamera.REST_FACTOR
 		self.radMult = bxt.math.lerp(self.radMult, radMult,
-									CameraPath.RADIUS_SPEED)
+									PathCamera.RADIUS_SPEED)
 		restNear = self.REST_DISTANCE
 		restFar = self.REST_DISTANCE * self.radMult
 
@@ -368,14 +471,14 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		look.negate()
 		yfac = 1 - abs(self.getAxisVect(bxt.math.ZAXIS).dot(bxt.math.ZAXIS))
 		yfac = (yfac * 0.5) + 0.5
-		yfac *= CameraPath.ALIGN_Y_SPEED
+		yfac *= PathCamera.ALIGN_Y_SPEED
 
 		if actor.localCoordinates:
 			axis = node.owner.getAxisVect(bxt.math.ZAXIS)
 			self.alignAxisToVect(axis, 1, yfac)
 		else:
 			self.alignAxisToVect(bxt.math.ZAXIS, 1, yfac)
-		self.alignAxisToVect(look, 2, CameraPath.ALIGN_Z_SPEED)
+		self.alignAxisToVect(look, 2, PathCamera.ALIGN_Z_SPEED)
 
 		if DEBUG: self.targetVis.worldPosition = target
 
@@ -401,7 +504,7 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		a, b = self.path[0], self.path[1]
 		ba = a.owner.worldPosition - b.owner.worldPosition
 		ba.normalize()
-		projectedPoint = a.owner.worldPosition + (ba * CameraPath.PREDICT_FWD)
+		projectedPoint = a.owner.worldPosition + (ba * PathCamera.PREDICT_FWD)
 
 		hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
 				projectedPoint, a.owner, prop = 'Ray')
@@ -426,7 +529,7 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			# curvature. The cross product gives us the axis of rotation.
 			rotAxis = ba.cross(cb)
 			upAxis = rotAxis.cross(ba)
-			pp2 = projectedPoint - (upAxis * CameraPath.PREDICT_FWD)
+			pp2 = projectedPoint - (upAxis * PathCamera.PREDICT_FWD)
 
 			hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
 					pp2, projectedPoint, prop = 'Ray')
@@ -520,7 +623,7 @@ class CameraPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				addNew = True
 
 		if addNew:
-			node = CameraPath.CameraNode()
+			node = PathCamera.CameraNode()
 
 			if actor.localCoordinates:
 				bxt.math.copy_transform(actor, node.owner)

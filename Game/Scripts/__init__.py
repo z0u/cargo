@@ -15,4 +15,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# No global initialisation.
+from . import camera
+from . import director
+from . import lodtree
+from . import menu
+from . import ui
+
+# Create singletons. Order should not be important.
+camera.AutoCamera()
+camera.MainGoalManager()
+director.Director()
+lodtree.LODManager()
+menu.SessionManager()
+menu.InputHandler()
+ui.HUDState()

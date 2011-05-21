@@ -33,6 +33,10 @@ def init():
 			evt = bxt.types.Event('ShowMessage',
 				'Could not load foliage. Try reinstalling the game.')
 			bxt.types.EventBus().notify(evt)
+	try:
+		bge.logic.LibLoad('//OutdoorsDistantLand.blend', 'Scene')
+	except ValueError:
+		print('Could not load distant land. Try reinstalling the game.')
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''

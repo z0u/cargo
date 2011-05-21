@@ -177,27 +177,24 @@ class MainGoalManager(metaclass=bxt.types.Singleton):
 
 	def __init__(self):
 		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')
+		bxt.types.EventBus().replay_last(self, 'SetCameraType')
 		self.cameraType = None
 
 	def on_event(self, evt):
-		if evt.message == 'MainCharacterSet':
-			print('MainGoalManager.on_event:MainCharacterSet', director.Director().mainCharacter)
-			mainChar = director.Director().mainCharacter
-			if mainChar == None:
-				return
+		if evt.message == 'SetCameraType':
+			print('MainGoalManager.on_event:SetCameraType', evt.body)
 			if (self.currentCamera == None or
-					self.cameraType != mainChar.cameraType):
+					self.cameraType != evt.body):
 				scene = bge.logic.getCurrentScene()
 				oldCamera = self.currentCamera
 				self.currentCamera = bxt.types.add_and_mutate_object(scene,
-						mainChar.cameraType)
+						evt.body)
 
 				ac = AutoCamera().camera
 				if ac != None:
 					self.currentCamera.worldPosition = ac.worldPosition
 					self.currentCamera.worldOrientation = ac.worldOrientation
-				self.cameraType = mainChar.cameraType
+				self.cameraType = evt.body
 				if oldCamera != None:
 					oldCamera.endObject()
 

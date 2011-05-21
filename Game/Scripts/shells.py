@@ -33,7 +33,6 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 	S_ALWAYS   = 16
 
 	snail = bxt.types.weakprop('snail')
-	cameraType = 'PathCamera'
 
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)

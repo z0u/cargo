@@ -64,7 +64,6 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	armature = bxt.types.weakprop('armature')
 	cargoHold = bxt.types.weakprop('cargoHold')
 	shockwave = bxt.types.weakprop('shockwave')
-	cameraType = 'OrbitCamera'
 
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)
@@ -91,6 +90,8 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.actuators['aArtificialGravity'].force = [0, 0, 0 - GRAVITY]
 
 		evt = bxt.types.WeakEvent('MainCharacterSet', self)
+		bxt.types.EventBus().notify(evt)
+		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
 		bxt.types.EventBus().notify(evt)
 
 	@bxt.types.expose
@@ -373,6 +374,9 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		if not self.has_state(Snail.S_HASSHELL):
 			return
 
+		evt = bxt.types.Event('SetCameraType', 'PathCamera')
+		bxt.types.EventBus().notify(evt)
+
 		self.rem_state(Snail.S_HASSHELL)
 		self.add_state(Snail.S_ENTERING)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_CRAWL)
@@ -463,6 +467,9 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		transferred).'''
 		if not self.has_state(Snail.S_EXITING):
 			return
+
+		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
+		bxt.types.EventBus().notify(evt)
 
 		self.rem_state(Snail.S_EXITING)
 		self.add_state(Snail.S_HASSHELL)

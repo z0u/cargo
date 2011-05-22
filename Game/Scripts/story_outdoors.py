@@ -315,6 +315,11 @@ class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		pass
 
 	def destruct(self):
+		scene = bge.logic.getCurrentScene()
+		for hook in self.children:
+			i = hook.name[-3:]
+			pieceName = 'T_Door_Broken.%s' % i
+			scene.addObject(pieceName, hook)
 		self.endObject()
 
 	@bxt.types.expose
@@ -327,5 +332,4 @@ class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				continue
 			evt = bxt.types.Event('ForceExitShell')
 			bxt.types.EventBus().notify(evt)
-			print(shell.get_last_linear_velocity())
 			self.destruct()

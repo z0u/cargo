@@ -46,11 +46,13 @@ class SessionManager(metaclass=bxt.types.Singleton):
 
 		elif event.message == 'startGame':
 			# Load the level indicated in the save game.
-			bge.logic.startGame(store.get('/game/level', 'Outdoors.blend'))
+			level = store.get('/game/levelFile', 'Outdoors.blend')
+			store.save()
+			bge.logic.startGame(level)
 
 		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.
-			for key in store.list('/game'):
+			for key in store.list('/game/'):
 				store.unset(key)
 			evt = bxt.types.Event('showScreen', 'LoadingScreen')
 			bxt.types.EventBus().notify(evt)

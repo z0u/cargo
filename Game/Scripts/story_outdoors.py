@@ -310,7 +310,7 @@ def wormKnockSound(c):
 
 class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):
-		if not store.get('/game/TreeDoorBroken', False):
+		if not store.get('/game/level/treeDoorBroken', False):
 			self.create_door()
 
 	def create_door(self):
@@ -336,7 +336,7 @@ class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			except ValueError:
 				print('Failed to add object %s' % pieceName)
 		self.endObject()
-		store.set('/game/TreeDoorBroken', True)
+		store.set('/game/level/treeDoorBroken', True)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

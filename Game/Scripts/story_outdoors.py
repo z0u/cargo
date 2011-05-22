@@ -308,6 +308,18 @@ def wormKnockSound(c):
 	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):
 		bxt.sound.play_with_random_pitch(c)
 
+class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	def __init__(self, oldOwner):
+		if not store.get('/game/TreeDoorBroken', False):
+			self.create_door()
+
+	def create_door(self):
+		hook = self.children['T_Door_Hook']
+		scene = bge.logic.getCurrentScene()
+		door = scene.addObject('T_Door', hook)
+		door.worldPosition = hook.worldPosition
+		door.worldOrientation = hook.worldOrientation
+
 class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'TD_'
 
@@ -319,8 +331,12 @@ class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		for hook in self.children:
 			i = hook.name[-3:]
 			pieceName = 'T_Door_Broken.%s' % i
-			scene.addObject(pieceName, hook)
+			try:
+				scene.addObject(pieceName, hook)
+			except ValueError:
+				print('Failed to add object %s' % pieceName)
 		self.endObject()
+		store.set('/game/TreeDoorBroken', True)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

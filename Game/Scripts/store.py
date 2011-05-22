@@ -101,3 +101,4 @@ def save():
 	only actually write the file if the settings have changed.'''
 	if __dirty:
 		_save()
+		print('Game saved.')

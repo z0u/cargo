@@ -21,6 +21,8 @@ import bxt
 
 from . import ui
 from . import camera
+from . import director
+from . import store
 
 class StoryError(Exception):
 	pass
@@ -255,3 +257,18 @@ class Character(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def CreateSteps(self):
 		pass
+
+def activate_portal(c):
+	'''Loads the next level, based on the properties of the owner.
+
+	Properties:
+		level: The name of the .blend file to load.
+		spawnPoint: The name of the spawn point that the player should start at.
+	'''
+	if director.Director().mainCharacter in c.sensors[0].hitObjectList:
+		portal = c.owner
+		print('Loading next level: %s, %s' % (portal['level'], portal['spawnPoint']))
+		store.set('/game/levelFile', portal['level'])
+		store.set('/game/level/spawnPoint', portal['spawnPoint'])
+		store.save()
+		bge.logic.startGame(portal['level'])

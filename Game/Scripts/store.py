@@ -29,7 +29,11 @@ def setSessionId(id):
 	current = id
 
 def resolve(path):
-	return str(path).replace('/game', '/savedGames/' + str(getSessionId()), 1)
+	rp = str(path).replace('/game/', '/savedGames/%s/' % str(getSessionId()), 1)
+	if '/level/' in rp:
+		level = get('/game/levelFile')
+		rp = str(path).replace('/level/', '/levels/%s/' % level, 1)
+	return rp
 
 def get(path, defaultValue = None):
 	'''

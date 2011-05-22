@@ -44,6 +44,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	'''
 	_prefix = 'AC_'
 
+	COLLISION_BIAS = 0.8
+
 	camera = bxt.types.weakprop('camera')
 	lastGoal = bxt.types.weakprop('lastGoal')
 
@@ -80,23 +82,25 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 			print('Empty q')
 			return
 
-		if self.lastGoal != currentGoal:
-			# Keeping track of goals being added and removed it very
-			# difficult, so we just consider the last action when deciding
-			# whether or not to cut instantly.
-			if not self.instantCut:
-				# Also cut instantly if there's an obstacle in the way.
-				ob, _, _ = bxt.math.ray_cast_p2p(currentGoal, self.camera,
-						prop = 'Ray')
-				if ob != None:
-					self.instantCut = True
+		# Keeping track of goals being added and removed it very
+		# difficult, so we just consider the last action when deciding
+		# whether or not to cut instantly.
+		if not self.instantCut:
+			# ... but if there's an object in the way, teleport to the nearest
+			# safe position.
+			ob, hitPoint, _ = bxt.math.ray_cast_p2p(currentGoal, self.camera,
+					prop = 'Ray')
+			if ob != None:
+				vectTo = hitPoint - currentGoal.worldPosition
+				vectTo *= AutoCamera.COLLISION_BIAS
+				self.camera.worldPosition = currentGoal.worldPosition + vectTo
 
-			if self.instantCut:
-				self.camera.worldPosition = currentGoal.worldPosition
-				self.camera.worldOrientation = currentGoal.worldOrientation
-				if hasattr(currentGoal, 'lens'):
-					self.camera.lens = currentGoal.lens
-				self.instantCut = False
+		if self.instantCut:
+			self.camera.worldPosition = currentGoal.worldPosition
+			self.camera.worldOrientation = currentGoal.worldOrientation
+			if hasattr(currentGoal, 'lens'):
+				self.camera.lens = currentGoal.lens
+			self.instantCut = False
 
 		bxt.math.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
 		bxt.math.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
@@ -715,23 +719,30 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 	def on_camera_moved(self, autoCamera):
 		self.worldPosition = autoCamera.camera.worldPosition
 		pos = autoCamera.camera.worldPosition.copy()
-		through = pos.copy()
-		through.z += CameraCollider.MAX_DIST
-		vec = through - pos
 
-		ob, _, normal = bxt.math.ray_cast_p2p(through, pos, prop='VolumeCol')
-
-		inside = False
+		dir = bxt.math.ZAXIS.copy()
+		ob = self.cast_for_water(pos, dir)
 		if ob != None:
-			if normal.dot(vec) > 0.0:
-				inside = True
+			# Double check - works around bug with rays that strike a glancing
+			# blow on an edge.
+			dir.x = dir.y = 0.1
+			dir.normalize()
+			ob = self.cast_for_water(pos, dir)
 
-		if inside:
+		if ob != None:
 			evt = bxt.types.Event('ShowFilter', ob['VolumeCol'])
 			bxt.types.EventBus().notify(evt)
 		else:
 			evt = bxt.types.Event('ShowFilter', None)
 			bxt.types.EventBus().notify(evt)
+
+	def cast_for_water(self, pos, dir):
+		through = pos + dir * CameraCollider.MAX_DIST
+		ob, _, normal = bxt.math.ray_cast_p2p(through, pos, prop='VolumeCol')
+		if ob != None and normal.dot(dir) > 0.0:
+			return ob
+		else:
+			return None
 
 #
 # camera for viewing the background scene

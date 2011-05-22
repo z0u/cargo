@@ -98,7 +98,7 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 		pass
 
 	def on_button1(self, positive, triggered):
-		if not self.has_state(ShellBase.S_OCCUPIED):
+		if not self.is_occupied():
 			return
 
 		if positive and triggered:
@@ -113,9 +113,9 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 			self.snail.save_location()
 
 	def respawn(self, reason = None):
-		if self.has_state(ShellBase.S_OCCUPIED):
+		if self.is_occupied():
 			self.snail.respawn(reason)
-		elif self.has_state(ShellBase.S_CARRIED):
+		elif self.is_carried():
 			# Do nothing: shell is being carried, but snail is still in control
 			# (so presumably the snail will be told to respawn too).
 			pass
@@ -123,18 +123,21 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 			super(ShellBase, self).respawn(reason)
 
 	def get_health(self):
-		if (self.has_state(ShellBase.S_CARRIED) or
-		    self.has_state(ShellBase.S_OCCUPIED)):
+		if self.is_carried() or self.is_occupied():
 			return self.snail.get_health()
 		else:
 			return super(ShellBase, self).get_health()
 
 	def set_health(self, value):
-		if (self.has_state(ShellBase.S_CARRIED) or
-		    self.has_state(ShellBase.S_OCCUPIED)):
+		if self.is_carried() or self.is_occupied():
 			return self.snail.set_health(value)
 		else:
 			return super(ShellBase, self).set_health(value)
+
+	def is_occupied(self):
+		return self.has_state(ShellBase.S_OCCUPIED)
+	def is_carried(self):
+		return self.has_state(ShellBase.S_CARRIED)
 
 class Shell(ShellBase):
 	def on_movement_impulse(self, fwd, back, left, right):
@@ -178,6 +181,8 @@ class Shell(ShellBase):
 		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
 class Wheel(ShellBase):
+	DESTRUCTION_SPEED = 5.0
+
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 		self._reset_speed()
@@ -228,6 +233,13 @@ class Wheel(ShellBase):
 		self.currentRotSpeed = bxt.math.lerp(self.currentRotSpeed,
 				targetRotSpeed, self['SpeedFac'])
 		self.setAngularVelocity(ZAXIS * self.currentRotSpeed, True)
+
+	def can_destroy_stuff(self):
+		if not self.is_occupied():
+			return False
+		if self.get_last_linear_velocity().magnitude < Wheel.DESTRUCTION_SPEED:
+			return False
+		return True
 
 class Nut(ShellBase):
 	def on_movement_impulse(self, fwd, back, left, right):

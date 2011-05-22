@@ -85,6 +85,8 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.actuators['aAntiGravity'].force = [0, 0, GRAVITY]
 		self.actuators['aArtificialGravity'].force = [0, 0, 0 - GRAVITY]
 
+		bxt.types.EventBus().add_listener(self)
+
 		evt = bxt.types.WeakEvent('MainCharacterSet', self)
 		bxt.types.EventBus().notify(evt)
 		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
@@ -203,6 +205,10 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		# Recurse
 		if len(segment.children) > 0:
 			self.orient_segment(segment)
+
+	def on_event(self, evt):
+		if evt.message == 'ForceExitShell':
+			self.exit_shell(True)
 
 	def update_eye_length(self):
 		def update_single(eyeRayOb):

@@ -23,6 +23,7 @@ import bxt
 from .story import *
 from . import director
 from . import store
+from Scripts import shells
 
 def init():
 	'''Load extra files'''
@@ -306,3 +307,25 @@ def wormKnockSound(c):
 	frame = c.owner['ActionFrame']
 	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):
 		bxt.sound.play_with_random_pitch(c)
+
+class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'TD_'
+
+	def __init__(self, oldOnwer):
+		pass
+
+	def destruct(self):
+		self.endObject()
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def collide(self, c):
+		for shell in c.sensors[0].hitObjectList:
+			if shell.name != 'Wheel':
+				continue
+			if not shell.can_destroy_stuff():
+				continue
+			evt = bxt.types.Event('ForceExitShell')
+			bxt.types.EventBus().notify(evt)
+			print(shell.get_last_linear_velocity())
+			self.destruct()

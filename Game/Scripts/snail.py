@@ -24,6 +24,7 @@ from bge import logic
 import bxt
 import bge
 from . import director
+from Scripts import store
 
 GRAVITY = 75.0
 
@@ -31,10 +32,10 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	_prefix = ''
 
 	# Snail states
-	#S_INIT     = 1
+	S_INIT     = 1
 	S_CRAWLING = 2
 	S_FALLING  = 3
-	#S_ACTIVE   = 4
+	S_ACTIVE   = 4
 	S_SHOCKED  = 5
 	S_NOSHELL  = 16
 	S_HASSHELL = 17
@@ -61,6 +62,15 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)
 
+		# Initialise state.
+		self.rem_state(Snail.S_CRAWLING)
+		self.add_state(Snail.S_FALLING)
+		self.add_state(Snail.S_NOSHELL)
+		self.rem_state(Snail.S_HASSHELL)
+		self.rem_state(Snail.S_INSHELL)
+		self.add_state(Snail.S_ACTIVE)
+		self.rem_state(Snail.S_INIT)
+
 		self.shell = None
 		self.nearestPickup = None
 		# Not weak props, but it should be OK because they will die in the same
@@ -85,12 +95,22 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.actuators['aAntiGravity'].force = [0, 0, GRAVITY]
 		self.actuators['aArtificialGravity'].force = [0, 0, 0 - GRAVITY]
 
+		self.load_items()
+
 		bxt.types.EventBus().add_listener(self)
 
 		evt = bxt.types.WeakEvent('MainCharacterSet', self)
 		bxt.types.EventBus().notify(evt)
 		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
 		bxt.types.EventBus().notify(evt)
+
+	def load_items(self):
+		bge.logic.LibLoad('//ItemLoader.blend', 'Scene')
+		shellName = store.get('/game/equippedShell', 'Shell')
+		if shellName != None:
+			scene = bge.logic.getCurrentScene()
+			shell = bxt.types.add_and_mutate_object(scene, shellName, self)
+			self.set_shell(shell, False)
 
 	@bxt.types.expose
 	def update(self):
@@ -308,9 +328,6 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 				self.nearestPickup = ob
 				break
 
-		if self.frameCounter < 5:
-			self.set_shell(self.nearestPickup, False)
-
 	def set_shell(self, shell, animate):
 		'''
 		Add the shell as a descendant of the snail. It will be
@@ -332,6 +349,8 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self['HasShell'] = 1
 		self['DynamicMass'] = self['DynamicMass'] + shell['DynamicMass']
 		self.shell.on_picked_up(self, animate)
+		store.set('/game/equippedShell', shell.name)
+
 		if animate:
 			self.shockwave.worldPosition = shell.worldPosition
 			self.shockwave.worldOrientation = shell.worldOrientation
@@ -346,6 +365,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.add_state(Snail.S_POPPING)
 		bxt.utils.add_state(self.armature, Snail.S_ARM_POP)
 		self.armature['NoTransition'] = not animate
+		store.set('/game/equippedShell', None)
 
 	@bxt.types.expose
 	def on_drop_shell(self):

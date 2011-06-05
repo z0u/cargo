@@ -23,7 +23,8 @@ const float radius = 5.0/512.0;
 const float maxdepth = 1.0;
 const float focus = 0.5;
 const float nsamples = 32;
-const float contribution = 1.0 / nsamples;
+//const float contribution = 1.0 / nsamples;
+const float contribution = 1.0;
 
 vec4 get_colour(vec2 offset) {
     return texture2D(bgl_RenderedTexture, gl_TexCoord[0].xy + offset);
@@ -31,13 +32,26 @@ vec4 get_colour(vec2 offset) {
 float get_depth(vec2 offset) {
     return texture2D(bgl_DepthTexture, gl_TexCoord[0].xy + offset).r;
 }
+float get_focus(float depth) {
+    return abs(depth * 2 - 1);
+}
 
 vec4 blur_sample(float depth, float depthNorm, vec2 offset, out float influence) {
-    offset *= radius * depthNorm;
-    float ndepth = get_depth(offset);
-    float sw = step(0, ndepth - depth);
-    influence += contribution * sw;
-    return get_colour(offset) * contribution * sw;
+    float focusFactor;
+
+    offset *= radius * get_focus(depth);
+    float idepth = get_depth(offset);
+    float focus = get_focus(idepth);
+    float contrib;
+    if (idepth < depth)
+        contrib = focus;
+    else
+        contrib = 1.0;
+    //float sw = step(0, depth - idepth);
+    //influence += contribution * sw * focus;
+    //return get_colour(offset) * contribution * sw * focus;
+    influence += contrib;
+    return get_colour(offset) * contrib;
 }
 
 void main(void) {
@@ -48,6 +62,8 @@ void main(void) {
     float influence = 0;
     vec2 offset;
 
+    blur = result;
+    influence = 1.0;
     blur += blur_sample(depth, depthNorm, vec2(0.220308, 0.190851), influence);
     blur += blur_sample(depth, depthNorm, vec2(0.009629, 0.891577), influence);
     blur += blur_sample(depth, depthNorm, vec2(0.484737, 0.344041), influence);
@@ -81,8 +97,10 @@ void main(void) {
     blur += blur_sample(depth, depthNorm, vec2(-0.430415, 0.106992), influence);
     blur += blur_sample(depth, depthNorm, vec2(-0.675179, -0.133977), influence);
 
-    blur = result * (1 - influence) + blur;
-    result = mix(result, blur, depth * 100 - 99);
+    result = blur / influence;
+    //blur = result * (1 - influence) + blur;
+    //result = mix(result, blur, depth * 100 - 99);
 
     gl_FragColor = result;
+    //gl_FragColor = vec4(get_focus(depth));
 }

@@ -19,10 +19,10 @@
 
 uniform sampler2D bgl_RenderedTexture;
 uniform sampler2D bgl_DepthTexture;
-const float radius = 1.0/512.0;
+const float radius = 5.0/512.0;
 const float maxdepth = 1.0;
 const float focus = 0.5;
-const float nsamples = 8;
+const float nsamples = 32;
 const float contribution = 1.0 / nsamples;
 
 vec4 get_colour(vec2 offset) {
@@ -48,29 +48,38 @@ void main(void) {
     float influence = 0;
     vec2 offset;
 
-    offset = vec2(-0.707107, 0.707107);
-    blur += blur_sample(depth, depthNorm, offset, influence);
-
-    offset = vec2(0, 1);
-    blur += blur_sample(depth, depthNorm, offset, influence);
-
-    offset = vec2(0.707107, 0.707107);
-    blur += blur_sample(depth, depthNorm, offset, influence);
-
-    offset = vec2(1, 0);
-    blur += blur_sample(depth, depthNorm, offset, influence);
-
-    offset = vec2(0.707107, -0.707107);
-    blur += blur_sample(depth, depthNorm, offset, influence);
-
-    offset = vec2(0, -1);
-    blur += blur_sample(depth, depthNorm, offset, influence);
-
-    offset = vec2(-0.707107, -0.707107);
-    blur += blur_sample(depth, depthNorm, offset, influence);
-
-    offset = vec2(-1, 0);
-    blur += blur_sample(depth, depthNorm, offset, influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.220308, 0.190851), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.009629, 0.891577), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.484737, 0.344041), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.093412, 0.766928), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.508705, 0.597546), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.147513, 0.539470), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.746857, 0.347826), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.601831, -0.453539), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.069247, -0.078927), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.663293, -0.088260), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.190517, -0.103302), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.528019, 0.138705), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.355210, -0.237941), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.617317, 0.319847), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.096463, 0.919791), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.288909, 0.280413), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.157119, 0.787627), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.031250, 0.442411), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.336061, 0.600733), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.104189, 0.139011), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.311419, -0.621612), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.462600, -0.800826), influence);
+    blur += blur_sample(depth, depthNorm, vec2(0.068910, -0.396675), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.335844, -0.729556), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.234761, -0.376287), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.081222, -0.683535), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.494954, -0.488265), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.904582, 0.192490), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.355966, -0.188117), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.797630, 0.093962), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.430415, 0.106992), influence);
+    blur += blur_sample(depth, depthNorm, vec2(-0.675179, -0.133977), influence);
 
     blur = result * (1 - influence) + blur;
     result = mix(result, blur, depth * 100 - 99);

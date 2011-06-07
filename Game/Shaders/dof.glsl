@@ -17,11 +17,19 @@
 
 // Fragment shader
 
+//
+// Uniforms provided by Blender
+//
 uniform sampler2D bgl_RenderedTexture;
 uniform sampler2D bgl_DepthTexture;
+uniform float bgl_RenderedTextureWidth;
+uniform float bgl_RenderedTextureHeight;
 
-const float radius = 3.0/512.0;
-const float focalDistance = 0.5;
+//
+// Uniforms set as game object properties (see logic buttons)
+//
+uniform float focalDistance;
+uniform float blurRadius;
 
 vec4 get_colour(vec2 offset) {
     return texture2D(bgl_RenderedTexture, gl_TexCoord[0].xy + offset);
@@ -30,7 +38,7 @@ float get_depth(vec2 offset) {
     return texture2D(bgl_DepthTexture, gl_TexCoord[0].xy + offset).r;
 }
 float get_blur(float depth) {
-    return abs(depth * 2 - (2 * focalDistance));
+    return abs(depth * 2.0 - (2.0 * focalDistance));
 }
 
 //
@@ -48,12 +56,12 @@ float get_blur(float depth) {
 //              due to occlusion and different z-depths, a sample may
 //              contribute a smaller fraction of its colour.
 //
-vec4 blur_sample(float depth, float blur, vec2 offset, inout float influence) {
+vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
     float idepth;
     float contrib;
 
     // Use the focus of the current point to drive the filter radius.
-    offset *= radius * blur;
+    offset *= blur * blurRadius;
 
     // If the sample is closer than the current pixel (depth-wise), modulate its
     // influence by how blurry it is. I.e. if it is fully in-focus, it will not
@@ -73,9 +81,10 @@ vec4 blur_sample(float depth, float blur, vec2 offset, inout float influence) {
 }
 
 void main(void) {
-    vec4 col = get_colour(vec2(0));
-    float depth = get_depth(vec2(0));
-    float blur = get_blur(depth);
+    vec4 col = get_colour(vec2(0.0));
+    float depth = get_depth(vec2(0.0));
+    float aspect = bgl_RenderedTextureWidth / bgl_RenderedTextureHeight;
+    vec2 blur = vec2(get_blur(depth)) * vec2(1.0, aspect);
     float influence = 1.0;
 
     // Bokeh: Spiral

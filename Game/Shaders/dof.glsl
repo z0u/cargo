@@ -38,25 +38,10 @@ float get_depth(vec2 offset) {
     return texture2D(bgl_DepthTexture, gl_TexCoord[0].xy + offset).r;
 }
 float get_blur(float depth) {
-    //return abs(depth * 2.0 - (2.0 * focalDistance));
-
-    float zn = 1;
     float z;
 
     z = abs((depth - focalDistance) / 1.0);
     return z * 10.0;
-
-    float zf = 100000;
-    float a = zf / (zf - zn);
-    float b = zf * zn / (zn - zf);
-    z = b / ((depth - focalDistance) - a);
-    //z /= zf;
-    return abs(z);
-
-    //if (depth > focalDistance)
-    //    return (depth - focalDistance) * (1.0 / 1.0 - focalDistance);
-    //else
-    //    return 0.0 - (depth - focalDistance);
 }
 
 //

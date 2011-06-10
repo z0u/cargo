@@ -28,7 +28,7 @@ uniform float bgl_RenderedTextureHeight;
 //
 // Uniforms set as game object properties (see logic buttons)
 //
-uniform float focalDistance;
+uniform float focalDepth;
 uniform float blurRadius;
 
 vec4 get_colour(vec2 offset) {
@@ -38,10 +38,10 @@ float get_depth(vec2 offset) {
     return texture2D(bgl_DepthTexture, gl_TexCoord[0].xy + offset).r;
 }
 float get_blur(float depth) {
-    float z;
-
-    z = abs((depth - focalDistance) / 1.0);
-    return z * 10.0;
+    // Depth buffer is inverse linear. Find the difference between this
+    // and the focal depth, and convert back to something like world
+    // units (linear).
+    return 10.0 * abs((depth - focalDepth) / 1.0);
 }
 
 //

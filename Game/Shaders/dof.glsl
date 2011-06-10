@@ -32,10 +32,10 @@ uniform float focalDepth;
 uniform float blurRadius;
 
 vec4 get_colour(vec2 offset) {
-    return texture2D(bgl_RenderedTexture, gl_TexCoord[0].xy + offset);
+    return texture(bgl_RenderedTexture, gl_TexCoord[0].st + offset);
 }
 float get_depth(vec2 offset) {
-    return texture2D(bgl_DepthTexture, gl_TexCoord[0].xy + offset).r;
+    return texture(bgl_DepthTexture, gl_TexCoord[0].st + offset).r;
 }
 float get_blur(float depth) {
     // Depth buffer is inverse linear. Find the difference between this
@@ -70,7 +70,7 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
     // Ignore samples that are totally black. This avoids blurring the screen border.
     // NOTE: no truly black pixels in the scene will be blurred!
     col = get_colour(offset);
-    if (col.xyz == vec3(0,0,0))
+    if (col.rgb == vec3(0,0,0))
         return vec4(0,0,0,0);
 
     // If the sample is closer than the current pixel (depth-wise), modulate its

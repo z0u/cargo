@@ -62,9 +62,16 @@ float get_blur(float depth) {
 vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
     float idepth;
     float contrib;
+    vec4 col;
 
     // Use the focus of the current point to drive the filter radius.
     offset *= blur * blurRadius;
+
+    // Ignore samples that are totally black. This avoids blurring the screen border.
+    // NOTE: no truly black pixels in the scene will be blurred!
+    col = get_colour(offset);
+    if (col.xyz == vec3(0,0,0))
+        return vec4(0,0,0,0);
 
     // If the sample is closer than the current pixel (depth-wise), modulate its
     // influence by how blurry it is. I.e. if it is fully in-focus, it will not
@@ -80,7 +87,7 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
         contrib = 1.0;
 
     influence += contrib;
-    return get_colour(offset) * contrib;
+    return col * contrib;
 }
 
 void main(void) {

@@ -165,6 +165,8 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 		Actor.__init__(self)
 		evt = bxt.types.WeakEvent('MainCharacterSet', self)
 		bxt.types.EventBus().notify(evt)
+		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
+		bxt.types.EventBus().notify(evt)
 	def on_movement_impulse(self, left, right, fwd, back):
 		pass
 	def on_button1(self, pos, trig):

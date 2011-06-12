@@ -58,6 +58,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		self.queue = bxt.types.GameObjectPriorityQueue()
 		self.lastGoal = None
 		self.instantCut = False
+		self.errorReported = False
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls
@@ -79,7 +80,9 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		try:
 			currentGoal = self.queue.top()
 		except IndexError:
-			print('Empty q')
+			if not self.errorReported:
+				print('Warning: AutoCamera queue is empty')
+				self.errorReported = True
 			return
 
 		# Keeping track of goals being added and removed it very
@@ -113,8 +116,23 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 
 		self.lastGoal = currentGoal
 
+		self._update_focal_depth()
+
 		evt = bxt.types.WeakEvent('CameraMoved', self)
 		bxt.types.EventBus().notify(evt)
+
+	def _update_focal_depth(self):
+		focalPoint = director.Director().mainCharacter
+		if not focalPoint:
+			return
+
+		cam = bge.logic.getCurrentScene().active_camera
+
+		# Convert to depth; assume very large zFar
+		# http://www.sjbaker.org/steve/omniv/love_your_z_buffer.html
+		vecTo = focalPoint.worldPosition - cam.worldPosition
+		z = vecTo.project(cam.getAxisVect((0.0, 0.0, 1.0))).magnitude
+		cam['focalDepth'] = 1.0 - cam.near / z
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls
@@ -135,6 +153,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if self.queue.top() == goal['InstantCut']:
 			# Goal is on top of the stack: it will be switched to next
 			self.instantCut = True
+
+		self.errorReported = False
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls

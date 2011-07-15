@@ -10,9 +10,12 @@ SCRIPT_CACHE=bxt/*.pyc\
 	Scripts/*.pyc\
 	Scripts/__pycache__\
 	BScripts/*.pyc\
-	BScripts/__pycache__
+	BScripts/__pycache__\
+	__pycache__\
+	*.pyc
 
 clean:
 	rm -rf $(SCRIPT_CACHE)
 	rm -f *.blend?
-	rm -f *_compiled.blend
+#	rm -f *_compiled.blend
+

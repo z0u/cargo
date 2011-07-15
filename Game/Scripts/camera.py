@@ -229,7 +229,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''
 	_prefix = 'Orb_'
 
-	UP_DIST = 12.0
+	UP_DIST = 8.0
 	BACK_DIST = 20.0
 	DIST_BIAS = 0.5
 	EXPAND_FAC = 0.005

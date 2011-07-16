@@ -102,7 +102,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		lampCol.resize_3d()
 		self.lamp.color =  bxt.math.lerp(currentLampCol, lampCol, 0.1)
 
-class Worm(Character):
+class Worm(Character, bge.types.BL_ArmatureObject):
 	def __init__(self, old_owner):
 		Character.__init__(self, old_owner)
 		evt = bxt.types.WeakEvent('StartLoading', self)
@@ -179,7 +179,7 @@ class Worm(Character):
 		#
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 185.0))
-		step.AddAction(ActSetCamera('WormCamera_Knock', instantCut = True))
+		step.AddAction(ActSetCamera('WormCamera_Knock'))
 		step.AddAction(ActShowDialogue("Wake up, Cargo!"))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 185.0, 198.0, True))
 
@@ -238,7 +238,7 @@ class Worm(Character):
 
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 275.0))
-		step.AddAction(ActSetCamera('WormCamera_Envelope', instantCut = True))
+		step.AddAction(ActSetCamera('WormCamera_Envelope'))
 
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 280.0))
@@ -268,7 +268,7 @@ class Worm(Character):
 
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 360.0))
-		step.AddAction(ActSetCamera('WormCamera_Lighthouse', fac = 0.01))
+		step.AddAction(ActSetCamera('WormCamera_Lighthouse'))
 
 		step = self.NewStep()
 		step.AddCondition(CondPropertyGE('ActionFrame', 395.0))
@@ -303,7 +303,7 @@ class Worm(Character):
 		return True
 
 @bxt.utils.controller
-def wormKnockSound(c):
+def worm_knock_sound(c):
 	frame = c.owner['ActionFrame']
 	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):
 		bxt.sound.play_with_random_pitch(c)

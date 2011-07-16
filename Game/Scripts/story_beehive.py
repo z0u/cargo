@@ -24,7 +24,7 @@ from . import ui
 from . import camera
 from .story import *
 
-class Intro(Character):
+class Intro(Character, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		Character.__init__(self, old_owner)
 		evt = bxt.types.WeakEvent('StartLoading', self)
@@ -61,7 +61,7 @@ class Intro(Character):
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActGeneric(bge.types.KX_GameObject.endObject, self))
 
-class Extro(Character):
+class Extro(Character, bge.types.KX_GameObject):
 	S_MUSIC = 3
 
 	def __init__(self, old_owner):

@@ -217,7 +217,7 @@ class Step:
 				print("Warning: Action %s failed." % act)
 				print(e)
 
-class Character(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Character(bxt.types.BX_GameObject):
 	'''Embodies a story in the scene. Subclass this to define the story
 	(override CreateSteps). Then call Progress on each frame to allow the steps
 	to be executed.'''

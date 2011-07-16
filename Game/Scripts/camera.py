@@ -45,6 +45,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	_prefix = 'AC_'
 
 	COLLISION_BIAS = 0.8
+	MIN_FOCAL_DIST = 5.0
+	FOCAL_FAC = 0.1
 
 	camera = bxt.types.weakprop('camera')
 	lastGoal = bxt.types.weakprop('lastGoal')
@@ -132,7 +134,10 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		# http://www.sjbaker.org/steve/omniv/love_your_z_buffer.html
 		vecTo = focalPoint.worldPosition - cam.worldPosition
 		z = vecTo.project(cam.getAxisVect((0.0, 0.0, 1.0))).magnitude
-		cam['focalDepth'] = 1.0 - cam.near / z
+		z = max(z, AutoCamera.MIN_FOCAL_DIST)
+		depth = 1.0 - cam.near / z
+		cam['focalDepth'] = bxt.math.lerp(cam['focalDepth'], depth,
+				AutoCamera.FOCAL_FAC)
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls
@@ -230,7 +235,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'Orb_'
 
 	UP_DIST = 8.0
-	BACK_DIST = 20.0
+	BACK_DIST = 25.0
 	DIST_BIAS = 0.5
 	EXPAND_FAC = 0.005
 	ZALIGN_FAC = 0.025
@@ -290,6 +295,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		backPos, self.distBack = self.cast_ray(upPos, direction, self.distBack,
 				OrbitCamera.BACK_DIST)
 		self.worldPosition = backPos
+		self.worldLinearVelocity = (0, 0, 0.0001)
 
 		# Orient the camera towards the target.
 		self.alignAxisToVect(zlocal, 1)

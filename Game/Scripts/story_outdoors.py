@@ -27,10 +27,6 @@ from Scripts import shells
 
 def init():
 	'''Load extra files'''
-	try:
-		bge.logic.LibLoad('//OutdoorsDistantLand.blend', 'Scene')
-	except ValueError:
-		print('Could not load distant land. Try reinstalling the game.')
 	if store.get('/opt/foliage', True):
 		try:
 			bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene')

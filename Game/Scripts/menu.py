@@ -49,6 +49,17 @@ class SessionManager(metaclass=bxt.types.Singleton):
 			bxt.types.EventBus().notify(evt)
 
 		elif event.message == 'startGame':
+			# Show the loading screen and send another message to start the game
+			# in a couple of frames.
+			scene = bge.logic.getCurrentScene()
+			messageOwner = scene.objects['MenuController']
+			evt = bxt.types.WeakEvent('StartLoading', messageOwner)
+			bxt.types.EventBus().notify(evt)
+
+			evt = bxt.types.Event('reallyStartGame')
+			bxt.types.EventBus().enqueue(evt, 2)
+
+		elif event.message == 'reallyStartGame':
 			# Load the level indicated in the save game.
 			level = store.get('/game/levelFile', 'Outdoors.blend')
 			store.save()

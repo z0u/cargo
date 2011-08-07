@@ -20,7 +20,7 @@ from bge import logic
 import weakref
 
 import bxt
-from . import ui, director
+from . import ui, director, store
 
 DEBUG = False
 
@@ -66,9 +66,17 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	@bxt.utils.owner_cls
 	def set_camera(self, camera):
 		'''Bind to a camera.'''
+		print('setting camera')
 		self.camera = camera
 		self.defaultLens = camera.lens
 		logic.getCurrentScene().active_camera = camera
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def init_filters(self, c):
+		'''Initialise filters.'''
+		if store.get('/opt/depthOfField', True):
+			c.activate(c.actuators['aDof'])
 
 	@bxt.types.expose
 	def update(self):

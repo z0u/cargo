@@ -25,9 +25,13 @@ from . import store
 from . import ui
 
 CREDITS = [
-	("Most Things", "Alex Fraser"),
+	("Director/Producer", "Alex Fraser"),
 	("Story", "Alex Fraser, Lara Micocki"),
+	("Modelling", "Alex Fraser"),
+	("Animation", "Alex Fraser"),
+	("Textures", "Alex Fraser, Junki Wano"),
 	("Music", "Robert Leigh"),
+	("Programming", "Alex Fraser, Mark Triggs"),
 	("Sound Effects", "Alex Fraser, freesound.org users: anamorphosis, tigersound, HerbertBoland, MeltyMcFace, kijjaz, arnaud, FreqMan"),
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
 	("Made With", "Blender, Bullet, The GIMP and Inkscape")]

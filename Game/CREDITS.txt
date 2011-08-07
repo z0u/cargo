@@ -8,7 +8,7 @@ Storyboards:      Alex Fraser
 3D modelling:     Alex Fraser
 Rigging:          Alex Fraser
 Animation:        Alex Fraser
-Textures:         Alex Fraser
+Textures:         Alex Fraser, Junki Wano
 Code:             Alex Fraser, Mark Triggs
 Engines:          The Blender Foundation (Blender)[3], Game Physics Simulation
                   (Bullet)[4]

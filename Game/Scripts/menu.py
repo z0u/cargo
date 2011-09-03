@@ -61,7 +61,7 @@ class SessionManager(metaclass=bxt.types.Singleton):
 
 		elif event.message == 'reallyStartGame':
 			# Load the level indicated in the save game.
-			level = store.get('/game/levelFile', 'Outdoors.blend')
+			level = store.get('/game/levelFile', '//Outdoors.blend')
 			store.save()
 			bge.logic.startGame(level)
 

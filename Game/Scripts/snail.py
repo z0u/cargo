@@ -105,7 +105,10 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		bxt.types.EventBus().notify(evt)
 
 	def load_items(self):
-		bge.logic.LibLoad('//ItemLoader.blend', 'Scene')
+		try:
+			bge.logic.LibLoad('//ItemLoader.blend', 'Scene')
+		except ValueError:
+			print("Warning: failed to open ItemLoader. May be open already. Proceeding...")
 		shellName = store.get('/game/equippedShell', 'Shell')
 		if shellName != None:
 			scene = bge.logic.getCurrentScene()

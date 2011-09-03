@@ -62,7 +62,6 @@ def get(path, defaultValue = None):
 
 	p = resolve(path)
 	try:
-		print('get', p, logic.globalDict[p])
 		return logic.globalDict[p]
 	except KeyError:
 		set(path, defaultValue)
@@ -74,7 +73,6 @@ def set(path, value):
 	global __dirty
 
 	p = resolve(path)
-	print('set', p, value)
 	if (not p in logic.globalDict) or (not logic.globalDict[p] == value):
 		logic.globalDict[p] = value
 		__dirty = True
@@ -84,7 +82,6 @@ def unset(path):
 	global __dirty
 
 	p = resolve(path)
-	print('unset', p)
 	if p in logic.globalDict:
 		del(logic.globalDict[p])
 		__dirty = True

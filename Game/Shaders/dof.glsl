@@ -50,10 +50,10 @@ uniform float focalDepth;
 uniform float blurRadius;
 
 vec4 get_colour(vec2 offset) {
-    return texture(bgl_RenderedTexture, gl_TexCoord[0].st + offset);
+    return texture2D(bgl_RenderedTexture, gl_TexCoord[0].st + offset);
 }
 float get_depth(vec2 offset) {
-    return texture(bgl_DepthTexture, gl_TexCoord[0].st + offset).r;
+    return texture2D(bgl_DepthTexture, gl_TexCoord[0].st + offset).r;
 }
 float get_blur(float depth) {
     // Depth buffer is inverse linear. Find the difference between this
@@ -115,40 +115,25 @@ void main(void) {
     vec4 col = vec4(0.0);
     float influence = 0.000001;
 
-    // Bokeh: Spiral (33 samples)
-    col += blur_sample(depth, blur, vec2(0.727598, -0.083846), influence);
-    col += blur_sample(depth, blur, vec2(-0.232845, 0.369841), influence);
-    col += blur_sample(depth, blur, vec2(-0.361229, 0.069334), influence);
-    col += blur_sample(depth, blur, vec2(-0.248693, -0.230454), influence);
-    col += blur_sample(depth, blur, vec2(-0.851074, 0.000078), influence);
-    col += blur_sample(depth, blur, vec2(-0.829571, 0.398621), influence);
-    col += blur_sample(depth, blur, vec2(-0.713448, -0.372055), influence);
-    col += blur_sample(depth, blur, vec2(-0.450084, -0.616818), influence);
-    col += blur_sample(depth, blur, vec2(-0.118037, -0.736375), influence);
-    col += blur_sample(depth, blur, vec2(0.196000, -0.728203), influence);
-    col += blur_sample(depth, blur, vec2(0.457748, -0.601702), influence);
-    col += blur_sample(depth, blur, vec2(0.654456, -0.384559), influence);
-    col += blur_sample(depth, blur, vec2(0.652880, 0.223744), influence);
-    col += blur_sample(depth, blur, vec2(0.484907, 0.429292), influence);
-    col += blur_sample(depth, blur, vec2(0.260309, 0.523052), influence);
-    col += blur_sample(depth, blur, vec2(0.005869, 0.522435), influence);
-    col += blur_sample(depth, blur, vec2(-0.799039, -0.202063), influence);
-    col += blur_sample(depth, blur, vec2(-0.286281, -0.691932), influence);
-    col += blur_sample(depth, blur, vec2(0.332811, -0.678216), influence);
-    col += blur_sample(depth, blur, vec2(0.711320, -0.245884), influence);
-    col += blur_sample(depth, blur, vec2(0.707670, 0.080424), influence);
-    col += blur_sample(depth, blur, vec2(0.380423, 0.488774), influence);
-    col += blur_sample(depth, blur, vec2(-0.117451, 0.472880), influence);
-    col += blur_sample(depth, blur, vec2(-0.320076, 0.230215), influence);
-    col += blur_sample(depth, blur, vec2(-0.341791, -0.091123), influence);
-    col += blur_sample(depth, blur, vec2(-0.116627, -0.311663), influence);
-    col += blur_sample(depth, blur, vec2(-0.801338, 0.488685), influence);
-    col += blur_sample(depth, blur, vec2(-0.862699, 0.209245), influence);
-    col += blur_sample(depth, blur, vec2(-0.596620, -0.510339), influence);
-    col += blur_sample(depth, blur, vec2(0.045917, -0.748743), influence);
-    col += blur_sample(depth, blur, vec2(0.566514, -0.502467), influence);
-    col += blur_sample(depth, blur, vec2(0.574893, 0.341632), influence);
-    col += blur_sample(depth, blur, vec2(0.132835, 0.533804), influence);
+    // Bokeh: Spiral (18 samples)
+    col += blur_sample(depth, blur, vec2(-0.842387, 0.253423), influence);
+    col += blur_sample(depth, blur, vec2(-0.822194, -0.185772), influence);
+    col += blur_sample(depth, blur, vec2(-0.584927, -0.559341), influence);
+    col += blur_sample(depth, blur, vec2(-0.176021, -0.746126), influence);
+    col += blur_sample(depth, blur, vec2(0.263175, -0.660306), influence);
+    col += blur_sample(depth, blur, vec2(0.566068, -0.337219), influence);
+    col += blur_sample(depth, blur, vec2(0.571117, 0.112073), influence);
+    col += blur_sample(depth, blur, vec2(0.248030, 0.420015), influence);
+    col += blur_sample(depth, blur, vec2(-0.191166, 0.329147), influence);
+    col += blur_sample(depth, blur, vec2(-0.862580, 0.033825), influence);
+    col += blur_sample(depth, blur, vec2(-0.721229, -0.407894), influence);
+    col += blur_sample(depth, blur, vec2(-0.398143, -0.683023), influence);
+    col += blur_sample(depth, blur, vec2(0.058722, -0.743601), influence);
+    col += blur_sample(depth, blur, vec2(0.444911, -0.524004), influence);
+    col += blur_sample(depth, blur, vec2(0.608978, -0.117621), influence);
+    col += blur_sample(depth, blur, vec2(0.439863, 0.306430), influence);
+    col += blur_sample(depth, blur, vec2(0.008239, 0.435159), influence);
+    col += blur_sample(depth, blur, vec2(-0.287082, 0.104501), influence);
 
     gl_FragColor = col / influence;
 

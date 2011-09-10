@@ -62,12 +62,8 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		# Sort lights by distance from cord origin.
 		self.lights = []
-		self.lamp = None
 		for ob in self.children:
-			if isLamp(ob):
-				self.lamp = ob
-			else:
-				self.lights.append(ob)
+			self.lights.append(ob)
 		self.lights.sort(key=bxt.math.DistanceKey(self))
 
 		self.cols = list(map(lambda x: x.color.copy(), self.lights))
@@ -92,12 +88,6 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def update(self):
 		for light, targetCol in zip(self.lights, self.targetCols):
 			light.color = bxt.math.lerp(light.color, targetCol, 0.1)
-
-		if self.lamp:
-			currentLampCol = mathutils.Vector(self.lamp.color)
-			lampCol = self.targetLampCol.copy()
-			lampCol.resize_3d()
-			self.lamp.color =  bxt.math.lerp(currentLampCol, lampCol, 0.1)
 
 class Worm(Character, bge.types.BL_ArmatureObject):
 	def __init__(self, old_owner):

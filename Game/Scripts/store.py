@@ -18,6 +18,8 @@
 from bge import logic
 import bxt
 
+DEBUG = True
+
 __dirty = False
 
 def getSessionId():
@@ -62,8 +64,12 @@ def get(path, defaultValue = None):
 
 	p = resolve(path)
 	try:
+		if DEBUG:
+			print("store.get(%s) ->" % path, logic.globalDict[p])
 		return logic.globalDict[p]
 	except KeyError:
+		if DEBUG:
+			print("store.get(%s) ->" % path, defaultValue)
 		set(path, defaultValue)
 		return defaultValue
 
@@ -74,6 +80,8 @@ def set(path, value):
 
 	p = resolve(path)
 	if (not p in logic.globalDict) or (not logic.globalDict[p] == value):
+		if DEBUG:
+			print("store.set(%s) <-" % path, value)
 		logic.globalDict[p] = value
 		__dirty = True
 
@@ -83,6 +91,8 @@ def unset(path):
 
 	p = resolve(path)
 	if p in logic.globalDict:
+		if DEBUG:
+			print("store.unset(%s)" % path)
 		del(logic.globalDict[p])
 		__dirty = True
 

@@ -56,6 +56,9 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
 
+	SHELL_NAMES = ['Shell', 'BottleCap', 'Nut', 'Wheel', 'Thimble']
+	DEFAULT_SHELLS = 'Shell,Wheel,BottleCap,Nut'
+
 	shell = bxt.types.weakprop('shell')
 	nearestPickup = bxt.types.weakprop('nearestPickup')
 
@@ -109,6 +112,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 			bge.logic.LibLoad('//ItemLoader.blend', 'Scene')
 		except ValueError:
 			print("Warning: failed to open ItemLoader. May be open already. Proceeding...")
+
 		shellName = store.get('/game/equippedShell', 'Shell')
 		if shellName != None:
 			scene = bge.logic.getCurrentScene()
@@ -315,13 +319,6 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		bxt.math.set_rel_pos(shell, self.cargoHold, referential)
 		shell.setParent(self.cargoHold)
 
-	def _get_nearest_pickup(self, obs):
-		'''Find the nearest shell that isn't being carried.'''
-		for ob in sorted(obs, key=bxt.math.DistanceKey(self)):
-			if not ob['Carried']:
-				return ob
-		return None
-
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def scan_pickups(self, controller):
@@ -330,6 +327,40 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 			if not ob['Carried']:
 				self.nearestPickup = ob
 				break
+
+	def switch_next(self):
+		'''Equip the next-higher shell that the snail has.'''
+		self._switch_next(Snail.SHELL_NAMES)
+
+	def switch_previous(self):
+		'''Equip the next-lower shell that the snail has.'''
+		self._switch_next(list(reversed(Snail.SHELL_NAMES)))
+
+	def _switch_next(self, shellNames):
+		'''Equip the next shell. The current shell is found in the list of
+		possible shells, 'shellNames'. Shell i+1 is then equipped. If the
+		current shell is the last in the list, the first will be equipped.'''
+		i = -1
+		if self.shell:
+			i = shellNames.index(self.shell.name)
+		slicedShellNames = shellNames[i+1:] + shellNames[:i+1]
+
+		nextShell = None
+		inventoryS = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
+		inventory = inventoryS.split(',')
+		for sn in slicedShellNames:
+			if sn in inventory:
+				nextShell = sn
+				break
+		if nextShell == None:
+			return
+
+		if self.shell:
+			oldShell = self.remove_shell()
+			oldShell.endObject()
+		scene = bge.logic.getCurrentScene()
+		shell = bxt.types.add_and_mutate_object(scene, nextShell, self)
+		self.set_shell(shell, True)
 
 	def set_shell(self, shell, animate):
 		'''
@@ -354,10 +385,29 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.shell.on_picked_up(self, animate)
 		store.set('/game/equippedShell', shell.name)
 
+		inventoryS = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
+		inventory = inventoryS.split(',')
+		if not shell.name in inventory:
+			inventory.append(shell.name)
+			inventoryS = ','.join(inventory)
+			store.set('/game/shellInventory', inventoryS)
+
 		if animate:
 			self.shockwave.worldPosition = shell.worldPosition
 			self.shockwave.worldOrientation = shell.worldOrientation
 			bxt.utils.set_state(self.shockwave, 2)
+
+	def remove_shell(self):
+		self.rem_state(Snail.S_HASSHELL)
+		self.rem_state(Snail.S_POPPING)
+		self.add_state(Snail.S_NOSHELL)
+		shell = self.shell
+		shell.removeParent()
+		self.shell = None
+		self['HasShell'] = 0
+		self['DynamicMass'] -= shell['DynamicMass']
+		store.set('/game/equippedShell', None)
+		return shell
 
 	def drop_shell(self, animate):
 		'''Causes the snail to drop its shell, if it is carrying one.'''
@@ -368,7 +418,6 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.add_state(Snail.S_POPPING)
 		bxt.utils.add_state(self.armature, Snail.S_ARM_POP)
 		self.armature['NoTransition'] = not animate
-		store.set('/game/equippedShell', None)
 
 	@bxt.types.expose
 	def on_drop_shell(self):
@@ -376,19 +425,21 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		if not self.has_state(Snail.S_POPPING):
 			return
 
-		self.rem_state(Snail.S_POPPING)
-		self.add_state(Snail.S_NOSHELL)
-
-		self.shell.removeParent()
 		velocity = bxt.math.ZAXIS.copy()
 		velocity.x += 0.5 - bge.logic.getRandomFloat()
 		velocity = self.getAxisVect(velocity)
 		velocity *= self['ShellPopForce']
-		self.shell.setLinearVelocity(velocity)
-		self['HasShell'] = 0
-		self['DynamicMass'] = self['DynamicMass'] - self.shell['DynamicMass']
-		self.shell.on_dropped()
-		self.shell = None
+		shell = self.remove_shell()
+
+		inventoryS = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
+		inventory = inventoryS.split(',')
+		if shell.name in inventory:
+			inventory.remove(shell.name)
+			inventoryS = ','.join(inventory)
+			store.set('/game/shellInventory', inventoryS)
+
+		shell.setLinearVelocity(velocity)
+		shell.on_dropped()
 
 	def enter_shell(self, animate):
 		'''
@@ -642,6 +693,18 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		if positive and triggered:
 			if self.has_state(Snail.S_HASSHELL):
 				self.drop_shell(animate = True)
+
+	def on_next(self, positive, triggered):
+		if positive and triggered:
+			if (self.has_state(Snail.S_HASSHELL) or
+					self.has_state(Snail.S_NOSHELL)):
+				self.switch_next()
+
+	def on_previous(self, positive, triggered):
+		if positive and triggered:
+			if (self.has_state(Snail.S_HASSHELL) or
+					self.has_state(Snail.S_NOSHELL)):
+				self.switch_previous()
 
 	def get_camera_tracking_point(self):
 		return self.cameraTrack

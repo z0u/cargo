@@ -173,6 +173,10 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 		pass
 	def on_button2(self, pos, trig):
 		pass
+	def on_next(self, pos, trig):
+		pass
+	def on_previous(self, pos, trig):
+		pass
 
 class Director(metaclass=bxt.types.Singleton):
 	_prefix = ''
@@ -234,6 +238,20 @@ class Director(metaclass=bxt.types.Singleton):
 		s = c.sensors[0]
 		if self.mainCharacter != None and not self.inputSuspended:
 			self.mainCharacter.on_button2(s.positive, s.triggered)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def on_next(self, c):
+		s = c.sensors[0]
+		if self.mainCharacter != None and not self.inputSuspended:
+			self.mainCharacter.on_next(s.positive, s.triggered)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def on_previous(self, c):
+		s = c.sensors[0]
+		if self.mainCharacter != None and not self.inputSuspended:
+			self.mainCharacter.on_previous(s.positive, s.triggered)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

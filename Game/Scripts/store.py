@@ -18,7 +18,7 @@
 from bge import logic
 import bxt
 
-DEBUG = True
+DEBUG = False
 
 __dirty = False
 
@@ -76,14 +76,12 @@ def get(path, defaultValue = None):
 def set(path, value):
 	'''Set a value in persistent storage. The data will be saved to file the
 	next time save() is called.'''
-	global __dirty
-
 	p = resolve(path)
-	if (not p in logic.globalDict) or (not logic.globalDict[p] == value):
-		if DEBUG:
-			print("store.set(%s) <-" % path, value)
-		logic.globalDict[p] = value
-		__dirty = True
+	global __dirty
+	if DEBUG:
+		print("store.set(%s) <-" % path, value)
+	logic.globalDict[p] = value
+	__dirty = True
 
 def unset(path):
 	'''Delete a value from persistent storage.'''

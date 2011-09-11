@@ -24,7 +24,7 @@ from bge import logic
 import bxt
 import bge
 from . import director
-from Scripts import store
+from Scripts import store, shells
 
 GRAVITY = 75.0
 
@@ -56,11 +56,11 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
 
+	# Shell names are stored in '/game/shellInventory' as a set.
 	SHELL_NAMES = ['Shell', 'BottleCap', 'Nut', 'Wheel', 'Thimble']
-	DEFAULT_SHELLS = 'Shell,Wheel,BottleCap,Nut'
+	DEFAULT_SHELLS = {'Shell', 'BottleCap', 'Nut', 'Wheel'}
 
 	shell = bxt.types.weakprop('shell')
-	nearestPickup = bxt.types.weakprop('nearestPickup')
 
 	def __init__(self, old_owner):
 		director.Actor.__init__(self)
@@ -75,7 +75,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.rem_state(Snail.S_INIT)
 
 		self.shell = None
-		self.nearestPickup = None
+		self.recentlyDroppedItems = bxt.types.GameObjectSet()
 		# Not weak props, but it should be OK because they will die in the same
 		# frame as the snail (this object).
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
@@ -117,7 +117,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		if shellName != None:
 			scene = bge.logic.getCurrentScene()
 			shell = bxt.types.add_and_mutate_object(scene, shellName, self)
-			self.set_shell(shell, False)
+			self.equip_shell(shell, False)
 
 	@bxt.types.expose
 	def update(self):
@@ -321,12 +321,21 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
-	def scan_pickups(self, controller):
-		obs = controller.sensors['sPickup'].hitObjectList
-		for ob in sorted(obs, key=bxt.math.DistanceKey(self)):
-			if not ob['Carried']:
-				self.nearestPickup = ob
-				break
+	def pick_up_item(self, controller):
+		'''Picks up and equips nearby shells that don't already have an
+		owner. Note: this must run with priority over functions that drop
+		items!'''
+		collectables = bxt.types.GameObjectSet(
+				controller.sensors['sPickup'].hitObjectList)
+		# Forget objects that are no longer in range.
+		self.recentlyDroppedItems.intersection_update(collectables)
+		# Ignore objects that were recently dropped.
+		collectables.difference_update(self.recentlyDroppedItems)
+
+		for ob in collectables:
+			if isinstance(ob, shells.ShellBase):
+				if not ob.is_carried():
+					self.equip_shell(ob, True)
 
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
@@ -346,8 +355,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		slicedShellNames = shellNames[i+1:] + shellNames[:i+1]
 
 		nextShell = None
-		inventoryS = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
-		inventory = inventoryS.split(',')
+		inventory = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
 		for sn in slicedShellNames:
 			if sn in inventory:
 				nextShell = sn
@@ -356,13 +364,13 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 			return
 
 		if self.shell:
-			oldShell = self.remove_shell()
+			oldShell = self.unequip_shell()
 			oldShell.endObject()
 		scene = bge.logic.getCurrentScene()
 		shell = bxt.types.add_and_mutate_object(scene, nextShell, self)
-		self.set_shell(shell, True)
+		self.equip_shell(shell, True)
 
-	def set_shell(self, shell, animate):
+	def equip_shell(self, shell, animate):
 		'''
 		Add the shell as a descendant of the snail. It will be
 		made a child of the CargoHold. If the shell has a child
@@ -373,7 +381,14 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 
 		Adding the shell as a child prevents collision with the
 		parent. The shell's inactive state will also be set.
+
+		If the snail already has a shell equipped, that shell will be unequipped
+		and destroyed; but it will be kept in the snail's inventory.
 		'''
+		if self.shell:
+			shell = self.unequip_shell()
+			shell.endObject()
+
 		self.rem_state(Snail.S_NOSHELL)
 		self.add_state(Snail.S_HASSHELL)
 
@@ -385,19 +400,16 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.shell.on_picked_up(self, animate)
 		store.set('/game/equippedShell', shell.name)
 
-		inventoryS = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
-		inventory = inventoryS.split(',')
-		if not shell.name in inventory:
-			inventory.append(shell.name)
-			inventoryS = ','.join(inventory)
-			store.set('/game/shellInventory', inventoryS)
+		inventory = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
+		inventory.add(shell.name)
+		store.set('/game/shellInventory', inventory)
 
 		if animate:
 			self.shockwave.worldPosition = shell.worldPosition
 			self.shockwave.worldOrientation = shell.worldOrientation
 			bxt.utils.set_state(self.shockwave, 2)
 
-	def remove_shell(self):
+	def unequip_shell(self):
 		self.rem_state(Snail.S_HASSHELL)
 		self.rem_state(Snail.S_POPPING)
 		self.add_state(Snail.S_NOSHELL)
@@ -429,17 +441,15 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		velocity.x += 0.5 - bge.logic.getRandomFloat()
 		velocity = self.getAxisVect(velocity)
 		velocity *= self['ShellPopForce']
-		shell = self.remove_shell()
+		shell = self.unequip_shell()
 
-		inventoryS = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
-		inventory = inventoryS.split(',')
-		if shell.name in inventory:
-			inventory.remove(shell.name)
-			inventoryS = ','.join(inventory)
-			store.set('/game/shellInventory', inventoryS)
+		inventory = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
+		inventory.discard(shell.name)
+		store.set('/game/shellInventory', inventory)
 
 		shell.setLinearVelocity(velocity)
 		shell.on_dropped()
+		self.recentlyDroppedItems.add(shell)
 
 	def enter_shell(self, animate):
 		'''
@@ -685,9 +695,6 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 				self.exit_shell(animate = True)
 			elif self.has_state(Snail.S_HASSHELL):
 				self.enter_shell(animate = True)
-			elif self.has_state(Snail.S_NOSHELL):
-				if self.nearestPickup:
-					self.set_shell(self.nearestPickup, animate = True)
 
 	def on_button2(self, positive, triggered):
 		if positive and triggered:

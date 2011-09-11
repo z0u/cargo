@@ -218,12 +218,19 @@ class Director(metaclass=bxt.types.Singleton):
 	@bxt.utils.controller_cls
 	def on_movement_impulse(self, c):
 		fwd = c.sensors['sForward']
+		fwd2 = c.sensors['sForward2']
 		back = c.sensors['sBackward']
+		back2 = c.sensors['sBackward2']
 		left = c.sensors['sLeft']
+		left2 = c.sensors['sLeft2']
 		right = c.sensors['sRight']
+		right2 = c.sensors['sRight2']
 		if self.mainCharacter != None and not self.inputSuspended:
-			self.mainCharacter.on_movement_impulse(fwd.positive, back.positive,
-					left.positive, right.positive)
+			self.mainCharacter.on_movement_impulse(
+				fwd.positive or fwd2.positive,
+				back.positive or back2.positive,
+				left.positive or left2.positive,
+				right.positive or right2.positive)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

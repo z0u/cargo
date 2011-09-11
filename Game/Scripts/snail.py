@@ -339,18 +339,26 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
 		shellName = inventory.Shells().get_next(1)
-		if shellName != None:
-			self._switch(shellName)
-			evt = bxt.types.Event('ShellChanged', 'next')
-			bxt.types.EventBus().notify(evt)
+		if shellName == None:
+			return
+		if self.shell and shellName == self.shell.name:
+			return
+
+		self._switch(shellName)
+		evt = bxt.types.Event('ShellChanged', 'next')
+		bxt.types.EventBus().notify(evt)
 
 	def switch_previous(self):
 		'''Equip the next-lower shell that the snail has.'''
 		shellName = inventory.Shells().get_next(-1)
-		if shellName != None:
-			self._switch(shellName)
-			evt = bxt.types.Event('ShellChanged', 'previous')
-			bxt.types.EventBus().notify(evt)
+		if shellName == None:
+			return
+		if self.shell and shellName == self.shell.name:
+			return
+
+		self._switch(shellName)
+		evt = bxt.types.Event('ShellChanged', 'previous')
+		bxt.types.EventBus().notify(evt)
 
 	def _switch(self, name):
 		if name == None:

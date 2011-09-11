@@ -236,11 +236,21 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			icon.localOrientation.identity()
 
 	def update_icons(self):
-		self.set_item(-2, inventory.Shells().get_next(-2))
-		self.set_item(-1, inventory.Shells().get_next(-1))
-		self.set_item(0, inventory.Shells().get_equipped())
-		self.set_item(1, inventory.Shells().get_next(1))
-		self.set_item(2, inventory.Shells().get_next(2))
+		equipped = inventory.Shells().get_equipped()
+		self.set_item(0, equipped)
+		if equipped == None or len(inventory.Shells().get_shells()) > 1:
+			# Special case: if nothing is equipped, we still want to draw icons
+			# for the next and previous shell - even if there is only one shell
+			# remaining in the inventory.
+			self.set_item(-2, inventory.Shells().get_next(-2))
+			self.set_item(-1, inventory.Shells().get_next(-1))
+			self.set_item(1, inventory.Shells().get_next(1))
+			self.set_item(2, inventory.Shells().get_next(2))
+		else:
+			self.set_item(-2, None)
+			self.set_item(-1, None)
+			self.set_item(1, None)
+			self.set_item(2, None)
 
 	@bxt.types.expose
 	def update_frame(self):

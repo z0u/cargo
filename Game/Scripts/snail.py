@@ -24,6 +24,7 @@ from bge import logic
 import bxt
 import bge
 from . import director
+from . import inventory
 from Scripts import store, shells
 
 GRAVITY = 75.0
@@ -55,10 +56,6 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
-
-	# Shell names are stored in '/game/shellInventory' as a set.
-	SHELL_NAMES = ['Shell', 'BottleCap', 'Nut', 'Wheel', 'Thimble']
-	DEFAULT_SHELLS = {'Shell', 'BottleCap', 'Nut', 'Wheel'}
 
 	shell = bxt.types.weakprop('shell')
 
@@ -113,7 +110,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		except ValueError:
 			print("Warning: failed to open ItemLoader. May be open already. Proceeding...")
 
-		shellName = store.get('/game/equippedShell', 'Shell')
+		shellName = inventory.Shells().get_equipped()
 		if shellName != None:
 			scene = bge.logic.getCurrentScene()
 			shell = bxt.types.add_and_mutate_object(scene, shellName, self)
@@ -336,38 +333,34 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 			if isinstance(ob, shells.ShellBase):
 				if not ob.is_carried():
 					self.equip_shell(ob, True)
+					evt = bxt.types.Event('ShellChanged', 'new')
+					bxt.types.EventBus().notify(evt)
 
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
-		self._switch_next(Snail.SHELL_NAMES)
+		shellName = inventory.Shells().get_next(1)
+		if shellName != None:
+			self._switch(shellName)
+			evt = bxt.types.Event('ShellChanged', 'next')
+			bxt.types.EventBus().notify(evt)
 
 	def switch_previous(self):
 		'''Equip the next-lower shell that the snail has.'''
-		self._switch_next(list(reversed(Snail.SHELL_NAMES)))
+		shellName = inventory.Shells().get_next(-1)
+		if shellName != None:
+			self._switch(shellName)
+			evt = bxt.types.Event('ShellChanged', 'previous')
+			bxt.types.EventBus().notify(evt)
 
-	def _switch_next(self, shellNames):
-		'''Equip the next shell. The current shell is found in the list of
-		possible shells, 'shellNames'. Shell i+1 is then equipped. If the
-		current shell is the last in the list, the first will be equipped.'''
-		i = -1
-		if self.shell:
-			i = shellNames.index(self.shell.name)
-		slicedShellNames = shellNames[i+1:] + shellNames[:i+1]
-
-		nextShell = None
-		inventory = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
-		for sn in slicedShellNames:
-			if sn in inventory:
-				nextShell = sn
-				break
-		if nextShell == None:
+	def _switch(self, name):
+		if name == None:
 			return
 
 		if self.shell:
 			oldShell = self.unequip_shell()
 			oldShell.endObject()
 		scene = bge.logic.getCurrentScene()
-		shell = bxt.types.add_and_mutate_object(scene, nextShell, self)
+		shell = bxt.types.add_and_mutate_object(scene, name, self)
 		self.equip_shell(shell, True)
 
 	def equip_shell(self, shell, animate):
@@ -398,11 +391,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self['HasShell'] = 1
 		self['DynamicMass'] = self['DynamicMass'] + shell['DynamicMass']
 		self.shell.on_picked_up(self, animate)
-		store.set('/game/equippedShell', shell.name)
-
-		inventory = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
-		inventory.add(shell.name)
-		store.set('/game/shellInventory', inventory)
+		inventory.Shells().equip(shell.name)
 
 		if animate:
 			self.shockwave.worldPosition = shell.worldPosition
@@ -418,7 +407,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		self.shell = None
 		self['HasShell'] = 0
 		self['DynamicMass'] -= shell['DynamicMass']
-		store.set('/game/equippedShell', None)
+		inventory.Shells().unequip()
 		return shell
 
 	def drop_shell(self, animate):
@@ -443,13 +432,14 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		velocity *= self['ShellPopForce']
 		shell = self.unequip_shell()
 
-		inventory = store.get('/game/shellInventory', Snail.DEFAULT_SHELLS)
-		inventory.discard(shell.name)
-		store.set('/game/shellInventory', inventory)
+		inventory.Shells().discard(shell.name)
 
 		shell.setLinearVelocity(velocity)
 		shell.on_dropped()
 		self.recentlyDroppedItems.add(shell)
+
+		evt = bxt.types.Event('ShellChanged', 'new')
+		bxt.types.EventBus().notify(evt)
 
 	def enter_shell(self, animate):
 		'''

@@ -21,6 +21,7 @@ import bge
 from bge import logic
 
 import bxt
+from . import inventory
 
 class HUDState(metaclass=bxt.types.Singleton):
 	def __init__(self):
@@ -189,6 +190,89 @@ class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def hide(self):
 		if self.has_state(self.S_VISIBLE):
 			self.set_state(self.S_HIDING)
+
+class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+
+	_prefix = 'Inv_'
+
+	FRAME_STEP = 0.5
+	FRAME_EPSILON = 0.6
+	FRAME_PREVIOUS = 31.0
+	FRAME_CENTRE = 21.0
+	FRAME_NEXT = 11.0
+
+	S_UPDATING = 2
+	S_IDLE = 3
+
+	def __init__(self, old_owner):
+		self.initialise_icon_pool()
+
+		self.update_icons()
+		self['targetFrame'] = Inventory.FRAME_CENTRE
+		self.set_state(Inventory.S_UPDATING)
+		bxt.types.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'ShellChanged':
+			if evt.body == 'new':
+				self.update_icons()
+			elif evt.body == 'next':
+				self['targetFrame'] = Inventory.FRAME_NEXT
+				self.set_state(Inventory.S_UPDATING)
+			elif evt.body == 'previous':
+				self['targetFrame'] = Inventory.FRAME_PREVIOUS
+				self.set_state(Inventory.S_UPDATING)
+
+	def set_item(self, index, shellName):
+		hook = self.children['I_IconHook_' + str(index)]
+		for icon in hook.children:
+			self.release_icon(icon)
+
+		if shellName != None:
+			icon = self.claim_icon(shellName)
+			icon.setParent(hook)
+			icon.localScale = (1.0, 1.0, 1.0)
+			icon.localPosition = (0.0, 0.0, 0.0)
+			icon.localOrientation.identity()
+
+	def update_icons(self):
+		self.set_item(-2, inventory.Shells().get_next(-2))
+		self.set_item(-1, inventory.Shells().get_next(-1))
+		self.set_item(0, inventory.Shells().get_equipped())
+		self.set_item(1, inventory.Shells().get_next(1))
+		self.set_item(2, inventory.Shells().get_next(2))
+
+	@bxt.types.expose
+	def update_frame(self):
+		if self['targetFrame'] > self['frame'] + Inventory.FRAME_EPSILON:
+			self['frame'] += Inventory.FRAME_STEP
+		elif self['targetFrame'] < self['frame'] - Inventory.FRAME_EPSILON:
+			self['frame'] -= Inventory.FRAME_STEP
+		else:
+			self.update_icons()
+			self['frame'] = self['targetFrame'] = Inventory.FRAME_CENTRE
+			self.set_state(Inventory.S_IDLE)
+
+	def initialise_icon_pool(self):
+		'''Pre-create flyweight icons.'''
+		pool = self.children['I_IconPool']
+		for shellName in inventory.Shells.SHELL_NAMES:
+			for _ in range(5):
+				icon = logic.getCurrentScene().addObject(
+						'Icon_%s_static' % shellName, pool)
+				icon.setParent(pool)
+				icon.localScale = (0.1, 0.1, 0.1)
+
+	def claim_icon(self, shellName):
+		pool = self.children['I_IconPool']
+		return pool.children['Icon_%s_static' % shellName]
+
+	def release_icon(self, icon):
+		pool = self.children['I_IconPool']
+		icon.setParent(pool)
+		icon.localScale = (0.1, 0.1, 0.1)
+		icon.localPosition = (0.0, 0.0, 0.0)
+		icon.localOrientation.identity()
 
 class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''

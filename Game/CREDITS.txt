@@ -1,11 +1,11 @@
 = Contributors =
-Story:            Alex Fraser[1], Lara Mikocki
-Character design: Alex Fraser, Lara Mikocki
+Story:            Alex Fraser[1], Lara Mikocki, Lev Lafayette
 Sound effects:    Alex Fraser, Freesound[2] users: anamorphosis, tigersound,
                   HerbertBoland, MeltyMcFace, kijjaz, arnaud, FreqMan
 Music:            Robert Leigh
+Concept art:      Alex Fraser, Lara Mikocki, Junki Wano
 Storyboards:      Alex Fraser
-3D modelling:     Alex Fraser
+3D modelling:     Alex Fraser, Junki Wano
 Rigging:          Alex Fraser
 Animation:        Alex Fraser
 Textures:         Alex Fraser, Junki Wano

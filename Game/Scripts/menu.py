@@ -26,7 +26,7 @@ from . import ui
 
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
-	("Story", "Alex Fraser, Lara Micocki"),
+	("Story", "Lev Lafayette, Alex Fraser, Lara Micocki"),
 	("Modelling", "Alex Fraser"),
 	("Animation", "Alex Fraser"),
 	("Textures", "Alex Fraser, Junki Wano"),
@@ -222,6 +222,8 @@ def controllerInit(c):
 	bge.render.showMouse(True)
 	mOver = c.sensors['sMouseOver']
 	mOver.usePulseFocus = True
+	evt = bxt.types.Event('GameModeChanged', 'Menu')
+	bxt.types.EventBus().notify(evt)
 
 ################
 # Widget classes

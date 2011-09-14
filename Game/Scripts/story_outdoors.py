@@ -25,16 +25,21 @@ from . import director
 from . import store
 from Scripts import shells
 
-def init():
-	'''Load extra files'''
-	if store.get('/opt/foliage', True):
-		try:
-			bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene')
-		except ValueError:
-			print('Could not load foliage. Try reinstalling the game.')
-			evt = bxt.types.Event('ShowMessage',
-				'Could not load foliage. Try reinstalling the game.')
-			bxt.types.EventBus().notify(evt)
+class LevelOut(Level):
+	def __init__(self, oldOwner):
+		Level.__init__(self, oldOwner)
+		self.dynload()
+
+	def dynload(self):
+		'''Load extra files'''
+		if store.get('/opt/foliage', True):
+			try:
+				bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene')
+			except ValueError:
+				print('Could not load foliage. Try reinstalling the game.')
+				evt = bxt.types.Event('ShowMessage',
+					'Could not load foliage. Try reinstalling the game.')
+				bxt.types.EventBus().notify(evt)
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''

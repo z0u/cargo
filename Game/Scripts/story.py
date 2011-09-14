@@ -258,6 +258,11 @@ class Character(bxt.types.BX_GameObject):
 	def CreateSteps(self):
 		pass
 
+class Level(bxt.types.BX_GameObject):
+	def __init__(self, old_owner):
+		evt = bxt.types.Event('GameModeChanged', 'Playing')
+		bxt.types.EventBus().notify(evt)
+
 def activate_portal(c):
 	'''Loads the next level, based on the properties of the owner.
 

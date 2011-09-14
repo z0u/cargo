@@ -192,14 +192,17 @@ class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.set_state(self.S_HIDING)
 
 class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''Displays the current shells in a scrolling view on the side of the
+	screen.'''
 
 	_prefix = 'Inv_'
 
 	FRAME_STEP = 0.5
 	FRAME_EPSILON = 0.6
-	FRAME_PREVIOUS = 31.0
-	FRAME_CENTRE = 21.0
-	FRAME_NEXT = 11.0
+	FRAME_HIDE = 1.0
+	FRAME_PREVIOUS = 51.0
+	FRAME_CENTRE = 41.0
+	FRAME_NEXT = 31.0
 
 	S_UPDATING = 2
 	S_IDLE = 3
@@ -208,9 +211,10 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.initialise_icon_pool()
 
 		self.update_icons()
-		self['targetFrame'] = Inventory.FRAME_CENTRE
+		self['targetFrame'] = Inventory.FRAME_HIDE
 		self.set_state(Inventory.S_UPDATING)
 		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'ShellChanged':
@@ -221,6 +225,14 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				self.set_state(Inventory.S_UPDATING)
 			elif evt.body == 'previous':
 				self['targetFrame'] = Inventory.FRAME_PREVIOUS
+				self.set_state(Inventory.S_UPDATING)
+
+		elif evt.message == 'GameModeChanged':
+			if evt.body == 'Playing':
+				self['targetFrame'] = Inventory.FRAME_CENTRE
+				self.set_state(Inventory.S_UPDATING)
+			else:
+				self['targetFrame'] = Inventory.FRAME_HIDE
 				self.set_state(Inventory.S_UPDATING)
 
 	def set_item(self, index, shellName):
@@ -258,7 +270,7 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self['frame'] += Inventory.FRAME_STEP
 		elif self['targetFrame'] < self['frame'] - Inventory.FRAME_EPSILON:
 			self['frame'] -= Inventory.FRAME_STEP
-		else:
+		elif not self['targetFrame'] == Inventory.FRAME_HIDE:
 			self.update_icons()
 			self['frame'] = self['targetFrame'] = Inventory.FRAME_CENTRE
 			self.set_state(Inventory.S_IDLE)
@@ -275,7 +287,9 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def claim_icon(self, shellName):
 		pool = self.children['I_IconPool']
-		return pool.children['Icon_%s_static' % shellName]
+		icon = pool.children['Icon_%s_static' % shellName]
+		icon.visible = True
+		return icon
 
 	def release_icon(self, icon):
 		pool = self.children['I_IconPool']
@@ -283,6 +297,7 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		icon.localScale = (0.1, 0.1, 0.1)
 		icon.localPosition = (0.0, 0.0, 0.0)
 		icon.localOrientation.identity()
+		icon.visible = False
 
 class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''

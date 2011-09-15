@@ -16,6 +16,7 @@
 #
 
 import bge
+import mathutils
 
 import bxt
 
@@ -23,6 +24,8 @@ from . import ui
 from . import camera
 from . import director
 from . import store
+
+GRAVITY = 75.0
 
 class StoryError(Exception):
 	pass
@@ -259,7 +262,17 @@ class Character(bxt.types.BX_GameObject):
 		pass
 
 class Level(bxt.types.BX_GameObject):
+	'''Embodies a level. By default, this just sets some common settings when
+	initialised. This should not be included in cut scenes etc; just in scenes
+	where the player can move around.'''
+
 	def __init__(self, old_owner):
+		# Adjust gravity to be appropriate for the size of the scene..
+		g = mathutils.Vector((0.0, 0.0, 0 - GRAVITY))
+		bge.logic.setGravity(g)
+		evt = bxt.types.Event('GravityChanged', g)
+		bxt.types.EventBus().notify(evt)
+
 		evt = bxt.types.Event('GameModeChanged', 'Playing')
 		bxt.types.EventBus().notify(evt)
 

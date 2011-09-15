@@ -27,8 +27,6 @@ from . import director
 from . import inventory
 from Scripts import store, shells
 
-GRAVITY = 75.0
-
 class Snail(director.Actor, bge.types.KX_GameObject):
 	_prefix = ''
 
@@ -89,15 +87,10 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 
 		self.frameCounter = 0
 
-		# Make sure the settings are right for a snail. Not the best place for
-		# this, as it has a global effect.
-		logic.setGravity([0.0, 0.0, 0 - GRAVITY])
-		self.actuators['aAntiGravity'].force = [0, 0, GRAVITY]
-		self.actuators['aArtificialGravity'].force = [0, 0, 0 - GRAVITY]
-
 		self.load_items()
 
 		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'GravityChanged')
 
 		evt = bxt.types.WeakEvent('MainCharacterSet', self)
 		bxt.types.EventBus().notify(evt)
@@ -108,7 +101,8 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		try:
 			bge.logic.LibLoad('//ItemLoader.blend', 'Scene')
 		except ValueError:
-			print("Warning: failed to open ItemLoader. May be open already. Proceeding...")
+			print("Warning: failed to open ItemLoader. May be open already. "
+					"Proceeding...")
 
 		shellName = inventory.Shells().get_equipped()
 		if shellName != None:
@@ -233,6 +227,13 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	def on_event(self, evt):
 		if evt.message == 'ForceExitShell':
 			self.exit_shell(True)
+		elif evt.message == 'GravityChanged':
+			antiG = evt.body.copy()
+			antiG.negate()
+			# Anti-gravity is applied in world coordinates.
+			self.actuators['aAntiGravity'].force = antiG
+			# Artificial gravity is applied in local coordinates.
+			self.actuators['aArtificialGravity'].force = evt.body
 
 	def update_eye_length(self):
 		def update_single(eyeRayOb):

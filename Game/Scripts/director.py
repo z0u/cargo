@@ -24,6 +24,9 @@ import bxt.types
 import bxt.utils
 
 class Actor(bxt.types.BX_GameObject):
+	'''Actors are generally mobile objects. They can receive movement impulses,
+	and can float (and drown!) in water.'''
+
 	SANITY_RAY_LENGTH = 10000.0
 
 	touchedObject = bxt.types.weakprop('touchedObject')
@@ -32,7 +35,6 @@ class Actor(bxt.types.BX_GameObject):
 		self.save_location()
 		self._currentLinV = bxt.math.MINVECTOR.copy()
 		self.lastLinV = bxt.math.MINVECTOR.copy()
-		self.set_default_prop('Health', 1.0)
 		self.localCoordinates = False
 		self.touchedObject = None
 		Director().add_actor(self)
@@ -45,24 +47,26 @@ class Actor(bxt.types.BX_GameObject):
 		self.safeOrientation = self.worldOrientation.copy()
 
 	def respawn(self, reason = None):
-		print(self.name, 'respawning')
 		self.worldPosition = self.safePosition
 		self.worldOrientation = self.safeOrientation
 		self.setLinearVelocity(bxt.math.MINVECTOR)
 		self.setAngularVelocity(bxt.math.MINVECTOR)
-		if reason != None:
+		if self == Director().mainCharacter and reason != None:
 			evt = bxt.types.Event('ShowMessage', reason)
 			bxt.types.EventBus().notify(evt)
 
 	def drown(self):
 		'''Called when the Actor is fully submerged in water, and its Oxigen
-		property reaches zero.
+		property reaches zero. Consider overriding on_drown instead.
 		'''
 		if self.parent != None:
 			return False
 
 		self.respawn("You drowned! Try again.")
-		self.damage(1.0, shock = False)
+		self.on_drown()
+
+	def on_drown(self):
+		pass
 
 	def record_velocity(self):
 		'''Store the velocity of this object for one frame. See
@@ -75,21 +79,6 @@ class Actor(bxt.types.BX_GameObject):
 		handlers, because the object's energy is absorbed by the time the
 		handler is called.'''
 		return self.lastLinV
-
-	def get_health(self):
-		return self['Health']
-
-	def set_health(self, value):
-		self['Health'] = value
-		for l in self.getListeners().copy():
-			l.actorHealthChanged(self)
-		print(self['Health'])
-
-	def damage(self, amount, shock):
-		self['Health'] -= amount
-		print('Health =', self['Health'])
-		if self['Health'] < 0.0:
-			self.endObject()
 
 	def is_inside_world(self):
 		'''Make sure the actor is in a sensible place. This searches for objects
@@ -159,6 +148,94 @@ class Actor(bxt.types.BX_GameObject):
 
 	def get_camera_tracking_point(self):
 		return self
+
+class VulnerableActor(Actor):
+	'''An actor that has a measure of health, and may be damaged.'''
+
+	_prefix = 'VA_'
+
+	# The number of logic ticks between damages from a particular object
+	DAMAGE_FREQUENCY = 60
+
+	def __init__(self, maxHealth = 1):
+		Actor.__init__(self)
+		self.maxHealth = maxHealth
+		self.set_health(maxHealth)
+		# A map of current passive attackers, so we can keep track of when we
+		# were last attacked. NOTE this keeps only the IDs of the objects as its
+		# keys to prevent invalid object access.
+		self.attackerIds = {}
+
+	def on_drown(self):
+		'''Respawn happens automatically; we just need to apply damage.'''
+		self.damage(1, shock = False)
+
+	def get_health(self):
+		return self['Health']
+
+	def set_health(self, value):
+		'''Set the health of the actor. If this results in a health of zero, the
+		actor will die.'''
+		if value > self.maxHealth:
+			value = self.maxHealth
+
+		try:
+			if self['Health'] == value:
+				return
+		except KeyError:
+			pass
+
+		self['Health'] = value
+		print('%s health = %d' % (self.name, value))
+		if value <= 0:
+			self.die()
+
+	def damage(self, amount = 1, shock = False):
+		'''Inflict damage on the actor. If this results in a health of zero, the
+		actor will die.
+		@param amount The amount of damage to inflict (int).
+		@param shock If True, the actor should have its current action
+			interrupted, and may become stunned.'''
+
+		print("Damaging by", amount)
+		self.set_health(self.get_health() - amount)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def damage_auto(self, c):
+		'''Should be attached to a Near or Collision sensor that looks for
+		objects with the Damage property.'''
+		def apply_damage(ob):
+			shock = False
+			if 'Shock' in ob:
+				shock = ob['Shock']
+			self.damage(ob['Damage'], shock)
+
+		# Walk the list of attackers and decide which ones will actually deal
+		# damage on this frame.
+		currentAttackers = []
+		for ob in c.sensors[0].hitObjectList:
+			aId = id(ob)
+			currentAttackers.append(aId)
+			if aId in self.attackerIds:
+				self.attackerIds[aId] -= 1
+				if self.attackerIds[aId] <= 0:
+					apply_damage(ob)
+					self.attackerIds[aId] = VulnerableActor.DAMAGE_FREQUENCY
+			else:
+				apply_damage(ob)
+				self.attackerIds[aId] = VulnerableActor.DAMAGE_FREQUENCY
+
+		# Remove stale attackers.
+		for aId in list(self.attackerIds.keys()):
+			if aId not in currentAttackers:
+				del self.attackerIds[aId]
+
+	def die(self):
+		'''Called when the actor runs out of health. The default action is for
+		the object to be destroyed; override this function if you don't want
+		that to happen.'''
+		self.endObject()
 
 class ActorTest(Actor, bge.types.KX_GameObject):
 	def __init__(self, old_owner):

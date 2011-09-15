@@ -27,7 +27,7 @@ from . import director
 from . import inventory
 from Scripts import store, shells
 
-class Snail(director.Actor, bge.types.KX_GameObject):
+class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
 
 	# Snail states
@@ -58,7 +58,7 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 	shell = bxt.types.weakprop('shell')
 
 	def __init__(self, old_owner):
-		director.Actor.__init__(self)
+		director.VulnerableActor.__init__(self, maxHealth=7)
 
 		# Initialise state.
 		self.rem_state(Snail.S_CRAWLING)
@@ -565,6 +565,11 @@ class Snail(director.Actor, bge.types.KX_GameObject):
 		if self.has_state(Snail.S_INSHELL):
 			self.exit_shell(False)
 		super(Snail, self).respawn(reason)
+
+	def set_health(self, value):
+		super(Snail, self).set_health(value)
+		evt = bxt.types.Event('HealthSet', value)
+		bxt.types.EventBus().notify(evt)
 
 	@bxt.types.expose
 	def modify_speed(self):

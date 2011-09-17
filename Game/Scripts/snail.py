@@ -89,6 +89,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.load_items()
 
+		self['Oxygen'] = 1.0
+		self.on_oxygen_set()
+
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
 
@@ -568,7 +571,11 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 	def set_health(self, value):
 		super(Snail, self).set_health(value)
-		evt = bxt.types.Event('HealthSet', value)
+		evt = bxt.types.Event('HealthSet', value / self.maxHealth)
+		bxt.types.EventBus().notify(evt)
+
+	def on_oxygen_set(self):
+		evt = bxt.types.Event('OxygenSet', self['Oxygen'])
 		bxt.types.EventBus().notify(evt)
 
 	@bxt.types.expose

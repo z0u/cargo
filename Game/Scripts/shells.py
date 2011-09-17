@@ -141,6 +141,10 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 		else:
 			return super(ShellBase, self).set_health(value)
 
+	def on_oxygen_set(self):
+		if self.is_occupied():
+			self.snail.on_oxygen_set()
+
 	def is_occupied(self):
 		return self.has_state(ShellBase.S_OCCUPIED)
 	def is_carried(self):

@@ -161,7 +161,9 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def update(self):
 		self.fraction = bxt.math.lerp(self.fraction, self.targetFraction,
 			self['Speed'])
-		self['Frame'] = self.fraction * 100.0
+		frame = self.fraction * 100.0
+		frame = min(max(frame, 0), 100)
+		self['Frame'] = frame
 
 class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):	
 	S_HIDDEN  = 1

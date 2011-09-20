@@ -168,7 +168,7 @@ class VulnerableActor(Actor):
 
 	def on_drown(self):
 		'''Respawn happens automatically; we just need to apply damage.'''
-		self.damage(1, shock = False)
+		self.damage(amount=1)
 
 	def get_health(self):
 		return self['Health']
@@ -186,19 +186,20 @@ class VulnerableActor(Actor):
 			pass
 
 		self['Health'] = value
-		print('%s health = %d' % (self.name, value))
 		if value <= 0:
 			self.die()
 
-	def damage(self, amount = 1, shock = False):
+	def damage(self, amount=1):
 		'''Inflict damage on the actor. If this results in a health of zero, the
 		actor will die.
-		@param amount The amount of damage to inflict (int).
-		@param shock If True, the actor should have its current action
-			interrupted, and may become stunned.'''
+		@param amount The amount of damage to inflict (int).'''
 
-		print("Damaging by", amount)
 		self.set_health(self.get_health() - amount)
+
+	def shock(self):
+		'''The actor should have its current action interrupted, and may become
+		stunned.'''
+		pass
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -206,10 +207,9 @@ class VulnerableActor(Actor):
 		'''Should be attached to a Near or Collision sensor that looks for
 		objects with the Damage property.'''
 		def apply_damage(ob):
-			shock = False
-			if 'Shock' in ob:
-				shock = ob['Shock']
-			self.damage(ob['Damage'], shock)
+			if 'Shock' in ob and ob['Shock']:
+				self.shock()
+			self.damage(ob['Damage'])
 
 		# Walk the list of attackers and decide which ones will actually deal
 		# damage on this frame.

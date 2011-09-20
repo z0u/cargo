@@ -574,6 +574,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		evt = bxt.types.Event('HealthSet', value / self.maxHealth)
 		bxt.types.EventBus().notify(evt)
 
+	def shock(self):
+		self.enter_shell(animate=True)
+
 	def on_oxygen_set(self):
 		evt = bxt.types.Event('OxygenSet', self['Oxygen'])
 		bxt.types.EventBus().notify(evt)

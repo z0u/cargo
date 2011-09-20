@@ -121,15 +121,17 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 
 	def respawn(self, reason = None):
 		if self.is_occupied():
-			snail = self.snail
 			self.snail.respawn(reason)
-			snail.damage(amount=1.0)
 		elif self.is_carried():
 			# Do nothing: shell is being carried, but snail is still in control
 			# (so presumably the snail will be told to respawn too).
 			pass
 		else:
 			super(ShellBase, self).respawn(reason)
+
+	def on_drown(self):
+		if self.snail:
+			self.snail.damage(amount=1)
 
 	def on_oxygen_set(self):
 		if self.is_occupied():

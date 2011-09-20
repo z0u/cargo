@@ -582,8 +582,26 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		bxt.types.EventBus().notify(evt)
 
 	@bxt.types.expose
-	def modify_speed(self):
-		pass
+	@bxt.utils.controller_cls
+	def power_up(self, c):
+		for powerUp in c.sensors[0].hitObjectList:
+			if powerUp['SpeedMultiplier']:
+				self['SpeedMultiplier'] = powerUp['SpeedMultiplier']
+
+			if powerUp['SingleUse']:
+				powerUp.endObject()
+
+	def on_float(self, water):
+		# Assume water gives speed up unless otherwise specified (e.g. honey
+		# slows you down).
+		speed = 2.0
+		if 'SpeedMultiplier' in water:
+			speed = water['SpeedMultiplier']
+
+		if speed > 1.0 and self['SpeedMultiplier'] < speed:
+			self['SpeedMultiplier'] = speed
+		elif speed < 1.0 and self['SpeedMultiplier'] > speed:
+			self['SpeedMultiplier'] = speed
 
 	@bxt.types.expose
 	def start_crawling(self):
@@ -673,7 +691,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		#
 		# Match the bend angle with the current speed.
 		#
-		targetBendAngleAft = targetBendAngleAft / self['SpeedMultiplier']
+		if self['SpeedMultiplier'] > 1.0:
+			targetBendAngleAft /= self['SpeedMultiplier']
 
 		# These actually get applied in update.
 		self['BendAngleFore'] = bxt.math.lerp(self['BendAngleFore'],
@@ -686,9 +705,6 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		if self.touchedObject != None and (fwd or back):
 			self.children['Trail'].moved(self['SpeedMultiplier'], self.touchedObject)
-
-	def set_speed_multiplier(self, mult):
-		self['SpeedMultiplier'] = max(min(mult, Snail.MAX_SPEED), Snail.MIN_SPEED)
 
 	def decay_speed(self):
 		'''Bring the speed of the snail one step closer to normal speed.'''

@@ -25,9 +25,9 @@ from . import director
 from . import store
 from Scripts import shells
 
-class LevelOut(Level):
+class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
-		Level.__init__(self, oldOwner)
+		GameLevel.__init__(self, oldOwner)
 		self.dynload()
 
 	def dynload(self):

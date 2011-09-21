@@ -261,7 +261,7 @@ class Character(bxt.types.BX_GameObject):
 	def CreateSteps(self):
 		pass
 
-class Level(bxt.types.BX_GameObject):
+class Level(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Embodies a level. By default, this just sets some common settings when
 	initialised. This should not be included in cut scenes etc; just in scenes
 	where the player can move around.'''
@@ -275,6 +275,22 @@ class Level(bxt.types.BX_GameObject):
 
 		evt = bxt.types.Event('GameModeChanged', 'Playing')
 		bxt.types.EventBus().notify(evt)
+
+class GameLevel(Level):
+	def __init__(self, old_owner):
+		Level.__init__(self, old_owner)
+
+		scene = bge.logic.getCurrentScene()
+		spawnPointName = store.get('/game/level/spawnPoint',
+				self['defaultSpawnPoint'])
+		spawnPoint = None
+		try:
+			spawnPoint = scene.objects[spawnPointName]
+		except KeyError:
+			print("Error: spawn point %s not found." % spawnPointName)
+			spawnPoint = scene.objects[self['defaultSpawnPoint']]
+		print("Spawning snail at %s" % spawnPoint.name)
+		scene.addObject('Snail', spawnPoint)
 
 def activate_portal(c):
 	'''Loads the next level, based on the properties of the owner.

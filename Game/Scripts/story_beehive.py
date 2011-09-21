@@ -24,6 +24,10 @@ from . import ui
 from . import camera
 from .story import *
 
+class LevelBeehive(GameLevel):
+	def __init__(self, oldOwner):
+		GameLevel.__init__(self, oldOwner)
+
 class Intro(Character, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		Character.__init__(self, old_owner)

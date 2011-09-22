@@ -300,6 +300,46 @@ def worm_knock_sound(c):
 	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):
 		bxt.sound.play_with_random_pitch(c)
 
+class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''The Sauce Bar'''
+
+	_prefix = 'B_'
+
+	def __init__(self, oldOwner):
+		# Hide half of the lights until the end of the game.
+		if not store.get('/game/level/bottleLights', False):
+			self.children['BlinkenlightsRight'].setVisible(False, True)
+		else:
+			self.children['BlinkenlightsRight'].setVisible(True, True)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def portal_touched(self, c):
+		'''Control access to the Sauce Bar. If the snail is carrying a shell,
+		the door should be shut; otherwise, the SauceBar level should be loaded.
+		'''
+
+		if not c.sensors[0].positive:
+			self.open_door()
+			return
+
+		mainChar = director.Director().mainCharacter
+		if not mainChar in c.sensors[0].hitObjectList:
+			self.close_door()
+		elif not 'HasShell' in mainChar:
+			self.close_door()
+		elif mainChar['HasShell']:
+			self.close_door()
+		else:
+			self.open_door()
+			print("Teleporting!")
+
+	def close_door(self):
+		self.children['B_Door']['close'] = True
+
+	def open_door(self):
+		self.children['B_Door']['close'] = False
+
 class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):
 		if not store.get('/game/level/treeDoorBroken', False):

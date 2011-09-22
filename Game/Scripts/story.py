@@ -292,6 +292,24 @@ class GameLevel(Level):
 		print("Spawning snail at %s" % spawnPoint.name)
 		scene.addObject('Snail', spawnPoint)
 
+		bxt.types.EventBus().add_listener(self)
+
+	def on_event(self, event):
+		if event.message == "LoadLevel":
+			bge.logic.startGame(event.body)
+
+def load_level(caller, level, spawnPoint):
+	print('Loading next level: %s, %s' % (level, spawnPoint))
+	store.set('/game/levelFile', level)
+	store.set('/game/level/spawnPoint', spawnPoint)
+	store.save()
+
+	evt = bxt.types.WeakEvent('StartLoading', caller)
+	bxt.types.EventBus().notify(evt)
+
+	evt = bxt.types.Event('LoadLevel', level)
+	bxt.types.EventBus().enqueue(evt, 2)
+
 def activate_portal(c):
 	'''Loads the next level, based on the properties of the owner.
 
@@ -301,8 +319,4 @@ def activate_portal(c):
 	'''
 	if director.Director().mainCharacter in c.sensors[0].hitObjectList:
 		portal = c.owner
-		print('Loading next level: %s, %s' % (portal['level'], portal['spawnPoint']))
-		store.set('/game/levelFile', portal['level'])
-		store.set('/game/level/spawnPoint', portal['spawnPoint'])
-		store.save()
-		bge.logic.startGame(portal['level'])
+		load_level(portal, portal['level'], portal['spawnPoint'])

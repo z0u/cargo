@@ -333,7 +333,7 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 						"to drop your shell.")
 				bxt.types.EventBus().notify(evt)
 			else:
-				print("Teleporting")
+				load_level(self, "//SauceBar.blend", "SpawnOutdoors")
 
 	def eject(self, ob):
 		direction = self.children['B_Portal'].getAxisVect(bxt.math.ZAXIS)

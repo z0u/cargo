@@ -320,25 +320,24 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		'''
 
 		if not c.sensors[0].positive:
-			self.open_door()
 			return
 
-		mainChar = director.Director().mainCharacter
-		if not mainChar in c.sensors[0].hitObjectList:
-			self.close_door()
-		elif not 'HasShell' in mainChar:
-			self.close_door()
-		elif mainChar['HasShell']:
-			self.close_door()
-		else:
-			self.open_door()
-			print("Teleporting!")
+		for ob in c.sensors[0].hitObjectList:
+			if not ob == director.Director().mainCharacter:
+				self.eject(ob)
+			elif not 'HasShell' in ob:
+				self.eject(ob)
+			elif ob['HasShell']:
+				self.eject(ob)
+				evt = bxt.types.Event('ShowMessage', "You can't fit! Press X "
+						"to drop your shell.")
+				bxt.types.EventBus().notify(evt)
+			else:
+				print("Teleporting")
 
-	def close_door(self):
-		self.children['B_Door']['close'] = True
-
-	def open_door(self):
-		self.children['B_Door']['close'] = False
+	def eject(self, ob):
+		direction = self.children['B_Portal'].getAxisVect(bxt.math.ZAXIS)
+		ob.worldPosition += direction
 
 class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):

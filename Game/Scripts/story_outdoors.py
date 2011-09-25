@@ -311,33 +311,53 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.children['BlinkenlightsRight'].setVisible(False, True)
 		else:
 			self.children['BlinkenlightsRight'].setVisible(True, True)
+		self.open_window(False)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
-	def portal_touched(self, c):
+	def door_touched(self, c):
 		'''Control access to the Sauce Bar. If the snail is carrying a shell,
 		the door should be shut; otherwise, the SauceBar level should be loaded.
 		'''
 
-		if not c.sensors[0].positive:
-			return
+		inner = c.sensors['sDoorInner']
+		outer = c.sensors['sDoorOuter']
 
-		for ob in c.sensors[0].hitObjectList:
-			if not ob == director.Director().mainCharacter:
+		mainChar = director.Director().mainCharacter
+
+		for ob in outer.hitObjectList:
+			if not ob == mainChar:
+				# Only the main character can enter
 				self.eject(ob)
 			elif not 'HasShell' in ob:
+				# Only a snail can enter
 				self.eject(ob)
 			elif ob['HasShell']:
+				# Only a snail without a shell can enter!
 				self.eject(ob)
 				evt = bxt.types.Event('ShowMessage', "You can't fit! Press X "
 						"to drop your shell.")
 				bxt.types.EventBus().notify(evt)
-			else:
-				load_level(self, "//SauceBar.blend", "SpawnOutdoors")
+
+		if (mainChar in inner.hitObjectList and
+				not mainChar in outer.hitObjectList):
+			store.set('/game/spawnPoint', 'SpawnBottle')
+			self.open_window(True)
+			camera.AutoCamera().add_goal(self.children['BottleCamera'])
+		elif (mainChar in outer.hitObjectList and
+				not mainChar in inner.hitObjectList):
+			self.open_window(False)
+			camera.AutoCamera().remove_goal(self.children['BottleCamera'])
 
 	def eject(self, ob):
-		direction = self.children['B_Portal'].getAxisVect(bxt.math.ZAXIS)
+		direction = self.children['B_DoorOuter'].getAxisVect(bxt.math.ZAXIS)
 		ob.worldPosition += direction
+
+	def open_window(self, open):
+		self.visible = not open
+		self.children['B_CrossSection'].visible = open
+		self.children['B_Rock'].visible = not open
+		self.children['B_SoilCrossSection'].visible = open
 
 class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):

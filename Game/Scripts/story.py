@@ -281,7 +281,7 @@ class GameLevel(Level):
 		Level.__init__(self, old_owner)
 
 		scene = bge.logic.getCurrentScene()
-		spawnPointName = store.get('/game/level/spawnPoint',
+		spawnPointName = store.get('/game/spawnPoint',
 				self['defaultSpawnPoint'])
 		spawnPoint = None
 		try:
@@ -301,7 +301,7 @@ class GameLevel(Level):
 def load_level(caller, level, spawnPoint):
 	print('Loading next level: %s, %s' % (level, spawnPoint))
 	store.set('/game/levelFile', level)
-	store.set('/game/level/spawnPoint', spawnPoint)
+	store.set('/game/spawnPoint', spawnPoint)
 	store.save()
 
 	evt = bxt.types.WeakEvent('StartLoading', caller)

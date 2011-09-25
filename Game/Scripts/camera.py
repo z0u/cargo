@@ -163,7 +163,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		# Add the goal to the queue.
 		self.queue.push(goal, goal['Priority'])
 
-		if self.queue.top() == goal['InstantCut']:
+		if self.queue.top() == goal and goal['InstantCut']:
 			# Goal is on top of the stack: it will be switched to next
 			self.instantCut = True
 

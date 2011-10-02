@@ -25,7 +25,7 @@ import bxt
 import bge
 from . import director
 from . import inventory
-from Scripts import store, shells
+from Scripts import store, shells, camera
 
 class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
@@ -54,6 +54,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
+	CAMERA_SAFE_DIST = 10.0
+	SHELL_SCALE_FAC = 0.5
 
 	shell = bxt.types.weakprop('shell')
 
@@ -117,6 +119,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	def update(self):
 		self.orient()
 		self.update_eye_length()
+		self.size_shell()
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
@@ -314,7 +317,27 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		look_single(self.eyeLocL, nearest)
 		look_single(self.eyeLocR, nearest)
 
+	def size_shell(self):
+		'''Set the size of the carried shell based on the distance to the
+		camera. This prevents the shell from filling the screen when in tight
+		spaces.'''
+		if not self.has_state(Snail.S_HASSHELL):
+			return
+
+		offset = camera.AutoCamera().camera.worldPosition - self.worldPosition
+		dist = offset.magnitude
+		targetScale = dist / Snail.CAMERA_SAFE_DIST
+		if targetScale < 0:
+			targetScale = 0
+		if targetScale > 1:
+			targetScale = 1
+		scale = self.cargoHold.localScale.x
+		scale = bxt.math.lerp(scale, targetScale, Snail.SHELL_SCALE_FAC)
+		self.cargoHold.localScale = (scale, scale, scale)
+
 	def _stow_shell(self, shell):
+		shell.localScale = (1.0, 1.0, 1.0)
+		self.cargoHold.localScale = (1.0, 1.0, 1.0)
 		referential = shell.cargoHook
 		bxt.math.set_rel_orn(shell, self.cargoHold, referential)
 		bxt.math.set_rel_pos(shell, self.cargoHold, referential)
@@ -489,7 +512,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		angV = self.getAngularVelocity()
 
 		self.shell.removeParent()
-		self.armature.setVisible(0, 1)
+		# Make sure the shell is the right size.
+		self.shell.localScale = (1.0, 1.0, 1.0)
+		self.armature.setVisible(False, True)
 		self.localScale = (0.01, 0.01, 0.01)
 		self.setParent(self.shell)
 
@@ -502,6 +527,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		dm = self.shell['DynamicMass']
 		self.shell['DynamicMass'] = self['DynamicMass']
 		self['DynamicMass'] = dm
+
 
 		self['InShell'] = 1
 		self.shell.on_entered()

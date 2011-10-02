@@ -62,6 +62,18 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		self.instantCut = False
 		self.errorReported = False
 
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'Spawned')
+
+	def on_event(self, evt):
+		if evt.message == 'Spawned':
+			spawnPoint = evt.body
+			if len(spawnPoint.children) <= 0:
+				return
+			pos = spawnPoint.children[0].worldPosition
+			orn = spawnPoint.children[0].worldOrientation
+			bxt.types.Event('RelocatePlayerCamera', (pos, orn)).send()
+
 	@bxt.types.expose
 	@bxt.utils.owner_cls
 	def set_camera(self, camera):
@@ -166,6 +178,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if self.queue.top() == goal and goal['InstantCut']:
 			# Goal is on top of the stack: it will be switched to next
 			self.instantCut = True
+			self.update()
 
 		self.errorReported = False
 
@@ -182,6 +195,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if self.queue.top() == goal and goal['InstantCut']:
 			# Goal is on top of the stack: it's in use!
 			self.instantCut = True
+			self.update()
 
 		self.queue.discard(goal)
 
@@ -210,12 +224,16 @@ class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 		self.attached = shouldAttach
 
 class MainGoalManager(metaclass=bxt.types.Singleton):
+	'''Creates cameras that follow the player in response to SetCameraType
+	messages. The body of the message should be the name of the camera to
+	create (i.e. the name of the objects that embodies that camera).'''
+
 	currentCamera = bxt.types.weakprop('currentCamera')
 
 	def __init__(self):
+		self.cameraType = None
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'SetCameraType')
-		self.cameraType = None
 
 	def on_event(self, evt):
 		if evt.message == 'SetCameraType':
@@ -228,8 +246,8 @@ class MainGoalManager(metaclass=bxt.types.Singleton):
 
 				ac = AutoCamera().camera
 				if ac != None:
-					self.currentCamera.worldPosition = ac.worldPosition
-					self.currentCamera.worldOrientation = ac.worldOrientation
+					bxt.types.Event('RelocatePlayerCamera',
+							(ac.worldPosition, ac.worldOrientation)).send()
 				self.cameraType = evt.body
 				if oldCamera != None:
 					oldCamera.endObject()
@@ -255,6 +273,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.reset = False
 		AutoCamera().add_goal(self)
 		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'RelocatePlayerCamera')
 
 	def _init(self, target):
 		'''Derive the distance up and back from the current camera location.'''
@@ -344,6 +363,11 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def on_event(self, evt):
 		if evt.message == 'ResetCameraPos':
 			self.reset = True
+		elif evt.message == 'RelocatePlayerCamera':
+			pos, orn = evt.body
+			self.worldPosition = pos
+			if orn != None:
+				self.worldOrientation = orn
 
 class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A camera goal that follows the active player. It tries to follow the same
@@ -465,6 +489,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		AutoCamera().add_goal(self)
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')
+		bxt.types.EventBus().replay_last(self, 'RelocatePlayerCamera')
 
 		if DEBUG:
 			self.targetVis = bxt.utils.add_object('DebugReticule')
@@ -473,6 +498,11 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def on_event(self, event):
 		if event.message == 'MainCharacterSet':
 			self.target = event.body
+		elif event.message == 'RelocatePlayerCamera':
+			pos, orn = event.body
+			self.worldPosition = pos
+			if orn != None:
+				self.worldOrientation = orn
 
 	@bxt.types.expose
 	def update(self):
@@ -737,7 +767,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 #
 
 class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameObject):
-	'''Helper for sensing when camera is inside something. This senses when the
+	'''Senses when the camera is inside something. This senses when the
 	camera touches a volumetric object, and then tracks to see when the camera
 	enters and leaves that object, adjusting the screen filter appropriately.'''
 

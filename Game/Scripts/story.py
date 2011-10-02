@@ -277,6 +277,10 @@ class Level(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		bxt.types.EventBus().notify(evt)
 
 class GameLevel(Level):
+	'''A level that is part of the main game. Handles things such as spawn
+	points and level transitions. Test scenes may use these too, but it is not
+	required.'''
+
 	def __init__(self, old_owner):
 		Level.__init__(self, old_owner)
 
@@ -290,9 +294,12 @@ class GameLevel(Level):
 			print("Error: spawn point %s not found." % spawnPointName)
 			spawnPoint = scene.objects[self['defaultSpawnPoint']]
 		print("Spawning snail at %s" % spawnPoint.name)
-		scene.addObject('Snail', spawnPoint)
+		bxt.types.add_and_mutate_object(scene, 'Snail', spawnPoint)
 
 		bxt.types.EventBus().add_listener(self)
+
+		evt = bxt.types.WeakEvent('Spawned', spawnPoint)
+		bxt.types.EventBus().notify(evt)
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":

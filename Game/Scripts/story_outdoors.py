@@ -349,6 +349,10 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.open_window(False)
 			camera.AutoCamera().remove_goal(self.children['BottleCamera'])
 
+			cam = self.childrenRecursive['B_DoorCamera']
+			transform = (cam.worldPosition, cam.worldOrientation)
+			bxt.types.Event('RelocatePlayerCamera', transform).send()
+
 	def eject(self, ob):
 		direction = self.children['B_DoorOuter'].getAxisVect(bxt.math.ZAXIS)
 		ob.worldPosition += direction

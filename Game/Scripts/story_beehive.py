@@ -148,6 +148,8 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	camTop = bxt.types.weakprop('camTop')
 	camBottom = bxt.types.weakprop('camBottom')
+	currentCamera = bxt.types.weakprop('currentCamera')
+	player = bxt.types.weakprop('player')
 
 	def __init__(self, old_owner):
 		scene = bge.logic.getCurrentScene()
@@ -164,19 +166,20 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	@bxt.utils.controller_cls
 	def update(self, c):
 		sCollision = c.sensors['sPlayer']
-		self.frameChanged()
+		self.frame_changed()
 
 		if director.Director().mainCharacter in sCollision.hitObjectList:
-			self.setTouchingPlayer(True)
+			self.set_touching_player(True)
 		else:
-			self.setTouchingPlayer(False)
+			self.set_touching_player(False)
 
-	def spawnWaterBall(self):
+	def spawn_water_ball(self):
+		'''Drop a ball of water at the top to make a splash.'''
 		scene = bge.logic.getCurrentScene()
 		waterBall = scene.addObject(self['WaterBallTemplate'], self.water)
 		waterBall.setLinearVelocity(self.water.getAxisVect(Bucket.PROJECTION))
 
-	def setDirection(self, dir):
+	def set_direction(self, dir):
 		if dir == self.dir:
 			return
 
@@ -184,10 +187,10 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.water.setVisible(True, False)
 		else:
 			self.water.setVisible(False, False)
-			self.spawnWaterBall()
+			self.spawn_water_ball()
 		self.dir = dir
 
-	def setLocation(self, loc):
+	def set_location(self, loc):
 		if loc == self.loc:
 			return
 
@@ -196,27 +199,34 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		else:
 			self.water.setVisible(False, False)
 		self.loc = loc
-		self.updateCamera()
+		self.update_camera()
 
-	def frameChanged(self):
+	def frame_changed(self):
 		frame = self['Frame']
 		if frame < 170:
-			self.setDirection(Bucket.DIR_UP)
+			self.set_direction(Bucket.DIR_UP)
 		else:
-			self.setDirection(Bucket.DIR_DOWN)
+			self.set_direction(Bucket.DIR_DOWN)
 
 		if frame > 100 and frame < 260:
-			self.setLocation(Bucket.LOC_TOP)
+			self.set_location(Bucket.LOC_TOP)
 		else:
-			self.setLocation(Bucket.LOC_BOTTOM)
+			self.set_location(Bucket.LOC_BOTTOM)
 
-	def updateCamera(self):
+	def update_camera(self):
 		cam = None
 		if self.isTouchingPlayer:
 			if self.loc == Bucket.LOC_BOTTOM:
 				cam = self.camBottom
 			else:
 				cam = self.camTop
+
+		if cam == None and self.currentCamera != None:
+			# Player is being ejected; update camera position to prevent
+			# jolting.
+			pos = self.currentCamera.worldPosition
+			orn = self.currentCamera.worldOrientation
+			bxt.types.Event('RelocatePlayerCamera', (pos, orn)).send()
 
 		if cam == self.currentCamera:
 			return
@@ -228,7 +238,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		self.currentCamera = cam
 
-	def setTouchingPlayer(self, isTouchingPlayer):
+	def set_touching_player(self, isTouchingPlayer):
 		if isTouchingPlayer == self.isTouchingPlayer:
 			return
 
@@ -237,4 +247,4 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', True))
 		else:
 			bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', False))
-		self.updateCamera()
+		self.update_camera()

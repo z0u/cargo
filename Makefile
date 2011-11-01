@@ -1,15 +1,31 @@
 SHARED_LOCATION=${HOME}/Dropbox/cargo
-RSYNC_OPTS=-rtuvh --exclude-from=rsync-exclude.txt --dry-run
+RSYNC_OPTS=-rtuvh --exclude-from=rsync-exclude.txt
+LOCAL_FILES=\
+	Game\
+	Source\
+	ConceptArt\
+	Tasks*
+REMOTE_FILES=\
+	${SHARED_LOCATION}/Game\
+	${SHARED_LOCATION}/Source\
+	${SHARED_LOCATION}/ConceptArt\
+	${SHARED_LOCATION}/Tasks*
 
 # Compile any generated game files.
 compile:
 	$(MAKE) -C Game
 
 # Publish files to team.
-push:
-	rsync ${RSYNC_OPTS} Game Source ConceptArt Tasks* ${SHARED_LOCATION}/
+export:
+	rsync ${RSYNC_OPTS} ${LOCAL_FILES} ${SHARED_LOCATION}/
+
+test-export:
+	rsync ${RSYNC_OPTS} --dry-run ${LOCAL_FILES} ${SHARED_LOCATION}/
 
 # Import team's changed files.
-pull:
-	rsync ${RSYNC_OPTS} ${SHARED_LOCATION}/Game ${SHARED_LOCATION}/Source ${SHARED_LOCATION}/ConceptArt ${SHARED_LOCATION}/Tasks* ./
+import:
+	rsync ${RSYNC_OPTS} ${REMOTE_FILES} ./
+
+test-import:
+	rsync ${RSYNC_OPTS} --dry-run ${REMOTE_FILES} ./
 

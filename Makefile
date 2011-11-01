@@ -22,6 +22,12 @@ export:
 test-export:
 	rsync ${RSYNC_OPTS} --dry-run ${LOCAL_FILES} ${SHARED_LOCATION}/
 
+export-stomp:
+	rsync ${RSYNC_OPTS} --delete ${LOCAL_FILES} ${SHARED_LOCATION}/
+
+test-export-stomp:
+	rsync ${RSYNC_OPTS} --delete --dry-run ${LOCAL_FILES} ${SHARED_LOCATION}/
+
 # Import team's changed files.
 import:
 	rsync ${RSYNC_OPTS} ${REMOTE_FILES} ./

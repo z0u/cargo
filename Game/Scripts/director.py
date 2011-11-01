@@ -118,8 +118,8 @@ class Actor(bxt.types.BX_GameObject):
 		if ob != None:
 			# Found some ground. Are we outside of it?
 			foundGround = True
-			if (ob):
-				if normal.dot(vec) > 0.0:
+			if ob:
+				if not 'TwoSided' in ob and normal.dot(vec) > 0.0:
 					# Hit was from inside.
 					outsideGround = False
 

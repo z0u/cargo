@@ -311,6 +311,7 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.children['BlinkenlightsRight'].setVisible(False, True)
 		else:
 			self.children['BlinkenlightsRight'].setVisible(True, True)
+		self.snailInside = False
 		self.open_window(False)
 
 	@bxt.types.expose
@@ -344,14 +345,18 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			store.set('/game/spawnPoint', 'SpawnBottle')
 			self.open_window(True)
 			camera.AutoCamera().add_goal(self.children['BottleCamera'])
+			self.snailInside = True
 		elif (mainChar in outer.hitObjectList and
 				not mainChar in inner.hitObjectList):
 			self.open_window(False)
 			camera.AutoCamera().remove_goal(self.children['BottleCamera'])
 
-			cam = self.childrenRecursive['B_DoorCamera']
-			transform = (cam.worldPosition, cam.worldOrientation)
-			bxt.types.Event('RelocatePlayerCamera', transform).send()
+			if self.snailInside:
+				# Transitioning to outside; move camera to sensible location.
+				cam = self.childrenRecursive['B_DoorCamera']
+				transform = (cam.worldPosition, cam.worldOrientation)
+				bxt.types.Event('RelocatePlayerCamera', transform).send()
+			self.snailInside = False
 
 	def eject(self, ob):
 		direction = self.children['B_DoorOuter'].getAxisVect(bxt.math.ZAXIS)

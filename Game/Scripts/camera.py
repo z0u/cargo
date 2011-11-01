@@ -416,7 +416,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	# Responsiveness of the radius adjustment.
 	RADIUS_SPEED = 0.1
 	# Responsiveness of the camera orientation.
-	ALIGN_Y_SPEED = 0.05
+	ALIGN_Y_SPEED = 0.15
 	ALIGN_Z_SPEED = 0.5
 	# Distance to project predictive node.
 	PREDICT_FWD = 20.0

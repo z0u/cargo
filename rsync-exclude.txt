@@ -1,0 +1,7 @@
+__pycache__
+.git*
+*~
+*.blend?
+*.bgeconf
+.project
+.pydevproject

@@ -103,15 +103,17 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		bxt.types.EventBus().notify(evt)
 
 	def load_items(self):
-		try:
-			bge.logic.LibLoad('//ItemLoader.blend', 'Scene')
-		except ValueError:
-			print("Warning: failed to open ItemLoader. May be open already. "
-					"Proceeding...")
+		scene = bge.logic.getCurrentScene()
+		if not "Shell" in scene.objectsInactive:
+			print("Loading shells")
+			try:
+				bge.logic.LibLoad('//ItemLoader.blend', 'Scene')
+			except ValueError:
+				print("Warning: failed to open ItemLoader. May be open already. "
+						"Proceeding...")
 
 		shellName = inventory.Shells().get_equipped()
 		if shellName != None:
-			scene = bge.logic.getCurrentScene()
 			shell = bxt.types.add_and_mutate_object(scene, shellName, self)
 			self.equip_shell(shell, False)
 

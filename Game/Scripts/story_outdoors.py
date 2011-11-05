@@ -363,8 +363,20 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		ob.worldPosition += direction
 
 	def open_window(self, open):
-		self.visible = not open
-		self.children['B_CrossSection'].visible = open
+		sce = bge.logic.getCurrentScene()
+		if open:
+			# Create bar interior; destroy exterior (so it doesn't get in the
+			# way when crawling).
+			if not 'B_Inner' in sce.objects:
+				sce.addObject('B_Inner', self)
+			if 'B_Outer' in sce.objects:
+				sce.objects['B_Outer'].endObject()
+		else:
+			# Create bar exterior; destroy interior.
+			if 'B_Inner' in sce.objects:
+				sce.objects['B_Inner'].endObject()
+			if not 'B_Outer' in sce.objects:
+				sce.addObject('B_Outer', self)
 		self.children['B_Rock'].visible = not open
 		self.children['B_SoilCrossSection'].visible = open
 

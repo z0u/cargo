@@ -91,6 +91,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self.localCoordinates = True
 
 		self.frameCounter = 0
+		self.shellActionCb = None
+		self.shellActionFrame = None
 
 		self.load_items()
 
@@ -450,23 +452,30 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		inventory.Shells().unequip()
 		return shell
 
+	def play_shell_action(self, actionName, endFrame, callback, animate=True,
+				triggerFrame=None):
+		'''Play a modal shell action. 'callback' will be executed either when
+		the action finishes playing, or 'triggerFrame' is reached.'''
+		self.shellActionCb = callback
+		self.shellActionFrame = triggerFrame
+
+		self.add_state(Snail.S_SHELLACTION)
+		self.armature.playAction(actionName, 1, endFrame, layer=Snail.L_ARM_SHELL)
+		if not animate:
+			self.armature.setActionFrame(endFrame, layer=Snail.L_ARM_SHELL)
+
 	@bxt.types.expose
 	def poll_shell_action(self):
 		'''Called during modal shell actions to check for end of animations, and
 		trigger new state transition.'''
-		playing = self.armature.isPlayingAction(Snail.L_ARM_SHELL)
-		frame = self.armature.getActionFrame(Snail.L_ARM_SHELL)
-
-		if self.has_state(Snail.S_ENTERING):
-			if not playing:
+		if not self.armature.isPlayingAction(Snail.L_ARM_SHELL):
+			self.rem_state(Snail.S_SHELLACTION)
+			self.shellActionCb()
+		elif self.shellActionFrame != None:
+			frame = self.armature.getActionFrame(Snail.L_ARM_SHELL)
+			if frame >= self.shellActionFrame:
 				self.rem_state(Snail.S_SHELLACTION)
-				self.on_enter_shell()
-		elif self.has_state(Snail.S_EXITING):
-			if not playing:
-				self.on_exit_shell()
-		elif self.has_state(Snail.S_POPPING):
-			if not playing or frame >= 15:
-				self.on_drop_shell()
+				self.shellActionCb()
 
 	def drop_shell(self, animate):
 		'''Causes the snail to drop its shell, if it is carrying one.'''
@@ -475,11 +484,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.rem_state(Snail.S_HASSHELL)
 		self.add_state(Snail.S_POPPING)
-
-		self.add_state(Snail.S_SHELLACTION)
-		self.armature.playAction("PopShell", 1, 18, layer=Snail.L_ARM_SHELL)
-		if not animate:
-			self.armature.setActionFrame(18, layer=Snail.L_ARM_SHELL)
+		self.play_shell_action("PopShell", 18, self.on_drop_shell, animate, 15)
 
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
@@ -515,13 +520,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.rem_state(Snail.S_HASSHELL)
 		self.add_state(Snail.S_ENTERING)
-
-		self.add_state(Snail.S_SHELLACTION)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_CRAWL)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_LOCOMOTION)
-		self.armature.playAction("Inshell", 1, 18, layer=Snail.L_ARM_SHELL)
-		if not animate:
-			self.armature.setActionFrame(18, layer=Snail.L_ARM_SHELL)
+		self.play_shell_action("Inshell", 18, self.on_enter_shell, animate)
 
 		self.shell.on_pre_enter()
 
@@ -570,13 +571,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self.rem_state(Snail.S_INSHELL)
 		self.add_state(Snail.S_EXITING)
 		self.add_state(Snail.S_FALLING)
-
-		self.add_state(Snail.S_SHELLACTION)
-		self.armature.playAction("Outshell", 1, 18, layer=Snail.L_ARM_SHELL)
-		if not animate:
-			self.armature.setActionFrame(18, layer=Snail.L_ARM_SHELL)
 		bxt.utils.add_state(self.armature, Snail.S_ARM_CRAWL)
 		bxt.utils.add_state(self.armature, Snail.S_ARM_LOCOMOTION)
+		self.play_shell_action("Outshell", 18, self.on_exit_shell, animate)
 
 		linV = self.shell.getLinearVelocity()
 		angV = self.shell.getAngularVelocity()

@@ -18,11 +18,12 @@
 import math
 
 import mathutils
+import bge
 from bge import render
 from bge import logic
 
 import bxt
-import bge
+
 from . import director
 from . import inventory
 from Scripts import store, shells, camera
@@ -38,11 +39,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	S_SHOCKED  = 5
 	S_NOSHELL  = 16
 	S_HASSHELL = 17
-	S_POPPING  = 18
-	S_INSHELL  = 19
-	S_EXITING  = 20
-	S_ENTERING = 21
-	S_SHELLACTION = 22
+	S_INSHELL  = 18
+	S_SHELLACTION = 19
 
 	# Armature states
 	S_ARM_CRAWL      = 1
@@ -442,7 +440,6 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 	def unequip_shell(self):
 		self.rem_state(Snail.S_HASSHELL)
-		self.rem_state(Snail.S_POPPING)
 		self.add_state(Snail.S_NOSHELL)
 		shell = self.shell
 		shell.removeParent()
@@ -483,14 +480,11 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			return
 
 		self.rem_state(Snail.S_HASSHELL)
-		self.add_state(Snail.S_POPPING)
 		self.play_shell_action("PopShell", 18, self.on_drop_shell, animate, 15)
+		bxt.sound.play_sample('//Sound/cc-sample/ShellPop.ogg')
 
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
-		if not self.has_state(Snail.S_POPPING):
-			return
-
 		velocity = bxt.math.ZAXIS.copy()
 		velocity.x += 0.5 - bge.logic.getRandomFloat()
 		velocity = self.getAxisVect(velocity)
@@ -519,7 +513,6 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		bxt.types.EventBus().notify(evt)
 
 		self.rem_state(Snail.S_HASSHELL)
-		self.add_state(Snail.S_ENTERING)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_CRAWL)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_LOCOMOTION)
 		self.play_shell_action("Inshell", 18, self.on_enter_shell, animate)
@@ -529,11 +522,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	def on_enter_shell(self):
 		'''Transfers control of the character to the shell. The snail must have
 		a shell.'''
-		if not self.has_state(Snail.S_ENTERING):
-			return
-
 		self.rem_state(Snail.S_CRAWLING)
-		self.rem_state(Snail.S_ENTERING)
 		self.add_state(Snail.S_INSHELL)
 
 		linV = self.getLinearVelocity()
@@ -569,7 +558,6 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			return
 
 		self.rem_state(Snail.S_INSHELL)
-		self.add_state(Snail.S_EXITING)
 		self.add_state(Snail.S_FALLING)
 		bxt.utils.add_state(self.armature, Snail.S_ARM_CRAWL)
 		bxt.utils.add_state(self.armature, Snail.S_ARM_LOCOMOTION)
@@ -605,13 +593,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
 		transferred).'''
-		if not self.has_state(Snail.S_EXITING):
-			return
-
 		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
 		bxt.types.EventBus().notify(evt)
 
-		self.rem_state(Snail.S_EXITING)
 		self.add_state(Snail.S_HASSHELL)
 		self.shell.on_post_exit()
 

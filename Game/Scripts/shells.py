@@ -251,6 +251,16 @@ class Nut(ShellBase):
 		pass
 
 class BottleCap(ShellBase):
+	# States - be careful not to let conflict with ShellBase states.
+	S_EMERGE = 6
+	S_JUMP = 7
+
+	# Animation layers
+	L_EMERGE = 1 # Entering/exiting shell
+	L_JUMP = 2   # Jumping
+
+	_prefix = 'BC_'
+
 	def orient(self):
 		'''Try to make the cap sit upright, and face the direction of travel.'''
 		vec = ZAXIS.copy()
@@ -262,36 +272,45 @@ class BottleCap(ShellBase):
 		if facing.magnitude > EPSILON:
 			self.alignAxisToVect(facing, 1, self['TurnFac'] * facing.magnitude)
 
-	def on_movement_impulse(self, fwd, back, left, right):
-		'''Make the cap jump around around based on user input.'''
-		self.orient()
+	def on_pre_enter(self):
+		ShellBase.on_pre_enter(self)
+		self.occupier.visible = True
+		self.occupier.playAction('CapSnailEmerge', 1, 25, layer=BottleCap.L_EMERGE)
+		self.add_state(BottleCap.S_EMERGE)
 
-		if not self.occupier['JumpReady']:
-			return
+	def on_exited(self):
+		ShellBase.on_exited(self)
+		self.occupier.playAction('CapSnailEmerge', 25, 1, layer=BottleCap.L_EMERGE)
+		self.add_state(BottleCap.S_EMERGE)
 
-		if not self['OnGround']:
-			return
+	@bxt.types.expose
+	def poll_emerge_action(self):
+		'''Hides occupier when fully inside shell; shows when emerging.'''
+		if self.occupier.getActionFrame(BottleCap.L_EMERGE) > 2:
+			self.occupier.visible = True
+		else:
+			self.occupier.visible = False
 
-		if fwd or back or left or right:
-			bxt.utils.add_state(self.occupier, 3)
+		if not self.occupier.isPlayingAction(BottleCap.L_EMERGE):
+			self.rem_state(BottleCap.S_EMERGE)
 
-		if not self.occupier['JumpNow']:
-			return
+	@bxt.types.expose
+	def poll_jump_action(self):
+		'''Triggers a jump impulse at a certain point in the jump animation.'''
+		if self.occupier.getActionFrame(BottleCap.L_JUMP) >= 5:
+			self.jump()
+			self.rem_state(BottleCap.S_JUMP)
 
-		#
-		# Decide which direction to jump on the two axes.
-		#
-		fwdMagnitude = 0.0
-		if fwd and not back:
-			fwdMagnitude = 1.0
-		elif back and not fwd:
-			fwdMagnitude = -1.0
-		leftMagnitude = 0.0
-		if left and not right:
-			leftMagnitude = 1.0
-		elif right and not left:
-			leftMagnitude = -1.0
+	def start_jump(self, fwdMagnitude, leftMagnitude):
+		'''Plays the jump action. The actual impulse will be given at the right
+		time in the animation.'''
+		self.fwdMagnitude = fwdMagnitude
+		self.leftMagnitude = leftMagnitude
+		self.occupier.playAction('CapSnailJump', 1, 15, layer=BottleCap.L_JUMP)
+		self.add_state(BottleCap.S_JUMP)
 
+	def jump(self):
+		'''Applies an impulse to the shell to make it jump.'''
 		#
 		# Get the vectors to apply force along.
 		#
@@ -305,8 +324,8 @@ class BottleCap(ShellBase):
 		#
 		# Set the direction of the vectors.
 		#
-		fwdVec = fwdVec * fwdMagnitude
-		leftVec = leftVec * leftMagnitude
+		fwdVec = fwdVec * self.fwdMagnitude
+		leftVec = leftVec * self.leftMagnitude
 		finalVec = fwdVec + leftVec
 		finalVec.z = self['Lift']
 		finalVec.normalize()
@@ -316,11 +335,33 @@ class BottleCap(ShellBase):
 		# Apply the force.
 		#
 		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
-		self.occupier['JumpNow'] = False
 
-	def on_exited(self):
-		'''Called when control is transferred to the snail. Reset propulsion.'''
-		ShellBase.on_exited(self)
-		self.FwdMagnitude = 0.0
-		self.LeftMagnitude = 0.0
-		self.occupier['JumpFrame'] = 0
+		bxt.sound.play_sample('//Sound/MouthPopOpen.ogg')
+
+	def on_movement_impulse(self, fwd, back, left, right):
+		'''Make the cap jump around around based on user input.'''
+		self.orient()
+
+		if not self['OnGround']:
+			return
+
+		if self.occupier.isPlayingAction(BottleCap.L_JUMP):
+			# Jump has been initiated already; wait for it to finish.
+			return
+
+		if fwd or back or left or right:
+			#
+			# Decide which direction to jump on the two axes.
+			#
+			fwdMagnitude = 0.0
+			if fwd and not back:
+				fwdMagnitude = 1.0
+			elif back and not fwd:
+				fwdMagnitude = -1.0
+			leftMagnitude = 0.0
+			if left and not right:
+				leftMagnitude = 1.0
+			elif right and not left:
+				leftMagnitude = -1.0
+			self.start_jump(fwdMagnitude, leftMagnitude)
+			bxt.utils.add_state(self.occupier, 3)

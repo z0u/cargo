@@ -41,6 +41,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	S_HASSHELL = 17
 	S_INSHELL  = 18
 	S_SHELLACTION = 19
+	S_SHOCKWAVE = 20
 
 	# Armature states
 	S_ARM_CRAWL      = 1
@@ -52,6 +53,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	L_ARM_IDLE		= 1 # Idle animations, like wriggling
 	L_ARM_LOCO		= 2 # Locomation (walk cycle)
 	L_ARM_SHELL		= 3 # Shell actions, like pop, enter, exit
+
+	# Shockwave animation layers
+	L_SW_GROW		= 0
 
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
@@ -434,9 +438,20 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		inventory.Shells().equip(shell.name)
 
 		if animate:
-			self.shockwave.worldPosition = shell.worldPosition
-			self.shockwave.worldOrientation = shell.worldOrientation
-			bxt.utils.set_state(self.shockwave, 2)
+			self.show_shockwave()
+
+	def show_shockwave(self):
+		self.shockwave.worldPosition = self.shell.worldPosition
+		self.shockwave.worldOrientation = self.shell.worldOrientation
+		self.shockwave.visible = True
+		self.shockwave.playAction('ShockwaveGrow', 1, 20, layer=Snail.L_SW_GROW)
+		self.add_state(Snail.S_SHOCKWAVE)
+
+	@bxt.types.expose
+	def poll_shockwave(self):
+		if not self.shockwave.isPlayingAction(Snail.L_SW_GROW):
+			self.rem_state(Snail.S_SHOCKWAVE)
+			self.shockwave.visible = False
 
 	def unequip_shell(self):
 		self.rem_state(Snail.S_HASSHELL)

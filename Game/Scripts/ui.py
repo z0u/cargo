@@ -65,38 +65,61 @@ class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'DB_'
 
+	S_DISPLAYING = 2
+	L_DISPLAY = 0
+
 	def __init__(self, old_owner):
 		self.canvas = self.find_descendant([('template', 'TextCanvas_T')])
 		if self.canvas.__class__ != Text:
 			self.canvas = Text(self.canvas)
+		self.armature = self.children['FrameArmature']
+		self.frame = self.childrenRecursive['DialogueBoxFrame']
+		self.button = self.childrenRecursive['OKButton']
+		self.hide()
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'ShowDialogue')
+		#bxt.types.Event('ShowDialogue', 'Foo').send()
 
 	def on_event(self, evt):
 		if evt.message == 'ShowDialogue':
 			self.setText(evt.body)
 
+	def show(self):
+		self.armature.playAction('DialogueBoxBoing', 1, 8, layer=DialogueBox.L_DISPLAY)
+		self.frame.playAction('DB_FrameVis', 1, 8, layer=DialogueBox.L_DISPLAY)
+		self.add_state(DialogueBox.S_DISPLAYING)
+		self.button.visible = True
+
+	def hide(self):
+		self.armature.playAction('DialogueBoxBoing', 8, 1, layer=DialogueBox.L_DISPLAY)
+		self.frame.playAction('DB_FrameVis', 8, 1, layer=DialogueBox.L_DISPLAY)
+		self.add_state(DialogueBox.S_DISPLAYING)
+		self.button.visible = False
+
+	def poll_animation(self):
+		print(self.armature.getActionFrame(DialogueBox.L_DISPLAY))
+		if self.armature.getActionFrame(DialogueBox.L_DISPLAY) > 2:
+			self.armature.setVisible(True, True)
+		else:
+			self.armature.setVisible(False, False)
+
+		if not self.armature.isPlayingAction(DialogueBox.L_DISPLAY):
+			self.rem_state(DialogueBox.S_DISPLAYING)
+
 	def setText(self, text):
 		if text == None:
 			text = ""
 
-		if self['Content'] != text:
-			self['Content'] = text
+		if text != self.canvas['Content']:
 			self.canvas['Content'] = text
 
-		if self['Content'] != text:
 			if text == "":
-				evt = bxt.types.Event("ResumePlay")
-				bxt.types.EventBus().notify(evt)
+				bxt.types.Event("ResumePlay").send()
+				self.hide()
 			else:
-				evt = bxt.types.Event("SuspendPlay")
-				bxt.types.EventBus().notify(evt)
-
-	@bxt.types.expose
-	def clear(self):
-		self['Content'] = ""
-		self.canvas['Content'] = ""
+				bxt.types.Event("SuspendPlay").send()
+				self.show()
 
 class LoadingScreen(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'LS_'

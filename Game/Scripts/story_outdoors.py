@@ -34,7 +34,8 @@ class LevelOut(GameLevel):
 		'''Load extra files'''
 		if store.get('/opt/foliage', True):
 			try:
-				bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene')
+				bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene',
+						load_actions=True)
 			except ValueError:
 				print('Could not load foliage. Try reinstalling the game.')
 				evt = bxt.types.Event('ShowMessage',

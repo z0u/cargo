@@ -42,8 +42,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	S_INSHELL  = 19
 	S_EXITING  = 20
 	S_ENTERING = 21
-	#S_REINCARNATE = 29
-	#S_DROWNING    = 30
+	S_SHELLACTION = 22
 
 	# Armature states
 	S_ARM_CRAWL      = 1
@@ -51,6 +50,10 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	S_ARM_POP        = 16
 	S_ARM_ENTER      = 17
 	S_ARM_EXIT       = 18
+	# Armature animation layers
+	L_ARM_IDLE		= 1 # Idle animations, like wriggling
+	L_ARM_LOCO		= 2 # Locomation (walk cycle)
+	L_ARM_SHELL		= 3 # Shell actions, like pop, enter, exit
 
 	MAX_SPEED = 3.0
 	MIN_SPEED = -3.0
@@ -107,7 +110,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		if not "Shell" in scene.objectsInactive:
 			print("Loading shells")
 			try:
-				bge.logic.LibLoad('//ItemLoader.blend', 'Scene')
+				bge.logic.LibLoad('//ItemLoader.blend', 'Scene', load_actions=True)
 			except ValueError:
 				print("Warning: failed to open ItemLoader. May be open already. "
 						"Proceeding...")
@@ -447,6 +450,24 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		inventory.Shells().unequip()
 		return shell
 
+	@bxt.types.expose
+	def poll_shell_action(self):
+		'''Called during modal shell actions to check for end of animations, and
+		trigger new state transition.'''
+		playing = self.armature.isPlayingAction(Snail.L_ARM_SHELL)
+		frame = self.armature.getActionFrame(Snail.L_ARM_SHELL)
+
+		if self.has_state(Snail.S_ENTERING):
+			if not playing:
+				self.rem_state(Snail.S_SHELLACTION)
+				self.on_enter_shell()
+		elif self.has_state(Snail.S_EXITING):
+			if not playing:
+				self.on_exit_shell()
+		elif self.has_state(Snail.S_POPPING):
+			if not playing or frame >= 15:
+				self.on_drop_shell()
+
 	def drop_shell(self, animate):
 		'''Causes the snail to drop its shell, if it is carrying one.'''
 		if not self.has_state(Snail.S_HASSHELL):
@@ -454,10 +475,12 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.rem_state(Snail.S_HASSHELL)
 		self.add_state(Snail.S_POPPING)
-		bxt.utils.add_state(self.armature, Snail.S_ARM_POP)
-		self.armature['NoTransition'] = not animate
 
-	@bxt.types.expose
+		self.add_state(Snail.S_SHELLACTION)
+		self.armature.playAction("PopShell", 1, 18, layer=Snail.L_ARM_SHELL)
+		if not animate:
+			self.armature.setActionFrame(18, layer=Snail.L_ARM_SHELL)
+
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
 		if not self.has_state(Snail.S_POPPING):
@@ -492,14 +515,16 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.rem_state(Snail.S_HASSHELL)
 		self.add_state(Snail.S_ENTERING)
+
+		self.add_state(Snail.S_SHELLACTION)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_CRAWL)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_LOCOMOTION)
-		bxt.utils.add_state(self.armature, Snail.S_ARM_ENTER)
-		self.armature['NoTransition'] = not animate
+		self.armature.playAction("Inshell", 1, 18, layer=Snail.L_ARM_SHELL)
+		if not animate:
+			self.armature.setActionFrame(18, layer=Snail.L_ARM_SHELL)
+
 		self.shell.on_pre_enter()
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
 	def on_enter_shell(self):
 		'''Transfers control of the character to the shell. The snail must have
 		a shell.'''
@@ -545,10 +570,13 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self.rem_state(Snail.S_INSHELL)
 		self.add_state(Snail.S_EXITING)
 		self.add_state(Snail.S_FALLING)
-		bxt.utils.add_state(self.armature, Snail.S_ARM_EXIT)
+
+		self.add_state(Snail.S_SHELLACTION)
+		self.armature.playAction("Outshell", 1, 18, layer=Snail.L_ARM_SHELL)
+		if not animate:
+			self.armature.setActionFrame(18, layer=Snail.L_ARM_SHELL)
 		bxt.utils.add_state(self.armature, Snail.S_ARM_CRAWL)
 		bxt.utils.add_state(self.armature, Snail.S_ARM_LOCOMOTION)
-		self.armature['NoTransition'] = not animate
 
 		linV = self.shell.getLinearVelocity()
 		angV = self.shell.getAngularVelocity()
@@ -576,9 +604,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		evt = bxt.types.WeakEvent('MainCharacterSet', self)
 		bxt.types.EventBus().notify(evt)
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
-	def on_post_exit_shell(self):
+	def on_exit_shell(self):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
 		transferred).'''

@@ -65,7 +65,6 @@ class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'DB_'
 
-	S_DISPLAYING = 2
 	L_DISPLAY = 0
 
 	def __init__(self, old_owner):
@@ -79,7 +78,6 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'ShowDialogue')
-		#bxt.types.Event('ShowDialogue', 'Foo').send()
 
 	def on_event(self, evt):
 		if evt.message == 'ShowDialogue':
@@ -88,24 +86,22 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def show(self):
 		self.armature.playAction('DialogueBoxBoing', 1, 8, layer=DialogueBox.L_DISPLAY)
 		self.frame.playAction('DB_FrameVis', 1, 8, layer=DialogueBox.L_DISPLAY)
-		self.add_state(DialogueBox.S_DISPLAYING)
-		self.button.visible = True
+
+		# Frame is visible immediately; button is shown later.
+		self.armature.setVisible(True, True)
+		def cb():
+			self.button.visible = True
+		bxt.anim.add_trigger_gte(self.armature, DialogueBox.L_DISPLAY, 2, cb)
 
 	def hide(self):
 		self.armature.playAction('DialogueBoxBoing', 8, 1, layer=DialogueBox.L_DISPLAY)
 		self.frame.playAction('DB_FrameVis', 8, 1, layer=DialogueBox.L_DISPLAY)
-		self.add_state(DialogueBox.S_DISPLAYING)
 		self.button.visible = False
 
-	def poll_animation(self):
-		print(self.armature.getActionFrame(DialogueBox.L_DISPLAY))
-		if self.armature.getActionFrame(DialogueBox.L_DISPLAY) > 2:
-			self.armature.setVisible(True, True)
-		else:
+		# Button is hidden immediately; frame is hidden later.
+		def cb():
 			self.armature.setVisible(False, False)
-
-		if not self.armature.isPlayingAction(DialogueBox.L_DISPLAY):
-			self.rem_state(DialogueBox.S_DISPLAYING)
+		bxt.anim.add_trigger_lt(self.armature, DialogueBox.L_DISPLAY, 2, cb)
 
 	def setText(self, text):
 		if text == None:

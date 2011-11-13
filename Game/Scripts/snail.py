@@ -40,7 +40,6 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	S_NOSHELL  = 16
 	S_HASSHELL = 17
 	S_INSHELL  = 18
-	S_SHELLACTION = 19
 	S_SHOCKWAVE = 20
 
 	# Armature states
@@ -93,8 +92,6 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self.localCoordinates = True
 
 		self.frameCounter = 0
-		self.shellActionCb = None
-		self.shellActionFrame = None
 
 		self.load_items()
 
@@ -468,26 +465,15 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 				triggerFrame=None):
 		'''Play a modal shell action. 'callback' will be executed either when
 		the action finishes playing, or 'triggerFrame' is reached.'''
-		self.shellActionCb = callback
-		self.shellActionFrame = triggerFrame
 
-		self.add_state(Snail.S_SHELLACTION)
 		self.armature.playAction(actionName, 1, endFrame, layer=Snail.L_ARM_SHELL)
 		if not animate:
-			self.armature.setActionFrame(endFrame, layer=Snail.L_ARM_SHELL)
+			self.armature.setActionFrame(endFrame, Snail.L_ARM_SHELL)
 
-	@bxt.types.expose
-	def poll_shell_action(self):
-		'''Called during modal shell actions to check for end of animations, and
-		trigger new state transition.'''
-		if not self.armature.isPlayingAction(Snail.L_ARM_SHELL):
-			self.rem_state(Snail.S_SHELLACTION)
-			self.shellActionCb()
-		elif self.shellActionFrame != None:
-			frame = self.armature.getActionFrame(Snail.L_ARM_SHELL)
-			if frame >= self.shellActionFrame:
-				self.rem_state(Snail.S_SHELLACTION)
-				self.shellActionCb()
+		if triggerFrame != None:
+			bxt.anim.add_trigger_gte(self.armature, Snail.L_ARM_SHELL, triggerFrame, callback)
+		else:
+			bxt.anim.add_trigger_end(self.armature, Snail.L_ARM_SHELL, callback)
 
 	def drop_shell(self, animate):
 		'''Causes the snail to drop its shell, if it is carrying one.'''

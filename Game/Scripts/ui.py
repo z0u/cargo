@@ -96,9 +96,9 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def hide(self):
 		self.armature.playAction('DialogueBoxBoing', 8, 1, layer=DialogueBox.L_DISPLAY)
 		self.frame.playAction('DB_FrameVis', 8, 1, layer=DialogueBox.L_DISPLAY)
-		self.button.visible = False
 
 		# Button is hidden immediately; frame is hidden later.
+		self.button.visible = False
 		def cb():
 			self.armature.setVisible(False, False)
 		bxt.anim.add_trigger_lt(self.armature, DialogueBox.L_DISPLAY, 2, cb)

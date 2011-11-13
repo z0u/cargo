@@ -74,7 +74,7 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.armature = self.children['FrameArmature']
 		self.frame = self.childrenRecursive['DialogueBoxFrame']
 		self.button = self.childrenRecursive['OKButton']
-		self.hide()
+		self.hide(False)
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'ShowDialogue')
@@ -83,7 +83,12 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if evt.message == 'ShowDialogue':
 			self.setText(evt.body)
 
-	def show(self):
+	def show(self, animate=True):
+		if not animate:
+			self.armature.setVisible(True, True)
+			self.button.visible = True
+			return
+
 		self.armature.playAction('DialogueBoxBoing', 1, 8, layer=DialogueBox.L_DISPLAY)
 		self.frame.playAction('DB_FrameVis', 1, 8, layer=DialogueBox.L_DISPLAY)
 
@@ -93,14 +98,19 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.button.visible = True
 		bxt.anim.add_trigger_gte(self.armature, DialogueBox.L_DISPLAY, 2, cb)
 
-	def hide(self):
+	def hide(self, animate=True):
+		if not animate:
+			self.armature.setVisible(False, True)
+			self.button.visible = False
+			return
+
 		self.armature.playAction('DialogueBoxBoing', 8, 1, layer=DialogueBox.L_DISPLAY)
 		self.frame.playAction('DB_FrameVis', 8, 1, layer=DialogueBox.L_DISPLAY)
 
 		# Button is hidden immediately; frame is hidden later.
 		self.button.visible = False
 		def cb():
-			self.armature.setVisible(False, False)
+			self.armature.setVisible(False, True)
 		bxt.anim.add_trigger_lt(self.armature, DialogueBox.L_DISPLAY, 2, cb)
 
 	def setText(self, text):

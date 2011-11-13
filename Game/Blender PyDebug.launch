@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="org.eclipse.ui.externaltools.ProgramLaunchConfigurationType">
 <mapAttribute key="org.eclipse.debug.core.environmentVariables">
-<mapEntry key="PYTHONPATH" value="/home/alex/.eclipse/org.eclipse.platform_3.5.0_155965261/plugins/org.python.pydev.debug_2.0.0.2011040403/pysrc"/>
+<mapEntry key="PYTHONPATH" value="/home/alex/.eclipse/org.eclipse.platform_3.7.0_155965261/plugins/org.python.pydev.debug_2.2.4.2011110216/pysrc"/>
 </mapAttribute>
 <listAttribute key="org.eclipse.debug.ui.favoriteGroups">
 <listEntry value="org.eclipse.ui.externaltools.launchGroup"/>

@@ -57,7 +57,7 @@ class SessionManager(metaclass=bxt.types.Singleton):
 			bxt.types.EventBus().notify(evt)
 
 			evt = bxt.types.Event('reallyStartGame')
-			bxt.types.EventBus().enqueue(evt, 2)
+			bxt.types.EventBus().notify(evt, 2)
 
 		elif event.message == 'reallyStartGame':
 			# Load the level indicated in the save game.

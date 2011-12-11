@@ -315,7 +315,7 @@ def load_level(caller, level, spawnPoint):
 	bxt.types.EventBus().notify(evt)
 
 	evt = bxt.types.Event('LoadLevel', level)
-	bxt.types.EventBus().enqueue(evt, 2)
+	bxt.types.EventBus().notify(evt, 2)
 
 def activate_portal(c):
 	'''Loads the next level, based on the properties of the owner.

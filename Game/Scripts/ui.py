@@ -199,6 +199,12 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		frame = min(max(frame, 0), 100)
 		self['Frame'] = frame
 
+#bxt.types.Event("HealthSet", 1.0).send()
+#bxt.types.Event("OxygenSet", 1.0).send()
+#bxt.types.Event("TimeSet", 0.5).send()
+#bxt.types.Event("TimeSet", 0.0).send(50)
+#bxt.types.Event("TimeSet", 0.0).send(100)
+
 class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):	
 	S_HIDDEN  = 1
 	S_VISIBLE = 2

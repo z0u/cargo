@@ -31,11 +31,11 @@ class HUDState(metaclass=bxt.types.Singleton):
 	def on_event(self, evt):
 		if evt.message == "StartLoading":
 			self.loaders.add(evt.body)
-		if evt.message == "FinishLoading":
+			bxt.types.Event("ShowLoadingScreen", True).send()
+		elif evt.message == "FinishLoading":
 			self.loaders.discard(evt.body)
-
-	def getNumLoaders(self):
-		return len(self.loaders)
+			if len(self.loaders) == 0:
+				bxt.types.Event("ShowLoadingScreen", False).send()
 
 class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'MB_'
@@ -133,21 +133,26 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_SHOW = 2
 	S_HIDE = 3
 
+	L_DISPLAY = 0
+
 	def __init__(self, old_owner):
 		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'StartLoading')
-		self.set_state(LoadingScreen.S_SHOW)
+		bxt.types.Event("FinishLoading").send()
 
 	def on_event(self, evt):
-		if evt.message == 'StartLoading':
-			self.set_state(LoadingScreen.S_SHOW)
+		if evt.message == 'ShowLoadingScreen':
+			self.show(evt.body)
 
-	@bxt.types.expose
-	def update(self):
-		if HUDState().getNumLoaders() > 0:
-			self.set_state(LoadingScreen.S_SHOW)
+	def show(self, visible):
+		if visible:
+			self.setVisible(True, True)
+			self.playAction('LoadingScreenHide', 1, 2, layer=LoadingScreen.L_DISPLAY)
+			self.setActionFrame(2, LoadingScreen.L_DISPLAY)
 		else:
-			self.set_state(LoadingScreen.S_HIDE)
+			def cb():
+				self.setVisible(False, True)
+			self.playAction('LoadingScreenHide', 3, 8, layer=LoadingScreen.L_DISPLAY)
+			bxt.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 7, cb)
 
 class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 1

@@ -238,7 +238,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 	def on_event(self, evt):
 		if evt.message == 'ForceExitShell':
-			self.exit_shell(True)
+			self.exit_shell(evt.body)
+		elif evt.message == 'ForceEnterShell':
+			self.enter_shell(evt.body)
 		elif evt.message == 'GravityChanged':
 			antiG = evt.body.copy()
 			antiG.negate()

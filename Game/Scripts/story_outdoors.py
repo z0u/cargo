@@ -98,8 +98,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 class Worm(Character, bge.types.BL_ArmatureObject):
 	def __init__(self, old_owner):
 		Character.__init__(self, old_owner)
-		evt = bxt.types.WeakEvent('StartLoading', self)
-		bxt.types.EventBus().notify(evt)
+		bxt.types.WeakEvent('StartLoading', self).send()
 
 	def CreateSteps(self):
 		#
@@ -122,22 +121,18 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 			worm = c.owner['Actor']
 			worm.Destroy()
 
-		step = self.NewStep()
-		step.AddAction(ActGenericContext(SleepSnail, False))
-		step.AddAction(ActSuspendInput())
-
-		step = self.NewStep()
-		step.AddCondition(CondSensor('sSnailAsleep'))
+		step = self.NewStep("Init")
+		step.AddEvent("ForceEnterShell", False)
 		step.AddAction(ActSetCamera('WormCamera_Enter'))
 		step.AddAction(ActShowDialogue("Press Return to start."))
 
 		#
 		# Peer out of ground
 		#
-		step = self.NewStep()
+		step = self.NewStep("Begin")
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActHideDialogue())
-		step.AddAction(ActEvent(bxt.types.WeakEvent('FinishLoading', self)))
+		step.AddWeakEvent("FinishLoading", self)
 		step.AddAction(ActGenericContext(SprayDirt, 10, 15.0))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
 
@@ -148,7 +143,7 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		#
 		# Get out of the ground
 		#
-		step = self.NewStep()
+		step = self.NewStep("Get out of the ground")
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActRemoveCamera('WormCamera_Enter'))
@@ -170,7 +165,7 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		#
 		# Knock on shell
 		#
-		step = self.NewStep()
+		step = self.NewStep("Knock on shell")
 		step.AddCondition(CondPropertyGE('ActionFrame', 185.0))
 		step.AddAction(ActSetCamera('WormCamera_Knock'))
 		step.AddAction(ActShowDialogue("Wake up, Cargo!"))
@@ -187,7 +182,7 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		#
 		# Wake / chastise
 		#	
-		step = self.NewStep()
+		step = self.NewStep("Wake / Chastise")
 		step.AddCondition(CondPropertyGE('ActionFrame', 205.0))
 		step.AddAction(ActGenericContext(WakeSnail, True))
 		step.AddAction(ActHideDialogue())
@@ -203,7 +198,7 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		#
 		# Dig up letter
 		#
-		step = self.NewStep()
+		step = self.NewStep("Dig up letter")
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActActuate('aParticleEmitMove'))
@@ -240,7 +235,7 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		#
 		# Give letter
 		#
-		step = self.NewStep()
+		step = self.NewStep("Give letter")
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActRemoveCamera('WormCamera_Envelope'))
@@ -254,7 +249,7 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		#
 		# Point to lighthouse
 		#
-		step = self.NewStep()
+		step = self.NewStep("Point to lighthouse")
 		step.AddCondition(CondSensor('sReturn'))
 		step.AddAction(ActShowDialogue("Great! Please take it to the lighthouse keeper."))
 		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 330.0, 395.0))
@@ -279,7 +274,7 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		#
 		# Return to game
 		#
-		step = self.NewStep()
+		step = self.NewStep("Return to game")
 		step.AddCondition(CondPropertyGE('ActionFrame', 460.0))
 		step.AddAction(ActActuate('aFadeSods'))
 		step.AddAction(ActResumeInput())
@@ -288,7 +283,7 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		#
 		# Clean up. At this point, the worm is completely hidden and the sods have faded.
 		#
-		step = self.NewStep()
+		step = self.NewStep("Clean up")
 		step.AddCondition(CondPropertyGE('ActionFrame', 540.0))
 		step.AddAction(ActGenericContext(CleanUp))
 
@@ -407,6 +402,6 @@ class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				continue
 			if not shell.can_destroy_stuff():
 				continue
-			evt = bxt.types.Event('ForceExitShell')
+			evt = bxt.types.Event('ForceExitShell', True)
 			bxt.types.EventBus().notify(evt)
 			self.destruct()

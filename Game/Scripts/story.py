@@ -55,25 +55,35 @@ class CondPropertyGE:
 #
 # Actions. These belong to and are executed by steps.
 #
-class ActSuspendInput:
+class BaseAct:
+	def execute(self, c):
+		pass
+
+	def __str__(self):
+		return self.__class__.__name__
+
+class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
-	def Execute(self, c):
+	def execute(self, c):
 		bxt.types.EventBus().notify(bxt.types.Event('SuspendPlay'))
 
-class ActResumeInput:
+class ActResumeInput(BaseAct):
 	'''Let the player move around.'''
-	def Execute(self, c):
+	def execute(self, c):
 		bxt.types.EventBus().notify(bxt.types.Event('ResumePlay'))
 
-class ActActuate:
+class ActActuate(BaseAct):
 	'''Activate an actuator.'''
 	def __init__(self, actuatorName):
 		self.ActuatorName = actuatorName
 
-	def Execute(self, c):
+	def execute(self, c):
 		c.activate(c.actuators[self.ActuatorName])
 
-class ActActionPair:
+	def __str__(self):
+		return "ActActuate: %s" % self.ActuatorName
+
+class ActActionPair(BaseAct):
 	'''Play an armature action and an IPO at the same time.'''
 	def __init__(self, aArmName, aMeshName, actionPrefix, start, end, loop = False):
 		self.aArmName = aArmName
@@ -83,7 +93,7 @@ class ActActionPair:
 		self.End = end
 		self.Loop = loop
 
-	def Execute(self, c):
+	def execute(self, c):
 		aArm = c.actuators[self.aArmName]
 		aMesh = c.actuators[self.aMeshName]
 		aArm.action = self.ActionPrefix
@@ -101,33 +111,43 @@ class ActActionPair:
 		c.activate(aArm)
 		c.activate(aMesh)
 
-class ActShowDialogue:
+	def __str__(self):
+		return "ActActionPair: %s, %d -> %d" % (self.ActionPrefix, self.start,
+				self.End)
+
+class ActShowDialogue(BaseAct):
 	def __init__(self, message):
 		self.message = message
 
-	def Execute(self, c):
+	def execute(self, c):
 		evt = bxt.types.Event('ShowDialogue', self.message)
 		bxt.types.EventBus().notify(evt)
 
-class ActHideDialogue:
-	def Execute(self, c):
+	def __str__(self):
+		return 'ActShowDialogue: "%s"' % self.message
+
+class ActHideDialogue(BaseAct):
+	def execute(self, c):
 		evt = bxt.types.Event('ShowDialogue', None)
 		bxt.types.EventBus().notify(evt)
 
-class ActShowMessage:
+class ActShowMessage(BaseAct):
 	def __init__(self, message):
 		self.message = message
 
-	def Execute(self, c):
+	def execute(self, c):
 		evt = bxt.types.Event('ShowMessage', self.message)
 		bxt.types.EventBus().notify(evt)
 
-class ActSetCamera:
+	def __str__(self):
+		return 'ActShowMessage: "%s"' % self.message
+
+class ActSetCamera(BaseAct):
 	'''Switch to a named camera.'''
 	def __init__(self, camName):
 		self.CamName = camName
 
-	def Execute(self, c):
+	def execute(self, c):
 		try:
 			cam = bge.logic.getCurrentScene().objects[self.CamName]
 		except KeyError:
@@ -136,11 +156,14 @@ class ActSetCamera:
 			return
 		camera.AutoCamera().add_goal(cam)
 
-class ActRemoveCamera:
+	def __str__(self):
+		return "ActSetCamera: %s" % self.CamName
+
+class ActRemoveCamera(BaseAct):
 	def __init__(self, camName):
 		self.CamName = camName
 
-	def Execute(self, c):
+	def execute(self, c):
 		try:
 			cam = bge.logic.getCurrentScene().objects[self.CamName]
 		except KeyError:
@@ -149,41 +172,50 @@ class ActRemoveCamera:
 			return
 		camera.AutoCamera().remove_goal(cam)
 
-class ActGeneric:
+	def __str__(self):
+		return "ActRemoveCamera: %s" % self.CamName
+
+class ActGeneric(BaseAct):
 	'''Run any function.'''
 	def __init__(self, f, *args):
 		self.Function = f
 		self.args = args
 
-	def Execute(self, c):
+	def execute(self, c):
 		try:
 			self.Function(*self.args)
 		except Exception as e:
 			raise StoryError("Error executing " + str(self.Function), e)
 
+	def __str__(self):
+		return "ActGeneric: %s" % self.Function
+
 class ActGenericContext(ActGeneric):
 	'''Run any function, passing in the current controller as the first
 	argument.'''
-	def Execute(self, c):
+	def execute(self, c):
 		try:
 			self.Function(c, *self.args)
 		except Exception as e:
 			raise StoryError("Error executing " + str(self.Function), e)
 
-class ActEvent:
+class ActEvent(BaseAct):
 	'''Fire an event.'''
 	def __init__(self, event):
 		self.event = event
 
-	def Execute(self, c):
+	def execute(self, c):
 		bxt.types.EventBus().notify(self.event)
 
-class ActDebug:
+	def __str__(self):
+		return "ActEvent: %s" % self.event.message
+
+class ActDebug(BaseAct):
 	'''Print a debugging message to the console.'''
 	def __init__(self, message):
 		self.message = message
 
-	def Execute(self, c):
+	def execute(self, c):
 		print(self.message)
 
 #
@@ -195,12 +227,21 @@ class Step:
 	(see Character.NewStep()). When this step is at the front of the queue, its
 	actions will be executed when all conditions are true.'''
 
-	def __init__(self):
+	def __init__(self, name=""):
+		self.name = name
 		self.Conditions = []
 		self.Actions = []
 
 	def AddAction(self, action):
 		self.Actions.append(action)
+
+	def AddEvent(self, message, body):
+		evt = bxt.types.Event(message, body)
+		self.Actions.append(ActEvent(evt))
+
+	def AddWeakEvent(self, message, body):
+		evt = bxt.types.WeakEvent(message, body)
+		self.Actions.append(ActEvent(evt))
 
 	def AddCondition(self, cond):
 		self.Conditions.append(cond)
@@ -211,14 +252,18 @@ class Step:
 				return False
 		return True
 
-	def Execute(self, c):
+	def execute(self, c):
+		if self.name != "":
+			print("== Step {} ==".format(self.name))
+		else:
+			print("== Step ==")
 		for act in self.Actions:
 			try:
 				print(act)
-				act.Execute(c)
+				act.execute(c)
 			except Exception as e:
 				print("Warning: Action %s failed." % act)
-				print(e)
+				print("\t%s" % e)
 
 class Character(bxt.types.BX_GameObject):
 	'''Embodies a story in the scene. Subclass this to define the story
@@ -236,8 +281,8 @@ class Character(bxt.types.BX_GameObject):
 	def setCyclic(self, value):
 		self.Cyclic = value
 
-	def NewStep(self):
-		step = Step()
+	def NewStep(self, name=""):
+		step = Step(name)
 		self.Steps.append(step)
 		return step
 
@@ -253,9 +298,8 @@ class Character(bxt.types.BX_GameObject):
 				return
 
 		step = self.Steps[self.NextStep]
-		print(step)
 		if step.CanExecute(controller):
-			step.Execute(controller)
+			step.execute(controller)
 			self.NextStep = self.NextStep + 1
 
 	def CreateSteps(self):

@@ -28,10 +28,14 @@ from Scripts import shells
 class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
 		GameLevel.__init__(self, oldOwner)
-		self.dynload()
+		# Load additional files
+		self.load_foaliage()
+		self.load_npcs()
+		self.init_worm()
 
-	def dynload(self):
+	def load_foaliage(self):
 		'''Load extra files'''
+
 		if store.get('/opt/foliage', True):
 			try:
 				bge.logic.LibLoad('//OutdoorsGrass_compiled.blend', 'Scene',
@@ -41,6 +45,31 @@ class LevelOut(GameLevel):
 				evt = bxt.types.Event('ShowMessage',
 					'Could not load foliage. Try reinstalling the game.')
 				bxt.types.EventBus().notify(evt)
+
+	def load_npcs(self):
+		try:
+			bge.logic.LibLoad('//OutdoorsNPCLoader.blend', 'Scene',
+					load_actions=True)
+		except ValueError:
+			print('Could not load characters. Try reinstalling the game.')
+			evt = bxt.types.Event('ShowMessage',
+				'Could not load characters. Try reinstalling the game.')
+			bxt.types.EventBus().notify(evt)
+
+	def init_worm(self):
+		sce = bge.logic.getCurrentScene()
+		if not store.get('/game/level/wormMissionStarted', False):
+			sce.addObject("G_Worm", "WormSpawn")
+			bxt.math.copy_transform(sce.objects['WormSpawn'], sce.objects['Worm'])
+
+class TestLevelCargoHouse(LevelOut):
+	'''A level loader for Cargo's house - local testing only (not used by
+	Outdoors.blend)'''
+
+	def __init__(self, oldOwner):
+		GameLevel.__init__(self, oldOwner)
+		self.load_npcs()
+		self.init_worm()
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''
@@ -302,6 +331,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActAction('SodFade', 120, 200, 0, 'Sods'))
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('WormCamera_Converse'))
+		s.addAction(ActStoreSet('/game/level/wormMissionStarted', True))
 
 		#
 		# Clean up. At this point, the worm is completely hidden and the sods have faded.

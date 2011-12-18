@@ -102,6 +102,18 @@ class BaseAct:
 	def __str__(self):
 		return self.__class__.__name__
 
+class ActStoreSet(BaseAct):
+	'''Prevent the player from moving around.'''
+	def __init__(self, path, value):
+		self.path = path
+		self.value = value
+
+	def execute(self, c):
+		store.set(self.path, self.value)
+
+	def __str__(self):
+		return "ActStoreSet: %s" % self.ActuatorName
+
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
 	def execute(self, c):

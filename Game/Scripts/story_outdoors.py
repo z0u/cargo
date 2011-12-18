@@ -105,6 +105,23 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		self.create_state_graph()
 
 	def create_state_graph(self):
+		def letter_auto(c):
+			sce = bge.logic.getCurrentScene()
+			ob = sce.objects['Worm_Letter']
+			hook = c.owner.childrenRecursive['CargoHoldAuto']
+			ob.setParent(hook)
+			bxt.math.copy_transform(hook, ob)
+		def letter_manual(c):
+			sce = bge.logic.getCurrentScene()
+			ob = sce.objects['Worm_Letter']
+			hook = c.owner.childrenRecursive['CargoHoldManual']
+			ob.setParent(hook)
+			bxt.math.copy_transform(hook, ob)
+		def letter_hide(c):
+			sce = bge.logic.getCurrentScene()
+			ob = sce.objects['Worm_Letter']
+			ob.visible = False
+
 		def spray_dirt(c, number, maxSpeed):
 			o = c.sensors['sParticleHook'].owner
 			o['nParticles'] = o['nParticles'] + number
@@ -115,6 +132,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetCamera('WormCamera_Enter'))
 		s.addAction(ActShowDialogue("Press Return to start."))
 		s.addAction(ActAction('ParticleEmitMove', 1, 1, Worm.L_ANIM, "ParticleEmitterLoc"))
+		s.addAction(ActGenericContext(letter_manual))
 
 		#
 		# Peer out of ground
@@ -219,6 +237,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 265))
 		s.addAction(ActGenericContext(spray_dirt, 3, 7.0))
+		s.addAction(ActGenericContext(letter_auto))
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 275))
@@ -239,8 +258,12 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActAction('BurstOut_S', 290, 330, Worm.L_ANIM, 'WormBody'))
 
 		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 308))
+		s.addAction(ActGenericContext(letter_manual))
+
+		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 315))
-		s.addAction(ActActuate('aHideLetter'))
+		s.addAction(ActGenericContext(letter_hide))
 		s.addAction(ActShowDialogue("Is that OK?"))
 
 		#

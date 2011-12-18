@@ -44,7 +44,7 @@ class CondSensor(Condition):
 	def __init__(self, name):
 		self.Name = name
 
-	def Evaluate(self, c):
+	def evaluate(self, c):
 		s = c.sensors[self.Name]
 		return s.positive and s.triggered
 
@@ -55,7 +55,7 @@ class CondPropertyGE(Condition):
 		self.Name = name
 		self.Value = value
 
-	def Evaluate(self, c):
+	def evaluate(self, c):
 		return c.owner[self.Name] >= self.Value
 
 class CondActionGE(Condition):
@@ -63,7 +63,7 @@ class CondActionGE(Condition):
 		self.layer = layer
 		self.frame = frame
 
-	def Evaluate(self, c):
+	def evaluate(self, c):
 		return c.owner.getActionFrame(self.layer) >= self.frame
 
 class CondEvent(Condition):
@@ -86,7 +86,7 @@ class CondEvent(Condition):
 		if evt.message == self.message:
 			self.triggered = True
 
-	def Evaluate(self, c):
+	def evaluate(self, c):
 		return self.triggered
 
 #
@@ -120,38 +120,6 @@ class ActActuate(BaseAct):
 	def __str__(self):
 		return "ActActuate: %s" % self.ActuatorName
 
-class ActActionPair(BaseAct):
-	'''Play an armature action and an IPO at the same time.'''
-	def __init__(self, aArmName, aMeshName, actionPrefix, start, end, loop = False):
-		self.aArmName = aArmName
-		self.aMeshName = aMeshName
-		self.ActionPrefix = actionPrefix
-		self.start = start
-		self.End = end
-		self.Loop = loop
-
-	def execute(self, c):
-		aArm = c.actuators[self.aArmName]
-		aMesh = c.actuators[self.aMeshName]
-		aArm.action = self.ActionPrefix
-		aMesh.action = self.ActionPrefix + '_S'
-
-		aArm.frameStart = aMesh.frameStart = self.start
-		aArm.frameEnd = aMesh.frameEnd = self.End
-		aArm.frame = aMesh.frame = self.start
-
-		if self.Loop:
-			aArm.mode = aMesh.mode = bge.logic.KX_ACTIONACT_LOOPEND
-		else:
-			aArm.mode = aMesh.mode = bge.logic.KX_ACTIONACT_PLAY
-
-		c.activate(aArm)
-		c.activate(aMesh)
-
-	def __str__(self):
-		return "ActActionPair: %s, %d -> %d" % (self.ActionPrefix, self.start,
-				self.End)
-
 class ActAction(BaseAct):
 	def __init__(self, action, start, end, layer, targetDescendant=None,
 			play_mode=bge.logic.KX_ACTION_MODE_PLAY):
@@ -177,24 +145,21 @@ class ActShowDialogue(BaseAct):
 		self.message = message
 
 	def execute(self, c):
-		evt = bxt.types.Event('ShowDialogue', self.message)
-		bxt.types.EventBus().notify(evt)
+		bxt.types.Event('ShowDialogue', self.message).send()
 
 	def __str__(self):
 		return 'ActShowDialogue: "%s"' % self.message
 
 class ActHideDialogue(BaseAct):
 	def execute(self, c):
-		evt = bxt.types.Event('ShowDialogue', None)
-		bxt.types.EventBus().notify(evt)
+		bxt.types.Event('ShowDialogue', None).send()
 
 class ActShowMessage(BaseAct):
 	def __init__(self, message):
 		self.message = message
 
 	def execute(self, c):
-		evt = bxt.types.Event('ShowMessage', self.message)
-		bxt.types.EventBus().notify(evt)
+		bxt.types.Event('ShowMessage', self.message).send()
 
 	def __str__(self):
 		return 'ActShowMessage: "%s"' % self.message
@@ -272,68 +237,22 @@ class ActDestroy(BaseAct):
 	def execute(self, c):
 		c.owner.endObject()
 
-class ActDebug(BaseAct):
-	'''Print a debugging message to the console.'''
-	def __init__(self, message):
-		self.message = message
-
-	def execute(self, c):
-		print(self.message)
-
 #
 # Steps. These are executed by Characters when their conditions are met and they
 # are at the front of the queue.
 #
-class Step:
-	'''A collection of Conditions and Actions. This should be placed in a queue
-	(see Character.NewStep()). When this step is at the front of the queue, its
-	actions will be executed when all conditions are true.'''
-
-	def __init__(self, name=""):
-		self.name = name
-		self.Conditions = []
-		self.Actions = []
-		self.tested = False
-
-	def AddAction(self, action):
-		self.Actions.append(action)
-
-	def AddEvent(self, message, body):
-		evt = bxt.types.Event(message, body)
-		self.Actions.append(ActEvent(evt))
-
-	def AddWeakEvent(self, message, body):
-		evt = bxt.types.WeakEvent(message, body)
-		self.Actions.append(ActEvent(evt))
-
-	def AddCondition(self, cond):
-		self.Conditions.append(cond)
-
-	def CanExecute(self, c):
-		if not self.tested:
-			if self.name != "":
-				print("== Step {} ==".format(self.name))
-			else:
-				print("== Step ==")
-		self.tested = True
-
-		for condition in self.Conditions:
-			if not condition.Evaluate(c):
-				return False
-		return True
-
-	def execute(self, c):
-		for act in self.Actions:
-			try:
-				print(act)
-				act.execute(c)
-			except Exception as e:
-				print("Warning: Action %s failed." % act)
-				print("\t%s" % e)
-
-		self.tested = False
-
 class State:
+	'''These comprise state machines that may be used to drive a scripted
+	sequence, e.g. a dialogue with a non-player character.
+
+	A State may have links to other states; these links are called
+	'transitions'. When a State is active, its transitions will be polled
+	repeatedly. When a transitions' conditions all test positive, it will be
+	made the next active State. At that time, all actions associated with it
+	will be executed.
+
+	@see: Chapter'''
+
 	def __init__(self, name=""):
 		self.name = name
 		self.conditions = []
@@ -412,7 +331,7 @@ class State:
 	def test(self, c):
 		'''Check whether this state is ready to be transitioned to.'''
 		for condition in self.conditions:
-			if not condition.Evaluate(c):
+			if not condition.evaluate(c):
 				stdout.write("x")
 				return False
 			else:
@@ -421,46 +340,6 @@ class State:
 
 	def __str__(self):
 		return "== State {} ==".format(self.name)
-
-class Character(bxt.types.BX_GameObject):
-	'''Embodies a story in the scene. Subclass this to define the story
-	(override CreateSteps). Then call Progress on each frame to allow the steps
-	to be executed.'''
-
-	_prefix = ''
-
-	def __init__(self, old_owner):
-		self.NextStep = 0
-		self.Steps = []
-		self.CreateSteps()
-		self.setCyclic(False)
-
-	def setCyclic(self, value):
-		self.Cyclic = value
-
-	def NewStep(self, name=""):
-		step = Step(name)
-		self.Steps.append(step)
-		return step
-
-	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def Progress(self, controller):
-		if self.NextStep >= len(self.Steps):
-			if self.Cyclic:
-				# Loop.
-				self.NextStep = 0
-			else:
-				# Finished.
-				return
-
-		step = self.Steps[self.NextStep]
-		if step.CanExecute(controller):
-			step.execute(controller)
-			self.NextStep = self.NextStep + 1
-
-	def CreateSteps(self):
-		pass
 
 class Chapter(bxt.types.BX_GameObject):
 	'''Embodies a story in the scene. Subclass this to define the story

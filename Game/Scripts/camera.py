@@ -22,7 +22,7 @@ import weakref
 import bxt
 from . import ui, director, store
 
-DEBUG = False
+DEBUG = True
 log = bxt.utils.get_logger(DEBUG)
 
 def hasLineOfSight(ob, other):
@@ -444,6 +444,8 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			else:
 				self.marker = bxt.utils.add_object("PointMarker")
 				self.marker.color = bxt.render.BLUE
+				self.marker.visible = True
+				self.owner.visible = True
 
 			# It is an error to access these next two before calling update().
 			self.ceilingHeight = None
@@ -765,6 +767,14 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.pathHead.setCeilingHeight(marginMin(currentOffset,
 										self.pathHead.ceilingHeight,
 										self.ZOFFSET_INCREMENT))
+	def endObject(self):
+		for node in self.path:
+			node.destroy()
+		if DEBUG:
+			self.targetVis.endObject()
+			self.predictVis.endObject()
+		self.pathHead.destroy()
+		bge.types.KX_GameObject.endObject(self)
 
 #
 # Helper for sensing when camera is inside something.

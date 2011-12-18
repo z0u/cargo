@@ -22,7 +22,7 @@ import weakref
 import bxt
 from . import ui, director, store
 
-DEBUG = True
+DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
 
 def hasLineOfSight(ob, other):

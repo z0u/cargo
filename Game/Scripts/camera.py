@@ -23,6 +23,7 @@ import bxt
 from . import ui, director, store
 
 DEBUG = False
+log = bxt.utils.get_logger(DEBUG)
 
 def hasLineOfSight(ob, other):
 	hitOb, _, _ = bxt.math.ray_cast_p2p(other, ob, prop = 'Ray')
@@ -78,7 +79,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	@bxt.utils.owner_cls
 	def set_camera(self, camera):
 		'''Bind to a camera.'''
-		print('setting camera')
+		log('setting camera')
 		self.camera = camera
 		self.defaultLens = camera.lens
 		logic.getCurrentScene().active_camera = camera
@@ -99,6 +100,9 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if not self.camera:
 			return
 		currentGoal = None
+		if DEBUG:
+			log.write("\rCamera queue: {}".format(self.queue))
+			log.flush()
 		try:
 			currentGoal = self.queue.top()
 		except IndexError:

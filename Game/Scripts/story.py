@@ -27,6 +27,9 @@ from . import camera
 from . import director
 from . import store
 
+DEBUG = False
+log = bxt.utils.get_logger(DEBUG)
+
 GRAVITY = 75.0
 
 class StoryError(Exception):
@@ -305,37 +308,37 @@ class State:
 		'''Run all actions associated with this state.'''
 		for act in self.actions:
 			try:
-				print(act)
+				log(act)
 				act.execute(c)
 			except Exception as e:
-				print("Warning: Action %s failed." % act)
-				print("\t%s" % e)
+				log("Warning: Action %s failed." % act)
+				log("\t%s" % e)
 
 	def progress(self, c):
 		'''Find the next state that has all conditions met, or None if no such
 		state exists.'''
 		# Clear line
-		stdout.write("\r")
-		stdout.write("Transition: ")
+		log.write("\r")
+		log.write("Transition: ")
 		target = None
 		for state in self.transitions:
-			stdout.write("{}(".format(state.name))
+			log.write("{}(".format(state.name))
 			if state.test(c):
-				stdout.write(") ")
+				log.write(") ")
 				target = state
 				break
-			stdout.write(") ")
-		stdout.flush()
+			log.write(") ")
+		log.flush()
 		return target
 
 	def test(self, c):
 		'''Check whether this state is ready to be transitioned to.'''
 		for condition in self.conditions:
 			if not condition.evaluate(c):
-				stdout.write("x")
+				log.write("x")
 				return False
 			else:
-				stdout.write("o")
+				log.write("o")
 		return True
 
 	def __str__(self):
@@ -358,10 +361,10 @@ class Chapter(bxt.types.BX_GameObject):
 		if self.currentState != None:
 			nextState = self.currentState.progress(c)
 			if nextState != None:
-				print()
+				log()
 				self.currentState.deactivate()
 				self.currentState = nextState
-				print(self.currentState)
+				log(self.currentState)
 				self.currentState.activate(c)
 
 class Level(bxt.types.BX_GameObject, bge.types.KX_GameObject):

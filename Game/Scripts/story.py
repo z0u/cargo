@@ -35,7 +35,11 @@ class StoryError(Exception):
 #
 # Step progression conditions. These determine whether a step may execute.
 #
-class CondSensor:
+class Condition:
+	def enable(self, enabled):
+		pass
+
+class CondSensor(Condition):
 	'''Allow the story to progress when a particular sensor is true.'''
 	def __init__(self, name):
 		self.Name = name
@@ -44,7 +48,7 @@ class CondSensor:
 		s = c.sensors[self.Name]
 		return s.positive and s.triggered
 
-class CondPropertyGE:
+class CondPropertyGE(Condition):
 	'''Allow the story to progress when a property matches an inequality. In
 	this case, when the property is greater than or equal to the given value.'''
 	def __init__(self, name, value):
@@ -54,13 +58,36 @@ class CondPropertyGE:
 	def Evaluate(self, c):
 		return c.owner[self.Name] >= self.Value
 
-class CondActionGE:
+class CondActionGE(Condition):
 	def __init__(self, layer, frame):
 		self.layer = layer
 		self.frame = frame
 
 	def Evaluate(self, c):
 		return c.owner.getActionFrame(self.layer) >= self.frame
+
+class CondEvent(Condition):
+	def __init__(self, message):
+		self.message = message
+		self.triggered = False
+
+	def enable(self, enabled):
+		# This should not result in a memory leak, because the EventBus uses a
+		# WeakSet to store the listeners. Thus when the object that owns this
+		# state machine dies, so will this condition, and it will be removed
+		# from the EventBus.
+		if enabled:
+			bxt.types.EventBus().add_listener(self)
+		else:
+			bxt.types.EventBus().remove_listener(self)
+			self.triggered = False
+
+	def on_event(self, evt):
+		if evt.message == self.message:
+			self.triggered = True
+
+	def Evaluate(self, c):
+		return self.triggered
 
 #
 # Actions. These belong to and are executed by steps.
@@ -243,7 +270,7 @@ class ActEvent(BaseAct):
 class ActDestroy(BaseAct):
 	'''Remove the object from the scene.'''
 	def execute(self, c):
-		c.owner.EndObject()
+		c.owner.endObject()
 
 class ActDebug(BaseAct):
 	'''Print a debugging message to the console.'''
@@ -341,6 +368,19 @@ class State:
 		s = State(stateName)
 		self.transitions.append(s)
 		return s
+
+	def activate(self, c):
+		for state in self.transitions:
+			state.parent_activated(True)
+		self.execute(c)
+
+	def deactivate(self):
+		for state in self.transitions:
+			state.parent_activated(False)
+
+	def parent_activated(self, activated):
+		for condition in self.conditions:
+			condition.enable(activated)
 
 	def execute(self, c):
 		'''Run all actions associated with this state.'''
@@ -440,9 +480,10 @@ class Chapter(bxt.types.BX_GameObject):
 			nextState = self.currentState.progress(c)
 			if nextState != None:
 				print()
+				self.currentState.deactivate()
 				self.currentState = nextState
 				print(self.currentState)
-				self.currentState.execute(c)
+				self.currentState.activate(c)
 
 class Level(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Embodies a level. By default, this just sets some common settings when

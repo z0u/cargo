@@ -552,6 +552,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self['InShell'] = 1
 		self.shell.on_entered()
 
+		bxt.types.WeakEvent('ShellEntered', self).send()
+
 	def exit_shell(self, animate):
 		'''
 		Tries to make the snail exit the shell. If possible, control will be
@@ -601,6 +603,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.add_state(Snail.S_HASSHELL)
 		self.shell.on_post_exit()
+
+		bxt.types.WeakEvent('ShellExited', self).send()
 
 	def respawn(self, reason):
 		if self.has_state(Snail.S_INSHELL):

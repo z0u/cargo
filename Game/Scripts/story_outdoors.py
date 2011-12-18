@@ -114,6 +114,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addEvent("ForceEnterShell", False)
 		s.addAction(ActSetCamera('WormCamera_Enter'))
 		s.addAction(ActShowDialogue("Press Return to start."))
+		s.addAction(ActAction('ParticleEmitMove', 1, 1, Worm.L_ANIM, "ParticleEmitterLoc"))
 
 		#
 		# Peer out of ground
@@ -182,7 +183,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActHideDialogue())
 
 		s = s.createTransition("Chastise")
-		s.addCondition(CondSensor('sSnailAwake'))
+		s.addCondition(CondEvent('ShellExited'))
 		s.addAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
 
 		s = s.createTransition()
@@ -195,90 +196,95 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition("Dig up letter")
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
-		s.addAction(ActActuate('aParticleEmitMove'))
-		s.addAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 220.0, 280.0))
+		s.addAction(ActAction('ParticleEmitMove', 2, 2, Worm.L_ANIM, "ParticleEmitterLoc"))
+		s.addAction(ActAction('BurstOut', 220, 280, Worm.L_ANIM))
+		s.addAction(ActAction('BurstOut_S', 220, 280, Worm.L_ANIM, 'WormBody'))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 235))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 235))
 		s.addAction(ActGenericContext(spray_dirt, 3, 10.0))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 241))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 241))
 		s.addAction(ActGenericContext(spray_dirt, 3, 7.0))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 249))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 249))
 		s.addAction(ActGenericContext(spray_dirt, 3, 7.0))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 257))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 257))
 		s.addAction(ActGenericContext(spray_dirt, 3, 7.0))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 265))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 265))
 		s.addAction(ActGenericContext(spray_dirt, 3, 7.0))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 275.0))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 275))
 		s.addAction(ActSetCamera('WormCamera_Envelope'))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 280.0))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 279))
 		s.addAction(ActShowDialogue("Ta-da! Please deliver this letter for me."))
 
 		#
 		# Give letter
 		#
-		s.createTransition("Give letter")
+		s = s.createTransition("Give letter")
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
 		s.addAction(ActRemoveCamera('WormCamera_Envelope'))
-		s.addAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 290.0, 330.0))
+		s.addAction(ActAction('BurstOut', 290, 330, Worm.L_ANIM))
+		s.addAction(ActAction('BurstOut_S', 290, 330, Worm.L_ANIM, 'WormBody'))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 315.0))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 315))
 		s.addAction(ActActuate('aHideLetter'))
 		s.addAction(ActShowDialogue("Is that OK?"))
 
 		#
 		# Point to lighthouse
 		#
-		s.createTransition("Point to lighthouse")
+		s = s.createTransition("Point to lighthouse")
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActShowDialogue("Great! Please take it to the lighthouse keeper."))
-		s.addAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 330.0, 395.0))
+		s.addAction(ActAction('BurstOut', 330, 395, Worm.L_ANIM))
+		s.addAction(ActAction('BurstOut_S', 330, 395, Worm.L_ANIM, 'WormBody'))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 360.0))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 360))
 		s.addAction(ActSetCamera('WormCamera_Lighthouse'))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 395.0))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 394))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActRemoveCamera('WormCamera_Lighthouse'))
 		s.addAction(ActShowDialogue("See you later!"))
-		s.addAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 395.0, 420.0))
+		s.addAction(ActAction('BurstOut', 395, 420, Worm.L_ANIM))
+		s.addAction(ActAction('BurstOut_S', 395, 420, Worm.L_ANIM, 'WormBody'))
 
-		s.createTransition()
-		s.addCondition(CondPropertyGE('ActionFrame', 420.0))
+		s = s.createTransition()
+		s.addCondition(CondActionGE(Worm.L_ANIM, 420))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
-		s.addAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 420.0, 540.0))
+		s.addAction(ActAction('BurstOut', 420, 540, Worm.L_ANIM))
+		s.addAction(ActAction('BurstOut_S', 420, 540, Worm.L_ANIM, 'WormBody'))
 
 		#
 		# Return to game
 		#
-		s.createTransition("Return to game")
-		s.addCondition(CondPropertyGE('ActionFrame', 460.0))
-		s.addAction(ActActuate('aFadeSods'))
+		s = s.createTransition("Return to game")
+		s.addCondition(CondActionGE(Worm.L_ANIM, 460))
+		s.addAction(ActAction('SodFade', 120, 200, 0, 'Sods'))
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('WormCamera_Converse'))
 
 		#
 		# Clean up. At this point, the worm is completely hidden and the sods have faded.
 		#
-		s.createTransition("Clean up")
-		s.addCondition(CondPropertyGE('ActionFrame', 540.0))
+		s = s.createTransition("Clean up")
+		s.addCondition(CondActionGE(Worm.L_ANIM, 540))
 		s.addAction(ActDestroy())
 
 	def isInsideWorld(self):

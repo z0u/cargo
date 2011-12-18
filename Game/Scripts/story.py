@@ -238,6 +238,11 @@ class ActEvent(BaseAct):
 	def __str__(self):
 		return "ActEvent: %s" % self.event.message
 
+class ActDestroy(BaseAct):
+	'''Remove the object from the scene.'''
+	def execute(self, c):
+		c.owner.EndObject()
+
 class ActDebug(BaseAct):
 	'''Print a debugging message to the console.'''
 	def __init__(self, message):
@@ -299,6 +304,67 @@ class Step:
 
 		self.tested = False
 
+class State:
+	def __init__(self, name=""):
+		self.name = name
+		self.conditions = []
+		self.actions = []
+		self.transitions = []
+
+	def addCondition(self, condition):
+		'''Conditions control transition to this state.'''
+		self.conditions.append(condition)
+
+	def addAction(self, action):
+		'''Actions will run when this state becomes active.'''
+		self.actions.append(action)
+
+	def addEvent(self, message, body):
+		'''Convenience method to add an ActEvent action.'''
+		evt = bxt.types.Event(message, body)
+		self.actions.append(ActEvent(evt))
+
+	def addWeakEvent(self, message, body):
+		'''Convenience method to add an ActEvent action.'''
+		evt = bxt.types.WeakEvent(message, body)
+		self.actions.append(ActEvent(evt))
+
+	def addTransition(self, state):
+		'''Transitions are other states.'''
+		self.transitions.append(state)
+
+	def createTransition(self, stateName=""):
+		'''Create a new State and add it as a transition of this one.
+		@return: the new state.'''
+		s = State(stateName)
+		self.transitions.append(s)
+		return s
+
+	def execute(self, c):
+		'''Run all actions associated with this state.'''
+		for act in self.actions:
+			try:
+				print(act)
+				act.execute(c)
+			except Exception as e:
+				print("Warning: Action %s failed." % act)
+				print("\t%s" % e)
+
+	def progress(self, c):
+		'''Find the next state that has all conditions met, or None if no such
+		state exists.'''
+		for state in self.transitions:
+			if state.test(c):
+				return state
+		return None
+
+	def test(self, c):
+		'''Check whether this state is ready to be transitioned to.'''
+		for condition in self.conditions:
+			if not condition.Evaluate(c):
+				return False
+		return True
+
 class Character(bxt.types.BX_GameObject):
 	'''Embodies a story in the scene. Subclass this to define the story
 	(override CreateSteps). Then call Progress on each frame to allow the steps
@@ -338,6 +404,26 @@ class Character(bxt.types.BX_GameObject):
 
 	def CreateSteps(self):
 		pass
+
+class Chapter(bxt.types.BX_GameObject):
+	'''Embodies a story in the scene. Subclass this to define the story
+	(add transitions to self.rootState). Then call 'progress' on each frame to
+	allow the steps to be executed.'''
+
+	_prefix = ''
+
+	def __init__(self, old_owner):
+		self.rootState = State(name="Root")
+		self.currentState = self.rootState
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def progress(self, c):
+		if self.currentState != None:
+			nextState = self.currentState.progress(c)
+			if nextState != None:
+				self.currentState = nextState
+				self.currentState.execute(c)
 
 class Level(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Embodies a level. By default, this just sets some common settings when

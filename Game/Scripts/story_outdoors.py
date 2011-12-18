@@ -176,12 +176,12 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		#
 		# Wake / chastise
 		#	
-		s = s.createTransition("Wake / Chastise")
+		s = s.createTransition("Wake")
 		s.addCondition(CondActionGE(Worm.L_ANIM, 205.0))
 		s.addEvent("ForceExitShell", True)
 		s.addAction(ActHideDialogue())
 
-		s = s.createTransition()
+		s = s.createTransition("Chastise")
 		s.addCondition(CondSensor('sSnailAwake'))
 		s.addAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
 

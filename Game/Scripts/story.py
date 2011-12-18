@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from sys import stdout
+
 import bge
 import mathutils
 
@@ -216,7 +218,7 @@ class ActGeneric(BaseAct):
 			raise StoryError("Error executing " + str(self.Function), e)
 
 	def __str__(self):
-		return "ActGeneric: %s" % self.Function
+		return "ActGeneric: %s" % self.Function.__name__
 
 class ActGenericContext(ActGeneric):
 	'''Run any function, passing in the current controller as the first
@@ -353,17 +355,32 @@ class State:
 	def progress(self, c):
 		'''Find the next state that has all conditions met, or None if no such
 		state exists.'''
+		# Clear line
+		stdout.write("\r")
+		stdout.write("Transition: ")
+		target = None
 		for state in self.transitions:
+			stdout.write("{}(".format(state.name))
 			if state.test(c):
-				return state
-		return None
+				stdout.write(") ")
+				target = state
+				break
+			stdout.write(") ")
+		stdout.flush()
+		return target
 
 	def test(self, c):
 		'''Check whether this state is ready to be transitioned to.'''
 		for condition in self.conditions:
 			if not condition.Evaluate(c):
+				stdout.write("x")
 				return False
+			else:
+				stdout.write("o")
 		return True
+
+	def __str__(self):
+		return "== State {} ==".format(self.name)
 
 class Character(bxt.types.BX_GameObject):
 	'''Embodies a story in the scene. Subclass this to define the story
@@ -422,7 +439,9 @@ class Chapter(bxt.types.BX_GameObject):
 		if self.currentState != None:
 			nextState = self.currentState.progress(c)
 			if nextState != None:
+				print()
 				self.currentState = nextState
+				print(self.currentState)
 				self.currentState.execute(c)
 
 class Level(bxt.types.BX_GameObject, bge.types.KX_GameObject):

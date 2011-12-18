@@ -96,6 +96,9 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			light.color = bxt.math.lerp(light.color, targetCol, 0.1)
 
 class Worm(Character, bge.types.BL_ArmatureObject):
+	L_IDLE = 0
+	L_ANIM = 1
+
 	def __init__(self, old_owner):
 		Character.__init__(self, old_owner)
 		bxt.types.WeakEvent('StartLoading', self).send()
@@ -134,10 +137,11 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		step.AddAction(ActHideDialogue())
 		step.AddWeakEvent("FinishLoading", self)
 		step.AddAction(ActGenericContext(SprayDirt, 10, 15.0))
-		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 1.0, 75.0))
+		step.AddAction(ActAction('BurstOut', 1, 75, Worm.L_ANIM))
+		step.AddAction(ActAction('BurstOut_S', 1, 75, Worm.L_ANIM, 'WormBody'))
 
-		step = self.NewStep()
-		step.AddCondition(CondPropertyGE('ActionFrame', 75.0))
+		step = self.NewStep("Greet")
+		step.AddCondition(CondActionGE(Worm.L_ANIM, 74.0))
 		step.AddAction(ActShowDialogue("Cargo?"))
 
 		#
@@ -148,43 +152,47 @@ class Worm(Character, bge.types.BL_ArmatureObject):
 		step.AddAction(ActHideDialogue())
 		step.AddAction(ActRemoveCamera('WormCamera_Enter'))
 		step.AddAction(ActSetCamera('WormCamera_Converse'))
-		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 75.0, 186.0))
+		step.AddAction(ActAction('BurstOut', 75, 186, Worm.L_ANIM))
+		step.AddAction(ActAction('BurstOut_S', 75, 186, Worm.L_ANIM, 'WormBody'))
 
 		step = self.NewStep()
-		step.AddCondition(CondPropertyGE('ActionFrame', 115))
+		step.AddCondition(CondActionGE(Worm.L_ANIM, 115.0))
 		step.AddAction(ActGenericContext(SprayDirt, 3, 10.0))
 
 		step = self.NewStep()
-		step.AddCondition(CondPropertyGE('ActionFrame', 147))
+		step.AddCondition(CondActionGE(Worm.L_ANIM, 147.0))
 		step.AddAction(ActGenericContext(SprayDirt, 5, 10.0))
 
 		step = self.NewStep()
-		step.AddCondition(CondPropertyGE('ActionFrame', 153))
+		step.AddCondition(CondActionGE(Worm.L_ANIM, 153.0))
 		step.AddAction(ActGenericContext(SprayDirt, 5, 10.0))
 
 		#
 		# Knock on shell
 		#
 		step = self.NewStep("Knock on shell")
-		step.AddCondition(CondPropertyGE('ActionFrame', 185.0))
+		step.AddCondition(CondActionGE(Worm.L_ANIM, 185.0))
 		step.AddAction(ActSetCamera('WormCamera_Knock'))
 		step.AddAction(ActShowDialogue("Wake up, Cargo!"))
-		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 185.0, 198.0, True))
+		step.AddAction(ActAction('BurstOut', 185, 198, Worm.L_ANIM,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP))
+		step.AddAction(ActAction('BurstOut_S', 185, 198, Worm.L_ANIM, 'WormBody'))
 
 		step = self.NewStep()
 		step.AddCondition(CondSensor('sReturn'))
-		step.AddAction(ActActionPair('aArmature', 'aMesh', 'BurstOut', 185.0, 220.0))
+		step.AddAction(ActAction('BurstOut', 185, 220, Worm.L_ANIM))
+		step.AddAction(ActAction('BurstOut_S', 185, 220, Worm.L_ANIM, 'WormBody'))
 
 		step = self.NewStep()
-		step.AddCondition(CondPropertyGE('ActionFrame', 200.0))
+		step.AddCondition(CondActionGE(Worm.L_ANIM, 200.0))
 		step.AddAction(ActRemoveCamera('WormCamera_Knock'))
 
 		#
 		# Wake / chastise
 		#	
 		step = self.NewStep("Wake / Chastise")
-		step.AddCondition(CondPropertyGE('ActionFrame', 205.0))
-		step.AddAction(ActGenericContext(WakeSnail, True))
+		step.AddCondition(CondActionGE(Worm.L_ANIM, 205.0))
+		step.AddEvent("ForceExitShell", True)
 		step.AddAction(ActHideDialogue())
 
 		step = self.NewStep()

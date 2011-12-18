@@ -52,6 +52,14 @@ class CondPropertyGE:
 	def Evaluate(self, c):
 		return c.owner[self.Name] >= self.Value
 
+class CondActionGE:
+	def __init__(self, layer, frame):
+		self.layer = layer
+		self.frame = frame
+
+	def Evaluate(self, c):
+		return c.owner.getActionFrame(self.layer) >= self.frame
+
 #
 # Actions. These belong to and are executed by steps.
 #
@@ -114,6 +122,26 @@ class ActActionPair(BaseAct):
 	def __str__(self):
 		return "ActActionPair: %s, %d -> %d" % (self.ActionPrefix, self.start,
 				self.End)
+
+class ActAction(BaseAct):
+	def __init__(self, action, start, end, layer, targetDescendant=None,
+			play_mode=bge.logic.KX_ACTION_MODE_PLAY):
+		self.action = action
+		self.start = start
+		self.end = end
+		self.layer = layer
+		self.targetDescendant = targetDescendant
+		self.playMode = play_mode
+
+	def execute(self, c):
+		ob = c.owner
+		if self.targetDescendant != None:
+			ob = ob.childrenRecursive[self.targetDescendant]
+		ob.playAction(self.action, self.start, self.end, self.layer,
+			play_mode=self.playMode)
+
+	def __str__(self):
+		return "ActAction: %s, %d -> %d" % (self.action, self.start, self.end)
 
 class ActShowDialogue(BaseAct):
 	def __init__(self, message):
@@ -231,6 +259,7 @@ class Step:
 		self.name = name
 		self.Conditions = []
 		self.Actions = []
+		self.tested = False
 
 	def AddAction(self, action):
 		self.Actions.append(action)
@@ -247,16 +276,19 @@ class Step:
 		self.Conditions.append(cond)
 
 	def CanExecute(self, c):
+		if not self.tested:
+			if self.name != "":
+				print("== Step {} ==".format(self.name))
+			else:
+				print("== Step ==")
+		self.tested = True
+
 		for condition in self.Conditions:
 			if not condition.Evaluate(c):
 				return False
 		return True
 
 	def execute(self, c):
-		if self.name != "":
-			print("== Step {} ==".format(self.name))
-		else:
-			print("== Step ==")
 		for act in self.Actions:
 			try:
 				print(act)
@@ -264,6 +296,8 @@ class Step:
 			except Exception as e:
 				print("Warning: Action %s failed." % act)
 				print("\t%s" % e)
+
+		self.tested = False
 
 class Character(bxt.types.BX_GameObject):
 	'''Embodies a story in the scene. Subclass this to define the story

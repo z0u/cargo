@@ -159,6 +159,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = self.rootState.createTransition("Init")
 		s.addEvent("ForceEnterShell", False)
 		s.addAction(ActSetCamera('WormCamera_Enter'))
+		s.addAction(ActSetFocalPoint('CargoHoldAuto'))
 		s.addAction(ActShowDialogue("Press Return to start."))
 		s.addAction(ActAction('ParticleEmitMove', 1, 1, Worm.L_ANIM, "ParticleEmitterLoc"))
 		s.addAction(ActGenericContext(letter_manual))
@@ -307,11 +308,13 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 360))
 		s.addAction(ActSetCamera('WormCamera_Lighthouse'))
+		s.addAction(ActSetFocalPoint('Torch'))
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 394))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActRemoveCamera('WormCamera_Lighthouse'))
+		s.addAction(ActRemoveFocalPoint('Torch'))
 		s.addAction(ActShowDialogue("See you later!"))
 		s.addAction(ActAction('BurstOut', 395, 420, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 395, 420, Worm.L_ANIM, 'WormBody'))
@@ -331,6 +334,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActAction('SodFade', 120, 200, 0, 'Sods'))
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('WormCamera_Converse'))
+		s.addAction(ActRemoveFocalPoint('CargoHoldAuto'))
 		s.addAction(ActStoreSet('/game/level/wormMissionStarted', True))
 
 		#

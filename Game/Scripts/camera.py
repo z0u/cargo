@@ -59,6 +59,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		self.camera = None
 		self.defaultLens = 22.0
 		self.queue = bxt.types.GameObjectPriorityQueue()
+		self.focusQueue = bxt.types.GameObjectPriorityQueue()
 		self.lastGoal = None
 		self.instantCut = False
 		self.errorReported = False
@@ -148,8 +149,10 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		bxt.types.EventBus().notify(evt)
 
 	def _update_focal_depth(self):
-		focalPoint = director.Director().mainCharacter
-		if not focalPoint:
+		focalPoint = None
+		try:
+			focalPoint = self.focusQueue.top()
+		except IndexError:
 			return
 
 		cam = bge.logic.getCurrentScene().active_camera
@@ -202,6 +205,17 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 			self.update()
 
 		self.queue.discard(goal)
+
+	@bxt.types.expose
+	@bxt.utils.owner_cls
+	def add_focus_point(self, target):
+		bxt.utils.set_default_prop(target, 'FocusPriority', 1)
+		self.focusQueue.push(target, target['FocusPriority'])
+
+	@bxt.types.expose
+	@bxt.utils.owner_cls
+	def remove_focus_point(self, target):
+		self.focusQueue.discard(target)
 
 class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''Adds self as a goal when an attached sensor is touched by the main

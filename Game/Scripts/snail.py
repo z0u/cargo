@@ -105,6 +105,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		bxt.types.EventBus().notify(evt)
 		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
 		bxt.types.EventBus().notify(evt)
+		camera.AutoCamera().add_focus_point(self)
 
 	def load_items(self):
 		scene = bge.logic.getCurrentScene()

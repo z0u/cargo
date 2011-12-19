@@ -212,6 +212,39 @@ class ActRemoveCamera(BaseAct):
 	def __str__(self):
 		return "ActRemoveCamera: %s" % self.CamName
 
+class ActSetFocalPoint(BaseAct):
+	'''Focus on a named object.'''
+	def __init__(self, targetName):
+		self.targetName = targetName
+
+	def execute(self, c):
+		try:
+			target = bge.logic.getCurrentScene().objects[self.targetName]
+		except KeyError:
+			print(("Warning: couldn't find focus point %s. Not adding." %
+				self.targetName))
+			return
+		camera.AutoCamera().add_focus_point(target)
+
+	def __str__(self):
+		return "ActSetFocalPoint: %s" % self.targetName
+
+class ActRemoveFocalPoint(BaseAct):
+	def __init__(self, targetName):
+		self.targetName = targetName
+
+	def execute(self, c):
+		try:
+			target = bge.logic.getCurrentScene().objects[self.targetName]
+		except KeyError:
+			print(("Warning: couldn't find focus point %s. Not removing." %
+				self.targetName))
+			return
+		camera.AutoCamera().remove_focus_point(target)
+
+	def __str__(self):
+		return "ActRemoveFocalPoint: %s" % self.targetName
+
 class ActGeneric(BaseAct):
 	'''Run any function.'''
 	def __init__(self, f, *args):

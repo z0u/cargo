@@ -153,7 +153,9 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		try:
 			focalPoint = self.focusQueue.top()
 		except IndexError:
-			return
+			focalPoint = director.Director().mainCharacter
+			if focalPoint == None:
+				return
 
 		cam = bge.logic.getCurrentScene().active_camera
 
@@ -165,6 +167,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		depth = 1.0 - cam.near / z
 		cam['focalDepth'] = bxt.math.lerp(cam['focalDepth'], depth,
 				AutoCamera.FOCAL_FAC)
+
+		cam['blurRadius'] = cam['baseBlurRadius'] * (cam.lens / self.defaultLens)
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls

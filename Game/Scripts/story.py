@@ -19,6 +19,7 @@ from sys import stdout
 
 import bge
 import mathutils
+import aud
 
 import bxt
 
@@ -62,12 +63,35 @@ class CondPropertyGE(Condition):
 		return c.owner[self.Name] >= self.Value
 
 class CondActionGE(Condition):
-	def __init__(self, layer, frame):
+	def __init__(self, layer, frame, tap=False):
+		'''
+		@param layer: The animation layer to watch.
+		@param frame: The frame to trigger from.
+		@param tap: If True, the condition will only evaluate True once while
+			the current frame is increasing. If the current frame decreases (as
+			it may when an animation is looping) the condition will be reset,
+			and may trigger again.
+		'''
 		self.layer = layer
 		self.frame = frame
 
+		self.tap = tap
+		self.triggered = False
+		self.lastFrame = frame - 1
+
 	def evaluate(self, c):
-		return c.owner.getActionFrame(self.layer) >= self.frame
+		cfra = c.owner.getActionFrame(self.layer)
+		if not self.tap:
+			# Simple mode
+			return cfra >= self.frame
+		else:
+			# Memory (loop) mode
+			if self.lastFrame > cfra:
+				self.triggered = False
+			if not self.triggered and cfra >= self.frame:
+				self.triggered = True
+				return True
+			self.lastFrame = cfra
 
 class CondEvent(Condition):
 	def __init__(self, message):
@@ -103,16 +127,13 @@ class BaseAct:
 		return self.__class__.__name__
 
 class ActStoreSet(BaseAct):
-	'''Prevent the player from moving around.'''
+	'''Write to the save game file.'''
 	def __init__(self, path, value):
 		self.path = path
 		self.value = value
 
 	def execute(self, c):
 		store.set(self.path, self.value)
-
-	def __str__(self):
-		return "ActStoreSet: %s" % self.ActuatorName
 
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
@@ -154,6 +175,42 @@ class ActAction(BaseAct):
 
 	def __str__(self):
 		return "ActAction: %s, %d -> %d" % (self.action, self.start, self.end)
+
+class ActSound(BaseAct):
+	'''Plays a short sound.'''
+
+	def __init__(self, filename, vol=1, pitchmin=1, pitchmax=1, delay=0):
+		self.filename = bge.logic.expandPath(filename)
+		self.volume = vol
+		self.pitchmin = pitchmin
+		self.pitchmax = pitchmax
+		self.delay = delay
+		self._factory = None
+
+	def _get_factory(self):
+		if self._factory == None:
+			f = aud.Factory.file(self.filename)
+			if self.volume != 1:
+				f = f.volume(self.volume)
+			if self.delay > 0:
+				f = f.delay(self.delay)
+			self._factory = f
+		return self._factory
+	factory = property(_get_factory) 
+
+	def execute(self, c):
+		f = self.factory
+		if self.pitchmax != 1 or self.pitchmin != 1:
+			pitch = bxt.math.lerp(self.pitchmin, self.pitchmax,
+					bge.logic.getRandomFloat())
+			f = f.pitch(pitch)
+
+		# Play the sound, and throw away the handle.
+		dev = aud.device()
+		dev.play(f)
+
+	def __str__(self):
+		return "ActSound: %s" % self.filename
 
 class ActShowDialogue(BaseAct):
 	def __init__(self, message):
@@ -306,6 +363,7 @@ class State:
 		self.conditions = []
 		self.actions = []
 		self.transitions = []
+		self.subSteps = []
 
 	def addCondition(self, condition):
 		'''Conditions control transition to this state.'''
@@ -333,16 +391,28 @@ class State:
 		'''Create a new State and add it as a transition of this one.
 		@return: the new state.'''
 		s = State(stateName)
-		self.transitions.append(s)
+		self.addTransition(s)
+		return s
+
+	def addSubStep(self, state):
+		self.subSteps.append(state)
+
+	def createSubStep(self, stateName=""):
+		s = State(stateName)
+		self.addSubStep(s)
 		return s
 
 	def activate(self, c):
 		for state in self.transitions:
 			state.parent_activated(True)
+		for state in self.subSteps:
+			state.parent_activated(True)
 		self.execute(c)
 
 	def deactivate(self):
 		for state in self.transitions:
+			state.parent_activated(False)
+		for state in self.subSteps:
 			state.parent_activated(False)
 
 	def parent_activated(self, activated):
@@ -362,6 +432,10 @@ class State:
 	def progress(self, c):
 		'''Find the next state that has all conditions met, or None if no such
 		state exists.'''
+		for state in self.subSteps:
+			if state.test(c):
+				state.execute(c)
+
 		# Clear line
 		log.write("\r")
 		log.write("Transition: ")

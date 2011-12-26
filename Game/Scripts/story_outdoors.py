@@ -210,8 +210,13 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetCamera('WormCamera_Knock'))
 		s.addAction(ActShowDialogue("Wake up, Cargo!"))
 		s.addAction(ActAction('BurstOut', 185, 198, Worm.L_ANIM,
-			play_mode=bge.logic.KX_ACTION_MODE_LOOP))
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.addAction(ActAction('BurstOut_S', 185, 198, Worm.L_ANIM, 'WormBody'))
+
+		sKnock = s.createSubStep("Knock sound")
+		sKnock.addCondition(CondActionGE(Worm.L_ANIM, 187, tap=True))
+		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.8,
+				pitchmax= 1.1))
 
 		s = s.createTransition()
 		s.addCondition(CondSensor('sReturn'))

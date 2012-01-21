@@ -2,7 +2,8 @@
 *.pyc
 
 # Compiled assets
-*_compiled.blend
+OutdoorsBase_flowers.blend
+OutdoorsBase_grass.blend
 
 # IDE metadata
 .metadata

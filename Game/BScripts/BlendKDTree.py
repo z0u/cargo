@@ -206,7 +206,7 @@ class KDBranch(KDNode):
 		def dimension_key(ob):
 			return ob.location[self.axis]
 
-		os = objects.sort(key=dimension_key)
+		objects.sort(key=dimension_key)
 
 		#
 		# The median value is the location of the middle element on the current
@@ -313,7 +313,7 @@ class KDBranch(KDNode):
 		meshObs.append(ob)
 		posObs.append(ob)
 
-	def serialise_to_lod_tree(self, tBuf, indent, format):
+	def serialise_to_lod_tree(self, tBuf, indent, fmt):
 		'''
 		Serialise to an LODBranch.
 
@@ -323,12 +323,12 @@ class KDBranch(KDNode):
 
 		Several lines may be required to represent the new object. The last will
 		be an expression that returns an LODBranch, and will be formatted
-		according to the 'format' parameter (see below).
+		according to the 'fmt' parameter (see below).
 
 		Parameters:
 		tBuf:   The text buffer to write into (bpy.types.text).
 		indent: The spacing to insert at the start of each line (string).
-		format: Extra string formatting for the serialised object. This is used
+		fmt: Extra string formatting for the serialised object. This is used
 		        to assign the new object to a variable. (string)
 		'''
 		if not self.owner:
@@ -339,7 +339,7 @@ class KDBranch(KDNode):
 
 		obName = self.owner.name
 		expr = 'br(\'%s\',LQ.pop(),RQ.pop(),%d,%f)' % (obName, self.axis, self.medianValue)
-		tBuf.write(indent + (format % expr) + (' # %d' % self.depth)  + '\n')
+		tBuf.write(indent + (fmt % expr) + (' # %d' % self.depth)  + '\n')
 		self.tree.on_node_serialised(self)
 
 class KDLeaf(KDNode):
@@ -411,7 +411,7 @@ class KDLeaf(KDNode):
 
 		self.tree.on_cluster_created(self)
 
-	def serialise_to_lod_tree(self, tBuf, indent, format):
+	def serialise_to_lod_tree(self, tBuf, indent, fmt):
 		'''
 		Serialise to an LODLeaf.
 
@@ -420,12 +420,12 @@ class KDLeaf(KDNode):
 
 		Several lines may be required to represent the object. The last will be
 		an expression that returns an LODLeaf, and will be formatted according
-		to the 'format' parameter (see below).
+		to the 'fmt' parameter (see below).
 
 		Parameters:
 		tBuf:   The text buffer to write into (bpy.types.text).
 		indent: The spacing to insert at the start of each line (string).
-		format: Extra string formatting for the serialised object. This is used
+		fmt: Extra string formatting for the serialised object. This is used
 		        to assign the new object to a variable. (string)
 		'''
 		if len(self.serialisableObs) < len(self.obs):
@@ -436,7 +436,7 @@ class KDLeaf(KDNode):
 			elements.append(e.name)
 			e.select = True
 		expr = 'lf(%s)' % repr(elements)
-		tBuf.write(indent + (format % expr) + (' # %d' % self.depth)  + '\n')
+		tBuf.write(indent + (fmt % expr) + (' # %d' % self.depth)  + '\n')
 		self.tree.on_node_serialised(self)
 
 def parse_options():
@@ -451,7 +451,8 @@ def parse_options():
 
 	options = {}
 	try:
-		options['outfile'] = sys.argv[splitterIndex + 1]
+		options['sourceGroup'] = sys.argv[splitterIndex + 1]
+		options['outfile'] = sys.argv[splitterIndex + 2]
 	except IndexError:
 		raise Exception('Invalid arguments.')
 
@@ -467,36 +468,26 @@ def show_layers(layers=None):
 		for i in range(len(bpy.context.scene.layers)):
 			bpy.context.scene.layers[i] = i in layers
 
-def set_layers(object, layers=None):
+def set_layers(ob, layers=None):
 	'''Moves an object to the layers specified in a collection. If 'layers' is
 	None, the object will be moved to all layers.'''
 	if layers == None:
 		for i in range(len(bpy.context.scene.layers)):
-			object.layers[i] = True
+			ob.layers[i] = True
 	else:
 		for i in range(len(bpy.context.scene.layers)):
-			object.layers[i] = i in layers
+			ob.layers[i] = i in layers
 
-def make_lod_trees():
+def make_lod_tree(sourceGroup):
 	'''Create clusters and a serialised LOD tree from marked objects. To mark an
-	object as a source for an LOD tree, add two game properties to it:
-	 - LODDupli (any type), and
-	 - LODGroup (string; all derived objects will be added to a group with this
-	   name).'''
+	object as a source for an LOD tree, add it to the sourceGroup group.'''
 
 	show_layers()
 
-	def is_lodsource(ob):
-		return ('LODDupli' in ob.game.properties and
-			'LODGroup' in ob.game.properties)
-	sourceObs = {}
-	for sourceOb in bpy.context.scene.objects:
-		if not is_lodsource(sourceOb):
-			continue
-		groupName = sourceOb.game.properties['LODGroup'].value
-		if not groupName in sourceObs:
-			sourceObs[groupName] = []
-
+	sg = bpy.data.groups[sourceGroup]
+	targetGroup = "%s.o" % sourceGroup
+	dupliObs = []
+	for sourceOb in sg.objects:
 		# Make dupli-objects (e.g. particle instances) real, and select them.
 		bpy.ops.object.select_all(action='DESELECT')
 		bpy.context.scene.objects.active = sourceOb
@@ -505,22 +496,19 @@ def make_lod_trees():
 		sourceOb.select = False
 
 		# Make KD tree and clusters from duplicated objects.
-		sourceObs[groupName].extend(bpy.context.selected_objects)
+		dupliObs.extend(bpy.context.selected_objects)
 
-	trees = []
-	for groupName, lodObs in sourceObs.items():
-		print('Creating LOD tree "%s"' % groupName)
-		tree = KDTree(lodObs, groupName, groupName[0:2])
-		tree.create_cluster_hierarchy()
+	print('Creating LOD tree')
+	tree = KDTree(dupliObs, targetGroup, targetGroup[0:2])
+	tree.create_cluster_hierarchy()
 
-		# Serialise to text buffer.
-		tBuf = bpy.data.texts.new(name=tree.get_tbuf_name())
-		tree.serialise_to_lod_tree(tBuf)
-		trees.append(tree)
+	# Serialise to text buffer.
+	tBuf = bpy.data.texts.new(name=tree.get_tbuf_name())
+	tree.serialise_to_lod_tree(tBuf)
 
-		print('Tree created. Saved to text buffer %s.' % tBuf.name)
+	print('Tree created. Saved to text buffer %s.' % tBuf.name)
 
-	return trees
+	return tree
 
 def cleanup(keepGroups):
 	'''Delete all objects in the scene that aren't in one of the listed
@@ -538,7 +526,8 @@ def cleanup(keepGroups):
 			ob.select = True
 	bpy.ops.object.delete()
 
-	# Move the remaining objects to layer 2.
+	# Move the remaining objects to layer 2. This makes sure the tree is
+	# invisible in the game until bits of it are instantiated.
 	bpy.ops.object.select_all(action='DESELECT')
 	for ob in bpy.context.scene.objects:
 		ob.select = True
@@ -548,7 +537,7 @@ def cleanup(keepGroups):
 	# Show the first layer (i.e. the one with nothing on it).
 	show_layers((0,))
 
-def create_controller(trees):
+def create_controller(tree):
 	bpy.ops.object.add(type='EMPTY')
 	o = bpy.context.object
 	o.name = 'LODController'
@@ -568,13 +557,13 @@ def create_controller(trees):
 
 	# Several controllers, one to initialise each tree.
 	s = o.game.sensors['sOnce']
-	for tree in trees:
-		name = 'init' + tree.groupName
-		bpy.ops.logic.controller_add(type='PYTHON', name=name)
-		c = o.game.controllers[name]
-		c.mode = 'SCRIPT'
-		c.text = bpy.data.texts[tree.get_tbuf_name()]
-		s.link(c)
+
+	name = 'init' + tree.groupName
+	bpy.ops.logic.controller_add(type='PYTHON', name=name)
+	c = o.game.controllers[name]
+	c.mode = 'SCRIPT'
+	c.text = bpy.data.texts[tree.get_tbuf_name()]
+	s.link(c)
 
 def save_file(fileName):
 	print('Saving file to', fileName)
@@ -586,15 +575,14 @@ def save_file(fileName):
 if __name__ == '__main__':
 	try:
 		options = parse_options()
-		trees = make_lod_trees()
+		tree = make_lod_tree(options['sourceGroup'])
 		groups = []
-		for tree in trees:
-			if tree.groupName != None:
-				groups.append(tree.groupName)
+		if tree.groupName != None:
+			groups.append(tree.groupName)
 		cleanup(keepGroups=groups)
-		create_controller(trees)
+		create_controller(tree)
 		save_file(options['outfile'])
 	except Exception:
 		traceback.print_exc()
-		print('Usage:\n\tblender -P BScripts/BlendKDTree.py <infile.blend> -- <outfile.blend>')
+		print('Usage:\n\tblender -P BScripts/BlendKDTree.py <infile.blend> -- <sourceGroup> <outfile.blend>')
 		sys.exit(1)

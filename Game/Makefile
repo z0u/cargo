@@ -1,9 +1,14 @@
 all: foliage
 
-foliage: OutdoorsGrass_compiled.blend
+# Foliage is compiled: particle system object instances are made real, then
+# organised as a KD-tree. See BScripts/BlendKDTree.py
+foliage: OutdoorsBase_flowers.blend OutdoorsBase_grass.blend
 
-OutdoorsGrass_compiled.blend: OutdoorsGrass.blend OutdoorsBase.blend GrassBlade.blend BScripts/BlendKDTree.py
-	blender --factory-startup -b OutdoorsGrass.blend -P BScripts/BlendKDTree.py -- OutdoorsGrass_compiled.blend
+OutdoorsBase_grass.blend: OutdoorsBase.blend GrassBlade.blend BScripts/BlendKDTree.py
+	blender --factory-startup -b OutdoorsBase.blend -P BScripts/BlendKDTree.py -- Grass_LOD OutdoorsBase_grass.blend
+
+OutdoorsBase_flowers.blend: OutdoorsBase.blend GrassBlade.blend BScripts/BlendKDTree.py
+	blender --factory-startup -b OutdoorsBase.blend -P BScripts/BlendKDTree.py -- Flowers_LOD OutdoorsBase_flowers.blend
 
 SCRIPT_CACHE=bxt/*.pyc\
 	bxt/__pycache__\
@@ -14,8 +19,12 @@ SCRIPT_CACHE=bxt/*.pyc\
 	__pycache__\
 	*.pyc
 
-clean:
+clean: clean_backups clean_grass
+
+clean_backups:
 	rm -rf $(SCRIPT_CACHE)
 	rm -f *.blend?
-#	rm -f *_compiled.blend
+
+clean_grass:
+	rm -f OutdoorsBase_grass.blend OutdoorsBase_flowers.blend
 

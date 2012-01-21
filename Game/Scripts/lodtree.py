@@ -96,7 +96,7 @@ class LODManager(metaclass=bxt.types.Singleton):
 			self.remove_tree(t)
 
 		if DEBUG:
-			print('LOD tree: updated %d nodes.' % self.nodes_updated)
+			#print('LOD tree: updated %d nodes.' % self.nodes_updated)
 			currentObjects = set()
 			currentObjects.update(logic.getCurrentScene().objects)
 			newObjects = currentObjects.difference(self.currentObjects)

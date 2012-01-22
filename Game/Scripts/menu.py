@@ -44,23 +44,20 @@ class SessionManager(metaclass=bxt.types.Singleton):
 
 	def on_event(self, event):
 		if event.message == 'showSavedGameDetails':
+			# The session ID indicates which saved game is being used.
 			store.setSessionId(event.body)
 			evt = bxt.types.Event('showScreen', 'LoadDetailsScreen')
 			bxt.types.EventBus().notify(evt)
 
 		elif event.message == 'startGame':
 			# Show the loading screen and send another message to start the game
-			# in a couple of frames.
-			scene = bge.logic.getCurrentScene()
-			messageOwner = scene.objects['MenuController']
-			evt = bxt.types.WeakEvent('StartLoading', messageOwner)
-			bxt.types.EventBus().notify(evt)
+			# after the loading screen has shown.
+			cbEvent = bxt.types.Event('LoadLevel')
+			bxt.types.Event('ShowLoadingScreen', (True, cbEvent)).send()
 
-			evt = bxt.types.Event('reallyStartGame')
-			bxt.types.EventBus().notify(evt, 2)
-
-		elif event.message == 'reallyStartGame':
-			# Load the level indicated in the save game.
+		elif event.message == 'LoadLevel':
+			# Load the level indicated in the save game. This is called after
+			# the loading screen has been shown.
 			level = store.get('/game/levelFile', '//Outdoors.blend')
 			store.save()
 			bge.logic.startGame(level)
@@ -73,6 +70,10 @@ class SessionManager(metaclass=bxt.types.Singleton):
 			bxt.types.EventBus().notify(evt)
 
 		elif event.message == 'quit':
+			cbEvent = bxt.types.Event('reallyQuit')
+			bxt.types.Event('ShowLoadingScreen', (True, cbEvent)).send()
+
+		elif event.message == 'reallyQuit':
 			bge.logic.endGame()
 
 class InputHandler(metaclass=bxt.types.Singleton):

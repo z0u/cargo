@@ -31,11 +31,11 @@ class HUDState(metaclass=bxt.types.Singleton):
 	def on_event(self, evt):
 		if evt.message == "StartLoading":
 			self.loaders.add(evt.body)
-			bxt.types.Event("ShowLoadingScreen", True).send()
+			bxt.types.Event("ShowLoadingScreen", (True, None)).send()
 		elif evt.message == "FinishLoading":
 			self.loaders.discard(evt.body)
 			if len(self.loaders) == 0:
-				bxt.types.Event("ShowLoadingScreen", False).send()
+				bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 
 class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'MB_'
@@ -127,32 +127,54 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				bxt.types.Event("SuspendPlay").send()
 				self.show()
 
-class LoadingScreen(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = 'LS_'
-
-	S_SHOW = 2
-	S_HIDE = 3
 
 	L_DISPLAY = 0
 
 	def __init__(self, old_owner):
+		# Default state (frame 1) is for everything to be shown.
+		self.currently_shown = True
+
+		# Send an event to say that loading has finished. This will trigger the
+		# loading screen to hide itself, unless another object has already sent
+		# a StartLoading message - in which case, we wait for that object to
+		# finish loading too (see the HUDState class).
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.Event("FinishLoading").send()
 
 	def on_event(self, evt):
 		if evt.message == 'ShowLoadingScreen':
-			self.show(evt.body)
+			visible, cbEvent = evt.body
+			self.show(visible, cbEvent)
 
-	def show(self, visible):
-		if visible:
-			self.setVisible(True, True)
-			self.playAction('LoadingScreenHide', 1, 2, layer=LoadingScreen.L_DISPLAY)
-			self.setActionFrame(2, LoadingScreen.L_DISPLAY)
-		else:
+	def show(self, visible, cbEvent):
+		icon = self.children["LS_Icon"]
+		blackout = self.children["LS_Blackout"]
+
+		if visible and not self.currently_shown:
+			# Show the frame immediately, but wait for the animation to finish
+			# before showing the icon.
 			def cb():
-				self.setVisible(False, True)
-			self.playAction('LoadingScreenHide', 3, 8, layer=LoadingScreen.L_DISPLAY)
-			bxt.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 7, cb)
+				icon.visible = True
+				if cbEvent != None:
+					cbEvent.send(delay=1)
+			blackout.visible = True
+			self.playAction('LS_Hide_Arm', 16, 1, layer=LoadingScreen.L_DISPLAY)
+			bxt.anim.add_trigger_lt(self, LoadingScreen.L_DISPLAY, 2, cb)
+			self.currently_shown = True
+
+		elif not visible and self.currently_shown:
+			# Hide the icon immediately, but wait for the animation to finish
+			# before hiding the frame.
+			def cb():
+				blackout.visible = False
+				if cbEvent != None:
+					cbEvent.send(delay=1)
+			icon.visible = False
+			self.playAction('LS_Hide_Arm', 1, 16, layer=LoadingScreen.L_DISPLAY)
+			bxt.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)
+			self.currently_shown = False
 
 class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 1

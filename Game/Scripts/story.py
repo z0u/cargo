@@ -528,19 +528,22 @@ class GameLevel(Level):
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":
-			bge.logic.startGame(event.body)
+			# Listen for load events from portals.
+			level = store.get('/game/levelFile')
+			bge.logic.startGame(level)
 
 def load_level(caller, level, spawnPoint):
 	print('Loading next level: %s, %s' % (level, spawnPoint))
+
 	store.set('/game/levelFile', level)
 	store.set('/game/spawnPoint', spawnPoint)
 	store.save()
 
-	evt = bxt.types.WeakEvent('StartLoading', caller)
-	bxt.types.EventBus().notify(evt)
+	callback = bxt.types.Event('LoadLevel')
 
-	evt = bxt.types.Event('LoadLevel', level)
-	bxt.types.EventBus().notify(evt, 2)
+	# Start showing the loading screen. When it has finished, the LoadLevel
+	# event defined above will be sent, and received by GameLevel.
+	bxt.types.Event('ShowLoadingScreen', (True, callback)).send()
 
 def activate_portal(c):
 	'''Loads the next level, based on the properties of the owner.

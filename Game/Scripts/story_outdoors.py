@@ -368,6 +368,45 @@ def worm_knock_sound(c):
 	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):
 		bxt.sound.play_with_random_pitch(c)
 
+class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''Watches for Cargo's approach of the lighthouse, and creates the
+	lighthouse keeper in response.'''
+	_prefix = 'LH_'
+
+	def __init__(self, old_owner):
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, "ApproachLighthouse")
+
+		self.inLocality = False
+
+	def on_event(self, event):
+		if event.message == "ApproachLighthouse":
+			self.spawn_keeper()
+
+	def spawn_keeper(self):
+		sce = self.get_scene()
+		if "LighthouseKeeper" in sce.objects:
+			print("Warning: tried to create lighthouse keeper twice.")
+			return
+
+		obTemplate = sce.objectsInactive["G_LighthouseKeeper"]
+		spawnPoint = sce.objects["LighthouseKeeperSpawn"]
+		ob = sce.addObject(obTemplate, spawnPoint)
+		bxt.math.copy_transform(spawnPoint, ob)
+		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def touched(self, c):
+		if self.inLocality:
+			return
+
+		sCollision = c.sensors[0]
+		if director.Director().mainCharacter in sCollision.hitObjectList:
+			self.inLocality = True
+			cbEvent = bxt.types.Event("ApproachLighthouse")
+			bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+
 class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''
 

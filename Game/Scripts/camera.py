@@ -100,6 +100,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 
 		if not self.camera:
 			return
+
 		currentGoal = None
 		if DEBUG:
 			log.write("\rCamera queue: {}".format(self.queue))
@@ -118,8 +119,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if not self.instantCut:
 			# ... but if there's an object in the way, teleport to the nearest
 			# safe position.
-			ob, hitPoint, _ = bxt.math.ray_cast_p2p(currentGoal, self.camera,
-					prop = 'Ray')
+			ob, hitPoint, _ = self.camera.rayCast(currentGoal, self.camera, 0.0,
+				'Ray', True, True, False)
 			if ob != None:
 				vectTo = hitPoint - currentGoal.worldPosition
 				vectTo *= AutoCamera.COLLISION_BIAS

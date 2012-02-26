@@ -23,7 +23,7 @@ import mathutils
 import bxt.types
 import bxt.utils
 
-DEBUG = True
+DEBUG = False
 
 class Actor(bxt.types.BX_GameObject):
 	'''Actors are generally mobile objects. They can receive movement impulses,

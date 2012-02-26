@@ -28,6 +28,8 @@ from . import director
 from . import inventory
 from Scripts import store, shells, camera
 
+DEBUG = False
+
 class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
 
@@ -119,8 +121,15 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		shellName = inventory.Shells().get_equipped()
 		if shellName != None:
-			shell = bxt.types.add_and_mutate_object(scene, shellName, self)
+			shell = bxt.types.add_and_mutate_object(scene, shellName, shellName)
 			self.equip_shell(shell, False)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def debug_collisions(self, c):
+		if not DEBUG:
+			return
+		print(c.sensors[0].hitObjectList)
 
 	@bxt.types.expose
 	def update(self):

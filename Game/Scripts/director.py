@@ -23,6 +23,8 @@ import mathutils
 import bxt.types
 import bxt.utils
 
+DEBUG = True
+
 class Actor(bxt.types.BX_GameObject):
 	'''Actors are generally mobile objects. They can receive movement impulses,
 	and can float (and drown!) in water.'''
@@ -45,6 +47,10 @@ class Actor(bxt.types.BX_GameObject):
 		object touches a safe point.'''
 		self.safePosition = self.worldPosition.copy()
 		self.safeOrientation = self.worldOrientation.copy()
+
+	def inherit_safe_location(self, otherActor):
+		self.safePosition = otherActor.safePosition
+		self.safeOrientation = otherActor.safeOrientation
 
 	def respawn(self, reason = None):
 		self.worldPosition = self.safePosition
@@ -102,49 +108,37 @@ class Actor(bxt.types.BX_GameObject):
 		foundGround = False
 		outsideGround = True
 
-		# First, look up.
 		origin = self.worldPosition.copy()
-		vec = bxt.math.ZAXIS.copy()
-		through = origin + vec
-		ob, _, normal = self.rayCast(
-			through,             # to
-			origin,              # from
-			Actor.SANITY_RAY_LENGTH,   # dist
-			'Ground',            # prop
-			1,                   # face
-			1                    # xray
-		)
+		def cast_for_ground(vec):
+			through = origin + vec
+			ob, _, normal = self.rayCast(
+				through,             # to
+				origin,              # from
+				Actor.SANITY_RAY_LENGTH,   # dist
+				'Ground',            # prop
+				1,                   # face
+				1                    # xray
+			)
+			if ob != None:
+				if "TwoSided" in ob:
+					return True
+				elif normal.dot(vec) <= 0.0:
+					# Hit was from outside.
+					return True
+			return False
 
-		if ob != None:
-			# Found some ground. Are we outside of it?
-			foundGround = True
-			if ob:
-				if not 'TwoSided' in ob and normal.dot(vec) > 0.0:
-					# Hit was from inside.
-					outsideGround = False
+		# Cast a ray down. If it fails, try again with a small offset - due to
+		# numerical error, it is possible for the ray to glance off an edge from
+		# the outside and report itself as having hit from the inside.
 
-		# Now look down.
-		vec = bxt.math.ZAXIS.copy()
-		vec.negate()
-		through = origin + vec
-		ob, _, normal = self.rayCast(
-			through,             # to
-			origin,              # from
-			Actor.SANITY_RAY_LENGTH,   # dist
-			'Ground',            # prop
-			1,                   # face
-			1                    # xray
-		)
-
-		if ob != None:
-			# Found some ground. Are we outside of it?
-			foundGround = True
-			if (ob):
-				if normal.dot(vec) > 0.0:
-					# Hit was from inside.
-					outsideGround = False
-
-		return foundGround and outsideGround
+		# First, look up.
+		vecTo = mathutils.Vector((0.0, 0.0, -1.0))
+		if cast_for_ground(vecTo):
+			return True
+		else:
+			vecTo.x = 0.1
+			vecTo.y = 0.1
+			return cast_for_ground(vecTo)
 
 	def get_camera_tracking_point(self):
 		return self
@@ -288,7 +282,14 @@ class Director(metaclass=bxt.types.Singleton):
 		'''Make sure all actors are within the world.'''
 		for actor in self.actors:
 			if not actor.is_inside_world():
-				actor.respawn("Ouch! You got squashed.")
+				if DEBUG:
+					bge.logic.getCurrentScene().suspend()
+					print("Actor %s was outside world." % actor.name)
+					print("Loc:", actor.worldPosition)
+					print("Vel:", actor.worldLinearVelocity)
+					print("PrevVel:", actor.lastLinV)
+				else:
+					actor.respawn("Ouch! You got squashed.")
 			actor.record_velocity()
 
 	@bxt.types.expose

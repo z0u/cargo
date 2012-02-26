@@ -117,7 +117,7 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 	def save_location(self):
 		super(ShellBase, self).save_location()
 		if self.snail != None:
-			self.snail.save_location()
+			self.snail.inherit_safe_location(self)
 
 	def respawn(self, reason = None):
 		if self.is_occupied():

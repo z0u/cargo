@@ -111,7 +111,8 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.lights.append(ob)
 		self.lights.sort(key=bxt.math.DistanceKey(self))
 
-		self.cols = list(map(lambda x: x.color.copy(), self.lights))
+		self.cols = list(map(
+				lambda x: bxt.render.parse_colour(x["colour"]), self.lights))
 		self.targetCols = list(self.cols)
 		self.targetLampCol = bxt.render.BLACK.copy()
 
@@ -123,10 +124,11 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		for i, col in enumerate(self.cols):
 			target = None
 			if (i % stringLen) == self.step:
-				target = col * 1.2
+				target = col * 2.0
 				self.targetLampCol += col
 			else:
-				target = col * 0.3
+				target = col * 0.2
+				target.w = 1.0
 			self.targetCols[i] = target
 
 	@bxt.types.expose
@@ -428,12 +430,12 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		the door should be shut; otherwise, the SauceBar level should be loaded.
 		'''
 
-		inner = c.sensors['sDoorInner']
-		outer = c.sensors['sDoorOuter']
+		door = c.sensors['sDoor']
+		safety = c.sensors['sSafetyZone']
 
 		mainChar = director.Director().mainCharacter
 
-		for ob in outer.hitObjectList:
+		for ob in door.hitObjectList:
 			if not ob == mainChar:
 				# Only the main character can enter
 				self.eject(ob)
@@ -447,31 +449,50 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 						"to drop your shell.")
 				bxt.types.EventBus().notify(evt)
 
-		if (mainChar in inner.hitObjectList and
-				not mainChar in outer.hitObjectList):
+		if self.snailInside:
+			# Check to see if the snail is exiting.
+			if not mainChar in safety.hitObjectList:
+				print("Exiting because snail not in safety.")
+				self.transition(False)
+			elif mainChar in door.hitObjectList:
+				print("Exiting because snail touched door.")
+				self.transition(False)
+		else:
+			if mainChar in door.hitObjectList:
+				print("Entering because snail touched door.")
+				self.transition(True)
+
+	def transition(self, isEntering):
+		if isEntering:
 			store.set('/game/spawnPoint', 'SpawnBottle')
 			self.open_window(True)
-			camera.AutoCamera().add_goal(self.children['BottleCamera'])
-			self.snailInside = True
-		elif (mainChar in outer.hitObjectList and
-				not mainChar in inner.hitObjectList):
-			self.open_window(False)
-			camera.AutoCamera().remove_goal(self.children['BottleCamera'])
 
-			if self.snailInside:
-				# Transitioning to outside; move camera to sensible location.
-				cam = self.childrenRecursive['B_DoorCamera']
-				transform = (cam.worldPosition, cam.worldOrientation)
-				bxt.types.Event('RelocatePlayerCamera', transform).send()
-			self.snailInside = False
+			relocPoint = self.children['SpawnBottleInner']
+			transform = (relocPoint.worldPosition, relocPoint.worldOrientation)
+			bxt.types.Event('RelocatePlayer', transform).send()
+
+			camera.AutoCamera().add_goal(self.children['BottleCamera'])
+		else:
+			# Transitioning to outside; move camera to sensible location.
+			self.open_window(False)
+
+			relocPoint = self.children['SpawnBottle']
+			transform = (relocPoint.worldPosition, relocPoint.worldOrientation)
+			bxt.types.Event('RelocatePlayer', transform).send()
+
+			camera.AutoCamera().remove_goal(self.children['BottleCamera'])
+			cam = self.childrenRecursive['B_DoorCamera']
+			transform = (cam.worldPosition, cam.worldOrientation)
+			bxt.types.Event('RelocatePlayerCamera', transform).send()
+		self.snailInside = isEntering
 
 	def eject(self, ob):
-		direction = self.children['B_DoorOuter'].getAxisVect(bxt.math.ZAXIS)
+		direction = self.children['B_Door'].getAxisVect(bxt.math.ZAXIS)
 		ob.worldPosition += direction
 
-	def open_window(self, open):
+	def open_window(self, isOpening):
 		sce = bge.logic.getCurrentScene()
-		if open:
+		if isOpening:
 			# Create bar interior; destroy exterior (so it doesn't get in the
 			# way when crawling).
 			if not 'B_Inner' in sce.objects:
@@ -484,8 +505,8 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				sce.objects['B_Inner'].endObject()
 			if not 'B_Outer' in sce.objects:
 				sce.addObject('B_Outer', self)
-		self.children['B_Rock'].visible = not open
-		self.children['B_SoilCrossSection'].visible = open
+		self.children['B_Rock'].visible = not isOpening
+		self.children['B_SoilCrossSection'].visible = isOpening
 
 class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):

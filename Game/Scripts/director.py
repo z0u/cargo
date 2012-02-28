@@ -52,6 +52,10 @@ class Actor(bxt.types.BX_GameObject):
 		self.safePosition = otherActor.safePosition
 		self.safeOrientation = otherActor.safeOrientation
 
+	def relocate(self, pos, rot):
+		self.worldPosition = pos
+		self.worldOrientation = rot
+
 	def respawn(self, reason = None):
 		self.worldPosition = self.safePosition
 		self.worldOrientation = self.safeOrientation
@@ -276,6 +280,10 @@ class Director(metaclass=bxt.types.Singleton):
 			self.mainCharacter = event.body
 		elif event.message == 'SuspendInput':
 			self.inputSuspended = event.body
+		elif event.message == 'RelocatePlayer':
+			if self.mainCharacter is not None:
+				pos, rot = event.body
+				self.mainCharacter.relocate(pos, rot)
 
 	@bxt.types.expose
 	def update(self):

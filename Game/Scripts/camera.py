@@ -334,10 +334,11 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		self.reset = False
 
-		# These can't be computed from the current state: they become smaller
-		# when going over a convex surface.
-		self.distUp = 3.0
-		self.distBack = 3.0
+		# These must be members. This information can't be computed from the
+		# current state of the frame: they would become smaller when going over
+		# a convex surface.
+		self.distUp = None
+		self.distBack = None
 
 		self.alignment = None
 
@@ -362,6 +363,16 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.reset = False
 		else:
 			fwdDir, upDir = self.alignment.get_axes(self, target)
+
+		if self.distUp is None:
+			# The first time this is run (after creation), distUp and distBack
+			# are not known - so calculate them. On subsequent frames, the
+			# cached values will be used.
+			relPos = self.worldPosition - target.worldPosition
+			relUpPos = relPos.project(upDir)
+			relFwdPos = relPos - relUpPos
+			self.distUp = relUpPos.magnitude
+			self.distBack = relFwdPos.magnitude
 
 		# Look for the ceiling above the target.
 		upPos, self.distUp = self.cast_ray(target.worldPosition, upDir,

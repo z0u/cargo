@@ -291,7 +291,6 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	ZALIGN_FAC = 0.025
 
 	def __init__(self, old_owner):
-		self.upDir = None
 		self.reset = False
 		AutoCamera().add_goal(self)
 		bxt.types.EventBus().add_listener(self)
@@ -308,7 +307,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		fwdDir, distFwd, upDir, distUp = self.get_alignment_axes(target)
 
 		# Look for the ceiling above the target.
-		upPos = self.cast_ray(target.worldPosition, upDir.normalized(),
+		upPos = self.cast_ray(target.worldPosition, upDir,
 				distUp, OrbitCamera.UP_DIST)
 
 		# If the user requested a reset, apply it now: move the camera directly
@@ -319,7 +318,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		# Search backwards for a wall.
 		backDir = fwdDir.copy()
-		backPos = self.cast_ray(upPos, backDir.normalized(), distFwd,
+		backPos = self.cast_ray(upPos, backDir, distFwd,
 				OrbitCamera.BACK_DIST)
 		self.worldPosition = backPos
 		self.worldLinearVelocity = (0, 0, 0.0001)
@@ -342,12 +341,12 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		upDir = vectTo.project(rawUpDir)
 		fwdDir = vectTo - upDir
 
-		upDist = upDir.magnitude
-		fwdDist = fwdDir.magnitude
-		upDir.normalize()
+		upDist = max(upDir.magnitude, 3.0)
+		fwdDist = max(fwdDir.magnitude, 3.0)
+#		upDir.normalize()
 		fwdDir.normalize()
 
-		return fwdDir, fwdDist, upDir, upDist
+		return fwdDir, fwdDist, rawUpDir, upDist
 
 	def cast_ray(self, origin, direction, lastDist, maxDist):
 		through = origin + direction

@@ -58,18 +58,18 @@ def BendLeaf(c):
 		totalInfluence = totalInfluence * o['InfluenceMultiplier']
 
 		bendAngle = o['RestAngle'] + totalInfluence * o['MaxAngle']
-		bendAngle = bxt.math.clamp(o['MinAngle'], o['MaxAngle'], bendAngle)
-		targetCol = bxt.math.clamp(0.0, 1.0, 1.0 - totalInfluence)
+		bendAngle = bxt.bmath.clamp(o['MinAngle'], o['MaxAngle'], bendAngle)
+		targetCol = bxt.bmath.clamp(0.0, 1.0, 1.0 - totalInfluence)
 	else:
 		bendAngle = o['RestAngle']
 
 	#
 	# Interpolate to target angle.
 	#
-	o['CurrentDelta'], o['BendAngle'] = bxt.math.smerp(o['CurrentDelta'],
+	o['CurrentDelta'], o['BendAngle'] = bxt.bmath.smerp(o['CurrentDelta'],
 		o['BendAngle'], bendAngle, o['SpeedFactor'], o['Responsiveness'])
 	currentCol = o.children['BendyLeafSkin'].color.y
-	currentCol = bxt.math.lerp(currentCol, targetCol, o['SpeedFactor'])
+	currentCol = bxt.bmath.lerp(currentCol, targetCol, o['SpeedFactor'])
 	o.children['BendyLeafSkin'].color.y = currentCol
 	o.children['BendyLeafSkin'].color.z = currentCol
 

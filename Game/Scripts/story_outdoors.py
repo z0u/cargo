@@ -70,7 +70,7 @@ class LevelOut(GameLevel):
 		sce = bge.logic.getCurrentScene()
 		if not store.get('/game/level/wormMissionStarted', False):
 			sce.addObject("G_Worm", "WormSpawn")
-			bxt.math.copy_transform(sce.objects['WormSpawn'], sce.objects['Worm'])
+			bxt.bmath.copy_transform(sce.objects['WormSpawn'], sce.objects['Worm'])
 
 class TestLevelCargoHouse(LevelOut):
 	'''A level loader for Cargo's house - local testing only (not used by
@@ -109,7 +109,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.lights = []
 		for ob in self.children:
 			self.lights.append(ob)
-		self.lights.sort(key=bxt.math.DistanceKey(self))
+		self.lights.sort(key=bxt.bmath.DistanceKey(self))
 
 		self.cols = list(map(
 				lambda x: bxt.render.parse_colour(x["colour"]), self.lights))
@@ -134,7 +134,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	@bxt.types.expose
 	def update(self):
 		for light, targetCol in zip(self.lights, self.targetCols):
-			light.color = bxt.math.lerp(light.color, targetCol, 0.1)
+			light.color = bxt.bmath.lerp(light.color, targetCol, 0.1)
 
 class Worm(Chapter, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
@@ -151,13 +151,13 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 			ob = sce.objects['Worm_Letter']
 			hook = c.owner.childrenRecursive['CargoHoldAuto']
 			ob.setParent(hook)
-			bxt.math.copy_transform(hook, ob)
+			bxt.bmath.copy_transform(hook, ob)
 		def letter_manual(c):
 			sce = bge.logic.getCurrentScene()
 			ob = sce.objects['Worm_Letter']
 			hook = c.owner.childrenRecursive['CargoHoldManual']
 			ob.setParent(hook)
-			bxt.math.copy_transform(hook, ob)
+			bxt.bmath.copy_transform(hook, ob)
 		def letter_hide(c):
 			sce = bge.logic.getCurrentScene()
 			ob = sce.objects['Worm_Letter']
@@ -394,7 +394,7 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		obTemplate = sce.objectsInactive["G_LighthouseKeeper"]
 		spawnPoint = sce.objects["LighthouseKeeperSpawn"]
 		ob = sce.addObject(obTemplate, spawnPoint)
-		bxt.math.copy_transform(spawnPoint, ob)
+		bxt.bmath.copy_transform(spawnPoint, ob)
 		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 
 	@bxt.types.expose
@@ -487,7 +487,7 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.snailInside = isEntering
 
 	def eject(self, ob):
-		direction = self.children['B_Door'].getAxisVect(bxt.math.ZAXIS)
+		direction = self.children['B_Door'].getAxisVect(bxt.bmath.ZAXIS)
 		ob.worldPosition += direction
 
 	def open_window(self, isOpening):

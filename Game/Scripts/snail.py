@@ -15,8 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import math
-
 import mathutils
 import bge
 from bge import render
@@ -140,7 +138,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
 		counter = bxt.types.Counter()
-		avNormal = bxt.math.ZEROVEC.copy()
+		avNormal = bxt.bmath.ZEROVEC.copy()
 		ob0, p0, n0 = self.children['ArcRay_Root.0'].getHitPosition()
 		if ob0:
 			avNormal += n0
@@ -167,8 +165,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self.touchedObject = counter.mode
 		if self.touchedObject != None:
 			angV = self.touchedObject.getAngularVelocity()
-			if angV.magnitude < bxt.math.EPSILON:
-				angV = bxt.math.MINVECTOR
+			if angV.magnitude < bxt.bmath.EPSILON:
+				angV = bxt.bmath.MINVECTOR
 			self.setAngularVelocity(angV)
 
 		#
@@ -190,7 +188,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			# smoother transition than just averaging the normals returned by the
 			# rays. Rays that didn't hit will use their last known value.
 			#
-			normal = bxt.math.quadNormal(p0, p1, p2, p3)
+			normal = bxt.bmath.quadNormal(p0, p1, p2, p3)
 			if normal.dot(avNormal) < 0.0:
 				normal.negate()
 			self.alignAxisToVect(normal, 2)
@@ -214,14 +212,14 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		fulcrum = pivot.children['Fulcrum_%s.%d' % (name, i)]
 		segment = pivot.children['%s.%d' % (name, i)]
 
-		segment.alignAxisToVect(pivot.getAxisVect(bxt.math.XAXIS), 0)
+		segment.alignAxisToVect(pivot.getAxisVect(bxt.bmath.XAXIS), 0)
 
 		_, p1, _ = rayR.getHitPosition()
 		_, p2, _ = rayL.getHitPosition()
 		p3 = fulcrum.worldPosition
-		normal = bxt.math.triangleNormal(p1, p2, p3)
+		normal = bxt.bmath.triangleNormal(p1, p2, p3)
 
-		if normal.dot(pivot.getAxisVect(bxt.math.ZAXIS)) > 0.0:
+		if normal.dot(pivot.getAxisVect(bxt.bmath.ZAXIS)) > 0.0:
 			#
 			# Normal is within 90 degrees of parent's normal -> segment not
 			# doubling back on itself.
@@ -264,9 +262,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			restLength = self['EyeRestLen']
 			channel = self.armature.channels[eyeRayOb['channel']]
 
-			vect = eyeRayOb.getAxisVect(bxt.math.ZAXIS) * restLength
+			vect = eyeRayOb.getAxisVect(bxt.bmath.ZAXIS) * restLength
 			through = eyeRayOb.worldPosition + vect
-			hitOb, hitPos, _ = bxt.math.ray_cast_p2p(through, eyeRayOb,
+			hitOb, hitPos, _ = bxt.bmath.ray_cast_p2p(through, eyeRayOb,
 					prop = 'Ground')
 
 			targetLength = vect.magnitude
@@ -279,7 +277,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			if (currentProportion >= targetProportion):
 				targetProportion *= 0.5
 			else:
-				targetProportion = bxt.math.lerp(currentProportion,
+				targetProportion = bxt.bmath.lerp(currentProportion,
 						targetProportion, self['EyeLenFac'])
 
 			channel.scale = (1.0, targetProportion, 1.0)
@@ -299,7 +297,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		def look_single(eye, target):
 			channel = self.armature.channels[eye['channel']]
 			_, gVec, _ = eye.getVectTo(target)
-			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.math.ZAXIS), 2)
+			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.bmath.ZAXIS), 2)
 			eye.alignAxisToVect(gVec, 1)
 			orn = eye.localOrientation.to_quaternion()
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
@@ -350,15 +348,15 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		if targetScale > 1:
 			targetScale = 1
 		scale = self.cargoHold.localScale.x
-		scale = bxt.math.lerp(scale, targetScale, Snail.SHELL_SCALE_FAC)
+		scale = bxt.bmath.lerp(scale, targetScale, Snail.SHELL_SCALE_FAC)
 		self.cargoHold.localScale = (scale, scale, scale)
 
 	def _stow_shell(self, shell):
 		shell.localScale = (1.0, 1.0, 1.0)
 		self.cargoHold.localScale = (1.0, 1.0, 1.0)
 		referential = shell.cargoHook
-		bxt.math.set_rel_orn(shell, self.cargoHold, referential)
-		bxt.math.set_rel_pos(shell, self.cargoHold, referential)
+		bxt.bmath.set_rel_orn(shell, self.cargoHold, referential)
+		bxt.bmath.set_rel_pos(shell, self.cargoHold, referential)
 		shell.setParent(self.cargoHold)
 
 	@bxt.types.expose
@@ -498,7 +496,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
-		velocity = bxt.math.ZAXIS.copy()
+		velocity = bxt.bmath.ZAXIS.copy()
 		velocity.x += 0.5 - bge.logic.getRandomFloat()
 		velocity = self.getAxisVect(velocity)
 		velocity *= self['ShellPopForce']
@@ -662,8 +660,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		#
 		# Don't set it quite to zero: zero vectors are ignored!
 		#
-		self.setAngularVelocity(bxt.math.MINVECTOR, False)
-		self.setLinearVelocity(bxt.math.MINVECTOR, False)
+		self.setAngularVelocity(bxt.bmath.MINVECTOR, False)
+		self.setLinearVelocity(bxt.bmath.MINVECTOR, False)
 
 	def on_movement_impulse(self, fwd, back, left, right):
 		'''Make the snail move. If moving forward or backward, this implicitly
@@ -737,8 +735,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		#
 		# Rotate the snail.
 		#
-		self['Rot'] = bxt.math.lerp(self['Rot'], targetRot, self['RotFactor'])
-		oRot = mathutils.Matrix.Rotation(self['Rot'], 3, bxt.math.ZAXIS)
+		self['Rot'] = bxt.bmath.lerp(self['Rot'], targetRot, self['RotFactor'])
+		oRot = mathutils.Matrix.Rotation(self['Rot'], 3, bxt.bmath.ZAXIS)
 		self.localOrientation = self.localOrientation * oRot
 
 		#
@@ -748,11 +746,11 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			targetBendAngleAft /= self['SpeedMultiplier']
 
 		# These actually get applied in update.
-		self['BendAngleFore'] = bxt.math.lerp(self['BendAngleFore'],
+		self['BendAngleFore'] = bxt.bmath.lerp(self['BendAngleFore'],
 		                                     targetBendAngleFore,
 		                                     self['BendFactor'])
 		if fwdSign != 0:
-			self['BendAngleAft'] = bxt.math.lerp(self['BendAngleAft'],
+			self['BendAngleAft'] = bxt.bmath.lerp(self['BendAngleAft'],
 		                                        targetBendAngleAft,
 		                                        self['BendFactor'])
 
@@ -848,8 +846,8 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if distMinor > self['TrailSpacingMinor']:
 			self.lastMinorPos = pos.copy()
 			speedStyle = Trail.S_NORMAL
-			if speedMultiplier > (1.0 + bxt.math.EPSILON):
+			if speedMultiplier > (1.0 + bxt.bmath.EPSILON):
 				speedStyle = Trail.S_FAST
-			elif speedMultiplier < (1.0 - bxt.math.EPSILON):
+			elif speedMultiplier < (1.0 - bxt.bmath.EPSILON):
 				speedStyle = Trail.S_SLOW
 			self.add_spot(speedStyle, touchedObject)

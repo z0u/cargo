@@ -197,8 +197,8 @@ class WheelCameraAlignment:
 	'''
 
 	def get_home_axes(self, camera, target):
-		upDir = bxt.math.ZAXIS.copy()
-		leftDir = target.getAxisVect(bxt.math.ZAXIS)
+		upDir = bxt.bmath.ZAXIS.copy()
+		leftDir = target.getAxisVect(bxt.bmath.ZAXIS)
 		fwdDir = upDir.cross(leftDir)
 		return fwdDir, upDir
 
@@ -258,7 +258,7 @@ class Wheel(ShellBase):
 		# Turn (steer). Note that this is applied to the Z axis, but in world
 		# space.
 		#
-		self.currentTurnSpeed = bxt.math.lerp(self.currentTurnSpeed,
+		self.currentTurnSpeed = bxt.bmath.lerp(self.currentTurnSpeed,
 				self['TurnSpeed'] * leftMagnitude, self['SpeedFac'])
 		self.applyRotation(ZAXIS * self.currentTurnSpeed, False)
 
@@ -267,11 +267,11 @@ class Wheel(ShellBase):
 		# the wheel is being steered at (above).
 		#
 		turnStrength = abs(self.currentTurnSpeed) / self['TurnSpeed']
-		targetRotSpeed = self['RotSpeed'] * bxt.math.safe_invert(
+		targetRotSpeed = self['RotSpeed'] * bxt.bmath.safe_invert(
 				turnStrength, self['TurnInfluence'])
 		targetRotSpeed *= fwdMagnitude
 
-		self.currentRotSpeed = bxt.math.lerp(self.currentRotSpeed,
+		self.currentRotSpeed = bxt.bmath.lerp(self.currentRotSpeed,
 				targetRotSpeed, self['SpeedFac'])
 		self.setAngularVelocity(ZAXIS * self.currentRotSpeed, True)
 

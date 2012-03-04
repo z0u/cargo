@@ -26,7 +26,7 @@ DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
 
 def hasLineOfSight(ob, other):
-	hitOb, _, _ = bxt.math.ray_cast_p2p(other, ob, prop = 'Ray')
+	hitOb, _, _ = bxt.bmath.ray_cast_p2p(other, ob, prop = 'Ray')
 	return hitOb == None
 
 class CameraObserver:
@@ -133,13 +133,13 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 				self.camera.lens = currentGoal.lens
 			self.instantCut = False
 
-		bxt.math.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
-		bxt.math.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
+		bxt.bmath.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
+		bxt.bmath.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
 
 		targetLens = self.defaultLens
 		if hasattr(currentGoal, 'lens'):
 			targetLens = currentGoal.lens
-		self.camera.lens = bxt.math.lerp(self.camera.lens, targetLens,
+		self.camera.lens = bxt.bmath.lerp(self.camera.lens, targetLens,
 				currentGoal['RotFac'])
 
 		self.lastGoal = currentGoal
@@ -166,7 +166,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		z = vecTo.project(cam.getAxisVect((0.0, 0.0, 1.0))).magnitude
 		z = max(z, AutoCamera.MIN_FOCAL_DIST)
 		depth = 1.0 - cam.near / z
-		cam['focalDepth'] = bxt.math.lerp(cam['focalDepth'], depth,
+		cam['focalDepth'] = bxt.bmath.lerp(cam['focalDepth'], depth,
 				AutoCamera.FOCAL_FAC)
 
 		cam['blurRadius'] = cam['baseBlurRadius'] * (cam.lens / self.defaultLens)
@@ -292,9 +292,9 @@ class OrbitCameraAlignment:
 
 		@return: forwardVector, upVector
 		'''
-		upDir = target.getAxisVect(bxt.math.ZAXIS)
+		upDir = target.getAxisVect(bxt.bmath.ZAXIS)
 		self.upDir = upDir.copy()
-		fwdDir = target.getAxisVect(bxt.math.YAXIS)
+		fwdDir = target.getAxisVect(bxt.bmath.YAXIS)
 		fwdDir.negate()
 		return fwdDir, upDir
 
@@ -304,9 +304,9 @@ class OrbitCameraAlignment:
 
 		@return: forwardVector, upVector
 		'''
-		rawUpDir = target.getAxisVect(bxt.math.ZAXIS)
+		rawUpDir = target.getAxisVect(bxt.bmath.ZAXIS)
 		try:
-			rawUpDir = bxt.math.lerp(self.upDir, rawUpDir,
+			rawUpDir = bxt.bmath.lerp(self.upDir, rawUpDir,
 					OrbitCamera.ZALIGN_FAC)
 			rawUpDir.normalize()
 		except AttributeError:
@@ -415,7 +415,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if targetDist < lastDist:
 			dist = targetDist
 		else:
-			dist = bxt.math.lerp(lastDist, targetDist,
+			dist = bxt.bmath.lerp(lastDist, targetDist,
 					OrbitCamera.EXPAND_FAC)
 
 		pos = origin + (direction * dist)
@@ -511,10 +511,10 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.target = None
 
 		def update(self):
-			self.target = bxt.math.ZAXIS.copy()
+			self.target = bxt.bmath.ZAXIS.copy()
 			self.target *= PathCamera.ZOFFSET
-			self.target = bxt.math.to_world(self.owner, self.target)
-			hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
+			self.target = bxt.bmath.to_world(self.owner, self.target)
+			hitOb, hitPoint, _ = bxt.bmath.ray_cast_p2p(
 					self.target, # objto
 					self.owner.worldPosition, # objfrom
 					prop = 'Ray')
@@ -528,7 +528,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		def get_target(self):
 			bias = self.ceilingHeight / PathCamera.ZOFFSET
 			bias *= PathCamera.CEILING_AVOIDANCE_BIAS
-			return bxt.math.lerp(self.owner.worldPosition, self.target, bias)
+			return bxt.bmath.lerp(self.owner.worldPosition, self.target, bias)
 
 		def destroy(self):
 			self.owner.endObject()
@@ -544,7 +544,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# A list of CameraNodes.
 		self.path = []
 		self.pathHead = PathCamera.CameraNode()
-		self.linV = bxt.math.ZEROVEC.copy()
+		self.linV = bxt.bmath.ZEROVEC.copy()
 
 		self.radMult = 1.0
 		self.expand = bxt.types.FuzzySwitch(PathCamera.EXPAND_ON_WAIT,
@@ -610,7 +610,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			radMult = PathCamera.EXPAND_FACTOR
 		else:
 			radMult = PathCamera.REST_FACTOR
-		self.radMult = bxt.math.lerp(self.radMult, radMult,
+		self.radMult = bxt.bmath.lerp(self.radMult, radMult,
 									PathCamera.RADIUS_SPEED)
 		restNear = self.REST_DISTANCE
 		restFar = self.REST_DISTANCE * self.radMult
@@ -634,15 +634,15 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# the camera from spinning too rapidly when pointing up.
 		look = dirWay.copy()
 		look.negate()
-		yfac = 1 - abs(self.getAxisVect(bxt.math.ZAXIS).dot(bxt.math.ZAXIS))
+		yfac = 1 - abs(self.getAxisVect(bxt.bmath.ZAXIS).dot(bxt.bmath.ZAXIS))
 		yfac = (yfac * 0.5) + 0.5
 		yfac *= PathCamera.ALIGN_Y_SPEED
 
 		if actor.localCoordinates:
-			axis = node.owner.getAxisVect(bxt.math.ZAXIS)
+			axis = node.owner.getAxisVect(bxt.bmath.ZAXIS)
 			self.alignAxisToVect(axis, 1, yfac)
 		else:
-			self.alignAxisToVect(bxt.math.ZAXIS, 1, yfac)
+			self.alignAxisToVect(bxt.bmath.ZAXIS, 1, yfac)
 		self.alignAxisToVect(look, 2, PathCamera.ALIGN_Z_SPEED)
 
 		if DEBUG: self.targetVis.worldPosition = target
@@ -671,7 +671,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		ba.normalize()
 		projectedPoint = a.owner.worldPosition + (ba * PathCamera.PREDICT_FWD)
 
-		hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
+		hitOb, hitPoint, _ = bxt.bmath.ray_cast_p2p(
 				projectedPoint, a.owner, prop = 'Ray')
 		if hitOb != None:
 			vect = hitPoint - a.owner.worldPosition
@@ -696,7 +696,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			upAxis = rotAxis.cross(ba)
 			pp2 = projectedPoint - (upAxis * PathCamera.PREDICT_FWD)
 
-			hitOb, hitPoint, _ = bxt.math.ray_cast_p2p(
+			hitOb, hitPoint, _ = bxt.bmath.ray_cast_p2p(
 					pp2, projectedPoint, prop = 'Ray')
 			if hitOb != None:
 				vect = hitPoint - projectedPoint
@@ -772,10 +772,10 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return
 
 		if actor.localCoordinates:
-			bxt.math.copy_transform(actor, self.pathHead.owner)
+			bxt.bmath.copy_transform(actor, self.pathHead.owner)
 		else:
 			self.pathHead.owner.worldPosition = actor.worldPosition
-			bxt.math.reset_orientation(self.pathHead.owner)
+			bxt.bmath.reset_orientation(self.pathHead.owner)
 
 		# Add a new node if the actor has moved far enough.
 		addNew = False
@@ -791,7 +791,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			node = PathCamera.CameraNode()
 
 			if actor.localCoordinates:
-				bxt.math.copy_transform(actor, node.owner)
+				bxt.bmath.copy_transform(actor, node.owner)
 			else:
 				node.owner.worldPosition = actor.worldPosition
 			node.owner.worldPosition = actor.worldPosition
@@ -857,7 +857,7 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 		self.worldPosition = autoCamera.camera.worldPosition
 		pos = autoCamera.camera.worldPosition.copy()
 
-		dir = bxt.math.ZAXIS.copy()
+		dir = bxt.bmath.ZAXIS.copy()
 		ob = self.cast_for_water(pos, dir)
 		if ob != None:
 			# Double check - works around bug with rays that strike a glancing
@@ -875,7 +875,7 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 
 	def cast_for_water(self, pos, dir):
 		through = pos + dir * CameraCollider.MAX_DIST
-		ob, _, normal = bxt.math.ray_cast_p2p(through, pos, prop='VolumeCol')
+		ob, _, normal = bxt.bmath.ray_cast_p2p(through, pos, prop='VolumeCol')
 		if ob != None and normal.dot(dir) > 0.0:
 			return ob
 		else:

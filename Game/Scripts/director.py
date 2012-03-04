@@ -35,8 +35,8 @@ class Actor(bxt.types.BX_GameObject):
 
 	def __init__(self):
 		self.save_location()
-		self._currentLinV = bxt.math.MINVECTOR.copy()
-		self.lastLinV = bxt.math.MINVECTOR.copy()
+		self._currentLinV = bxt.bmath.MINVECTOR.copy()
+		self.lastLinV = bxt.bmath.MINVECTOR.copy()
 		self.localCoordinates = False
 		self.touchedObject = None
 		Director().add_actor(self)
@@ -59,8 +59,8 @@ class Actor(bxt.types.BX_GameObject):
 	def respawn(self, reason = None):
 		self.worldPosition = self.safePosition
 		self.worldOrientation = self.safeOrientation
-		self.setLinearVelocity(bxt.math.MINVECTOR)
-		self.setAngularVelocity(bxt.math.MINVECTOR)
+		self.setLinearVelocity(bxt.bmath.MINVECTOR)
+		self.setAngularVelocity(bxt.bmath.MINVECTOR)
 		if self == Director().mainCharacter and reason != None:
 			evt = bxt.types.Event('ShowMessage', reason)
 			bxt.types.EventBus().notify(evt)

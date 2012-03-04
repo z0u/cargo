@@ -201,7 +201,7 @@ class ActSound(BaseAct):
 	def execute(self, c):
 		f = self.factory
 		if self.pitchmax != 1 or self.pitchmin != 1:
-			pitch = bxt.math.lerp(self.pitchmin, self.pitchmax,
+			pitch = bxt.bmath.lerp(self.pitchmin, self.pitchmax,
 					bge.logic.getRandomFloat())
 			f = f.pitch(pitch)
 

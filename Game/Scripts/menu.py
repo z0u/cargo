@@ -591,7 +591,7 @@ class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		def look(bone, target, restOrn = None):
 			channel = self.armature.channels[bone['channel']]
 			_, gVec, _ = bone.getVectTo(target)
-			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.math.ZAXIS), 2)
+			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.bmath.ZAXIS), 2)
 			bone.alignAxisToVect(gVec, 1)
 			orn = bone.localOrientation.to_quaternion()
 

@@ -50,7 +50,7 @@ class GrassBlade(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	@bxt.types.profile('Scripts.foliage.GrassBlade.__init__')
 	def __init__(self, old_owner):
-		self.bbox = bxt.math.Box2D(
+		self.bbox = bxt.bmath.Box2D(
 				0.0 - self['GrassRadY'], 0.0 - self['GrassRadZ'],
 				self['GrassRadY'], self['GrassRadZ'])
 
@@ -69,7 +69,7 @@ class GrassBlade(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		#
 		# Transform collider into blade's coordinate system.
 		#
-		cPos = bxt.math.to_local(self, collider.worldPosition)
+		cPos = bxt.bmath.to_local(self, collider.worldPosition)
 
 		#
 		# The blades are rotated 90 degrees to work better as Blender particles.
@@ -81,7 +81,7 @@ class GrassBlade(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		# Collider bounding box.
 		#
 		colRad = collider['LODRadius']
-		colBox = bxt.math.Box2D(cPos.x - colRad, cPos.y - colRad,
+		colBox = bxt.bmath.Box2D(cPos.x - colRad, cPos.y - colRad,
 		                        cPos.x + colRad, cPos.y + colRad)
 
 		#

@@ -215,7 +215,7 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	@bxt.types.expose
 	def update(self):
-		self.fraction = bxt.math.lerp(self.fraction, self.targetFraction,
+		self.fraction = bxt.bmath.lerp(self.fraction, self.targetFraction,
 			self['Speed'])
 		frame = self.fraction * 100.0
 		frame = min(max(frame, 0), 100)

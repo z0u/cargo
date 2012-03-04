@@ -103,10 +103,10 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
 
-		evt = bxt.types.WeakEvent('MainCharacterSet', self)
-		bxt.types.EventBus().notify(evt)
-		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
-		bxt.types.EventBus().notify(evt)
+		bxt.types.WeakEvent('MainCharacterSet', self).send()
+		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
+		alignment = camera.OrbitCameraAlignment()
+		bxt.types.Event('SetCameraAlignment', alignment).send()
 		camera.AutoCamera().add_focus_point(self)
 
 	def load_items(self):
@@ -522,9 +522,6 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		if not self.has_state(Snail.S_HASSHELL):
 			return
 
-		evt = bxt.types.Event('SetCameraType', 'PathCamera')
-		bxt.types.EventBus().notify(evt)
-
 		self.rem_state(Snail.S_HASSHELL)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_CRAWL)
 		bxt.utils.rem_state(self.armature, Snail.S_ARM_LOCOMOTION)
@@ -601,18 +598,22 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self['InShell'] = 0
 		self.shell.on_exited()
 
-		evt = bxt.types.WeakEvent('MainCharacterSet', self)
-		bxt.types.EventBus().notify(evt)
+		bxt.types.WeakEvent('MainCharacterSet', self).send()
+		# Temporarily use a path camera while exiting the shell - it's smoother!
+		bxt.types.Event('SetCameraType', 'PathCamera').send()
 
 	def on_exit_shell(self):
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
 		transferred).'''
-		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
-		bxt.types.EventBus().notify(evt)
 
 		self.add_state(Snail.S_HASSHELL)
 		self.shell.on_post_exit()
+
+		# Switch to orbit camera.
+		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
+		alignment = camera.OrbitCameraAlignment()
+		bxt.types.Event('SetCameraAlignment', alignment).send()
 
 		bxt.types.WeakEvent('ShellExited', self).send()
 

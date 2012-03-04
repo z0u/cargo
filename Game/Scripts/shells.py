@@ -80,8 +80,7 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 		self.set_state(ShellBase.S_OCCUPIED)
 		self.add_state(ShellBase.S_ALWAYS)
 
-		evt = bxt.types.WeakEvent('MainCharacterSet', self)
-		bxt.types.EventBus().notify(evt)
+		bxt.types.WeakEvent('MainCharacterSet', self).send()
 
 	def on_exited(self):
 		'''Called when a snail exits this shell (just after
@@ -144,6 +143,11 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 		return self.has_state(ShellBase.S_CARRIED)
 
 class Shell(ShellBase):
+
+	def on_pre_enter(self):
+		ShellBase.on_pre_enter(self)
+		bxt.types.Event('SetCameraType', 'PathCamera').send()
+
 	def on_movement_impulse(self, fwd, back, left, right):
 		'''Make the shell roll around based on user input.'''
 		if not self['OnGround']:
@@ -184,6 +188,23 @@ class Shell(ShellBase):
 		#
 		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
+class WheelCameraAlignment:
+	'''
+	Aligns the camera with the wheel. This needs a special class because the
+	wheel's z-axis points out to the side.
+
+	@see: camera.OrbitCameraAlignment
+	'''
+
+	def get_home_axes(self, camera, target):
+		upDir = bxt.math.ZAXIS.copy()
+		leftDir = target.getAxisVect(bxt.math.ZAXIS)
+		fwdDir = upDir.cross(leftDir)
+		return fwdDir, upDir
+
+	def get_axes(self, camera, target):
+		return self.get_home_axes(camera, target)
+
 class Wheel(ShellBase):
 	DESTRUCTION_SPEED = 5.0
 
@@ -205,6 +226,14 @@ class Wheel(ShellBase):
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		self._reset_speed()
+		bxt.types.Event('SetCameraType', 'PathCamera').send()
+
+	def on_entered(self):
+		ShellBase.on_entered(self)
+
+		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
+		alignment = WheelCameraAlignment()
+		bxt.types.Event('SetCameraAlignment', alignment).send()
 
 	def on_movement_impulse(self, fwd, back, left, right):
 		self.orient()
@@ -246,6 +275,11 @@ class Wheel(ShellBase):
 		return True
 
 class Nut(ShellBase):
+
+	def on_pre_enter(self):
+		ShellBase.on_pre_enter(self)
+		bxt.types.Event('SetCameraType', 'PathCamera').send()
+
 	def on_movement_impulse(self, fwd, back, left, right):
 		# Can't move!
 		pass
@@ -277,6 +311,7 @@ class BottleCap(ShellBase):
 		self.occupier.visible = True
 		self.occupier.playAction('CapSnailEmerge', 1, 25, layer=BottleCap.L_EMERGE)
 		self.add_state(BottleCap.S_EMERGE)
+		bxt.types.Event('SetCameraType', 'PathCamera').send()
 
 	def on_exited(self):
 		ShellBase.on_exited(self)

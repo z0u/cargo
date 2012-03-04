@@ -339,14 +339,18 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.distUp = 3.0
 		self.distBack = 3.0
 
-		self.alignment = OrbitCameraAlignment()
+		self.alignment = None
 
 		AutoCamera().add_goal(self)
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'RelocatePlayerCamera')
+		bxt.types.EventBus().replay_last(self, 'SetCameraAlignment')
 
 	@bxt.types.expose
 	def update(self):
+		if self.alignment is None:
+			return
+
 		# Project up.
 		mainChar = director.Director().mainCharacter
 		if mainChar == None:
@@ -414,6 +418,8 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.worldPosition = pos
 			if orn != None:
 				self.worldOrientation = orn
+		elif evt.message == 'SetCameraAlignment':
+			self.alignment = evt.body
 
 class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A camera goal that follows the active player. It tries to follow the same

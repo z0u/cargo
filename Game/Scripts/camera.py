@@ -275,19 +275,60 @@ class MainGoalManager(metaclass=bxt.types.Singleton):
 				if oldCamera != None:
 					oldCamera.endObject()
 
-class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
-	'''Classic 3rd-person adventure camera. Tries to stay a constant distance
-	from the character, but does not always sit behind. Imagine a circle in the
+class OrbitCameraAlignment:
+	'''
+	Defines how the camera aligns with its target; use with OrbitCamera.
+
+	This class gives the classic 3rd-person adventure camera. It looks towards
+	the character, but does not always sit behind. Imagine a circle in the
 	air above the character: on each frame, the camera moves the shortest
 	distance possible to remain on that circle, unless it is blocked by a wall.
 	'''
+
+	def get_home_axes(self, camera, target):
+		'''
+		Get an alignment that represents the 'natural' view of the target, e.g.
+		behind the shoulder.
+
+		@return: forwardVector, upVector
+		'''
+		upDir = target.getAxisVect(bxt.math.ZAXIS)
+		self.upDir = upDir.copy()
+		fwdDir = target.getAxisVect(bxt.math.YAXIS)
+		fwdDir.negate()
+		return fwdDir, upDir
+
+	def get_axes(self, camera, target):
+		'''
+		Get an alignment that is a progression from the previous alignment.
+
+		@return: forwardVector, upVector
+		'''
+		rawUpDir = target.getAxisVect(bxt.math.ZAXIS)
+		try:
+			rawUpDir = bxt.math.lerp(self.upDir, rawUpDir,
+					OrbitCamera.ZALIGN_FAC)
+			rawUpDir.normalize()
+		except AttributeError:
+			pass
+		self.upDir = rawUpDir.copy()
+
+		vectTo = camera.worldPosition - target.worldPosition
+		upDir = vectTo.project(rawUpDir)
+		fwdDir = vectTo - upDir
+		fwdDir.normalize()
+
+		return fwdDir, rawUpDir
+
+class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''A 3rd-person camera that stays a constant distance from its target.'''
+
 	_prefix = 'Orb_'
 
 	UP_DIST = 8.0
 	BACK_DIST = 25.0
 	DIST_BIAS = 0.5
 	EXPAND_FAC = 0.005
-#	EXPAND_FAC = 1
 	ZALIGN_FAC = 0.025
 
 	def __init__(self, old_owner):
@@ -297,6 +338,8 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# when going over a convex surface.
 		self.distUp = 3.0
 		self.distBack = 3.0
+
+		self.alignment = OrbitCameraAlignment()
 
 		AutoCamera().add_goal(self)
 		bxt.types.EventBus().add_listener(self)
@@ -310,7 +353,11 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return
 		target = mainChar.get_camera_tracking_point()
 
-		fwdDir, upDir = self.get_alignment_axes(target)
+		if self.reset:
+			fwdDir, upDir = self.alignment.get_home_axes(self, target)
+			self.reset = False
+		else:
+			fwdDir, upDir = self.alignment.get_axes(self, target)
 
 		# Look for the ceiling above the target.
 		upPos, self.distUp = self.cast_ray(target.worldPosition, upDir,
@@ -326,31 +373,6 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# Orient the camera towards the target.
 		self.alignAxisToVect(upDir, 1)
 		self.alignAxisToVect(fwdDir, 2)
-
-	def get_alignment_axes(self, target):
-		if self.reset:
-			self.reset = False
-			upDir = target.getAxisVect(bxt.math.ZAXIS)
-			self.upDir = upDir.copy()
-			fwdDir = target.getAxisVect(bxt.math.YAXIS)
-			fwdDir.negate()
-			return fwdDir, upDir
-
-		rawUpDir = target.getAxisVect(bxt.math.ZAXIS)
-		try:
-			rawUpDir = bxt.math.lerp(self.upDir, rawUpDir,
-					OrbitCamera.ZALIGN_FAC)
-			rawUpDir.normalize()
-		except AttributeError:
-			pass
-		self.upDir = rawUpDir.copy()
-
-		vectTo = self.worldPosition - target.worldPosition
-		upDir = vectTo.project(rawUpDir)
-		fwdDir = vectTo - upDir
-		fwdDir.normalize()
-
-		return fwdDir, rawUpDir
 
 	def cast_ray(self, origin, direction, lastDist, maxDist):
 		through = origin + direction

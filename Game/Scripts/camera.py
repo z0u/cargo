@@ -292,6 +292,12 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		self.reset = False
+
+		# These can't be computed from the current state: they become smaller
+		# when going over a convex surface.
+		self.distUp = 3.0
+		self.distBack = 3.0
+
 		AutoCamera().add_goal(self)
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'RelocatePlayerCamera')
@@ -304,21 +310,15 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return
 		target = mainChar.get_camera_tracking_point()
 
-		fwdDir, distFwd, upDir, distUp = self.get_alignment_axes(target)
+		fwdDir, upDir = self.get_alignment_axes(target)
 
 		# Look for the ceiling above the target.
-		upPos = self.cast_ray(target.worldPosition, upDir,
-				distUp, OrbitCamera.UP_DIST)
-
-		# If the user requested a reset, apply it now: move the camera directly
-		# behind the target.
-		if self.reset:
-			self.worldPosition = upPos - fwdDir * distFwd
-			self.reset = False
+		upPos, self.distUp = self.cast_ray(target.worldPosition, upDir,
+				self.distUp, OrbitCamera.UP_DIST)
 
 		# Search backwards for a wall.
 		backDir = fwdDir.copy()
-		backPos = self.cast_ray(upPos, backDir, distFwd,
+		backPos, self.distBack = self.cast_ray(upPos, backDir, self.distBack,
 				OrbitCamera.BACK_DIST)
 		self.worldPosition = backPos
 		self.worldLinearVelocity = (0, 0, 0.0001)
@@ -328,6 +328,14 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.alignAxisToVect(fwdDir, 2)
 
 	def get_alignment_axes(self, target):
+		if self.reset:
+			self.reset = False
+			upDir = target.getAxisVect(bxt.math.ZAXIS)
+			self.upDir = upDir.copy()
+			fwdDir = target.getAxisVect(bxt.math.YAXIS)
+			fwdDir.negate()
+			return fwdDir, upDir
+
 		rawUpDir = target.getAxisVect(bxt.math.ZAXIS)
 		try:
 			rawUpDir = bxt.math.lerp(self.upDir, rawUpDir,
@@ -335,18 +343,14 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			rawUpDir.normalize()
 		except AttributeError:
 			pass
-		self.upDir = rawUpDir
+		self.upDir = rawUpDir.copy()
 
 		vectTo = self.worldPosition - target.worldPosition
 		upDir = vectTo.project(rawUpDir)
 		fwdDir = vectTo - upDir
-
-		upDist = max(upDir.magnitude, 3.0)
-		fwdDist = max(fwdDir.magnitude, 3.0)
-#		upDir.normalize()
 		fwdDir.normalize()
 
-		return fwdDir, fwdDist, rawUpDir, upDist
+		return fwdDir, rawUpDir
 
 	def cast_ray(self, origin, direction, lastDist, maxDist):
 		through = origin + direction
@@ -378,7 +382,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 					OrbitCamera.EXPAND_FAC)
 
 		pos = origin + (direction * dist)
-		return pos
+		return pos, dist
 
 	def on_event(self, evt):
 		if evt.message == 'ResetCameraPos':

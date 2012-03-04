@@ -26,8 +26,8 @@ from . import ui
 
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
-	("Story", "Lev Lafayette, Alex Fraser, Lara Micocki"),
-	("Modelling", "Alex Fraser"),
+	("Story", "Alex Fraser, Lev Lafayette, Lara Micocki"),
+	("Modelling", "Alex Fraser, Junki Wano"),
 	("Animation", "Alex Fraser"),
 	("Textures", "Alex Fraser, Junki Wano"),
 	("Music", "Robert Leigh"),

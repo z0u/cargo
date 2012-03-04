@@ -247,13 +247,20 @@ class Wheel(ShellBase):
 		if right:
 			leftMagnitude = leftMagnitude - 1.0
 
+		if back:
+			fwdMagnitude = 0.01
+		elif fwd:
+			fwdMagnitude = 1.0
+		else:
+			fwdMagnitude = 0.25
+
 		#
-		# Turn (steer).
+		# Turn (steer). Note that this is applied to the Z axis, but in world
+		# space.
 		#
 		self.currentTurnSpeed = bxt.math.lerp(self.currentTurnSpeed,
 				self['TurnSpeed'] * leftMagnitude, self['SpeedFac'])
-		self.applyRotation(
-				ZAXIS * self.currentTurnSpeed, False)
+		self.applyRotation(ZAXIS * self.currentTurnSpeed, False)
 
 		#
 		# Apply acceleration. The speed will be influenced by the rate that
@@ -262,6 +269,7 @@ class Wheel(ShellBase):
 		turnStrength = abs(self.currentTurnSpeed) / self['TurnSpeed']
 		targetRotSpeed = self['RotSpeed'] * bxt.math.safe_invert(
 				turnStrength, self['TurnInfluence'])
+		targetRotSpeed *= fwdMagnitude
 
 		self.currentRotSpeed = bxt.math.lerp(self.currentRotSpeed,
 				targetRotSpeed, self['SpeedFac'])

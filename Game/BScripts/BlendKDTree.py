@@ -478,14 +478,13 @@ def set_layers(ob, layers=None):
 		for i in range(len(bpy.context.scene.layers)):
 			ob.layers[i] = i in layers
 
-def make_lod_tree(sourceGroup):
+def make_lod_tree(source_group, target_group):
 	'''Create clusters and a serialised LOD tree from marked objects. To mark an
 	object as a source for an LOD tree, add it to the sourceGroup group.'''
 
 	show_layers()
 
-	sg = bpy.data.groups[sourceGroup]
-	targetGroup = "%s.o" % sourceGroup
+	sg = bpy.data.groups[source_group]
 	dupliObs = []
 	for sourceOb in sg.objects:
 		# Make dupli-objects (e.g. particle instances) real, and select them.
@@ -499,7 +498,7 @@ def make_lod_tree(sourceGroup):
 		dupliObs.extend(bpy.context.selected_objects)
 
 	print('Creating LOD tree')
-	tree = KDTree(dupliObs, targetGroup, targetGroup[0:2])
+	tree = KDTree(dupliObs, target_group, target_group[0:2])
 	tree.create_cluster_hierarchy()
 
 	# Serialise to text buffer.
@@ -510,14 +509,13 @@ def make_lod_tree(sourceGroup):
 
 	return tree
 
-def cleanup(keepGroups):
+def cleanup(keepGroup):
 	'''Delete all objects in the scene that aren't in one of the listed
 	groups.'''
 	print('Deleting unused objects')
 
 	keepObs = set()
-	for groupName in keepGroups:
-		keepObs.update(bpy.data.groups[groupName].objects)
+	keepObs.update(bpy.data.groups[keepGroup].objects)
 
 	show_layers()
 	bpy.ops.object.select_all(action='DESELECT')
@@ -528,12 +526,8 @@ def cleanup(keepGroups):
 
 	# Move the remaining objects to layer 2. This makes sure the tree is
 	# invisible in the game until bits of it are instantiated.
-	bpy.ops.object.select_all(action='DESELECT')
 	for ob in bpy.context.scene.objects:
-		ob.select = True
-	bpy.ops.object.move_to_layer(layers=(
-		False, True,  False, False, False, False, False, False, False, False,
-		False, False, False, False, False, False, False, False, False, False))
+		set_layers(ob, [1])
 	# Show the first layer (i.e. the one with nothing on it).
 	show_layers((0,))
 
@@ -565,8 +559,21 @@ def create_controller(tree):
 	c.text = bpy.data.texts[tree.get_tbuf_name()]
 	s.link(c)
 
+	set_layers(o, [0])
+
+def enable_extra_controllers(controller_group):
+	print("Enabling group %s" % controller_group)
+	print(bpy.data.groups[controller_group].objects[:])
+	for ob in bpy.data.groups[controller_group].objects:
+		print("Enabling object %s" % ob.name)
+		set_layers(ob, [0])
+		
+#	group_instance = bpy.data.objects["%s.ctl" % basename]
+
 def save_file(fileName):
 	print('Saving file to', fileName)
+	for lib in bpy.data.libraries:
+		lib.filepath = bpy.path.abspath(lib.filepath)
 	bpy.ops.wm.save_as_mainfile(filepath=fileName)
 	for lib in bpy.data.libraries:
 		lib.filepath = bpy.path.relpath(lib.filepath)
@@ -575,13 +582,17 @@ def save_file(fileName):
 if __name__ == '__main__':
 	try:
 		options = parse_options()
-		tree = make_lod_tree(options['sourceGroup'])
-		groups = []
-		if tree.groupName != None:
-			groups.append(tree.groupName)
-		cleanup(keepGroups=groups)
+
+		target_group = "%s.o" % options['sourceGroup']
+		tree = make_lod_tree(options['sourceGroup'], target_group)
+		cleanup(keepGroup=target_group)
+
 		create_controller(tree)
+		controller_group = "%s.ctl" % options['sourceGroup']
+		enable_extra_controllers(controller_group)
+
 		save_file(options['outfile'])
+
 	except Exception:
 		traceback.print_exc()
 		print('Usage:\n\tblender -P BScripts/BlendKDTree.py <infile.blend> -- <sourceGroup> <outfile.blend>')

@@ -1,2 +1,2 @@
-from . import tree
+from . import foliage
 

@@ -32,13 +32,16 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 	_prefix=""
 
 	def __init__(self):
-		self.shaders = bxt.types.GameObjectSet()
+		self.shaders = set()
 
-	def add_shader(self, shader):
-		self.shaders.add(shader)
+	def add_shader(self, shader, callback=None):
+		self.shaders.add((shader, callback))
 
 	@bxt.types.expose
 	def update(self):
+		if len(self.shaders) == 0:
+			return
+
 		sce = bge.logic.getCurrentScene()
 		cam = sce.active_camera
 		world_to_camera = cam.world_to_camera
@@ -118,7 +121,15 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 
 		# Iterate over all registered materials and update uniforms
 
-		for shader in self.shaders:
+		deadShaders = []
+		for sc in self.shaders:
+			shader, callback = sc
+			if shader.invalid:
+				deadShaders.append(sc)
+
+			if callback is not None:
+				callback(shader)
+
 			shader.setUniform3f("key_light_dir", key_light_dir.x, key_light_dir.y, key_light_dir.z)
 			shader.setUniform4f("key_light_col", key_light_col.x, key_light_col.y, key_light_col.z, 1.0)
 
@@ -144,7 +155,11 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			shader.setUniform1f("cust_light2_spotcutoff", cust_light2_spotcutoff)
 			shader.setUniform1f("cust_light2_spotcoscutoff", cust_light2_spotcoscutoff)
 
-def _set_shader(ob, vert_shader, frag_shader):
+		for sc in deadShaders:
+			self.shaders.remove(sc)
+
+
+def _set_shader(ob, vert_shader, frag_shader, callback=None):
 	me = ob.meshes[0]
 	mat = me.materials[0]
 
@@ -160,9 +175,7 @@ def _set_shader(ob, vert_shader, frag_shader):
 		if not shader.isValid():
 			shader.setSource(vert_shader, frag_shader, True)
 		shader.setSampler("tCol", 0)
-		ShaderCtrl().add_shader(shader)
-
-	return shader
+		ShaderCtrl().add_shader(shader, callback)
 
 
 def _print_code(text):
@@ -190,47 +203,38 @@ def set_windy(ob):
 	'''Makes the vertices on a mesh wave as if blown by the wind.'''
 	#return
 	#set_phong(ob); return
+
+
 	verts = wave_vert_shader(ob["SH_axes"], ob["SH_freq"], ob["SH_amp"])
-	shader = _set_shader(ob, verts, frag_gouraud)
+	cb = WindCallback(ob["SH_speed"], ob["SH_axes"])
+	_set_shader(ob, verts, frag_gouraud, cb)
 
 	for axis in ob["SH_axes"]:
 		ob["_phase{}".format(axis)] = 0.0
 
-	# FIXME: HACK HACK HACK
-	ob["_shader"] = shader
 
-# TODO: Make this get run as a callback from ShaderCtl.update
-PHASE_STEP = mathutils.Vector((1.0/3.0, 1.0/4.5, 1.0/9.0))
-@bxt.utils.owner
-def update_wind(ob):
-	'''Makes the leaves move.'''
+class WindCallback:
+	'''
+	Makes the leaves move. Called once per frame per instance of the shader.
+	'''
 
-	#return
-	#me = ob.meshes[0]
-	#mat = me.materials[0]
+	PHASE_STEP =  (1.0/3.0, 1.0/4.5, 1.0/9.0)
 
-	#if not hasattr(mat, "getShader"):
-	#	return
+	def __init__(self, speed, axes):
+		self.speed = []
+		self.phases = []
+		for _, step in zip(axes, WindCallback.PHASE_STEP):
+			self.speed.append(step * speed)
+			self.phases.append(0.0)
 
-	speed = PHASE_STEP * ob['SH_speed']
-	phases = []
-	for i, axis in enumerate(ob["SH_axes"]):
-		var = "_phase{}".format(axis)
-		val = ob[var]
-		val += speed[i]
-		val %= 1.0
-		phases.append(val)
-		ob[var] = val
-
-	# FIXME: HACK HACK HACK
-	#shader = mat.getShader()
-	shader = ob["_shader"]
-	if shader != None:
-		# pass uniform to the shader
-		if len(phases) == 1:
-			shader.setUniform1f("phase", phases[0])
+	def __call__(self, shader):
+		for i, speed in enumerate(self.speed):
+			self.phases[i] = (self.phases[i] + speed) % 1.0
+		if len(self.phases) == 1:
+			shader.setUniform1f("phase", self.phases[0])
 		else:
-			shader.setUniformfv("phase", phases)
+			shader.setUniformfv("phase", self.phases)
+
 
 calc_light = """
 

@@ -32,10 +32,10 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 	_prefix=""
 
 	def __init__(self):
-		self.materials = bxt.types.GameObjectSet()
+		self.shaders = bxt.types.GameObjectSet()
 
-	def add_material(self, material):
-		self.materials.add(material)
+	def add_shader(self, shader):
+		self.shaders.add(shader)
 
 	@bxt.types.expose
 	def update(self):
@@ -118,16 +118,9 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 
 		# Iterate over all registered materials and update uniforms
 
-		for mat in self.materials:
-			try:
-				shader = mat.getShader()
-				if shader is None:
-					continue
-			except AttributeError:
-				continue
-
-			shader.setUniformfv("key_light_dir", key_light_dir)
-			shader.setUniformfv("key_light_col", key_light_col)
+		for shader in self.shaders:
+			shader.setUniform3f("key_light_dir", key_light_dir.x, key_light_dir.y, key_light_dir.z)
+			shader.setUniform4f("key_light_col", key_light_col.x, key_light_col.y, key_light_col.z, 1.0)
 
 			shader.setUniformfv("fill_light1_dir", fill_light1_dir)
 			shader.setUniformfv("fill_light1_col", fill_light1_col)
@@ -167,7 +160,9 @@ def _set_shader(ob, vert_shader, frag_shader):
 		if not shader.isValid():
 			shader.setSource(vert_shader, frag_shader, True)
 		shader.setSampler("tCol", 0)
-		ShaderCtrl().add_material(mat)
+		ShaderCtrl().add_shader(shader)
+
+	return shader
 
 
 def _print_code(text):
@@ -184,14 +179,25 @@ def set_phong(ob):
 
 @bxt.utils.all_sensors_positive
 @bxt.utils.owner
+def set_gouraud(ob):
+	'''Uses a standard Phong shader.'''
+	_set_shader(ob, vert_basic, frag_gouraud)
+
+
+@bxt.utils.all_sensors_positive
+@bxt.utils.owner
 def set_windy(ob):
 	'''Makes the vertices on a mesh wave as if blown by the wind.'''
-	verts = wave_vert_shader(ob["SH_axes"], ob["SH_freq"],
-			ob["SH_amp"])
-	_set_shader(ob, verts, frag_gouraud)
+	#return
+	#set_phong(ob); return
+	verts = wave_vert_shader(ob["SH_axes"], ob["SH_freq"], ob["SH_amp"])
+	shader = _set_shader(ob, verts, frag_gouraud)
 
 	for axis in ob["SH_axes"]:
 		ob["_phase{}".format(axis)] = 0.0
+
+	# FIXME: HACK HACK HACK
+	ob["_shader"] = shader
 
 # TODO: Make this get run as a callback from ShaderCtl.update
 PHASE_STEP = mathutils.Vector((1.0/3.0, 1.0/4.5, 1.0/9.0))
@@ -199,11 +205,12 @@ PHASE_STEP = mathutils.Vector((1.0/3.0, 1.0/4.5, 1.0/9.0))
 def update_wind(ob):
 	'''Makes the leaves move.'''
 
-	me = ob.meshes[0]
-	mat = me.materials[0]
+	#return
+	#me = ob.meshes[0]
+	#mat = me.materials[0]
 
-	if not hasattr(mat, "getShader"):
-		return
+	#if not hasattr(mat, "getShader"):
+	#	return
 
 	speed = PHASE_STEP * ob['SH_speed']
 	phases = []
@@ -215,7 +222,9 @@ def update_wind(ob):
 		phases.append(val)
 		ob[var] = val
 
-	shader = mat.getShader()
+	# FIXME: HACK HACK HACK
+	#shader = mat.getShader()
+	shader = ob["_shader"]
 	if shader != None:
 		# pass uniform to the shader
 		if len(phases) == 1:
@@ -336,7 +345,7 @@ vert_basic = """
 """
 
 # Simple Phong shader; no specular.
-frag_phong = """
+frag_phong = calc_light + """
 
 	// Phong fragment shader
 
@@ -344,8 +353,6 @@ frag_phong = """
 
 	varying vec3 normal;
 	varying vec4 position;
-
-	""" + calc_light + """
 
 	void main() {
 		vec4 col = texture2D(tCol, gl_TexCoord[0].st);
@@ -359,6 +366,7 @@ frag_phong = """
 		vec4 lightCol = calc_light(position, norm);
 
 		gl_FragColor = col * lightCol;
+		// Debugging
 		//gl_FragColor = mix(gl_FragColor, vec4(1.0, 0.0, 1.0, 1.0), 0.9999);
 
 		// Prevent pure black, as it messes with the DoF shader.
@@ -366,6 +374,25 @@ frag_phong = """
 
 		// Using clip alpha; see above.
 		gl_FragColor.a = 1.0;
+	}
+"""
+
+vert_gouraud = calc_light + """
+
+	// Basic vertex shader
+
+	varying vec4 lightCol;
+
+	void main() {
+		gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+
+		// Transfer tex coords.
+		gl_TexCoord[0] = gl_MultiTexCoord0;
+
+		// Lighting (note: no perspective transform)
+		vec4 position = gl_ModelViewMatrix * gl_Vertex;
+		vec3 normal = normalize(gl_NormalMatrix * gl_Normal);
+		lightCol = calc_light(position, normal);
 	}
 """
 

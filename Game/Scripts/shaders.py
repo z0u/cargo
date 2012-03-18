@@ -16,6 +16,7 @@
 #
 
 from string import Template
+import math
 
 import bge
 import mathutils
@@ -76,10 +77,10 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			pass
 		else:
 			num_user_lights += 1
-			cust_light1_dir = world_to_camera_vec * light.getAxisVect(LAMPDIR)
+			cust_light1_dir = world_to_camera_vec * -light.getAxisVect(LAMPDIR)
 			cust_light1_col = mathutils.Vector(light.color) * light.energy
 			cust_light1_col.resize_4d()
-			if (light.type == bge.types.KX_LightObject.SUN):
+			if (light.type == light.SUN):
 				cust_light1_pos = cust_light1_dir.copy()
 				cust_light1_pos.resize_4d()
 				cust_light1_pos.w = 0.0
@@ -87,12 +88,15 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 				cust_light1_pos = world_to_camera * light.worldPosition
 				cust_light1_pos.resize_4d()
 				cust_light1_pos.w = 1.0
-			if (light.type == bge.types.KX_LightObject.SPOT):
-				cust_light1_spotcutoff = light.spotsize
-				cust_light1_spotcoscutoff = light.spotblend
+			if (light.type == light.SPOT):
+				cust_light1_spotcutoff = light.spotsize / 2.0
+				cust_light1_spotcoscutoff = math.cos(math.radians(
+						cust_light1_spotcutoff))
+				cust_light1_spotexponent = light.spotblend * 128.0
 			else:
 				cust_light1_spotcutoff = 180.0
 				cust_light1_spotcoscutoff = -1.0
+				cust_light1_spotexponent = light.spotblend * 128.0
 
 		# CUSTOM LIGHT 2
 		try:
@@ -101,10 +105,10 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			pass
 		else:
 			num_user_lights += 1
-			cust_light2_dir = world_to_camera_vec * light.getAxisVect(LAMPDIR)
+			cust_light2_dir = world_to_camera_vec * -light.getAxisVect(LAMPDIR)
 			cust_light2_col = mathutils.Vector(light.color) * light.energy
 			cust_light2_col.resize_4d()
-			if (light.type == bge.types.KX_LightObject.SUN):
+			if (light.type == light.SUN):
 				cust_light2_pos = cust_light2_dir.copy()
 				cust_light2_pos.resize_4d()
 				cust_light2_pos.w = 0.0
@@ -112,12 +116,15 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 				cust_light2_pos = world_to_camera * light.worldPosition
 				cust_light2_pos.resize_4d()
 				cust_light2_pos.w = 1.0
-			if (light.type == bge.types.KX_LightObject.SPOT):
-				cust_light2_spotcutoff = light.spotsize
-				cust_light2_spotcoscutoff = light.spotblend
+			if (light.type == light.SPOT):
+				cust_light2_spotcutoff = light.spotsize / 2.0
+				cust_light2_spotcoscutoff = math.cos(math.radians(
+						cust_light2_spotcutoff))
+				cust_light2_spotexponent = light.spotblend * 128.0
 			else:
 				cust_light2_spotcutoff = 180.0
 				cust_light2_spotcoscutoff = -1.0
+				cust_light2_spotexponent = light.spotblend * 128.0
 
 		# Iterate over all registered materials and update uniforms
 
@@ -146,6 +153,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			shader.setUniformfv("cust_light1_col", cust_light1_col)
 			shader.setUniform1f("cust_light1_spotcutoff", cust_light1_spotcutoff)
 			shader.setUniform1f("cust_light1_spotcoscutoff", cust_light1_spotcoscutoff)
+			shader.setUniform1f("cust_light1_spotexponent", cust_light1_spotexponent)
 
 			if num_user_lights < 2:
 				continue
@@ -154,6 +162,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			shader.setUniformfv("cust_light2_col", cust_light2_col)
 			shader.setUniform1f("cust_light2_spotcutoff", cust_light2_spotcutoff)
 			shader.setUniform1f("cust_light2_spotcoscutoff", cust_light2_spotcoscutoff)
+			shader.setUniform1f("cust_light2_spotexponent", cust_light2_spotexponent)
 
 		for sc in deadShaders:
 			self.shaders.remove(sc)
@@ -254,12 +263,14 @@ calc_light = """
 	uniform vec4 cust_light1_col;
 	uniform float cust_light1_spotcutoff;
 	uniform float cust_light1_spotcoscutoff;
+	uniform float cust_light1_spotexponent;
 
 	uniform vec4 cust_light2_pos;
 	uniform vec3 cust_light2_dir;
 	uniform vec4 cust_light2_col;
 	uniform float cust_light2_spotcutoff;
 	uniform float cust_light2_spotcoscutoff;
+	uniform float cust_light2_spotexponent;
 
 	float intensity(vec3 nor, vec3 direction) {
 		return max(dot(nor, direction), 0.0);
@@ -270,7 +281,7 @@ calc_light = """
 	}
 
 	float intensity_user(vec3 nor, vec4 pos, vec4 lightpos, vec3 dir,
-			float cutoff, float coscutoff) {
+			float cutoff, float coscutoff, float exponent) {
 
 		float attenuation;
 		vec3 viewLight;
@@ -283,7 +294,7 @@ calc_light = """
 		} else {
 			// Point
 			viewLight = normalize(lightpos.xyz - pos.xyz);
-			
+
 			if (cutoff <= 90.0) {
 				// Spotlight
 				float cosCone = max(0.0, dot(-viewLight, dir.xyz));
@@ -291,7 +302,7 @@ calc_light = """
 					// outside of spotlight cone
 					attenuation = 0.0;
 				} else {
-					attenuation = pow(cosCone, 10.0);
+					attenuation = pow(cosCone - coscutoff, exponent / 128.0);
 				}
 
 			} else {
@@ -318,12 +329,14 @@ calc_light = """
 				cust_light1_pos,
 				cust_light1_dir,
 				cust_light1_spotcutoff,
-				cust_light1_spotcoscutoff);
+				cust_light1_spotcoscutoff,
+				cust_light1_spotexponent);
 		lightCol += cust_light2_col * intensity_user(nor, pos,
 				cust_light2_pos,
 				cust_light2_dir,
 				cust_light2_spotcutoff,
-				cust_light2_spotcoscutoff);
+				cust_light2_spotcoscutoff,
+				cust_light2_spotexponent);
 
 		return lightCol;
 	}

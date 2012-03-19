@@ -17,15 +17,21 @@
 
 from string import Template
 import math
+from collections import namedtuple
 
 import bge
 import mathutils
 
 import bxt
 
-DEBUG = False
+DEBUG = True
 
 LAMPDIR = (0.0, 0.0, 1.0)
+XAXIS = mathutils.Vector((1.0, 0.0, 0.0))
+YAXIS = mathutils.Vector((0.0, 1.0, 0.0))
+ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
+
+Shaderdef = namedtuple('Shaderdef', ['shader', 'callback'])
 
 class ShaderCtrl(metaclass=bxt.types.Singleton):
 	'''Looks after special GLSL materials in this scene.'''
@@ -36,7 +42,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 		self.shaders = set()
 
 	def add_shader(self, shader, callback=None):
-		self.shaders.add((shader, callback))
+		self.shaders.add(Shaderdef(shader, callback))
 
 	@bxt.types.expose
 	def update(self):
@@ -130,12 +136,12 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 
 		deadShaders = []
 		for sc in self.shaders:
-			shader, callback = sc
+			shader = sc.shader
 			if shader.invalid:
 				deadShaders.append(sc)
 
-			if callback is not None:
-				callback(shader)
+			if sc.callback is not None:
+				sc.callback(shader, world_to_camera, world_to_camera_vec)
 
 			shader.setUniform3f("key_light_dir", key_light_dir.x, key_light_dir.y, key_light_dir.z)
 			shader.setUniform4f("key_light_col", key_light_col.x, key_light_col.y, key_light_col.z, 1.0)
@@ -185,6 +191,7 @@ def _set_shader(ob, vert_shader, frag_shader, callback=None):
 			shader.setSource(vert_shader, frag_shader, True)
 		shader.setSampler("tCol", 0)
 		ShaderCtrl().add_shader(shader, callback)
+	return shader
 
 
 def _print_code(text):
@@ -210,16 +217,13 @@ def set_gouraud(ob):
 @bxt.utils.owner
 def set_windy(ob):
 	'''Makes the vertices on a mesh wave as if blown by the wind.'''
-	#return
-	#set_phong(ob); return
-
 
 	verts = wave_vert_shader(ob["SH_axes"], ob["SH_freq"], ob["SH_amp"])
 	cb = WindCallback(ob["SH_speed"], ob["SH_axes"])
-	_set_shader(ob, verts, frag_gouraud, cb)
-
-	for axis in ob["SH_axes"]:
-		ob["_phase{}".format(axis)] = 0.0
+	shader = _set_shader(ob, verts, frag_gouraud, cb)
+	if shader is not None:
+		# Third texture slot is for displacement.
+		shader.setSampler("tDisp", 2)
 
 
 class WindCallback:
@@ -227,22 +231,23 @@ class WindCallback:
 	Makes the leaves move. Called once per frame per instance of the shader.
 	'''
 
-	PHASE_STEP =  (1.0/3.0, 1.0/4.5, 1.0/9.0)
+	PHASE_STEPX = (1.0/3.0) * 0.001
+	PHASE_STEPY = (1.0/4.5) * 0.001
 
 	def __init__(self, speed, axes):
-		self.speed = []
-		self.phases = []
-		for _, step in zip(axes, WindCallback.PHASE_STEP):
-			self.speed.append(step * speed)
-			self.phases.append(0.0)
+		self.speedx = WindCallback.PHASE_STEPX * speed
+		self.speedy = WindCallback.PHASE_STEPY * speed
+		self.phasex = self.phasey = 0.0
 
-	def __call__(self, shader):
-		for i, speed in enumerate(self.speed):
-			self.phases[i] = (self.phases[i] + speed) % 1.0
-		if len(self.phases) == 1:
-			shader.setUniform1f("phase", self.phases[0])
-		else:
-			shader.setUniformfv("phase", self.phases)
+	def __call__(self, shader, world_to_cam, world_to_cam_vec):
+		# Set displacement texture lookup offset
+		self.phasex = (self.phasex + self.speedx) % 1.0
+		self.phasey = (self.phasey + self.speedy) % 1.0
+		shader.setUniform2f("phase", self.phasex, self.phasey)
+
+		shader.setUniformfv("worldViewX", world_to_cam_vec * XAXIS)
+		shader.setUniformfv("worldViewY", world_to_cam_vec * YAXIS)
+		shader.setUniformfv("worldViewZ", world_to_cam_vec * ZAXIS)
 
 
 calc_light = """
@@ -451,27 +456,33 @@ def wave_vert_shader(axes="xyz", frequency=4.0, amplitude=1.0):
 	// Wavy vertex shader
 
 	const float PI2 = 2.0 * 3.14159;
-	const ${datatype} FREQ = ${datatype}(${frequency});
+	const float FREQ = ${frequency};
 	const float AMPLITUDE = ${amplitude};
 
-	uniform ${datatype} phase;
+	uniform sampler2D tDisp;
+	uniform vec3 worldViewX;
+	uniform vec3 worldViewY;
+	uniform vec3 worldViewZ;
+
+	uniform vec2 phase;
 
 	varying vec3 normal;
 	varying vec4 position;
 	varying vec4 lightCol;
 
 	void main() {
-		// Shift position of vertex using a sine generator.
-		${datatype} waveAmp = gl_Vertex.${axes} * FREQ + phase * PI2;
-		${datatype} disp = sin(waveAmp) * AMPLITUDE;
+		// Shift position of vertex using a displacement texture.
+		vec2 texcoords = gl_Vertex.xy * 0.0005 * FREQ + phase;
+		vec3 disp = texture2D(tDisp, texcoords).xyz;
+		disp = (disp - 0.5) * 2.0 * AMPLITUDE;
+		// TODO: limit axes. Consider combining all these vectors into one?
+		vec3 dispView = worldViewX * disp.x + worldViewY * disp.y + worldViewZ * disp.z;
 
 		// Limit displacement by vertex colour (black = stationary).
-		disp *= gl_Color.x;
+		dispView *= gl_Color.xyz;
 
-		vec4 pos = gl_Vertex;
-		pos.${axes} += disp;
-		position = gl_ModelViewMatrix * pos;
-		gl_Position = gl_ModelViewProjectionMatrix * pos;
+		position = (gl_ModelViewMatrix * gl_Vertex) + vec4(dispView, 0.0);
+		gl_Position = gl_ProjectionMatrix * position;
 
 		// Transfer tex coords.
 		gl_TexCoord[0] = gl_MultiTexCoord0;

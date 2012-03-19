@@ -475,11 +475,13 @@ def wave_vert_shader(axes="xyz", frequency=4.0, amplitude=1.0):
 		vec2 texcoords = gl_Vertex.xy * 0.0005 * FREQ + phase;
 		vec3 disp = texture2D(tDisp, texcoords).xyz;
 		disp = (disp - 0.5) * 2.0 * AMPLITUDE;
-		// TODO: limit axes. Consider combining all these vectors into one?
-		vec3 dispView = worldViewX * disp.x + worldViewY * disp.y + worldViewZ * disp.z;
 
 		// Limit displacement by vertex colour (black = stationary).
-		dispView *= gl_Color.xyz;
+		disp *= gl_Color.xyz;
+
+		// Can't combine these into one vector, or we lose the ability to limit
+		// individual axes.
+		vec3 dispView = worldViewX * disp.x + worldViewY * disp.y + worldViewZ * disp.z;
 
 		position = (gl_ModelViewMatrix * gl_Vertex) + vec4(dispView, 0.0);
 		gl_Position = gl_ProjectionMatrix * position;

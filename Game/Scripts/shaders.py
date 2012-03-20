@@ -24,7 +24,7 @@ import mathutils
 
 import bxt
 
-DEBUG = True
+DEBUG = False
 
 LAMPDIR = (0.0, 0.0, 1.0)
 XAXIS = mathutils.Vector((1.0, 0.0, 0.0))

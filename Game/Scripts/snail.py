@@ -107,6 +107,8 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		bxt.types.Event('SetCameraAlignment', alignment).send()
 		camera.AutoCamera().add_focus_point(self)
 
+		self.DEBUGpositions = [self.worldPosition.copy()]
+
 	def load_items(self):
 		scene = bge.logic.getCurrentScene()
 		if not "Shell" in scene.objectsInactive:
@@ -615,10 +617,21 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		bxt.types.WeakEvent('ShellExited', self).send()
 
+	def record_velocity(self):
+		# TODO: Remove this debugging code.
+		super(Snail, self).record_velocity()
+		self.DEBUGpositions.append(self.worldPosition.copy())
+		if len(self.DEBUGpositions) > 20:
+			self.DEBUGpositions.pop(0)
+
 	def respawn(self, reason):
 		if self.has_state(Snail.S_INSHELL):
 			self.exit_shell(False)
 		super(Snail, self).respawn(reason)
+
+		print("Snail respawning. Previous positions were:")
+		for pos in self.DEBUGpositions:
+			print(pos)
 
 	def set_health(self, value):
 		super(Snail, self).set_health(value)

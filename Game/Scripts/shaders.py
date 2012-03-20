@@ -31,7 +31,7 @@ XAXIS = mathutils.Vector((1.0, 0.0, 0.0))
 YAXIS = mathutils.Vector((0.0, 1.0, 0.0))
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 
-Shaderdef = namedtuple('Shaderdef', ['shader', 'callback'])
+Shaderdef = namedtuple('Shaderdef', ['shader', 'callback', 'uses_lights'])
 
 class ShaderCtrl(metaclass=bxt.types.Singleton):
 	'''Looks after special GLSL materials in this scene.'''
@@ -41,8 +41,8 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 	def __init__(self):
 		self.shaders = set()
 
-	def add_shader(self, shader, callback=None):
-		self.shaders.add(Shaderdef(shader, callback))
+	def add_shader(self, shader, callback=None, uses_lights=True):
+		self.shaders.add(Shaderdef(shader, callback, uses_lights))
 
 	@bxt.types.expose
 	def update(self):
@@ -143,6 +143,9 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			if sc.callback is not None:
 				sc.callback(shader, world_to_camera, world_to_camera_vec)
 
+			if not sc.uses_lights:
+				continue
+
 			shader.setUniform3f("key_light_dir", key_light_dir.x, key_light_dir.y, key_light_dir.z)
 			shader.setUniform4f("key_light_col", key_light_col.x, key_light_col.y, key_light_col.z, 1.0)
 
@@ -190,7 +193,9 @@ def _set_shader(ob, vert_shader, frag_shader, callback=None):
 		if not shader.isValid():
 			shader.setSource(vert_shader, frag_shader, True)
 		shader.setSampler("tCol", 0)
-		ShaderCtrl().add_shader(shader, callback)
+		uses_lights = ("key_light_dir" in vert_shader or
+				"key_light_dir" in frag_shader)
+		ShaderCtrl().add_shader(shader, callback, uses_lights)
 	return shader
 
 
@@ -201,16 +206,21 @@ def _print_code(text):
 
 @bxt.utils.all_sensors_positive
 @bxt.utils.owner
-def set_phong(ob):
-	'''Uses a standard Phong shader.'''
-	_set_shader(ob, vert_basic, frag_phong)
+def set_basic_shader(ob):
+	'''Uses a standard shader.'''
 
+	if 'SH_alpha' in ob:
+		alpha = ob['SH_alpha']
+	else:
+		alpha = 'CLIP'
 
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
-def set_gouraud(ob):
-	'''Uses a standard Phong shader.'''
-	_set_shader(ob, vert_basic, frag_gouraud)
+	if 'SH_model' in ob:
+		model = ob['SH_model']
+	else:
+		model = 'PHONG'
+
+	_set_shader(ob, create_vert_shader(model=model),
+			create_frag_shader(model=model, alpha=alpha))
 
 
 @bxt.utils.all_sensors_positive
@@ -218,9 +228,51 @@ def set_gouraud(ob):
 def set_windy(ob):
 	'''Makes the vertices on a mesh wave as if blown by the wind.'''
 
-	verts = wave_vert_shader(ob["SH_freq"], ob["SH_amp"])
+	if 'SH_alpha' in ob:
+		alpha = ob['SH_alpha']
+	else:
+		alpha = 'CLIP'
+	if 'SH_model' in ob:
+		model = ob['SH_model']
+	else:
+		model = 'GOURAUD'
+
+	POSITION_FN = Template("""
+	const float PI2 = 2.0 * 3.14159;
+	const float FREQ = ${frequency};
+	const float AMPLITUDE = ${amplitude};
+
+	uniform sampler2D tDisp;
+	uniform vec3 worldViewX;
+	uniform vec3 worldViewY;
+	uniform vec3 worldViewZ;
+
+	uniform vec2 phase;
+
+	vec4 getPosition() {
+		// Shift position of vertex using a displacement texture.
+		vec2 texcoords = gl_Vertex.xy * 0.0005 * FREQ + phase;
+		vec3 disp = texture2D(tDisp, texcoords).xyz;
+		disp = (disp - 0.5) * 2.0 * AMPLITUDE;
+
+		// Limit displacement by vertex colour (black = stationary).
+		disp *= gl_Color.xyz;
+
+		// Can't combine these into one vector, or we lose the ability to limit
+		// individual axes.
+		vec3 dispView = worldViewX * disp.x + worldViewY * disp.y + worldViewZ * disp.z;
+
+		position = (gl_ModelViewMatrix * gl_Vertex) + vec4(dispView, 0.0);
+		return gl_ProjectionMatrix * position;
+	}
+	""")
+	position_fn = POSITION_FN.substitute(frequency=ob["SH_freq"],
+			amplitude=ob["SH_amp"])
+
+	verts = create_vert_shader(model=model, position_fn=position_fn)
+	frags = create_frag_shader(model=model, alpha=alpha)
 	cb = WindCallback(ob["SH_speed"])
-	shader = _set_shader(ob, verts, frag_gouraud, cb)
+	shader = _set_shader(ob, verts, frags, cb)
 	if shader is not None:
 		# Third texture slot is for displacement.
 		shader.setSampler("tDisp", 2)
@@ -347,147 +399,128 @@ calc_light = """
 	}
 """
 
-vert_basic = """
+def create_vert_shader(model='PHONG', position_fn=None):
 
-	// Basic vertex shader
+	if model == 'PHONG':
+		light_header = ""
+		varying = ""
+		lighting = """
+		position = gl_ModelViewMatrix * gl_Vertex;
+		normal = normalize(gl_NormalMatrix * gl_Normal);
+		"""
+	elif model == 'GOURAUD':
+		light_header = calc_light
+		varying = """
+		varying vec4 lightCol;
+		"""
+		lighting = """
+		position = gl_ModelViewMatrix * gl_Vertex;
+		normal = normalize(gl_NormalMatrix * gl_Normal);
+		lightCol = calc_light(position, normal);
+		"""
+	else:
+		light_header = ""
+		varying = ""
+		lighting = ""
 
-	varying vec3 normal;
+	if position_fn is None:
+		position_fn = """
+		vec4 getPosition() {
+			return gl_ModelViewProjectionMatrix * gl_Vertex;
+		}
+		"""
+
+	verts = Template("""
+	${light_header}
+
+	// ${model} vertex shader
+
+	// Position and normal in view space. Always declared, but not always
+	// needed.
 	varying vec4 position;
+	varying vec3 normal;
+
+	${varying}
+	${position_fn}
  
  	void main() {
- 		gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+		gl_Position = getPosition();
  
  		// Transfer tex coords.
  		gl_TexCoord[0] = gl_MultiTexCoord0;
  
  		// Lighting (note: no perspective transform)
-		position = gl_ModelViewMatrix * gl_Vertex;
- 		normal = normalize(gl_NormalMatrix * gl_Normal);
+		${lighting}
  	}
-"""
+	""")
+	return verts.substitute(light_header=light_header, model=model,
+			varying=varying, position_fn=position_fn, lighting=lighting)
 
-# Simple Phong shader; no specular.
-frag_phong = calc_light + """
-
-	// Phong fragment shader
-
-	uniform sampler2D tCol;
-
-	varying vec3 normal;
-	varying vec4 position;
-
-	void main() {
-		vec4 col = texture2D(tCol, gl_TexCoord[0].st);
+def create_frag_shader(model='PHONG', alpha='CLIP'):
+	if alpha == 'CLIP':
+		alpha1 = """
 		// Prevent z-fighting by using a clip alpha test.
 		if (col.a < 0.5)
 			discard;
+		"""
+		alpha2 = """
+		// Using clip alpha; see above.
+		gl_FragColor.a = 1.0;
+		"""
+	else:
+		alpha1 = ""
+		alpha2 = """
+		gl_FragColor.a = col.a;
+		"""
 
+	if model == 'PHONG':
+		light_header = calc_light
+		varying = """
+		varying vec3 normal;
+		varying vec4 position;
+		"""
+		lighting = """
 		vec3 norm = normalize(normal);
 		//if (!gl_FrontFacing)
 		//	norm = -norm;
 		vec4 lightCol = calc_light(position, norm);
-
 		gl_FragColor = col * lightCol;
-		// Debugging
-		//gl_FragColor = mix(gl_FragColor, vec4(1.0, 0.0, 1.0, 1.0), 0.9999);
+		"""
+	elif model == 'GOURAUD':
+		light_header = ""
+		varying = """
+		varying vec4 lightCol;
+		"""
+		lighting = """
+		gl_FragColor = col * lightCol;
+		"""
+	else:
+		light_header = ""
+		varying = ""
+		lighting = """
+		gl_FragColor = col;
+		"""
 
-		// Prevent pure black, as it messes with the DoF shader.
-		gl_FragColor.g += 0.01;
+	frag = Template("""
+	${light_header}
 
-		// Using clip alpha; see above.
-		gl_FragColor.a = 1.0;
-	}
-"""
-
-vert_gouraud = calc_light + """
-
-	// Basic vertex shader
-
-	varying vec4 lightCol;
-
-	void main() {
-		gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-
-		// Transfer tex coords.
-		gl_TexCoord[0] = gl_MultiTexCoord0;
-
-		// Lighting (note: no perspective transform)
-		vec4 position = gl_ModelViewMatrix * gl_Vertex;
-		vec3 normal = normalize(gl_NormalMatrix * gl_Normal);
-		lightCol = calc_light(position, normal);
-	}
-"""
-
-# Simple Gouraud (interpolated) shader; no specular.
-frag_gouraud = """
-
-	// Gouraud fragment shader
+	// ${model} fragment shader
 
 	uniform sampler2D tCol;
 
-	varying vec4 lightCol;
+	${varying}
 
 	void main() {
 		vec4 col = texture2D(tCol, gl_TexCoord[0].st);
 
-		// Prevent z-fighting by using a clip alpha test.
-		if (col.a < 0.5)
-			discard;
-
-		gl_FragColor = col * lightCol;
+		${alpha1}
+		${lighting}
+		${alpha2}
 
 		// Prevent pure black, as it messes with the DoF shader.
 		gl_FragColor.g += 0.01;
-
-		// Using clip alpha; see above.
-		gl_FragColor.a = 1.0;
-	}
-"""
-
-def wave_vert_shader(frequency=4.0, amplitude=1.0):
-
-	verts = Template(calc_light + """
-
-	// Wavy vertex shader
-
-	const float PI2 = 2.0 * 3.14159;
-	const float FREQ = ${frequency};
-	const float AMPLITUDE = ${amplitude};
-
-	uniform sampler2D tDisp;
-	uniform vec3 worldViewX;
-	uniform vec3 worldViewY;
-	uniform vec3 worldViewZ;
-
-	uniform vec2 phase;
-
-	varying vec3 normal;
-	varying vec4 position;
-	varying vec4 lightCol;
-
-	void main() {
-		// Shift position of vertex using a displacement texture.
-		vec2 texcoords = gl_Vertex.xy * 0.0005 * FREQ + phase;
-		vec3 disp = texture2D(tDisp, texcoords).xyz;
-		disp = (disp - 0.5) * 2.0 * AMPLITUDE;
-
-		// Limit displacement by vertex colour (black = stationary).
-		disp *= gl_Color.xyz;
-
-		// Can't combine these into one vector, or we lose the ability to limit
-		// individual axes.
-		vec3 dispView = worldViewX * disp.x + worldViewY * disp.y + worldViewZ * disp.z;
-
-		position = (gl_ModelViewMatrix * gl_Vertex) + vec4(dispView, 0.0);
-		gl_Position = gl_ProjectionMatrix * position;
-
-		// Transfer tex coords.
-		gl_TexCoord[0] = gl_MultiTexCoord0;
-
-		// Lighting
-		normal = normalize(gl_NormalMatrix * gl_Normal);
-		lightCol = calc_light(position, normal);
 	}
 	""")
-	return verts.substitute(frequency=frequency,
-			amplitude=amplitude)
+	return frag.substitute(model=model, light_header=light_header,
+			varying=varying, lighting=lighting,
+			alpha1=alpha1, alpha2=alpha2)

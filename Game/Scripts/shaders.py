@@ -218,8 +218,8 @@ def set_gouraud(ob):
 def set_windy(ob):
 	'''Makes the vertices on a mesh wave as if blown by the wind.'''
 
-	verts = wave_vert_shader(ob["SH_axes"], ob["SH_freq"], ob["SH_amp"])
-	cb = WindCallback(ob["SH_speed"], ob["SH_axes"])
+	verts = wave_vert_shader(ob["SH_freq"], ob["SH_amp"])
+	cb = WindCallback(ob["SH_speed"])
 	shader = _set_shader(ob, verts, frag_gouraud, cb)
 	if shader is not None:
 		# Third texture slot is for displacement.
@@ -234,7 +234,7 @@ class WindCallback:
 	PHASE_STEPX = (1.0/3.0) * 0.001
 	PHASE_STEPY = (1.0/4.5) * 0.001
 
-	def __init__(self, speed, axes):
+	def __init__(self, speed):
 		self.speedx = WindCallback.PHASE_STEPX * speed
 		self.speedy = WindCallback.PHASE_STEPY * speed
 		self.phasex = self.phasey = 0.0
@@ -444,12 +444,7 @@ frag_gouraud = """
 	}
 """
 
-def wave_vert_shader(axes="xyz", frequency=4.0, amplitude=1.0):
-
-	if len(axes) == 1:
-		datatype = "float"
-	else:
-		datatype = "vec%d" % len(axes)
+def wave_vert_shader(frequency=4.0, amplitude=1.0):
 
 	verts = Template(calc_light + """
 
@@ -494,5 +489,5 @@ def wave_vert_shader(axes="xyz", frequency=4.0, amplitude=1.0):
 		lightCol = calc_light(position, normal);
 	}
 	""")
-	return verts.substitute(datatype=datatype, axes=axes, frequency=frequency,
+	return verts.substitute(frequency=frequency,
 			amplitude=amplitude)

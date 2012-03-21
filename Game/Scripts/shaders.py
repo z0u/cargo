@@ -40,9 +40,38 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 
 	def __init__(self):
 		self.shaders = set()
+		self.set_mist_colour(mathutils.Vector((1.0, 1.0, 1.0)))
+
+		sce = bge.logic.getCurrentScene()
+		cam = sce.active_camera
+		self.set_mist_depth(cam.far)
 
 	def add_shader(self, shader, callback=None, uses_lights=True):
 		self.shaders.add(Shaderdef(shader, callback, uses_lights))
+		self.update_globals_single(shader)
+
+	def update_globals_single(self, shader):
+		print("mist_colour", self._mist_colour)
+		shader.setUniformfv("mist_colour", self._mist_colour)
+		shader.setUniform1f("mist_depth", -self._mist_depth)
+
+	def update_globals(self):
+		for sc in self.shaders:
+			shader = sc.shader
+			if shader.invalid:
+				continue
+			self.update_globals_single(shader)
+
+	def set_mist_colour(self, colour):
+		self._mist_colour = colour.copy()
+		self.update_globals()
+		bge.render.setMistColor(colour)
+
+	def set_mist_depth(self, depth):
+		self._mist_depth = depth
+		self.update_globals()
+		bge.render.setMistStart(0.0)
+		bge.render.setMistEnd(depth)
 
 	@bxt.types.expose
 	def update(self):
@@ -219,8 +248,13 @@ def set_basic_shader(ob):
 	else:
 		model = 'PHONG'
 
+	if 'SH_twosided' in ob:
+		twosided = ob['SH_twosided']
+	else:
+		twosided = False
+
 	_set_shader(ob, create_vert_shader(model=model),
-			create_frag_shader(model=model, alpha=alpha))
+			create_frag_shader(model=model, alpha=alpha, twosided=twosided))
 
 
 @bxt.utils.all_sensors_positive
@@ -236,6 +270,10 @@ def set_windy(ob):
 		model = ob['SH_model']
 	else:
 		model = 'GOURAUD'
+	if 'SH_twosided' in ob:
+		twosided = ob['SH_twosided']
+	else:
+		twosided = False
 
 	POSITION_FN = Template("""
 	const float PI2 = 2.0 * 3.14159;
@@ -270,7 +308,7 @@ def set_windy(ob):
 			amplitude=ob["SH_amp"])
 
 	verts = create_vert_shader(model=model, position_fn=position_fn)
-	frags = create_frag_shader(model=model, alpha=alpha)
+	frags = create_frag_shader(model=model, alpha=alpha, twosided=twosided)
 	cb = WindCallback(ob["SH_speed"])
 	shader = _set_shader(ob, verts, frags, cb)
 	if shader is not None:
@@ -405,7 +443,6 @@ def create_vert_shader(model='PHONG', position_fn=None):
 		light_header = ""
 		varying = ""
 		lighting = """
-		position = gl_ModelViewMatrix * gl_Vertex;
 		normal = normalize(gl_NormalMatrix * gl_Normal);
 		"""
 	elif model == 'GOURAUD':
@@ -414,7 +451,6 @@ def create_vert_shader(model='PHONG', position_fn=None):
 		varying vec4 lightCol;
 		"""
 		lighting = """
-		position = gl_ModelViewMatrix * gl_Vertex;
 		normal = normalize(gl_NormalMatrix * gl_Normal);
 		lightCol = calc_light(position, normal);
 		"""
@@ -426,6 +462,7 @@ def create_vert_shader(model='PHONG', position_fn=None):
 	if position_fn is None:
 		position_fn = """
 		vec4 getPosition() {
+			position = gl_ModelViewMatrix * gl_Vertex;
 			return gl_ModelViewProjectionMatrix * gl_Vertex;
 		}
 		"""
@@ -435,9 +472,9 @@ def create_vert_shader(model='PHONG', position_fn=None):
 
 	// ${model} vertex shader
 
-	// Position and normal in view space. Always declared, but not always
-	// needed.
+	// Position and normal in view space.
 	varying vec4 position;
+	// Always declared, but not always needed.
 	varying vec3 normal;
 
 	${varying}
@@ -456,7 +493,7 @@ def create_vert_shader(model='PHONG', position_fn=None):
 	return verts.substitute(light_header=light_header, model=model,
 			varying=varying, position_fn=position_fn, lighting=lighting)
 
-def create_frag_shader(model='PHONG', alpha='CLIP'):
+def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 	if alpha == 'CLIP':
 		alpha1 = """
 		// Prevent z-fighting by using a clip alpha test.
@@ -467,25 +504,36 @@ def create_frag_shader(model='PHONG', alpha='CLIP'):
 		// Using clip alpha; see above.
 		gl_FragColor.a = 1.0;
 		"""
-	else:
+	elif alpha == 'BLEND':
 		alpha1 = ""
 		alpha2 = """
 		gl_FragColor.a = col.a;
+		"""
+	else:
+		alpha1 = ""
+		alpha2 = """
+		gl_FragColor.a = 1.0;
 		"""
 
 	if model == 'PHONG':
 		light_header = calc_light
 		varying = """
 		varying vec3 normal;
-		varying vec4 position;
 		"""
-		lighting = """
-		vec3 norm = normalize(normal);
-		//if (!gl_FrontFacing)
-		//	norm = -norm;
-		vec4 lightCol = calc_light(position, norm);
-		gl_FragColor = col * lightCol;
-		"""
+		if not twosided:
+			lighting = """
+			vec3 norm = normalize(normal);
+			vec4 lightCol = calc_light(position, norm);
+			gl_FragColor = col * lightCol;
+			"""
+		else:
+			lighting = """
+			vec3 norm = normalize(normal);
+			if (!gl_FrontFacing)
+				norm = -norm;
+			vec4 lightCol = calc_light(position, norm);
+			gl_FragColor = col * lightCol;
+			"""
 	elif model == 'GOURAUD':
 		light_header = ""
 		varying = """
@@ -507,8 +555,11 @@ def create_frag_shader(model='PHONG', alpha='CLIP'):
 	// ${model} fragment shader
 
 	uniform sampler2D tCol;
+	uniform vec3 mist_colour;
+	uniform float mist_depth;
 
 	${varying}
+	varying vec4 position;
 
 	void main() {
 		vec4 col = texture2D(tCol, gl_TexCoord[0].st);
@@ -516,6 +567,9 @@ def create_frag_shader(model='PHONG', alpha='CLIP'):
 		${alpha1}
 		${lighting}
 		${alpha2}
+
+		gl_FragColor.xyz = mix(gl_FragColor.xyz, mist_colour,
+				position.z / mist_depth);
 
 		// Prevent pure black, as it messes with the DoF shader.
 		gl_FragColor.g += 0.01;

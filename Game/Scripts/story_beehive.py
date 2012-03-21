@@ -23,10 +23,13 @@ from . import director
 from . import ui
 from . import camera
 from .story import *
+from . import shaders
 
 class LevelBeehive(GameLevel):
 	def __init__(self, oldOwner):
 		GameLevel.__init__(self, oldOwner)
+		shaders.ShaderCtrl().set_mist_colour(
+				mathutils.Vector((0.0, 0.0, 0.0)))
 
 class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	DIR_UP = 1

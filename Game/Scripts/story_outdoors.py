@@ -24,14 +24,19 @@ from .story import *
 from . import director
 from . import store
 from Scripts import shells
+from . import shaders
 
 class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
 		GameLevel.__init__(self, oldOwner)
+
 		# Load additional files
 		self.load_foaliage()
 		self.load_npcs()
 		self.init_worm()
+
+		shaders.ShaderCtrl().set_mist_colour(
+				mathutils.Vector((0.749020, 0.737255, 0.745098)))
 
 	def load_foaliage(self):
 		'''Load extra files'''

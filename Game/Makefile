@@ -17,14 +17,14 @@ SCRIPT_CACHE=bxt/*.pyc\
 	BScripts/*.pyc\
 	BScripts/__pycache__\
 	__pycache__\
-	*.pyc
+	*.pyc\
+	*~
 
-clean: clean_backups clean_grass
-
-clean_backups:
+clean:
 	rm -rf $(SCRIPT_CACHE)
 	rm -f *.blend?
 
-clean_grass:
+distclean: clean
 	rm -f OutdoorsBase_grass.blend OutdoorsBase_flowers.blend
+	rm -f *.bgeconf
 

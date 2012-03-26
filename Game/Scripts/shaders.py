@@ -105,7 +105,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 		fill_light2_col.w = 1.0
 
 		num_user_lights = 0
-		# CUSTOM LIGHT 1
+		# CUSTOM LIGHT 1 - Anything other than Hemi (undetectable)
 		try:
 			light = sce.objects["UserLight1"]
 		except KeyError:
@@ -119,10 +119,12 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 				cust_light1_pos = cust_light1_dir.copy()
 				cust_light1_pos.resize_4d()
 				cust_light1_pos.w = 0.0
+				cust_light1_dist = 0.0
 			else:
 				cust_light1_pos = world_to_camera * light.worldPosition
 				cust_light1_pos.resize_4d()
 				cust_light1_pos.w = 1.0
+				cust_light1_dist = light.distance
 			if (light.type == light.SPOT):
 				cust_light1_spotcutoff = light.spotsize / 2.0
 				cust_light1_spotcoscutoff = math.cos(math.radians(
@@ -133,7 +135,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 				cust_light1_spotcoscutoff = -1.0
 				cust_light1_spotexponent = light.spotblend * 128.0
 
-		# CUSTOM LIGHT 2
+		# CUSTOM LIGHT 2 - Anything other than Hemi (undetectable)
 		try:
 			light = sce.objects["UserLight2"]
 		except KeyError:
@@ -147,10 +149,12 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 				cust_light2_pos = cust_light2_dir.copy()
 				cust_light2_pos.resize_4d()
 				cust_light2_pos.w = 0.0
+				cust_light2_dist = 0.0
 			else:
 				cust_light2_pos = world_to_camera * light.worldPosition
 				cust_light2_pos.resize_4d()
 				cust_light2_pos.w = 1.0
+				cust_light2_dist = light.distance
 			if (light.type == light.SPOT):
 				cust_light2_spotcutoff = light.spotsize / 2.0
 				cust_light2_spotcoscutoff = math.cos(math.radians(
@@ -192,6 +196,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			shader.setUniform1f("cust_light1_spotcutoff", cust_light1_spotcutoff)
 			shader.setUniform1f("cust_light1_spotcoscutoff", cust_light1_spotcoscutoff)
 			shader.setUniform1f("cust_light1_spotexponent", cust_light1_spotexponent)
+			shader.setUniform1f("cust_light1_dist", cust_light1_dist)
 
 			if num_user_lights < 2:
 				continue
@@ -201,6 +206,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			shader.setUniform1f("cust_light2_spotcutoff", cust_light2_spotcutoff)
 			shader.setUniform1f("cust_light2_spotcoscutoff", cust_light2_spotcoscutoff)
 			shader.setUniform1f("cust_light2_spotexponent", cust_light2_spotexponent)
+			shader.setUniform1f("cust_light2_dist", cust_light2_dist)
 
 		for sc in deadShaders:
 			self.shaders.remove(sc)
@@ -359,6 +365,7 @@ calc_light = """
 	uniform float cust_light1_spotcutoff;
 	uniform float cust_light1_spotcoscutoff;
 	uniform float cust_light1_spotexponent;
+	uniform float cust_light1_dist;
 
 	uniform vec4 cust_light2_pos;
 	uniform vec3 cust_light2_dir;
@@ -366,6 +373,7 @@ calc_light = """
 	uniform float cust_light2_spotcutoff;
 	uniform float cust_light2_spotcoscutoff;
 	uniform float cust_light2_spotexponent;
+	uniform float cust_light2_dist;
 
 	float intensity(vec3 nor, vec3 direction) {
 		return max(dot(nor, direction), 0.0);
@@ -376,33 +384,33 @@ calc_light = """
 	}
 
 	float intensity_user(vec3 nor, vec4 pos, vec4 lightpos, vec3 dir,
-			float cutoff, float coscutoff, float exponent) {
+			float cutoff, float coscutoff, float exponent, float maxdist) {
 
 		float attenuation;
 		vec3 viewLight;
 
 		if (pos.w == 0.0) {
-			// Directional
+			// Directional (sun)
 			viewLight = pos.xyz;
 			attenuation = 1.0;
 
 		} else {
-			// Point
-			viewLight = normalize(lightpos.xyz - pos.xyz);
+			// Point or spot
+			viewLight = lightpos.xyz - pos.xyz;
+			float dist = length(viewLight);
+			attenuation = clamp((maxdist - dist) / maxdist, 0.0, 1.0);
+
+			viewLight = normalize(viewLight);
 
 			if (cutoff <= 90.0) {
-				// Spotlight
+				// Spotlight; adjust attenuation.
 				float cosCone = max(0.0, dot(-viewLight, dir.xyz));
 				if (cosCone < coscutoff) {
 					// outside of spotlight cone
 					attenuation = 0.0;
 				} else {
-					attenuation = pow(cosCone - coscutoff, exponent / 128.0);
+					attenuation *= pow(cosCone - coscutoff, exponent / 128.0);
 				}
-
-			} else {
-				// Point light
-				attenuation = 1.0;
 			}
 		}
 		return max(dot(nor, viewLight), 0.0) * attenuation;
@@ -425,13 +433,15 @@ calc_light = """
 				cust_light1_dir,
 				cust_light1_spotcutoff,
 				cust_light1_spotcoscutoff,
-				cust_light1_spotexponent);
+				cust_light1_spotexponent,
+				cust_light1_dist);
 		lightCol += cust_light2_col * intensity_user(nor, pos,
 				cust_light2_pos,
 				cust_light2_dir,
 				cust_light2_spotcutoff,
 				cust_light2_spotcoscutoff,
-				cust_light2_spotexponent);
+				cust_light2_spotexponent,
+				cust_light2_dist);
 
 		return lightCol;
 	}

@@ -158,7 +158,7 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			def cb():
 				icon.visible = True
 				if cbEvent != None:
-					cbEvent.send(delay=1)
+					cbEvent.send(delay=2)
 			blackout.visible = True
 			self.playAction('LS_Hide_Arm', 16, 1, layer=LoadingScreen.L_DISPLAY)
 			bxt.anim.add_trigger_lt(self, LoadingScreen.L_DISPLAY, 2, cb)
@@ -170,7 +170,7 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			def cb():
 				blackout.visible = False
 				if cbEvent != None:
-					cbEvent.send(delay=1)
+					cbEvent.send(delay=2)
 			icon.visible = False
 			self.playAction('LS_Hide_Arm', 1, 16, layer=LoadingScreen.L_DISPLAY)
 			bxt.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)

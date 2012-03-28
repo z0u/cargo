@@ -39,6 +39,8 @@ class Actor(bxt.types.BX_GameObject):
 		self.lastLinV = bxt.bmath.MINVECTOR.copy()
 		self.localCoordinates = False
 		self.touchedObject = None
+		# Set property to allow logic bricks to find actors.
+		self["Actor"] = True
 		Director().add_actor(self)
 
 	@bxt.types.expose

@@ -1,14 +1,10 @@
 == Freesound samples downloaded ==
 
     August 22, 2009
-        By HerbertBoland (http://www.freesound.org/people/HerbertBoland/)
-            MouthPop.wav (http://www.freesound.org/people/HerbertBoland/sounds/33369/) - CC-BY
         By tigersound (http://www.freesound.org/people/tigersound/)
             gravel walking.aif (http://www.freesound.org/people/tigersound/sounds/15562/) CC-BY-NC
    ---------------------------------------
     August 21, 2009
-        By MeltyMcFace (http://www.freesound.org/people/MeltyMcFace/)
-            Cabbage.wav (http://www.freesound.org/people/MeltyMcFace/sounds/50457/) CC-S+
         By anamorphosis (http://www.freesound.org/people/anamorphosis/)
             GMB Kantilan 9.WAV (http://www.freesound.org/people/anamorphosis/sounds/24629/) CC-S+
    ---------------------------------------
@@ -21,6 +17,3 @@ Bell.ogg: CC-S+ -> must be replaced
 Rolling.ogg: CC-BY-NC -> must be replaced
  - 15562 by tigersound
 
-ShellPop.ogg: CC-S+ + CC-BY -> must be replaced
- - 33369 by HerbertBoland
- - 50457 by MeltyMcFace

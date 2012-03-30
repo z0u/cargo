@@ -494,7 +494,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.rem_state(Snail.S_HASSHELL)
 		self.play_shell_action("PopShell", 18, self.on_drop_shell, animate, 15)
-		bxt.sound.play_sample('//Sound/cc-sample/ShellPop.ogg')
+		bxt.sound.play_sample('//Sound/cc-by/BottleOpen.ogg')
 
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''

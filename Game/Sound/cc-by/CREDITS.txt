@@ -12,6 +12,10 @@ Note: all of these samples are CC-BY.
             jaw_harp5.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95609/)
         By FreqMan (http://www.freesound.org/people/FreqMan/)
             wipe glass window - clean.wav (http://www.freesound.org/people/FreqMan/sounds/69208/)
+        By HerbertBoland (http://www.freesound.org/people/HerbertBoland/)
+            MouthPop.wav (http://www.freesound.org/people/HerbertBoland/sounds/33369/)
+        By Percy Duke (http://www.freesound.org/people/Percy%20Duke/)
+            Opening Scotch Whisky.mp3 (http://www.freesound.org/people/Percy%20Duke/sounds/23502/)
 
 == Sample catalogue ==
 jaw_harp*.ogg:
@@ -19,4 +23,8 @@ jaw_harp*.ogg:
 
 Slither*.ogg
     - 69208 by FreqMan
+
+BottleOpen.ogg
+    - 33369 by HerbertBoland
+    - 23502 by Percy Duke
 

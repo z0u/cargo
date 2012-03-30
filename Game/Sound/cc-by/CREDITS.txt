@@ -1,23 +1,32 @@
 == Freesound samples downloaded ==
-Note: all of these samples are CC-BY.
+Note: Licence is listed after sample URL.
 
     Mar 30, 2012
         By 3bagbrew (http://www.freesound.org/people/3bagbrew/)
-            jaw_harp2.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95600/)
-            jaw_harp19.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95599/)
-            jaw_harp20.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95601/)
-            jaw_harp21.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95602/)
-            jaw_harp3.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95607/)
-            jaw_harp4.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95608/)
-            jaw_harp5.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95609/)
+            jaw_harp2.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95600/) - CC-BY
+            jaw_harp19.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95599/) - CC-BY
+            jaw_harp20.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95601/) - CC-BY
+            jaw_harp21.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95602/) - CC-BY
+            jaw_harp3.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95607/) - CC-BY
+            jaw_harp4.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95608/) - CC-BY
+            jaw_harp5.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95609/) - CC-BY
         By FreqMan (http://www.freesound.org/people/FreqMan/)
-            wipe glass window - clean.wav (http://www.freesound.org/people/FreqMan/sounds/69208/)
+            wipe glass window - clean.wav (http://www.freesound.org/people/FreqMan/sounds/69208/) - CC-BY
         By HerbertBoland (http://www.freesound.org/people/HerbertBoland/)
-            MouthPop.wav (http://www.freesound.org/people/HerbertBoland/sounds/33369/)
+            MouthPop.wav (http://www.freesound.org/people/HerbertBoland/sounds/33369/) - CC-BY
         By Percy Duke (http://www.freesound.org/people/Percy%20Duke/)
-            Opening Scotch Whisky.mp3 (http://www.freesound.org/people/Percy%20Duke/sounds/23502/)
+            Opening Scotch Whisky.mp3 (http://www.freesound.org/people/Percy%20Duke/sounds/23502/) - CC-BY
+        By klakmart (http://www.freesound.org/people/klakmart/)
+            Rumble_BowlingBall.aif (http://www.freesound.org/people/klakmart/sounds/108273/) - CC-0
+        By aUREa (http://www.freesound.org/people/aUREa/)
+            Car on Highway Inside Fiat Punto.wav (http://www.freesound.org/people/aUREa/sounds/94305/) - CC-BY
+        By qubodup (http://www.freesound.org/people/qubodup/)
+            bus2.flac (http://www.freesound.org/people/qubodup/sounds/54910/) - CC-0
+
 
 == Sample catalogue ==
+These are sounds created from various samples. The IDs link to the samples above.
+
 jaw_harp*.ogg:
     - 95600, 95599, 95601, 95602, 95607, 95608, 95609 by 3bagbrew
 
@@ -27,4 +36,11 @@ Slither*.ogg
 BottleOpen.ogg
     - 33369 by HerbertBoland
     - 23502 by Percy Duke
+
+Rolling.ogg
+    - 108273 by klakmart
+
+Driving.ogg
+    - 94305 by aUREa
+    - 54910 by qubodup
 

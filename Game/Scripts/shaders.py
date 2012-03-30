@@ -51,7 +51,6 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 		self.update_globals_single(shader)
 
 	def update_globals_single(self, shader):
-		print("mist_colour", self._mist_colour)
 		shader.setUniformfv("mist_colour", self._mist_colour)
 		shader.setUniform1f("mist_depth", -self._mist_depth)
 

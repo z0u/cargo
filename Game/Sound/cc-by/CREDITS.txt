@@ -29,6 +29,11 @@ substitute it into this URL:
             Car on Highway Inside Fiat Punto.wav - 94305 - CC-BY
         By qubodup (http://www.freesound.org/people/qubodup/)
             bus2.flac - 54910 - CC-0
+            swosh-01.flac - 59988 - CC-0
+            swosh-08.flac - "stick cutting air" - 59995 - CC-0
+        By thetruwu (http://www.freesound.org/people/thetruwu/)
+            FOLEY Chew Ice 1.wav - 51675 - CC-0
+            FOLEY Chew Ice 2.wav - 51676 - CC-0
 
 
 == Sample catalogue ==
@@ -53,4 +58,10 @@ Driving.ogg
 
 Bell*.ogg
     - 30161, 30156, 30159, 30155 by HerbertBoland
+
+Crunch*.ogg
+    - 51675, 51676 by thetruwu
+
+Swosh*.ogg
+    - 59988, 59995 by qubodup
 

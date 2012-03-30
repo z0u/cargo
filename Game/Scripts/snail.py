@@ -775,6 +775,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		dr = self['SpeedDecayRate']
 		mult = self['SpeedMultiplier']
 
+		# Make noise when going fast.
+		self.armature['Squeaking'] = mult > 1.0
+
 		if mult == 1.0:
 			return
 		elif mult > 1.0:

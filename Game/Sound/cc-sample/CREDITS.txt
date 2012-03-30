@@ -1,32 +1,32 @@
 == Freesound samples downloaded ==
 
     August 22, 2009
-        By HerbertBoland (http://www.freesound.org/usersViewSingle.php?id=129090)
-            MouthPop.wav (http://www.freesound.org/samplesViewSingle.php?id=33369)
-        By FreqMan (http://www.freesound.org/usersViewSingle.php?id=92661)
-            wipe glass window - clean.wav (http://www.freesound.org/samplesViewSingle.php?id=69208)
-        By tigersound (http://www.freesound.org/usersViewSingle.php?id=23035)
-            gravel walking.aif (http://www.freesound.org/samplesViewSingle.php?id=15562)
+        By HerbertBoland (http://www.freesound.org/people/HerbertBoland/)
+            MouthPop.wav (http://www.freesound.org/people/HerbertBoland/sounds/33369/) - CC-BY
+        By FreqMan (http://www.freesound.org/people/FreqMan/)
+            wipe glass window - clean.wav (http://www.freesound.org/people/FreqMan/sounds/69208/) - CC-BY
+        By tigersound (http://www.freesound.org/people/tigersound/)
+            gravel walking.aif (http://www.freesound.org/people/tigersound/sounds/15562/) CC-BY-NC
    ---------------------------------------
     August 21, 2009
-        By MeltyMcFace (http://www.freesound.org/usersViewSingle.php?id=593355)
-            Cabbage.wav (http://www.freesound.org/samplesViewSingle.php?id=50457)
-        By anamorphosis (http://www.freesound.org/usersViewSingle.php?id=130612)
-            GMB Kantilan 9.WAV (http://www.freesound.org/samplesViewSingle.php?id=24629)
+        By MeltyMcFace (http://www.freesound.org/people/MeltyMcFace/)
+            Cabbage.wav (http://www.freesound.org/people/MeltyMcFace/sounds/50457/) CC-S+
+        By anamorphosis (http://www.freesound.org/people/anamorphosis/)
+            GMB Kantilan 9.WAV (http://www.freesound.org/people/anamorphosis/sounds/24629/) CC-S+
    ---------------------------------------
 
 
 == Sample catalogue ==
-Bell.ogg:
- - 24629 anamorphosis
+Bell.ogg: CC-S+ -> must be replaced
+ - 24629 by anamorphosis
 
-Rolling.ogg
- - 15562 tigersound
+Rolling.ogg: CC-BY-NC -> must be replaced
+ - 15562 by tigersound
 
-ShellPop.ogg
- - 33369 HerbertBoland
- - 50457 MeltyMcFace
+ShellPop.ogg: CC-S+ + CC-BY -> must be replaced
+ - 33369 by HerbertBoland
+ - 50457 by MeltyMcFace
 
-Slither*.ogg:
- - 15562 tigersound
- - 69208 FreqMan
+Slither*.ogg: CC-BY-NC + CC-BY -> must be replaced
+ - 15562 by tigersound
+ - 69208 by FreqMan

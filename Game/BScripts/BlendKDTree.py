@@ -292,6 +292,9 @@ class KDBranch(KDNode):
 		ob.select = True
 		bpy.context.scene.objects.active = ob
 		bpy.ops.object.join()
+		# Force recalculation of normals by briefly entering edit mode.
+		bpy.ops.object.editmode_toggle()
+		bpy.ops.object.editmode_toggle()
 
 		#
 		# Parent children to new cluster. This relationship will be broken by

@@ -1,14 +1,5 @@
 Samples used from Freesound
 
-    August 14, 2009
-        By arnaud coutancier (http://www.freesound.org/usersViewSingle.php?id=520316)
-            strange bubbles bulles etranges.wav (http://www.freesound.org/samplesViewSingle.php?id=54037)
-        By kijjaz (http://www.freesound.org/usersViewSingle.php?id=26950)
-            running water bubbles-02.aif (http://www.freesound.org/samplesViewSingle.php?id=16740)
-        By acclivity (http://www.freesound.org/usersViewSingle.php?id=37876)
-            Puddle1.wav (http://www.freesound.org/samplesViewSingle.php?id=24206)
-            Puddle2.wav (http://www.freesound.org/samplesViewSingle.php?id=24207)
-
     Mar 30, 2012
         By 3bagbrew (http://www.freesound.org/people/3bagbrew/)
             jaw_harp2.mp3 (http://www.freesound.org/people/3bagbrew/sounds/95600/)

@@ -1,8 +1,6 @@
 == Freesound samples downloaded ==
 
     August 22, 2009
-        By dobroide (http://www.freesound.org/usersViewSingle.php?id=8043)
-            car.horn.flac (http://www.freesound.org/samplesViewSingle.php?id=9674)
         By HerbertBoland (http://www.freesound.org/usersViewSingle.php?id=129090)
             MouthPop.wav (http://www.freesound.org/samplesViewSingle.php?id=33369)
         By FreqMan (http://www.freesound.org/usersViewSingle.php?id=92661)
@@ -11,45 +9,24 @@
             gravel walking.aif (http://www.freesound.org/samplesViewSingle.php?id=15562)
    ---------------------------------------
     August 21, 2009
-        By harri (http://www.freesound.org/usersViewSingle.php?id=18811)
-            hhh7.mp3 (http://www.freesound.org/samplesViewSingle.php?id=16810)
         By MeltyMcFace (http://www.freesound.org/usersViewSingle.php?id=593355)
             Cabbage.wav (http://www.freesound.org/samplesViewSingle.php?id=50457)
         By anamorphosis (http://www.freesound.org/usersViewSingle.php?id=130612)
             GMB Kantilan 9.WAV (http://www.freesound.org/samplesViewSingle.php?id=24629)
-        By acclivity (http://www.freesound.org/usersViewSingle.php?id=37876)
-            Brook20Sec.wav (http://www.freesound.org/samplesViewSingle.php?id=13552)
-   ---------------------------------------
-    August 14, 2009
-        By arnaud coutancier (http://www.freesound.org/usersViewSingle.php?id=520316)
-            strange bubbles bulles etranges.wav (http://www.freesound.org/samplesViewSingle.php?id=54037)
-        By kijjaz (http://www.freesound.org/usersViewSingle.php?id=26950)
-            running water bubbles-02.aif (http://www.freesound.org/samplesViewSingle.php?id=16740)
-        By acclivity (http://www.freesound.org/usersViewSingle.php?id=37876)
-            Puddle1.wav (http://www.freesound.org/samplesViewSingle.php?id=24206)
-            Puddle2.wav (http://www.freesound.org/samplesViewSingle.php?id=24207)
-   ---------------------------------------
-    May 10, 2009
-        By reinsamba (http://www.freesound.org/usersViewSingle.php?id=18799)
-            crystal_glass.wav (http://www.freesound.org/samplesViewSingle.php?id=35631)
    ---------------------------------------
 
 
 == Sample catalogue ==
-Bell.wav:
+Bell.ogg:
  - 24629 anamorphosis
 
-Rolling.wav
+Rolling.ogg
  - 15562 tigersound
 
-ShellPop.wav
+ShellPop.ogg
  - 33369 HerbertBoland
  - 50457 MeltyMcFace
 
-Sinking.wav:
- - 16740 kijjaz
- - 54037 arnaud
-
-Slither*.wav:
+Slither*.ogg:
  - 15562 tigersound
  - 69208 FreqMan

@@ -30,6 +30,7 @@ class LevelBeehive(GameLevel):
 		GameLevel.__init__(self, oldOwner)
 		shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.0, 0.0, 0.0)))
+		#bxt.music.play("//Sound/Music/bumbly_intro.wav", "//Sound/Music/bumbly.wav", volume=0.4)
 		bxt.music.play("//Sound/Music/bumbly.wav", volume=0.4)
 
 class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):

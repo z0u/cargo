@@ -27,11 +27,9 @@ import bxt
 DEBUG = False
 
 LAMPDIR = (0.0, 0.0, 1.0)
-XAXIS = mathutils.Vector((1.0, 0.0, 0.0))
-YAXIS = mathutils.Vector((0.0, 1.0, 0.0))
-ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 
-Shaderdef = namedtuple('Shaderdef', ['shader', 'callback', 'uses_lights'])
+Shaderdef = namedtuple('Shaderdef', ['shader', 'callback', 'uses_lights',
+			'needs_worldviewmat', 'needs_viewworldmat'])
 
 class ShaderCtrl(metaclass=bxt.types.Singleton):
 	'''Looks after special GLSL materials in this scene.'''
@@ -46,8 +44,11 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 		cam = sce.active_camera
 		self.set_mist_depth(cam.far)
 
-	def add_shader(self, shader, callback=None, uses_lights=True):
-		self.shaders.add(Shaderdef(shader, callback, uses_lights))
+	def add_shader(self, shader, callback=None, uses_lights=True,
+				needs_worlviewmat=False, needs_viewworldmat=False):
+
+		self.shaders.add(Shaderdef(shader, callback, uses_lights,
+				needs_worlviewmat, needs_viewworldmat))
 		self.update_globals_single(shader)
 
 	def update_globals_single(self, shader):
@@ -62,11 +63,20 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			self.update_globals_single(shader)
 
 	def set_mist_colour(self, colour):
+		'''
+		Sets the mist colour for the shaders. Note that this information can't
+		be gleaned from the bge API; therefore, to get matching mist colour
+		across custom shaders and regular Blender materials, this function must
+		be called. This is the only place that mist colour needs to be defined,
+		as it updates the colour for Blender materials too.
+		'''
 		self._mist_colour = colour.copy()
 		self.update_globals()
 		bge.render.setMistColor(colour)
 
 	def set_mist_depth(self, depth):
+		'''Set the distance that the mist reaches to. See set_mist_colour for
+		further details.'''
 		self._mist_depth = depth
 		self.update_globals()
 		bge.render.setMistStart(0.0)
@@ -74,6 +84,10 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 
 	@bxt.types.expose
 	def update(self):
+		'''
+		Update light positions and other uniforms for the custom shaders. Any
+		callbacks that were attached to the shaders will be run too.
+		'''
 		if len(self.shaders) == 0:
 			return
 
@@ -81,6 +95,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 		cam = sce.active_camera
 		world_to_camera = cam.world_to_camera
 		world_to_camera_vec = world_to_camera.to_quaternion()
+		camera_to_world = cam.camera_to_world
 
 		# SUN LIGHT (always sun)
 		light = sce.objects["KeyLight"]
@@ -175,6 +190,11 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			if sc.callback is not None:
 				sc.callback(shader, world_to_camera, world_to_camera_vec)
 
+			if sc.needs_worldviewmat:
+				shader.setUniformMatrix4('worldViewMatrix', world_to_camera)
+			if sc.needs_viewworldmat:
+				shader.setUniformMatrix4('worldViewMatrixInverse', camera_to_world)
+
 			if not sc.uses_lights:
 				continue
 
@@ -227,9 +247,14 @@ def _set_shader(ob, vert_shader, frag_shader, callback=None):
 		if not shader.isValid():
 			shader.setSource(vert_shader, frag_shader, True)
 		shader.setSampler("tCol", 0)
-		uses_lights = ("key_light_dir" in vert_shader or
-				"key_light_dir" in frag_shader)
-		ShaderCtrl().add_shader(shader, callback, uses_lights)
+		uses_lights = ("vec3 key_light_dir" in vert_shader or
+				"vec3 key_light_dir" in frag_shader)
+		needs_worlviewmat = ("mat4 worldViewMatrix" in vert_shader or
+				"mat4 worldViewMatrix" in frag_shader)
+		needs_viewworldmat = ("mat4 worldViewMatrixInverse" in vert_shader or
+				"mat4 worldViewMatrixInverse" in frag_shader)
+		ShaderCtrl().add_shader(shader, callback, uses_lights,
+				needs_worlviewmat, needs_viewworldmat)
 	return shader
 
 
@@ -241,7 +266,16 @@ def _print_code(text):
 @bxt.utils.all_sensors_positive
 @bxt.utils.owner
 def set_basic_shader(ob):
-	'''Uses a standard shader.'''
+	'''
+	Uses a standard shader.
+
+	Game object properties:
+	 - SH_alpha: Opacity mode, in {'CLIP', 'BLEND', 'OPAQUE'}. Defaults to
+	   'CLIP'.
+	 - SH_model: Lighting model in {'SHADELESS', 'GOURAUD', 'PHONG'}. Defaults
+	   to 'PHONG'.
+	 - SH_twosided: Whether to do two-sided lighting. Defaults to False.
+	'''
 
 	if 'SH_alpha' in ob:
 		alpha = ob['SH_alpha']
@@ -265,7 +299,22 @@ def set_basic_shader(ob):
 @bxt.utils.all_sensors_positive
 @bxt.utils.owner
 def set_windy(ob):
-	'''Makes the vertices on a mesh wave as if blown by the wind.'''
+	'''
+	Makes the vertices on a mesh wave as if blown by the wind.
+
+	Game object properties:
+	 - SH_freq: How many times the displacement texture should repeat / 0.0005.
+	 - SH_amp: The amplitude of the displacement in Blender units.
+	 - SH_speed: How fast the displacement texture should move across the scene.
+	Also, all properties listed for set_basic_shader are used.
+
+	Texture slots:
+	 - The third texture slot must contain a displacement texture, with three
+	   channels (RGB) that represent the magnitude of displacement (mapped to
+	   XYZ).
+	 - The first two texture slots must contain textures, but they may be
+	   disabled.
+	'''
 
 	if 'SH_alpha' in ob:
 		alpha = ob['SH_alpha']
@@ -280,32 +329,34 @@ def set_windy(ob):
 	else:
 		twosided = False
 
+	# Use the regular shaders, but replace the position function.
+
 	POSITION_FN = Template("""
 	const float PI2 = 2.0 * 3.14159;
 	const float FREQ = ${frequency};
 	const float AMPLITUDE = ${amplitude};
 
 	uniform sampler2D tDisp;
-	uniform vec3 worldViewX;
-	uniform vec3 worldViewY;
-	uniform vec3 worldViewZ;
+	uniform mat4 worldViewMatrix;
+	uniform mat4 worldViewMatrixInverse;
 
 	uniform vec2 phase;
 
 	vec4 getPosition() {
-		// Shift position of vertex using a displacement texture.
-		vec2 texcoords = gl_Vertex.xy * 0.0005 * FREQ + phase;
+		// Shift position of vertex using a displacement texture. Unfortunately
+		// this has to be done in world space, or things shift at the wrong
+		// time (e.g. in response to camera movement or object replacement).
+		position = gl_ModelViewMatrix * gl_Vertex;
+		vec4 worldpos = worldViewMatrixInverse * position;
+		vec2 texcoords = worldpos.xy * 0.0005 * FREQ + phase;
 		vec3 disp = texture2D(tDisp, texcoords).xyz;
 		disp = (disp - 0.5) * 2.0 * AMPLITUDE;
 
 		// Limit displacement by vertex colour (black = stationary).
 		disp *= gl_Color.xyz;
+		worldpos.xyz += disp;
 
-		// Can't combine these into one vector, or we lose the ability to limit
-		// individual axes.
-		vec3 dispView = worldViewX * disp.x + worldViewY * disp.y + worldViewZ * disp.z;
-
-		position = (gl_ModelViewMatrix * gl_Vertex) + vec4(dispView, 0.0);
+		position = worldViewMatrix * worldpos;
 		return gl_ProjectionMatrix * position;
 	}
 	""")
@@ -339,10 +390,6 @@ class WindCallback:
 		self.phasex = (self.phasex + self.speedx) % 1.0
 		self.phasey = (self.phasey + self.speedy) % 1.0
 		shader.setUniform2f("phase", self.phasex, self.phasey)
-
-		shader.setUniformfv("worldViewX", world_to_cam_vec * XAXIS)
-		shader.setUniformfv("worldViewY", world_to_cam_vec * YAXIS)
-		shader.setUniformfv("worldViewZ", world_to_cam_vec * ZAXIS)
 
 
 calc_light = """

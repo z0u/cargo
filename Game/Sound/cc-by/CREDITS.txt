@@ -35,9 +35,16 @@ substitute it into this URL:
             FOLEY Chew Ice 1.wav - 51675 - CC-0
             FOLEY Chew Ice 2.wav - 51676 - CC-0
 
+    Mar 31, 2012
+        By nsp (http://www.freesound.org/people/nsp/)
+            20110714 Mt Lindesay.wav - 124486 - CC-BY
+        By kangaroovindaloo (http://www.freesound.org/people/kangaroovindaloo/)
+            Lajamanu Billabong Atmos - 147666 - CC-BY
+
+
 
 == Sample catalogue ==
-These are sounds created from various samples. The IDs link to the samples above.
+These are sounds created from various samples. The IDs link to the samples above. All were remixed by Alex Fraser.
 
 jaw_harp*.ogg:
     - 95600, 95599, 95601, 95602, 95607, 95608, 95609 by 3bagbrew
@@ -64,4 +71,8 @@ Crunch*.ogg
 
 Swosh*.ogg
     - 59988, 59995 by qubodup
+
+PondAmbience*.ogg
+    - 124486 by nsp
+    - 147666 by kangaroovindaloo
 

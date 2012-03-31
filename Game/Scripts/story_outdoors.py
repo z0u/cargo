@@ -30,6 +30,8 @@ class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
 		GameLevel.__init__(self, oldOwner)
 
+		bxt.music.play("//Sound/Music/explore.ogg", volume=0.3)
+
 		# Load additional files
 		self.load_foaliage()
 		self.load_npcs()

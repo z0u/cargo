@@ -339,12 +339,15 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondActionGE(Worm.L_ANIM, 360))
 		s.addAction(ActSetCamera('WormCamera_Lighthouse'))
 		s.addAction(ActSetFocalPoint('Torch'))
+		sce = bge.logic.getCurrentScene()
+		s.addAction(ActShowMarker(sce.objects['Torch']))
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 394))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActRemoveCamera('WormCamera_Lighthouse'))
 		s.addAction(ActRemoveFocalPoint('Torch'))
+		s.addAction(ActShowMarker(None))
 		s.addAction(ActShowDialogue("See you later!"))
 		s.addAction(ActAction('BurstOut', 395, 420, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 395, 420, Worm.L_ANIM, 'WormBody'))
@@ -464,6 +467,8 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		self.create_state_graph()
 
 	def create_state_graph(self):
+		sce = bge.logic.getCurrentScene()
+
 		#
 		# Set scene with a long shot camera.
 		#
@@ -498,6 +503,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
 		s.addAction(ActSetFocalPoint('B_Bottle'))
+		s.addAction(ActShowMarker(sce.objects['B_Bottle']))
 		s.addAction(ActShowDialogue("Please go to the bar and order me some black bean sauce. I love that stuff!"))
 
 		s = s.createTransition()
@@ -506,6 +512,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActShowDialogue("Thanks!"))
 		s.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
 		s.addAction(ActRemoveFocalPoint('B_Bottle'))
+		s.addAction(ActShowMarker(None))
 
 		#
 		# Return to game

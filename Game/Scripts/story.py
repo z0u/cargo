@@ -253,6 +253,24 @@ class ActShowMessage(BaseAct):
 	def __str__(self):
 		return 'ActShowMessage: "%s"' % self.message
 
+class ActShowMarker(BaseAct):
+	'''Show a marker on the screen that points to an object.'''
+
+	target = bxt.types.weakprop("target")
+
+	def __init__(self, target):
+		self.target = target
+
+	def execute(self, c):
+		bxt.types.WeakEvent('ShowMarker', self.target).send()
+
+	def __str__(self):
+		if self.target is not None:
+			name = self.target.name
+		else:
+			name = "None"
+		return 'ActShowMarker: "%s"' % name
+
 class ActSetCamera(BaseAct):
 	'''Switch to a named camera.'''
 	def __init__(self, camName):

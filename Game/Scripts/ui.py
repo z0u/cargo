@@ -19,6 +19,7 @@ import weakref
 
 import bge
 from bge import logic
+import mathutils
 
 import bxt
 from . import inventory
@@ -126,6 +127,79 @@ class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			else:
 				bxt.types.Event("SuspendPlay").send()
 				self.show()
+
+
+class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'Ma_'
+
+	S_INIT = 1
+	S_ACTIVE = 2
+	S_INACTIVE = 3
+
+	L_DISPLAY = 0
+
+	target = bxt.types.weakprop("target")
+
+	def __init__(self, old_owner):
+		self.hide()
+
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'ShowMarker')
+
+	def on_event(self, evt):
+		if evt.message == 'ShowMarker':
+			self.target = evt.body
+			if evt.body is not None:
+				self.show()
+			else:
+				self.hide()
+
+	def show(self):
+		self.set_state(Marker.S_ACTIVE)
+
+	def hide(self):
+		self.visible = False
+		self.set_state(Marker.S_INACTIVE)
+
+	@bxt.types.expose
+	def update(self):
+		if self.target is None:
+			self.set_state(Marker.S_INACTIVE)
+
+		t_sce = bxt.utils.get_scene(self.target)
+		t_cam = t_sce.active_camera
+		viewpos = mathutils.Vector(t_cam.getScreenPosition(self.target))
+		#print("Viewpos", viewpos)
+
+		cam = bge.logic.getCurrentScene().active_camera
+		if cam.perspective:
+			vec = cam.getScreenVect(viewpos.x, viewpos.y)
+			#print("Vec", vec)
+			pos_from = cam.worldPosition
+			pos_through = pos_from - vec
+		else:
+			vec = cam.getAxisVect(-bxt.bmath.ZAXIS)
+			pos_from = viewpos.copy()
+			pos_from.resize_3d()
+			pos_from.x -= 0.5
+			pos_from.y = (1.0 - pos_from.y) - 0.5
+			aspect = (float(bge.render.getWindowWidth()) /
+					float(bge.render.getWindowHeight()))
+			pos_from.y /= aspect
+			pos_from *= cam.ortho_scale
+			pos_from = bxt.bmath.to_world(cam, pos_from)
+			pos_through = pos_from + vec
+		#print("Ray", pos_from, pos_through)
+		hitob, hitloc, _ = cam.rayCast(pos_through, pos_from, 100.0,
+				"MarkerPlane", 0, 1, 0)
+
+		#print("Hit", hitob, hitloc)
+		if hitob is not None:
+			self.worldPosition = hitloc
+			self.visible = True
+		else:
+			self.visible = False
+
 
 class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = 'LS_'

@@ -138,12 +138,12 @@ class ActStoreSet(BaseAct):
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
 	def execute(self, c):
-		bxt.types.EventBus().notify(bxt.types.Event('SuspendPlay'))
+		bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', True))
 
 class ActResumeInput(BaseAct):
 	'''Let the player move around.'''
 	def execute(self, c):
-		bxt.types.EventBus().notify(bxt.types.Event('ResumePlay'))
+		bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', False))
 
 class ActActuate(BaseAct):
 	'''Activate an actuator.'''

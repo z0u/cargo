@@ -182,6 +182,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 		s = self.rootState.createTransition("Init")
 		s.addEvent("ForceEnterShell", False)
+		s.addAction(ActSuspendInput())
 		s.addAction(ActSetCamera('WormCamera_Enter'))
 		s.addAction(ActSetFocalPoint('CargoHoldAuto'))
 		s.addAction(ActShowDialogue("Press Return to start."))
@@ -410,10 +411,10 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# scene (due to the event bus).
 		sce = self.get_scene()
 		if "LighthouseKeeper" in sce.objects:
-			print("Warning: tried to create LighthouseKeeper twice.")
+			print("Warning: tried to create LighthouseKeeperSet twice.")
 			return
 
-		obTemplate = sce.objectsInactive["LighthouseKeeper"]
+		obTemplate = sce.objectsInactive["LighthouseKeeperSet"]
 		spawnPoint = sce.objects["LighthouseKeeperSpawn"]
 		ob = sce.addObject(obTemplate, spawnPoint)
 		bxt.bmath.copy_transform(spawnPoint, ob)
@@ -422,10 +423,10 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def kill_keeper(self):
 		sce = self.get_scene()
 		try:
-			ob = sce.objects["LighthouseKeeper"]
+			ob = sce.objects["LighthouseKeeperSet"]
 			ob.endObject()
 		except KeyError:
-			print("Warning: could not delete LighthouseKeeper")
+			print("Warning: could not delete LighthouseKeeperSet")
 
 	def arrive(self):
 		print("Arriving at lighthouse.")
@@ -452,6 +453,31 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			sCollision = c.sensors[0]
 			if director.Director().mainCharacter in sCollision.hitObjectList:
 				self.arrive()
+
+class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
+	L_IDLE = 0
+	L_ANIM = 1
+
+	def __init__(self, old_owner):
+		Chapter.__init__(self, old_owner)
+		#bxt.types.WeakEvent('StartLoading', self).send()
+		self.create_state_graph()
+
+	def create_state_graph(self):
+		s = self.rootState.createTransition("Init")
+		s.addAction(ActSuspendInput())
+		s.addAction(ActSetCamera('LK_Camera'))
+		s.addAction(ActSetFocalPoint('LighthouseKeeper'))
+
+		#
+		# Return to game
+		#
+		s = s.createTransition("Return to game")
+		s.addCondition(CondSensor('sReturn'))
+		s.addAction(ActResumeInput())
+		s.addAction(ActRemoveCamera('LK_Camera'))
+		s.addAction(ActRemoveFocalPoint('LighthouseKeeper'))
+#		s.addAction(ActStoreSet('/game/level/wormMissionStarted', True))
 
 class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''

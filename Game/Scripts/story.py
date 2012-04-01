@@ -27,6 +27,7 @@ from . import ui
 from . import camera
 from . import director
 from . import store
+import time
 
 DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
@@ -115,6 +116,22 @@ class CondEvent(Condition):
 
 	def evaluate(self, c):
 		return self.triggered
+
+class CondWait(Condition):
+	'''A condition that waits for a certain time after being enabled.'''
+	def __init__(self, duration):
+		self.duration = duration
+		self.start = None
+		self.triggered = False
+
+	def enable(self, enabled):
+		if enabled:
+			self.start = time.time()
+		else:
+			self.start = None
+
+	def evaluate(self, c):
+		return time.time() - self.duration > self.start
 
 #
 # Actions. These belong to and are executed by steps.

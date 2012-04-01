@@ -305,7 +305,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 279))
-		s.addAction(ActShowDialogue("Ta-da! Please deliver this letter for me."))
+		s.addAction(ActShowDialogue("Ta-da! Please deliver this \[envelope] for me."))
 
 		#
 		# Give letter
@@ -464,18 +464,60 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		self.create_state_graph()
 
 	def create_state_graph(self):
+		#
+		# Set scene with a long shot camera.
+		#
 		s = self.rootState.createTransition("Init")
 		s.addAction(ActSuspendInput())
-		s.addAction(ActSetCamera('LK_Camera'))
+		s.addAction(ActSetCamera('LK_Cam_Long'))
 		s.addAction(ActSetFocalPoint('LighthouseKeeper'))
+
+		s = s.createTransition("Close-up")
+		s.addCondition(CondWait(5))
+		s.addAction(ActRemoveCamera('LK_Cam_Long'))
+		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
+		s.addAction(ActShowDialogue("Oh, hello Cargo!"))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(3))
+		s.addCondition(CondSensor('sReturn'))
+		s.addAction(ActShowDialogue("Ah, a \[envelope] for me? Thanks."))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(3))
+		s.addCondition(CondSensor('sReturn'))
+		s.addAction(ActShowDialogue("I'm glad you're here, actually - I need you to deliver something for me, too!"))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(3))
+		s.addCondition(CondSensor('sReturn'))
+		s.addAction(ActShowDialogue("I'm all out of sauce, you see. I'm parched! But work is busy, so I can't get to the sauce bar."))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(3))
+		s.addCondition(CondSensor('sReturn'))
+		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
+		s.addAction(ActSetFocalPoint('B_Bottle'))
+		s.addAction(ActShowDialogue("Please go to the bar and order me some black bean sauce. I love that stuff!"))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(3))
+		s.addCondition(CondSensor('sReturn'))
+		s.addAction(ActShowDialogue("Thanks!"))
+		s.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
+		s.addAction(ActRemoveFocalPoint('B_Bottle'))
 
 		#
 		# Return to game
 		#
 		s = s.createTransition("Return to game")
+		s.addCondition(CondWait(3))
 		s.addCondition(CondSensor('sReturn'))
+		s.addAction(ActHideDialogue())
 		s.addAction(ActResumeInput())
-		s.addAction(ActRemoveCamera('LK_Camera'))
+		s.addAction(ActRemoveCamera('LK_Cam_Long'))
+		s.addAction(ActRemoveCamera('LK_Cam_CU_LK'))
+		s.addAction(ActRemoveCamera('LK_Cam_CU_Cargo'))
 		s.addAction(ActRemoveFocalPoint('LighthouseKeeper'))
 #		s.addAction(ActStoreSet('/game/level/wormMissionStarted', True))
 

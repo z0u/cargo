@@ -502,8 +502,8 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondWait(3))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
-		s.addAction(ActSetFocalPoint('B_Bottle'))
-		s.addAction(ActShowMarker(sce.objects['B_Bottle']))
+		s.addAction(ActSetFocalPoint('B_SauceBarSign'))
+		s.addAction(ActShowMarker(sce.objects['B_SauceBarSign']))
 		s.addAction(ActShowDialogue("Please go to the bar and order me some black bean sauce. I love that stuff!"))
 
 		s = s.createTransition()
@@ -511,7 +511,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActShowDialogue("Thanks!"))
 		s.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
-		s.addAction(ActRemoveFocalPoint('B_Bottle'))
+		s.addAction(ActRemoveFocalPoint('B_SauceBarSign'))
 		s.addAction(ActShowMarker(None))
 
 		#

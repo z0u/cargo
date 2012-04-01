@@ -143,11 +143,17 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		self.hide()
 
+#		sce = bge.logic.getCurrentScene()
+#		target = sce.objects['MarkerTest']
+#		bxt.types.WeakEvent('ShowMarker', target).send(5)
+#		bxt.types.WeakEvent('ShowMarker', None).send(200)
+
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'ShowMarker')
 
 	def on_event(self, evt):
 		if evt.message == 'ShowMarker':
+			print(evt)
 			self.target = evt.body
 			if evt.body is not None:
 				self.show()
@@ -158,13 +164,15 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.set_state(Marker.S_ACTIVE)
 
 	def hide(self):
-		self.visible = False
+		self.setVisible(False, False)
 		self.set_state(Marker.S_INACTIVE)
 
 	@bxt.types.expose
 	def update(self):
 		if self.target is None:
 			self.set_state(Marker.S_INACTIVE)
+			self.setVisible(False, False)
+			return
 
 		t_sce = bxt.utils.get_scene(self.target)
 		t_cam = t_sce.active_camera
@@ -196,9 +204,9 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		#print("Hit", hitob, hitloc)
 		if hitob is not None:
 			self.worldPosition = hitloc
-			self.visible = True
+			self.setVisible(True, False)
 		else:
-			self.visible = False
+			self.setVisible(False, False)
 
 
 class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):

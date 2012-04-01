@@ -387,39 +387,71 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	lighthouse keeper in response.'''
 	_prefix = 'LH_'
 
+	# Note that this is a little convoluted:
+	#  1. Cargo touches a sensor, causing the loading screen to be shown.
+	#  2. When the loading screen has been fully displayed, it sends an event
+	#     (specified in 1.)
+	#  3. When the event is received here, the lighthouse keeper is spawned.
+	#  4. Then, the loading screen is hidden again.
+	# This is because spawning the lighthouse keeper results in a small delay.
+	# Showing the loading screen also allows us to reposition the snail for the
+	# conversation.
+
 	def __init__(self, old_owner):
 		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, "ApproachLighthouse")
-
 		self.inLocality = False
 
 	def on_event(self, event):
-		if event.message == "ApproachLighthouse":
+		if event.message == "EnterLighthouse":
 			self.spawn_keeper()
 
 	def spawn_keeper(self):
+		# Need to use get_scene() here because we might be called from another
+		# scene (due to the event bus).
 		sce = self.get_scene()
 		if "LighthouseKeeper" in sce.objects:
-			print("Warning: tried to create lighthouse keeper twice.")
+			print("Warning: tried to create LighthouseKeeper twice.")
 			return
 
-		obTemplate = sce.objectsInactive["G_LighthouseKeeper"]
+		obTemplate = sce.objectsInactive["LighthouseKeeper"]
 		spawnPoint = sce.objects["LighthouseKeeperSpawn"]
 		ob = sce.addObject(obTemplate, spawnPoint)
 		bxt.bmath.copy_transform(spawnPoint, ob)
 		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 
+	def kill_keeper(self):
+		sce = self.get_scene()
+		try:
+			ob = sce.objects["LighthouseKeeper"]
+			ob.endObject()
+		except KeyError:
+			print("Warning: could not delete LighthouseKeeper")
+
+	def arrive(self):
+		print("Arriving at lighthouse.")
+		self.inLocality = True
+		cbEvent = bxt.types.Event("EnterLighthouse")
+		bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+
+	def leave(self):
+		# Remove the keeper to prevent its armature from chewing up resources.
+		print("Leaving lighthouse.")
+		self.kill_keeper()
+		self.inLocality = False
+
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def touched(self, c):
 		if self.inLocality:
-			return
-
-		sCollision = c.sensors[0]
-		if director.Director().mainCharacter in sCollision.hitObjectList:
-			self.inLocality = True
-			cbEvent = bxt.types.Event("ApproachLighthouse")
-			bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+			# Check whether the snail is leaving.
+			sNear = c.sensors["Near"]
+			if not director.Director().mainCharacter in sNear.hitObjectList:
+				self.leave()
+		else:
+			# Check whether the snail is entering.
+			sCollision = c.sensors[0]
+			if director.Director().mainCharacter in sCollision.hitObjectList:
+				self.arrive()
 
 class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''

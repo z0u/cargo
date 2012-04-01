@@ -158,6 +158,7 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			def cb():
 				icon.visible = True
 				if cbEvent != None:
+					print("Sending delayed event", cbEvent)
 					cbEvent.send(delay=2)
 			blackout.visible = True
 			self.playAction('LS_Hide_Arm', 16, 1, layer=LoadingScreen.L_DISPLAY)

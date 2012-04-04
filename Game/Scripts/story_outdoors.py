@@ -193,6 +193,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Peer out of ground
 		#
 		s = s.createTransition("Begin")
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
 		s.addWeakEvent("FinishLoading", self)
@@ -208,6 +209,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Get out of the ground
 		#
 		s = s.createTransition("Get out of the ground")
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
 		s.addAction(ActRemoveCamera('WormCamera_Enter'))
@@ -244,6 +246,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 				pitchmax= 1.1))
 
 		s = s.createTransition()
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActAction('BurstOut', 185, 220, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 185, 220, Worm.L_ANIM, 'WormBody'))
@@ -265,6 +268,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
 
 		s = s.createTransition()
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActShowDialogue("I have something for you!"))
 
@@ -272,6 +276,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Dig up letter
 		#
 		s = s.createTransition("Dig up letter")
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
 		s.addAction(ActAction('ParticleEmitMove', 2, 2, Worm.L_ANIM, "ParticleEmitterLoc"))
@@ -311,6 +316,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Give letter
 		#
 		s = s.createTransition("Give letter")
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
 		s.addAction(ActRemoveCamera('WormCamera_Envelope'))
@@ -330,6 +336,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Point to lighthouse
 		#
 		s = s.createTransition("Point to lighthouse")
+		s.addCondition(CondWait(4))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActShowDialogue("Great! Please take it to the lighthouse keeper."))
 		s.addAction(ActAction('BurstOut', 330, 395, Worm.L_ANIM))
@@ -344,6 +351,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 394))
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActRemoveCamera('WormCamera_Lighthouse'))
 		s.addAction(ActRemoveFocalPoint('Torch'))
@@ -354,6 +362,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 420))
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
 		s.addAction(ActAction('BurstOut', 420, 540, Worm.L_ANIM))
@@ -478,28 +487,28 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetFocalPoint('LighthouseKeeper'))
 
 		s = s.createTransition("Close-up")
-		s.addCondition(CondWait(5))
+		s.addCondition(CondWait(2))
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
 		s.addAction(ActShowDialogue("Oh, hello Cargo!"))
 
 		s = s.createTransition()
-		s.addCondition(CondWait(3))
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActShowDialogue("Ah, a \[envelope] for me? Thanks."))
 
 		s = s.createTransition()
-		s.addCondition(CondWait(3))
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActShowDialogue("I'm glad you're here, actually - I need you to deliver something for me, too!"))
 
 		s = s.createTransition()
-		s.addCondition(CondWait(3))
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActShowDialogue("I'm all out of sauce, you see. I'm parched! But work is busy, so I can't get to the sauce bar."))
 
 		s = s.createTransition()
-		s.addCondition(CondWait(3))
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
 		s.addAction(ActSetFocalPoint('B_SauceBarSign'))
@@ -507,7 +516,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActShowDialogue("Please go to the bar and order me some black bean sauce. I love that stuff!"))
 
 		s = s.createTransition()
-		s.addCondition(CondWait(3))
+		s.addCondition(CondWait(4))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActShowDialogue("Thanks!"))
 		s.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
@@ -518,7 +527,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		# Return to game
 		#
 		s = s.createTransition("Return to game")
-		s.addCondition(CondWait(3))
+		s.addCondition(CondWait(1))
 		s.addCondition(CondSensor('sReturn'))
 		s.addAction(ActHideDialogue())
 		s.addAction(ActResumeInput())

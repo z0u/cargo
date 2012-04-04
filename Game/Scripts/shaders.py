@@ -25,6 +25,7 @@ import mathutils
 import bxt
 
 DEBUG = False
+DEBUG_LINE_NUMBERS = True
 
 LAMPDIR = (0.0, 0.0, 1.0)
 
@@ -123,7 +124,13 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 		try:
 			light = sce.objects["UserLight1"]
 		except KeyError:
-			pass
+			cust_light1_dir = mathutils.Vector((0.0, 0.0, 1.0))
+			cust_light1_col = mathutils.Vector((0.0, 0.0, 0.0, 0.0))
+			cust_light1_pos = mathutils.Vector((0.0, 0.0, 0.0, 0.0))
+			cust_light1_dist = 0.0
+			cust_light1_spotcutoff = 180.0
+			cust_light1_spotcoscutoff = -1.0
+			cust_light1_spotexponent = light.spotblend * 128.0
 		else:
 			num_user_lights += 1
 			cust_light1_dir = world_to_camera_vec * -light.getAxisVect(LAMPDIR)
@@ -153,7 +160,13 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 		try:
 			light = sce.objects["UserLight2"]
 		except KeyError:
-			pass
+			cust_light2_dir = mathutils.Vector((0.0, 0.0, 1.0))
+			cust_light2_col = mathutils.Vector((0.0, 0.0, 0.0, 0.0))
+			cust_light2_pos = mathutils.Vector((0.0, 0.0, 0.0, 0.0))
+			cust_light2_dist = 0.0
+			cust_light2_spotcutoff = 180.0
+			cust_light2_spotcoscutoff = -1.0
+			cust_light2_spotexponent = light.spotblend * 128.0
 		else:
 			num_user_lights += 1
 			cust_light2_dir = world_to_camera_vec * -light.getAxisVect(LAMPDIR)
@@ -207,8 +220,6 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			shader.setUniformfv("fill_light2_dir", fill_light2_dir)
 			shader.setUniformfv("fill_light2_col", fill_light2_col)
 
-			if num_user_lights < 1:
-				continue
 			shader.setUniformfv("cust_light1_pos", cust_light1_pos)
 			shader.setUniformfv("cust_light1_dir", cust_light1_dir)
 			shader.setUniformfv("cust_light1_col", cust_light1_col)
@@ -217,8 +228,6 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 			shader.setUniform1f("cust_light1_spotexponent", cust_light1_spotexponent)
 			shader.setUniform1f("cust_light1_dist", cust_light1_dist)
 
-			if num_user_lights < 2:
-				continue
 			shader.setUniformfv("cust_light2_pos", cust_light2_pos)
 			shader.setUniformfv("cust_light2_dir", cust_light2_dir)
 			shader.setUniformfv("cust_light2_col", cust_light2_col)
@@ -259,8 +268,12 @@ def _set_shader(ob, vert_shader, frag_shader, callback=None):
 
 
 def _print_code(text):
-	for i, line in enumerate(text.splitlines()):
-		print(i + 1, line)
+	if DEBUG_LINE_NUMBERS:
+		for i, line in enumerate(text.splitlines()):
+			print(i + 1, line)
+	else:
+		for line in text.splitlines():
+			print(line)
 
 
 @bxt.utils.all_sensors_positive
@@ -421,23 +434,24 @@ calc_light = """
 	uniform float cust_light2_spotexponent;
 	uniform float cust_light2_dist;
 
-	float intensity(vec3 nor, vec3 direction) {
+	float intensity(in vec3 nor, in vec3 direction) {
 		return max(dot(nor, direction), 0.0);
 	}
 
-	float intensity_hemi(vec3 nor, vec3 direction) {
+	float intensity_hemi(in vec3 nor, in vec3 direction) {
 		return max(dot(nor, direction) * 0.5 + 0.5, 0.0);
 	}
 
-	float intensity_user(vec3 nor, vec4 pos, vec4 lightpos, vec3 dir,
-			float cutoff, float coscutoff, float exponent, float maxdist) {
+	float intensity_user(in vec3 nor, in vec4 pos, in vec4 lightpos,
+			in vec3 dir, in float cutoff, in float coscutoff, in float exponent,
+			in float maxdist) {
 
 		float attenuation;
 		vec3 viewLight;
 
-		if (pos.w == 0.0) {
+		if (lightpos.w == 0.0) {
 			// Directional (sun)
-			viewLight = pos.xyz;
+			viewLight = -lightpos.xyz;
 			attenuation = 1.0;
 
 		} else {
@@ -459,10 +473,11 @@ calc_light = """
 				}
 			}
 		}
+
 		return max(dot(nor, viewLight), 0.0) * attenuation;
 	}
 
-	vec4 calc_light(vec4 pos, vec3 nor) {
+	vec4 calc_light(in vec4 pos, in vec3 nor) {
 		vec3 viewLight;
 		vec4 lightCol = vec4(0.0);
 
@@ -489,7 +504,7 @@ calc_light = """
 				cust_light2_spotexponent,
 				cust_light2_dist);
 
-		return lightCol;
+        return lightCol;
 	}
 """
 
@@ -629,6 +644,8 @@ def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 
 		// Prevent pure black, as it messes with the DoF shader.
 		gl_FragColor.g += 0.01;
+
+        gl_FragColor = gl_FragColor;
 	}
 	""")
 	return frag.substitute(model=model, light_header=light_header,

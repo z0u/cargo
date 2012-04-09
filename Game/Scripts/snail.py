@@ -378,8 +378,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			if isinstance(ob, shells.ShellBase):
 				if not ob.is_carried():
 					self.equip_shell(ob, True)
-					evt = bxt.types.Event('ShellChanged', 'new')
-					bxt.types.EventBus().notify(evt)
+					bxt.types.Event('ShellChanged', 'new').send()
 
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
@@ -390,8 +389,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			return
 
 		self._switch(shellName)
-		evt = bxt.types.Event('ShellChanged', 'next')
-		bxt.types.EventBus().notify(evt)
+		bxt.types.Event('ShellChanged', 'next').send()
 
 	def switch_previous(self):
 		'''Equip the next-lower shell that the snail has.'''
@@ -402,18 +400,21 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 			return
 
 		self._switch(shellName)
-		evt = bxt.types.Event('ShellChanged', 'previous')
-		bxt.types.EventBus().notify(evt)
+		bxt.types.Event('ShellChanged', 'previous').send()
 
 	def _switch(self, name):
 		if name == None:
 			return
 
-		if self.shell:
+		if self.shell and self.shell.name != name:
 			oldShell = self.unequip_shell()
 			oldShell.endObject()
+
 		scene = bge.logic.getCurrentScene()
-		shell = bxt.types.add_and_mutate_object(scene, name, self)
+		if name in scene.objects:
+			shell = scene.objects[name]
+		else:
+			shell = bxt.types.add_and_mutate_object(scene, name, self)
 		self.equip_shell(shell, True)
 
 	def equip_shell(self, shell, animate):
@@ -449,6 +450,12 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		if animate:
 			self.show_shockwave()
 
+	def reclaim_shell(self):
+		'''Reclaim a dropped shell.'''
+		shellName = inventory.Shells.get_equipped(self)
+		if shellName is not None:
+			self._switch(shellName)
+
 	def show_shockwave(self):
 		self.shockwave.worldPosition = self.shell.worldPosition
 		self.shockwave.worldOrientation = self.shell.worldOrientation
@@ -470,7 +477,6 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self.shell = None
 		self['HasShell'] = 0
 		self['DynamicMass'] -= shell['DynamicMass']
-		inventory.Shells().unequip()
 		return shell
 
 	def play_shell_action(self, actionName, endFrame, callback, animate=True,
@@ -504,14 +510,9 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		velocity *= self['ShellPopForce']
 		shell = self.unequip_shell()
 
-		inventory.Shells().discard(shell.name)
-
 		shell.setLinearVelocity(velocity)
 		shell.on_dropped()
 		self.recentlyDroppedItems.add(shell)
-
-		evt = bxt.types.Event('ShellChanged', 'new')
-		bxt.types.EventBus().notify(evt)
 
 	def enter_shell(self, animate):
 		'''
@@ -787,16 +788,19 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 	def on_button1(self, positive, triggered):
 		if positive and triggered:
-
 			if self.has_state(Snail.S_INSHELL):
 				self.exit_shell(animate = True)
 			elif self.has_state(Snail.S_HASSHELL):
 				self.enter_shell(animate = True)
+			elif self.has_state(Snail.S_NOSHELL):
+				self.reclaim_shell()
 
 	def on_button2(self, positive, triggered):
 		if positive and triggered:
 			if self.has_state(Snail.S_HASSHELL):
 				self.drop_shell(animate = True)
+			elif self.has_state(Snail.S_NOSHELL):
+				self.reclaim_shell()
 
 	def on_next(self, positive, triggered):
 		if positive and triggered:

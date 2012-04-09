@@ -419,9 +419,9 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.spawn_keeper()
 
 	def spawn_keeper(self):
-		# Need to use get_scene() here because we might be called from another
+		# Need to use self.scene here because we might be called from another
 		# scene (due to the event bus).
-		sce = self.get_scene()
+		sce = self.scene
 		if "LighthouseKeeper" in sce.objects:
 			print("Warning: tried to create LighthouseKeeperSet twice.")
 			return
@@ -433,9 +433,8 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 
 	def kill_keeper(self):
-		sce = self.get_scene()
 		try:
-			ob = sce.objects["LighthouseKeeperSet"]
+			ob = self.scene.objects["LighthouseKeeperSet"]
 			ob.endObject()
 		except KeyError:
 			print("Warning: could not delete LighthouseKeeperSet")

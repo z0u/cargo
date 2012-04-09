@@ -20,6 +20,7 @@ from . import director
 from . import lodtree
 from . import menu
 from . import ui
+from . import impulse
 
 # Create singletons. Order should not be important.
 camera.AutoCamera()

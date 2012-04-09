@@ -21,12 +21,12 @@ import mathutils
 import bxt
 from . import director
 from . import camera
-from . import store
+from . import impulse
 
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
 
-class ShellBase(director.Actor, bge.types.KX_GameObject):
+class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 	S_INIT     = 1
 	S_IDLE     = 2
 	S_CARRIED  = 3
@@ -80,11 +80,14 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 		self.set_state(ShellBase.S_OCCUPIED)
 		self.add_state(ShellBase.S_ALWAYS)
 
+		impulse.Input().add_handler(self)
 		bxt.types.WeakEvent('MainCharacterSet', self).send()
 
 	def on_exited(self):
-		'''Called when a snail exits this shell (just after
-		control is transferred).'''
+		'''Called when a snail exits this shell (as control is transferred).'''
+
+		impulse.Input().remove_handler(self)
+
 		self.set_state(ShellBase.S_CARRIED)
 		self.add_state(ShellBase.S_ALWAYS)
 		self.localScale = (1.0, 1.0, 1.0)
@@ -97,21 +100,19 @@ class ShellBase(director.Actor, bge.types.KX_GameObject):
 		animation.'''
 		pass
 
-	def on_button1(self, positive, triggered):
+	def handle_bt_camera(self, state):
+		# Allow the snail to handle this button event.
+		return False
+
+	def handle_bt_1(self, state):
 		if not self.is_occupied():
-			return
+			print("Warning: Shell %s received impulse when not occupied." %
+				self.name)
+			return False
 
-		if positive and triggered:
+		if state.triggered and state.positive:
 			self.snail.exit_shell(animate = True)
-
-	def on_button2(self, positive, triggered):
-		pass
-
-	def on_next(self, positive, triggered):
-		pass
-
-	def on_previous(self, positive, triggered):
-		pass
+		return True
 
 	def save_location(self):
 		super(ShellBase, self).save_location()
@@ -148,24 +149,11 @@ class Shell(ShellBase):
 		ShellBase.on_pre_enter(self)
 		bxt.types.Event('SetCameraType', 'PathCamera').send()
 
-	def on_movement_impulse(self, fwd, back, left, right):
+	def handle_movement(self, state):
 		'''Make the shell roll around based on user input.'''
-		if not self['OnGround']:
-			return
 
-		#
-		# Decide which direction to roll in on the two axes.
-		#
-		fwdMagnitude = 0.0
-		leftMagnitude = 0.0
-		if fwd:
-			fwdMagnitude = fwdMagnitude + 1.0
-		if back:
-			fwdMagnitude = fwdMagnitude - 1.0
-		if left:
-			leftMagnitude = leftMagnitude + 1.0
-		if right:
-			leftMagnitude = leftMagnitude - 1.0
+		if not self['OnGround']:
+			return True
 
 		#
 		# Get the vectors to apply force along.
@@ -179,14 +167,16 @@ class Shell(ShellBase):
 		#
 		# Set the direction of the vectors.
 		#
-		fwdVec = fwdVec * fwdMagnitude
-		leftVec = leftVec * leftMagnitude
+		fwdVec = fwdVec * state.direction.y
+		leftVec = leftVec * -state.direction.x
 		finalVec = (fwdVec + leftVec) * self['Power']
 
 		#
 		# Apply the force.
 		#
 		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
+
+		return True
 
 class WheelCameraAlignment:
 	'''
@@ -235,31 +225,21 @@ class Wheel(ShellBase):
 		alignment = WheelCameraAlignment()
 		bxt.types.Event('SetCameraAlignment', alignment).send()
 
-	def on_movement_impulse(self, fwd, back, left, right):
+	def handle_movement(self, state):
 		self.orient()
 
 		#
 		# Decide which direction to roll or turn.
 		#
-		leftMagnitude = 0.0
-		if left:
-			leftMagnitude = leftMagnitude + 1.0
-		if right:
-			leftMagnitude = leftMagnitude - 1.0
-
-		if back:
-			fwdMagnitude = 0.01
-		elif fwd:
-			fwdMagnitude = 1.0
-		else:
-			fwdMagnitude = 0.25
+		direction = state.direction.copy()
+		direction.y = max(direction.y * 0.5 + 0.5, 0.01)
 
 		#
 		# Turn (steer). Note that this is applied to the Z axis, but in world
 		# space.
 		#
 		self.currentTurnSpeed = bxt.bmath.lerp(self.currentTurnSpeed,
-				self['TurnSpeed'] * leftMagnitude, self['SpeedFac'])
+				self['TurnSpeed'] * -direction.x, self['SpeedFac'])
 		self.applyRotation(ZAXIS * self.currentTurnSpeed, False)
 
 		#
@@ -269,11 +249,13 @@ class Wheel(ShellBase):
 		turnStrength = abs(self.currentTurnSpeed) / self['TurnSpeed']
 		targetRotSpeed = self['RotSpeed'] * bxt.bmath.safe_invert(
 				turnStrength, self['TurnInfluence'])
-		targetRotSpeed *= fwdMagnitude
+		targetRotSpeed *= direction.y
 
 		self.currentRotSpeed = bxt.bmath.lerp(self.currentRotSpeed,
 				targetRotSpeed, self['SpeedFac'])
 		self.setAngularVelocity(ZAXIS * self.currentRotSpeed, True)
+
+		return True
 
 	def can_destroy_stuff(self):
 		if not self.is_occupied():
@@ -287,10 +269,6 @@ class Nut(ShellBase):
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		bxt.types.Event('SetCameraType', 'PathCamera').send()
-
-	def on_movement_impulse(self, fwd, back, left, right):
-		# Can't move!
-		pass
 
 class BottleCap(ShellBase):
 	# States - be careful not to let conflict with ShellBase states.
@@ -381,30 +359,22 @@ class BottleCap(ShellBase):
 
 		bxt.sound.play_sample('//Sound/MouthPopOpen.ogg')
 
-	def on_movement_impulse(self, fwd, back, left, right):
+	def handle_movement(self, state):
 		'''Make the cap jump around around based on user input.'''
 		self.orient()
 
 		if not self['OnGround']:
-			return
+			return True
 
 		if self.occupier.isPlayingAction(BottleCap.L_JUMP):
 			# Jump has been initiated already; wait for it to finish.
-			return
+			return True
 
-		if fwd or back or left or right:
+		if state.direction.magnitude > 0.1:
 			#
 			# Decide which direction to jump on the two axes.
 			#
-			fwdMagnitude = 0.0
-			if fwd and not back:
-				fwdMagnitude = 1.0
-			elif back and not fwd:
-				fwdMagnitude = -1.0
-			leftMagnitude = 0.0
-			if left and not right:
-				leftMagnitude = 1.0
-			elif right and not left:
-				leftMagnitude = -1.0
-			self.start_jump(fwdMagnitude, leftMagnitude)
+			self.start_jump(state.direction.y, -state.direction.x)
 			bxt.utils.add_state(self.occupier, 3)
+
+		return True

@@ -82,7 +82,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		log('setting camera')
 		self.camera = camera
 		self.defaultLens = camera.lens
-		logic.getCurrentScene().active_camera = camera
+		bxt.utils.get_scene(camera).active_camera = camera
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

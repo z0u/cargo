@@ -24,11 +24,11 @@ import bxt
 
 from . import director
 from . import inventory
-from Scripts import store, shells, camera
+from Scripts import store, shells, camera, impulse
 
 DEBUG = False
 
-class Snail(director.VulnerableActor, bge.types.KX_GameObject):
+class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
 
 	# Snail states
@@ -108,6 +108,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		camera.AutoCamera().add_focus_point(self)
 
 		self.DEBUGpositions = [self.worldPosition.copy()]
+		impulse.Input().add_handler(self)
 
 	def load_items(self):
 		scene = bge.logic.getCurrentScene()
@@ -677,58 +678,41 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self.setAngularVelocity(bxt.bmath.MINVECTOR, False)
 		self.setLinearVelocity(bxt.bmath.MINVECTOR, False)
 
-	def on_movement_impulse(self, fwd, back, left, right):
-		'''Make the snail move. If moving forward or backward, this implicitly
+	def on_movement_impulse(self, f, b, l, r):
+		return
+
+	def handle_movement(self, state):
+		'''
+		Make the snail move. If moving forward or backward, this implicitly
 		calls decaySpeed.
 		'''
 		if not self.has_state(Snail.S_CRAWLING):
-			return
+			return True
 
-		#
-		# Decide which direction to move in on the Y-axis.
-		#
-		fwdSign = 0
-		if fwd:
-			fwdSign = fwdSign + 1
-		if back:
-			fwdSign = fwdSign - 1
-
+		direction = state.direction
 		#
 		# Apply forward/backward motion.
 		#
-		speed = self['NormalSpeed'] * self['SpeedMultiplier'] * float(fwdSign)
+		speed = self['NormalSpeed'] * self['SpeedMultiplier'] * direction.y
 		self.applyMovement((0.0, speed, 0.0), True)
 		self.decay_speed()
 
 		#
 		# Decide which way to turn.
 		#
-		targetBendAngleFore = 0.0
-		targetRot = 0.0
 		targetBendAngleAft = None
-		if left:
-			#
-			# Bend left.
-			#
-			targetBendAngleFore = targetBendAngleFore - self['MaxBendAngle']
-			targetRot = targetRot + self['MaxRot']
-		if right:
-			#
-			# Bend right. If bending left too, the net result will be
-			# zero.
-			#
-			targetBendAngleFore = targetBendAngleFore + self['MaxBendAngle']
-			targetRot = targetRot - self['MaxRot']
+		targetBendAngleFore = self['MaxBendAngle'] * direction.x
+		targetRot = self['MaxRot'] * -direction.x
 
 		locomotionStep = self['SpeedMultiplier'] * 0.4
-		if fwdSign > 0:
+		if direction.y > 0.1:
 			#
 			# Moving forward.
 			#
 			targetBendAngleAft = targetBendAngleFore
 			self.armature['LocomotionFrame'] = (
 				self.armature['LocomotionFrame'] + locomotionStep)
-		elif fwdSign < 0:
+		elif direction.y < -0.1:
 			#
 			# Reversing: invert rotation direction.
 			#
@@ -761,15 +745,18 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 
 		# These actually get applied in update.
 		self['BendAngleFore'] = bxt.bmath.lerp(self['BendAngleFore'],
-		                                     targetBendAngleFore,
-		                                     self['BendFactor'])
-		if fwdSign != 0:
-			self['BendAngleAft'] = bxt.bmath.lerp(self['BendAngleAft'],
-		                                        targetBendAngleAft,
-		                                        self['BendFactor'])
+				targetBendAngleFore, self['BendFactor'])
 
-		if self.touchedObject != None and (fwd or back):
-			self.children['Trail'].moved(self['SpeedMultiplier'], self.touchedObject)
+		if abs(direction.y) > 0.1:
+			self['BendAngleAft'] = bxt.bmath.lerp(self['BendAngleAft'],
+					targetBendAngleAft, self['BendFactor'])
+
+			# Moving forward or backward, so update trail.
+			if self.touchedObject is not None:
+				self.children['Trail'].moved(self['SpeedMultiplier'],
+					self.touchedObject)
+
+		return True
 
 	def decay_speed(self):
 		'''Bring the speed of the snail one step closer to normal speed.'''
@@ -786,33 +773,37 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		else:
 			self['SpeedMultiplier'] = min(mult + dr, 1.0)
 
-	def on_button1(self, positive, triggered):
-		if positive and triggered:
+	def handle_bt_1(self, state):
+		if state.triggered and state.positive:
 			if self.has_state(Snail.S_INSHELL):
 				self.exit_shell(animate = True)
 			elif self.has_state(Snail.S_HASSHELL):
 				self.enter_shell(animate = True)
 			elif self.has_state(Snail.S_NOSHELL):
 				self.reclaim_shell()
+		return True
 
-	def on_button2(self, positive, triggered):
-		if positive and triggered:
+	def handle_bt_2(self, state):
+		if state.triggered and state.positive:
 			if self.has_state(Snail.S_HASSHELL):
 				self.drop_shell(animate = True)
 			elif self.has_state(Snail.S_NOSHELL):
 				self.reclaim_shell()
+		return True
 
-	def on_next(self, positive, triggered):
-		if positive and triggered:
-			if (self.has_state(Snail.S_HASSHELL) or
-					self.has_state(Snail.S_NOSHELL)):
+	def handle_switch(self, state):
+		if state.triggered and (self.has_state(Snail.S_HASSHELL) or
+				self.has_state(Snail.S_NOSHELL)):
+			if state.direction > 0.1:
 				self.switch_next()
-
-	def on_previous(self, positive, triggered):
-		if positive and triggered:
-			if (self.has_state(Snail.S_HASSHELL) or
-					self.has_state(Snail.S_NOSHELL)):
+			elif state.direction < -0.1:
 				self.switch_previous()
+		return True
+
+	def handle_bt_camera(self, state):
+		if state.triggered and state.positive:
+			bxt.types.Event('ResetCameraPos', None).send()
+		return True
 
 	def get_camera_tracking_point(self):
 		return self.cameraTrack
@@ -839,9 +830,8 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		'''
 		self.spotIndex = (self.spotIndex + 1) % len(self.children)
 
-		scene = logic.getCurrentScene()
 		spot = self.children[self.spotIndex]
-		spotI = scene.addObject(spot, self)
+		spotI = self.scene.addObject(spot, self)
 
 		#
 		# Attach the spot to the object that the snail is crawling on.

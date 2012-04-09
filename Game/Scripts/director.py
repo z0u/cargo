@@ -262,10 +262,8 @@ class Director(metaclass=bxt.types.Singleton):
 	def __init__(self):
 		self.mainCharacter = None
 		self.actors = bxt.types.SafeSet()
-		self.inputSuspended = False
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')
-		bxt.types.EventBus().replay_last(self, 'SuspendInput')
 		self.slowMotionCount = 0
 
 	def add_actor(self, actor):
@@ -277,8 +275,6 @@ class Director(metaclass=bxt.types.Singleton):
 	def on_event(self, event):
 		if event.message == 'MainCharacterSet':
 			self.mainCharacter = event.body
-		elif event.message == 'SuspendInput':
-			self.inputSuspended = event.body
 		elif event.message == 'RelocatePlayer':
 			if self.mainCharacter is not None:
 				pos, rot = event.body
@@ -290,7 +286,7 @@ class Director(metaclass=bxt.types.Singleton):
 		for actor in self.actors:
 			if not actor.is_inside_world():
 				if DEBUG:
-					bge.logic.getCurrentScene().suspend()
+					actor.scene.suspend()
 					print("Actor %s was outside world." % actor.name)
 					print("Loc:", actor.worldPosition)
 					print("Vel:", actor.worldLinearVelocity)
@@ -300,78 +296,13 @@ class Director(metaclass=bxt.types.Singleton):
 			actor.record_velocity()
 
 	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def on_movement_impulse(self, c):
-		fwd = c.sensors['sForward']
-		fwd2 = c.sensors['sForward2']
-		back = c.sensors['sBackward']
-		back2 = c.sensors['sBackward2']
-		left = c.sensors['sLeft']
-		left2 = c.sensors['sLeft2']
-		right = c.sensors['sRight']
-		right2 = c.sensors['sRight2']
-		if self.mainCharacter != None and not self.inputSuspended:
-			self.mainCharacter.on_movement_impulse(
-				fwd.positive or fwd2.positive,
-				back.positive or back2.positive,
-				left.positive or left2.positive,
-				right.positive or right2.positive)
-
-	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def on_button1(self, c):
-		s = c.sensors[0]
-		if self.mainCharacter != None and not self.inputSuspended:
-			self.mainCharacter.on_button1(s.positive, s.triggered)
-
-	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def on_button2(self, c):
-		s = c.sensors[0]
-		if self.mainCharacter != None and not self.inputSuspended:
-			self.mainCharacter.on_button2(s.positive, s.triggered)
-
-	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def on_next(self, c):
-		s = c.sensors[0]
-		if self.mainCharacter != None and not self.inputSuspended:
-			self.mainCharacter.on_next(s.positive, s.triggered)
-
-	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def on_previous(self, c):
-		s = c.sensors[0]
-		if self.mainCharacter != None and not self.inputSuspended:
-			self.mainCharacter.on_previous(s.positive, s.triggered)
-
-	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def on_view_button(self, c):
-		s = c.sensors[0]
-		if s.positive and not self.inputSuspended:
-			evt = bxt.types.Event('ResetCameraPos', None)
-			bxt.types.EventBus().notify(evt)
-
-	def _get_main_scene(self):
-		if self.mainCharacter == None:
-			return None
-		for s in bge.logic.getSceneList():
-			if self.mainCharacter in s.objects:
-				return s
-		return None
-
-	@bxt.types.expose
 	@bxt.utils.all_sensors_positive
 	@bxt.utils.controller_cls
 	def toggle_suspended(self, c):
 		if self.mainCharacter == None:
 			return
 
-		scene = self._get_main_scene()
-		if scene == None:
-			return
-
+		scene = self.mainCharacter.scene
 		if scene.suspended:
 			scene.resume()
 		else:
@@ -379,10 +310,10 @@ class Director(metaclass=bxt.types.Singleton):
 
 	@bxt.types.expose
 	def slow_motion_pulse(self):
-		scene = self._get_main_scene()
-		if scene == None:
+		if self.mainCharacter == None:
 			return
 
+		scene = self.mainCharacter.scene
 		self.slowMotionCount += 1
 		if self.slowMotionCount == self.SLOW_TICS_PER_FRAME:
 			scene.resume()

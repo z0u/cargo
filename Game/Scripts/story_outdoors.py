@@ -563,32 +563,36 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		mainChar = director.Director().mainCharacter
 
+		# Eject all objects other than the snail.
 		for ob in door.hitObjectList:
 			if not ob == mainChar:
-				# Only the main character can enter
-				self.eject(ob)
-			elif not 'HasShell' in ob:
 				# Only a snail can enter
 				self.eject(ob)
-			elif ob['HasShell']:
-				# Only a snail without a shell can enter!
-				self.eject(ob)
-				evt = bxt.types.Event('ShowMessage', "You can't fit! Press X "
-						"to drop your shell.")
-				bxt.types.EventBus().notify(evt)
 
-		if self.snailInside:
-			# Check to see if the snail is exiting.
-			if not mainChar in safety.hitObjectList:
-				print("Exiting because snail not in safety.")
-				self.transition(False)
-			elif mainChar in door.hitObjectList:
-				print("Exiting because snail touched door.")
-				self.transition(False)
+		# If the bottle mode indicates that the snail is inside, double-check
+		# that that's still the case.
+		if self.snailInside and not mainChar in safety.hitObjectList:
+			print("Exiting because snail not in safety.")
+			self.transition(False)
+			return
+ 
+		if not mainChar in door.hitObjectList:
+			return
+
+		if not 'HasShell' in mainChar:
+			# Touched by an occupied shell.
+			self.eject(mainChar)
+		elif mainChar['HasShell']:
+			# Touched by a snail who is wearing a shell.
+			bxt.types.Event('ShowMessage', "You can't fit! Press X to drop your shell.").send()
+			print("Sent message")
+			self.eject(mainChar)
+		elif self.snailInside:
+			print("Exiting because snail touched door.")
+			self.transition(False)
 		else:
-			if mainChar in door.hitObjectList:
-				print("Entering because snail touched door.")
-				self.transition(True)
+			print("Entering because snail touched door.")
+			self.transition(True)
 
 	def transition(self, isEntering):
 		if isEntering:

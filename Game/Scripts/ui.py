@@ -24,9 +24,10 @@ import mathutils
 import bxt
 from . import inventory
 
+
 class HUDState(metaclass=bxt.types.Singleton):
 	def __init__(self):
-		self.loaders = bxt.types.GameObjectSet()
+		self.loaders = bxt.types.SafeSet()
 		bxt.types.EventBus().add_listener(self)
 
 	def on_event(self, evt):
@@ -37,6 +38,7 @@ class HUDState(metaclass=bxt.types.Singleton):
 			self.loaders.discard(evt.body)
 			if len(self.loaders) == 0:
 				bxt.types.Event("ShowLoadingScreen", (False, None)).send()
+
 
 class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'MB_'
@@ -62,6 +64,7 @@ class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def clear(self):
 		self['Content'] = ""
 		self.canvas['Content'] = ""
+
 
 class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'DB_'
@@ -259,6 +262,7 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			bxt.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)
 			self.currently_shown = False
 
+
 class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 1
 	S_SHOW = 2
@@ -278,6 +282,7 @@ class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			colour = bxt.render.parse_colour(colourString)
 			self.color = colour
 			self.visible = True
+
 
 class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
@@ -337,6 +342,7 @@ class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def hide(self):
 		if self.has_state(self.S_VISIBLE):
 			self.set_state(self.S_HIDING)
+
 
 class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Displays the current shells in a scrolling view on the side of the
@@ -445,6 +451,7 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		icon.localPosition = (0.0, 0.0, 0.0)
 		icon.localOrientation.identity()
 		icon.visible = False
+
 
 class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''

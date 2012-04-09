@@ -111,9 +111,6 @@ class Actor(bxt.types.BX_GameObject):
 			# Responsibility delegated to parent.
 			return True
 
-		foundGround = False
-		outsideGround = True
-
 		origin = self.worldPosition.copy()
 		def cast_for_ground(vec):
 			through = origin + vec
@@ -264,7 +261,7 @@ class Director(metaclass=bxt.types.Singleton):
 
 	def __init__(self):
 		self.mainCharacter = None
-		self.actors = bxt.types.GameObjectSet()
+		self.actors = bxt.types.SafeSet()
 		self.inputSuspended = False
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')

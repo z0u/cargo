@@ -575,7 +575,7 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			print("Exiting because snail not in safety.")
 			self.transition(False)
 			return
- 
+
 		if not mainChar in door.hitObjectList:
 			return
 

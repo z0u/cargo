@@ -17,10 +17,9 @@
 
 import bge
 from bge import logic
-import weakref
 
 import bxt
-from . import ui, director, store
+from . import director, store
 
 DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
@@ -58,8 +57,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		'''
 		self.camera = None
 		self.defaultLens = 22.0
-		self.queue = bxt.types.GameObjectPriorityQueue()
-		self.focusQueue = bxt.types.GameObjectPriorityQueue()
+		self.queue = bxt.types.SafePriorityQueue()
+		self.focusQueue = bxt.types.SafePriorityQueue()
 		self.lastGoal = None
 		self.instantCut = False
 		self.errorReported = False
@@ -815,8 +814,8 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			for element in reversed(iterable):
 				yield element
 
-		def marginMin(current, next, margin):
-			return min(current + margin, next)
+		def marginMin(current, nxt, margin):
+			return min(current + margin, nxt)
 
 		currentOffset = self.pathHead.ceilingHeight
 		for node in pingPong(self.path):
@@ -857,14 +856,14 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 		self.worldPosition = autoCamera.camera.worldPosition
 		pos = autoCamera.camera.worldPosition.copy()
 
-		dir = bxt.bmath.ZAXIS.copy()
-		ob = self.cast_for_water(pos, dir)
+		direction = bxt.bmath.ZAXIS.copy()
+		ob = self.cast_for_water(pos, direction)
 		if ob != None:
 			# Double check - works around bug with rays that strike a glancing
 			# blow on an edge.
-			dir.x = dir.y = 0.1
-			dir.normalize()
-			ob = self.cast_for_water(pos, dir)
+			direction.x = direction.y = 0.1
+			direction.normalize()
+			ob = self.cast_for_water(pos, direction)
 
 		if ob != None:
 			evt = bxt.types.Event('ShowFilter', ob['VolumeCol'])
@@ -873,10 +872,10 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 			evt = bxt.types.Event('ShowFilter', None)
 			bxt.types.EventBus().notify(evt)
 
-	def cast_for_water(self, pos, dir):
-		through = pos + dir * CameraCollider.MAX_DIST
+	def cast_for_water(self, pos, direction):
+		through = pos + direction * CameraCollider.MAX_DIST
 		ob, _, normal = bxt.bmath.ray_cast_p2p(through, pos, prop='VolumeCol')
-		if ob != None and normal.dot(dir) > 0.0:
+		if ob != None and normal.dot(direction) > 0.0:
 			return ob
 		else:
 			return None

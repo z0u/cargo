@@ -76,7 +76,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		self.rem_state(Snail.S_INIT)
 
 		self.shell = None
-		self.recentlyDroppedItems = bxt.types.GameObjectSet()
+		self.recentlyDroppedItems = bxt.types.SafeSet()
 		# Not weak props, but it should be OK because they will die in the same
 		# frame as the snail (this object).
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
@@ -367,7 +367,7 @@ class Snail(director.VulnerableActor, bge.types.KX_GameObject):
 		'''Picks up and equips nearby shells that don't already have an
 		owner. Note: this must run with priority over functions that drop
 		items!'''
-		collectables = bxt.types.GameObjectSet(
+		collectables = bxt.types.SafeSet(
 				controller.sensors['sPickup'].hitObjectList)
 		# Forget objects that are no longer in range.
 		self.recentlyDroppedItems.intersection_update(collectables)

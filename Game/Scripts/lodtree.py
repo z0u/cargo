@@ -418,7 +418,7 @@ class LODLeaf(LODNode):
 
 		self.lastFrameVisible = False
 		# No fancy sets here; just be really careful!
-		#self.objectInstances = bxt.types.GameObjectSet()
+		#self.objectInstances = bxt.types.SafeSet()
 		self.objectInstances = set()
 
 		self.numFramesActive = -1

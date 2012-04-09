@@ -82,7 +82,7 @@ class InputHandler(metaclass=bxt.types.Singleton):
 	_prefix = 'IH_'
 
 	def __init__(self):
-		self.widgets = bxt.types.GameObjectSet()
+		self.widgets = bxt.types.SafeSet()
 		self._current = None
 		self._downCurrent = None
 

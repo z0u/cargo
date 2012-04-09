@@ -54,7 +54,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.camBottom = scene.objects['BucketBottomCam']
 		self.currentCamera = None
 
-		self.dir = Bucket.DIR_UP
+		self.direction = Bucket.DIR_UP
 		self.loc = Bucket.LOC_BOTTOM
 		self.isTouchingPlayer = False
 
@@ -75,16 +75,16 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		waterBall = scene.addObject(self['WaterBallTemplate'], self.water)
 		waterBall.setLinearVelocity(self.water.getAxisVect(Bucket.PROJECTION))
 
-	def set_direction(self, dir):
-		if dir == self.dir:
+	def set_direction(self, direction):
+		if direction == self.direction:
 			return
 
-		if dir == Bucket.DIR_UP:
+		if direction == Bucket.DIR_UP:
 			self.water.setVisible(True, False)
 		else:
 			self.water.setVisible(False, False)
 			self.spawn_water_ball()
-		self.dir = dir
+		self.direction = direction
 
 	def set_location(self, loc):
 		if loc == self.loc:

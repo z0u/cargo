@@ -23,6 +23,8 @@ import mathutils
 import bxt.types
 import bxt.utils
 
+from . import impulse
+
 DEBUG = False
 
 class Actor(bxt.types.BX_GameObject):
@@ -64,7 +66,7 @@ class Actor(bxt.types.BX_GameObject):
 		self.setLinearVelocity(bxt.bmath.MINVECTOR)
 		self.setAngularVelocity(bxt.bmath.MINVECTOR)
 		if self == Director().mainCharacter and reason != None:
-			evt = bxt.types.Event('ShowMessage', reason)
+			evt = bxt.types.Event('ShowDialogue', reason)
 			bxt.types.EventBus().notify(evt)
 
 	def drown(self):
@@ -252,7 +254,7 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 	def on_previous(self, pos, trig):
 		pass
 
-class Director(metaclass=bxt.types.Singleton):
+class Director(impulse.Handler, metaclass=bxt.types.Singleton):
 	_prefix = ''
 
 	SLOW_TICS_PER_FRAME = 10
@@ -279,10 +281,15 @@ class Director(metaclass=bxt.types.Singleton):
 			if self.mainCharacter is not None:
 				pos, rot = event.body
 				self.mainCharacter.relocate(pos, rot)
+		elif event.message == 'SuspendInput':
+			if event.body == True:
+				impulse.Input().add_handler(self, 'STORY')
+			else:
+				impulse.Input().remove_handler(self)
 
 	@bxt.types.expose
 	def update(self):
-		'''Make sure all actors are within the world.'''
+		# Make sure all actors are within the world.
 		for actor in self.actors:
 			if not actor.is_inside_world():
 				if DEBUG:

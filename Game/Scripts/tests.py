@@ -16,34 +16,44 @@
 #
 
 import unittest
-import bge
 import bxt
-import weakref
 
-class PriorityQueueTest(unittest.TestCase):
-	'''bxt.utils.PriorityQueue'''
+class PriorityStackTest(unittest.TestCase):
+	'''bxt.types.SafePriorityStack'''
 
 	class Dummy:
-		pass
+		def __init__(self):
+			self.invalid = False
 
 	def setUp(self):
-		self.foo = PriorityQueueTest.Dummy()
-		self.bar = PriorityQueueTest.Dummy()
-		self.baz = PriorityQueueTest.Dummy()
-		self.queue = bxt.utils.WeakPriorityQueue()
+		self.foo = PriorityStackTest.Dummy()
+		self.bar = PriorityStackTest.Dummy()
+		self.baz = PriorityStackTest.Dummy()
+		self.queue = bxt.types.SafePriorityStack()
 
 	def test_add(self):
 		self.queue.push(self.foo, 1)
-		self.assertEquals(self.queue[-1], self.foo)
+		self.assertIs(self.queue[-1], self.foo)
 		self.assertEquals(len(self.queue), 1)
+
+	def test_order(self):
+		items = [self.foo, self.bar, self.baz]
+
+		# Last item pushed on is at the front of the list.
+		self.queue.push(self.foo, 1)
+		self.queue.push(self.baz, 0)
+		self.queue.push(self.bar, 0)
+
+		for a, b in zip(self.queue, items):
+			self.assertIs(a, b)
 
 	def test_add_several(self):
 		self.queue.push(self.foo, 1)
 		self.queue.push(self.bar, 0)
-		self.assertEquals(self.queue[-1], self.foo)
+		self.assertIs(self.queue.top(), self.foo)
 		self.assertEquals(len(self.queue), 2)
 		self.queue.push(self.baz, 1)
-		self.assertEquals(self.queue[-1], self.baz)
+		self.assertIs(self.queue.top(), self.baz)
 		self.assertEquals(len(self.queue), 3)
 
 	def test_remove(self):
@@ -51,10 +61,10 @@ class PriorityQueueTest(unittest.TestCase):
 		self.queue.push(self.bar, 0)
 		self.queue.push(self.baz, 1)
 		self.queue.pop()
-		self.assertEquals(self.queue[-1], self.foo)
+		self.assertIs(self.queue.top(), self.foo)
 		self.assertEquals(len(self.queue), 2)
 		self.queue.pop()
-		self.assertEquals(self.queue[-1], self.bar)
+		self.assertIs(self.queue.top(), self.bar)
 		self.assertEquals(len(self.queue), 1)
 		self.queue.pop()
 		self.assertEquals(len(self.queue), 0)
@@ -63,13 +73,13 @@ class PriorityQueueTest(unittest.TestCase):
 		self.queue.push(self.foo, 1)
 		self.queue.push(self.bar, 0)
 		self.queue.push(self.baz, 1)
-		self.baz = None
-		self.assertEquals(self.queue[-1], self.foo)
+		self.baz.invalid = True
+		self.assertIs(self.queue.top(), self.foo)
 		self.assertEquals(len(self.queue), 2)
-		self.foo = None
-		self.assertEquals(self.queue[-1], self.bar)
+		self.foo.invalid = True
+		self.assertIs(self.queue.top(), self.bar)
 		self.assertEquals(len(self.queue), 1)
-		self.bar = None
+		self.bar.invalid = True
 		self.assertEquals(len(self.queue), 0)
 
 class FuzzySwitchTest(unittest.TestCase):
@@ -113,61 +123,6 @@ class FuzzySwitchTest(unittest.TestCase):
 
 def run_tests():
 	suite = unittest.TestSuite()
-	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(PriorityQueueTest))
+	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(PriorityStackTest))
 	suite.addTests(unittest.TestLoader().loadTestsFromTestCase(FuzzySwitchTest))
 	unittest.TextTestRunner(verbosity=2).run(suite)
-
-#########################
-# Non-standard unit tests
-#########################
-
-# Weak reference testing for GameObjects
-
-class WeakrefTest:
-	wpNative = bxt.types.weakprop('wpNative')
-	wpCustom = bxt.types.weakprop('wpCustom')
-
-wt = WeakrefTest()
-wrefCountdown = 3
-wrefPass = True
-
-class WeakrefCustom(bxt.types.BX_GameObject, bge.types.KX_GameObject):
-	def __init__(self, old_owner):
-		wt.wpCustom = self
-
-def weakref_init():
-	o = bge.logic.getCurrentScene().objects['weakref']
-	# This is actually stored as a weakref, due to weakprop.
-	wt.wpNative = o
-
-def weakref_test():
-	global wrefCountdown
-	global wrefPass
-
-	wrefCountdown -= 1
-
-	if wrefCountdown > 0 and wt.wpNative == None:
-		print("Info: Native weak reference died before it was due to.")
-		wrefPass = False
-	elif wrefCountdown > 0 and wt.wpCustom == None:
-		print("Info: Custom weak reference died before it was due to.")
-		wrefPass = False
-	elif wrefCountdown == 1:
-		wt.wpNative.endObject()
-		wt.wpCustom.endObject()
-	elif wrefCountdown == 0:
-		if wt.wpNative != None:
-			wrefPass = False
-			print("Info: Native weak reference did not die on time.")
-		if wt.wpCustom != None:
-			wrefPass = False
-			print("Info: Custom weak reference did not die on time.")
-
-		if wrefPass:
-			print("weakref_test ... ok")
-			print("\n----------------------------------------------------------------------")
-			print("OK")
-		else:
-			print("weakref_test ... FAIL")
-			print("\n----------------------------------------------------------------------")
-			print("FAIL")

@@ -57,8 +57,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		'''
 		self.camera = None
 		self.defaultLens = 22.0
-		self.queue = bxt.types.SafePriorityQueue()
-		self.focusQueue = bxt.types.SafePriorityQueue()
+		self.queue = bxt.types.SafePriorityStack()
+		self.focusQueue = bxt.types.SafePriorityStack()
 		self.lastGoal = None
 		self.instantCut = False
 		self.errorReported = False

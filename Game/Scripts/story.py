@@ -27,6 +27,7 @@ from . import ui
 from . import camera
 from . import director
 from . import store
+from . import impulse
 import time
 
 DEBUG = False
@@ -117,6 +118,26 @@ class CondEvent(Condition):
 	def evaluate(self, c):
 		return self.triggered
 
+class CondEventEq(Condition):
+	def __init__(self, message, body):
+		self.message = message
+		self.body = body
+		self.triggered = False
+
+	def enable(self, enabled):
+		if enabled:
+			bxt.types.EventBus().add_listener(self)
+		else:
+			bxt.types.EventBus().remove_listener(self)
+			self.triggered = False
+
+	def on_event(self, evt):
+		if evt.message == self.message and evt.body == self.body:
+			self.triggered = True
+
+	def evaluate(self, c):
+		return self.triggered
+
 class CondWait(Condition):
 	'''A condition that waits for a certain time after being enabled.'''
 	def __init__(self, duration):
@@ -155,12 +176,12 @@ class ActStoreSet(BaseAct):
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
 	def execute(self, c):
-		bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', True))
+		bxt.types.Event('SuspendInput', True).send()
 
 class ActResumeInput(BaseAct):
 	'''Let the player move around.'''
 	def execute(self, c):
-		bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', False))
+		bxt.types.Event('SuspendInput', False).send()
 
 class ActActuate(BaseAct):
 	'''Activate an actuator.'''
@@ -229,37 +250,23 @@ class ActSound(BaseAct):
 	def __str__(self):
 		return "ActSound: %s" % self.filename
 
-class ActShowDialogue(BaseAct):
-	def __init__(self, message):
-		self.message = message
-
-	def execute(self, c):
-		bxt.types.Event('ShowDialogue', self.message).send()
-
-	def __str__(self):
-		return 'ActShowDialogue: "%s"' % self.message
-
-class ActHideDialogue(BaseAct):
-	def execute(self, c):
-		bxt.types.Event('ShowDialogue', None).send()
-
-class ActShowMessage(BaseAct):
-	def __init__(self, message):
-		self.message = message
-
-	def execute(self, c):
-		bxt.types.Event('ShowMessage', self.message).send()
-
-	def __str__(self):
-		return 'ActShowMessage: "%s"' % self.message
-
 class ActShowMarker(BaseAct):
 	'''Show a marker on the screen that points to an object.'''
 
 	target = bxt.types.weakprop("target")
 
 	def __init__(self, target):
-		self.target = target
+		'''
+		@para target: The object to highlight. If None, the highlight will be
+				hidden.
+		'''
+		if isinstance(target, str):
+			try:
+				self.target = bge.logic.getCurrentScene().objects[target]
+			except KeyError:
+				self.target = None
+		else:
+			self.target = target
 
 	def execute(self, c):
 		bxt.types.WeakEvent('ShowMarker', self.target).send()
@@ -461,8 +468,8 @@ class State:
 				log(act)
 				act.execute(c)
 			except Exception as e:
-				log("Warning: Action %s failed." % act)
-				log("\t%s" % e)
+				print("Warning: Action %s failed." % act)
+				print("\t%s" % e)
 
 	def progress(self, c):
 		'''Find the next state that has all conditions met, or None if no such
@@ -506,8 +513,11 @@ class Chapter(bxt.types.BX_GameObject):
 	_prefix = ''
 
 	def __init__(self, old_owner):
-		self.rootState = State(name="Root")
-		self.currentState = self.rootState
+		# Need one dummy transition before root state to ensure the children of
+		# the root get activated.
+		self.zeroState = State(name="Zero")
+		self.rootState = self.zeroState.createTransition("Root")
+		self.currentState = self.zeroState
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

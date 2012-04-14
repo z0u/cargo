@@ -20,11 +20,15 @@ import mathutils
 
 import bxt
 
+DEBUG = False
+
 class Input(metaclass=bxt.types.Singleton):
 	_prefix = ""
 
+	PRI = {'PLAYER': 0, 'STORY': 1, 'DIALOGUE': 2}
+
 	def __init__(self):
-		self.handlers = bxt.types.SafeList()
+		self.handlers = bxt.types.SafePriorityStack()
 
 		# Acquire movement from a 2D directional pad.
 		self.dp_move = DPad2D("Movement")
@@ -95,11 +99,15 @@ class Input(metaclass=bxt.types.Singleton):
 		self.btn2.keyboard_keys.append(bge.events.XKEY)
 		self.btn_cam.keyboard_keys.append(bge.events.CKEY)
 
-	def add_handler(self, handler):
-		self.handlers.insert(0, handler)
+	def add_handler(self, handler, priority='PLAYER'):
+		self.handlers.push(handler, Input.PRI[priority])
+		if DEBUG:
+			print("Handlers:", self.handlers)
 
 	def remove_handler(self, handler):
-		self.handlers.remove(handler)
+		self.handlers.discard(handler)
+		if DEBUG:
+			print("Handlers:", self.handlers)
 
 class Button:
 	def __init__(self, name):
@@ -231,4 +239,4 @@ class TestHandler(Handler):
 		print(state)
 		return True
 
-#Input().add_handler(TestHandler())
+#Input().add_handler(TestHandler(), 'PLAYER')

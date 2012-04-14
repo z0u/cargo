@@ -16,6 +16,7 @@
 #
 
 import weakref
+import time
 
 import bge
 from bge import logic
@@ -23,6 +24,7 @@ import mathutils
 
 import bxt
 from . import inventory
+from . import impulse
 
 
 class HUDState(metaclass=bxt.types.Singleton):
@@ -40,96 +42,141 @@ class HUDState(metaclass=bxt.types.Singleton):
 				bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 
 
-class MessageBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
-	_prefix = 'MB_'
+def test_input(c):
+	if len(bge.logic.getSceneList()) > 1:
+		c.owner.endObject()
+		return
 
-	def __init__(self, old_owner):
-		self.canvas = self.find_descendant([('template', 'TextCanvas_T')])
-		if self.canvas.__class__ != Text:
-			self.canvas = Text(self.canvas)
+	# The owner has another controller that handles input. So we just send a
+	# message so that the user input can do something useful!
+	bxt.types.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me.",
+			("Of course!", "I'm too sleepy..."))).send(5)
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'ShowMessage')
-
-	def on_event(self, evt):
-		if evt.message == 'ShowMessage':
-			self.setText(evt.body)
-
-	def setText(self, text):
-		if self['Content'] != text:
-			self['Content'] = text
-			self.canvas['Content'] = text
-
-	@bxt.types.expose
-	def clear(self):
-		self['Content'] = ""
-		self.canvas['Content'] = ""
-
-
-class DialogueBox(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'DB_'
 
+	# Animation layers
 	L_DISPLAY = 0
 
+	# States
+	S_INIT = 1
+	S_HIDE_UPDATE = 2
+	S_SHOW_UPDATE = 3
+	S_IDLE = 4
+
+	# Time to wait before dialogue may be dismissed, in seconds per character.
+	WAIT_TIME = 0.6 / 24.0
+
 	def __init__(self, old_owner):
-		self.canvas = self.find_descendant([('template', 'TextCanvas_T')])
-		if self.canvas.__class__ != Text:
-			self.canvas = Text(self.canvas)
-		self.armature = self.children['FrameArmature']
-		self.frame = self.childrenRecursive['DialogueBoxFrame']
-		self.button = self.childrenRecursive['OKButton']
-		self.hide(False)
+		self.canvas = bxt.types.mutate(self.childrenRecursive['Dlg_TextCanvas'])
+		self.armature = self.childrenRecursive['Dlg_FrameArmature']
+		self.frame = self.childrenRecursive['Dlg_Frame']
+
+		self.response_canvas = bxt.types.mutate(self.childrenRecursive['Rsp_TextCanvas'])
+		self.response_armature = self.childrenRecursive['Rsp_FrameArmature']
+		self.response_frame = self.childrenRecursive['Rsp_Frame']
+		self.button = self.childrenRecursive['Dlg_OKButton']
+
+		self.options = None
+		self.selected_option = None
+		self.options_time = 0
+		self.options_visible = False
+		self.set_state(DialogueBox.S_IDLE)
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'ShowDialogue')
 
 	def on_event(self, evt):
 		if evt.message == 'ShowDialogue':
-			self.setText(evt.body)
+			if evt.body is None:
+				self.hide()
+			elif isinstance(evt.body, str):
+				self.show(evt.body, None)
+			else:
+				text, options = evt.body
+				self.show(text, options)
 
-	def show(self, animate=True):
-		if not animate:
-			self.armature.setVisible(True, True)
-			self.button.visible = True
-			return
+	def show(self, text, options):
+		self.canvas.set_text(text)
+		self.options = options
+		delay = time.time() + len(text) * DialogueBox.WAIT_TIME
+		self.hide_options()
+		self.show_options_later(delay)
 
-		self.armature.playAction('DialogueBoxBoing', 1, 8, layer=DialogueBox.L_DISPLAY)
-		self.frame.playAction('DB_FrameVis', 1, 8, layer=DialogueBox.L_DISPLAY)
+		start = self.armature.getActionFrame()
+		self.armature.playAction('DialogueBoxBoing', start, 8, layer=DialogueBox.L_DISPLAY)
+		self.frame.playAction('DB_FrameVis', start, 8, layer=DialogueBox.L_DISPLAY)
 
 		# Frame is visible immediately; button is shown later.
 		self.armature.setVisible(True, True)
-		def cb():
-			self.button.visible = True
-		bxt.anim.add_trigger_gte(self.armature, DialogueBox.L_DISPLAY, 2, cb)
+		impulse.Input().add_handler(self, 'DIALOGUE')
 
-	def hide(self, animate=True):
-		if not animate:
-			self.armature.setVisible(False, True)
-			self.button.visible = False
-			return
+	def hide(self):
+		self.canvas.set_text("")
+		self.options = None
+		self.hide_options()
 
-		self.armature.playAction('DialogueBoxBoing', 8, 1, layer=DialogueBox.L_DISPLAY)
-		self.frame.playAction('DB_FrameVis', 8, 1, layer=DialogueBox.L_DISPLAY)
+		start = self.armature.getActionFrame()
+		self.armature.playAction('DialogueBoxBoing', start, 1, layer=DialogueBox.L_DISPLAY)
+		self.frame.playAction('DB_FrameVis', start, 1, layer=DialogueBox.L_DISPLAY)
 
 		# Button is hidden immediately; frame is hidden later.
 		self.button.visible = False
-		def cb():
+		# Frame is hidden at end of animation in hide_update.
+
+		self.set_state(DialogueBox.S_HIDE_UPDATE)
+		impulse.Input().remove_handler(self)
+
+	def show_options_later(self, delay):
+		# Put this object into a state in which a sensor will fire every frame
+		# until it's the right time to show the options.
+		self.options_time = delay
+		self.set_state(DialogueBox.S_SHOW_UPDATE)
+
+	def show_options(self):
+		if self.options is None:
+			self.button.visible = True
+			self.selected_option = None
+		else:
+			self.selected_option = 0
+			self.response_canvas.set_text("%s\n%s" % self.options)
+			self.response_armature.playAction('DialogueBoxBoing', 1, 8, layer=DialogueBox.L_DISPLAY)
+			self.response_frame.playAction('DB_FrameVis', 1, 8, layer=DialogueBox.L_DISPLAY)
+			# Frame is shown immediately.
+			self.response_armature.setVisible(True, True)
+		self.options_visible = True
+
+	def hide_options(self):
+		if not self.options_visible:
+			return
+		self.selected_option = None
+		self.response_canvas.set_text("")
+		self.response_armature.playAction('DialogueBoxBoing', 8, 1, layer=DialogueBox.L_DISPLAY)
+		self.response_frame.playAction('DB_FrameVis', 8, 1, layer=DialogueBox.L_DISPLAY)
+		# Frame is hidden at end of animation in hide_update.
+		self.options_visible = False
+
+	def handle_bt_1(self, state):
+		if not self.options_visible:
+			return True
+
+		if state.triggered and state.positive:
+			self.hide()
+			bxt.types.Event("DialogueDismissed", self.selected_option).send()
+		return True
+
+	@bxt.types.expose
+	def show_update(self):
+		if self.options_time < time.time():
+			self.show_options()
+			self.set_state(DialogueBox.S_IDLE)
+
+	@bxt.types.expose
+	def hide_update(self):
+		if self.armature.getActionFrame() < 2:
+			self.response_armature.setVisible(False, True)
 			self.armature.setVisible(False, True)
-		bxt.anim.add_trigger_lt(self.armature, DialogueBox.L_DISPLAY, 2, cb)
-
-	def setText(self, text):
-		if text == None:
-			text = ""
-
-		if text != self.canvas['Content']:
-			self.canvas['Content'] = text
-
-			if text == "":
-				bxt.types.Event("ResumePlay").send()
-				self.hide()
-			else:
-				bxt.types.Event("SuspendPlay").send()
-				self.show()
+			self.set_state(DialogueBox.S_IDLE)
 
 
 class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
@@ -504,6 +551,9 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			seqLen = 1
 			if char == '\\':
 				char, seqLen = self.decode_escape_sequence(text, i)
+			elif char == '\n':
+				# Literal newline.
+				char = 'newline'
 			glyphString.append(self.get_glyph(char))
 			i = i + seqLen
 		return glyphString
@@ -524,6 +574,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			key = '\\'
 			seqLen = 2
 		elif text[start + 1] == 'n':
+			# Escaped newline.
 			key = 'newline'
 			seqLen = 2
 		elif text[start + 1] == '[':
@@ -670,6 +721,9 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				glyph['DelayMultiplier'])
 			bxt.utils.set_state(glyphInstance, 3)
 
+	def set_text(self, text):
+		self['Content'] = text
+
 	@bxt.types.expose
 	def render_next_char(self):
 		'''
@@ -687,7 +741,10 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	@bxt.types.expose
 	def render(self):
-		'''Render the content onto the canvas.'''
+		'''
+		Render the content onto the canvas. This is idempotent if the content
+		hasn't changed.
+		'''
 
 		h = hash(str(self['Content']))
 		if h == self.lastHash:

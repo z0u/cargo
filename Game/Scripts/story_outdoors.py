@@ -64,7 +64,7 @@ class LevelOut(GameLevel):
 
 		if err:
 			print('Error: Could not load foliage. Try reinstalling the game.')
-			evt = bxt.types.Event('ShowMessage',
+			evt = bxt.types.Event('ShowDialogue',
 				'Error: Could not load foliage. Try reinstalling the game.')
 			bxt.types.EventBus().notify(evt)
 
@@ -74,7 +74,7 @@ class LevelOut(GameLevel):
 					load_actions=True)
 		except ValueError:
 			print('Could not load characters. Try reinstalling the game.')
-			evt = bxt.types.Event('ShowMessage',
+			evt = bxt.types.Event('ShowDialogue',
 				'Could not load characters. Try reinstalling the game.')
 			bxt.types.EventBus().notify(evt)
 
@@ -181,11 +181,14 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 			o['maxSpeed'] = maxSpeed
 
 		s = self.rootState.createTransition("Init")
-		s.addEvent("ForceEnterShell", False)
 		s.addAction(ActSuspendInput())
+
+		s = s.createTransition("Init")
+		s.addCondition(CondWait(1))
+		s.addEvent("ForceEnterShell", False)
 		s.addAction(ActSetCamera('WormCamera_Enter'))
 		s.addAction(ActSetFocalPoint('CargoHoldAuto'))
-		s.addAction(ActShowDialogue("Press Return to start."))
+		s.addEvent("ShowDialogue", "Press Return to start.")
 		s.addAction(ActAction('ParticleEmitMove', 1, 1, Worm.L_ANIM, "ParticleEmitterLoc"))
 		s.addAction(ActGenericContext(letter_manual))
 
@@ -193,9 +196,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Peer out of ground
 		#
 		s = s.createTransition("Begin")
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActHideDialogue())
+		s.addCondition(CondEvent('DialogueDismissed'))
 		s.addWeakEvent("FinishLoading", self)
 		s.addAction(ActGenericContext(spray_dirt, 10, 15.0))
 		s.addAction(ActAction('BurstOut', 1, 75, Worm.L_ANIM))
@@ -203,15 +204,13 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition("Greet")
 		s.addCondition(CondActionGE(Worm.L_ANIM, 74.0))
-		s.addAction(ActShowDialogue("Cargo?"))
+		s.addEvent("ShowDialogue", "Cargo?")
 
 		#
 		# Get out of the ground
 		#
 		s = s.createTransition("Get out of the ground")
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActHideDialogue())
+		s.addCondition(CondEvent('DialogueDismissed'))
 		s.addAction(ActRemoveCamera('WormCamera_Enter'))
 		s.addAction(ActSetCamera('WormCamera_Converse'))
 		s.addAction(ActAction('BurstOut', 75, 186, Worm.L_ANIM))
@@ -235,7 +234,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition("Knock on shell")
 		s.addCondition(CondActionGE(Worm.L_ANIM, 185.0))
 		s.addAction(ActSetCamera('WormCamera_Knock'))
-		s.addAction(ActShowDialogue("Wake up, Cargo!"))
+		s.addEvent("ShowDialogue", "Wake up, Cargo!")
 		s.addAction(ActAction('BurstOut', 185, 198, Worm.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.addAction(ActAction('BurstOut_S', 185, 198, Worm.L_ANIM, 'WormBody'))
@@ -246,8 +245,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 				pitchmax= 1.1))
 
 		s = s.createTransition()
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
+		s.addCondition(CondEvent('DialogueDismissed'))
 		s.addAction(ActAction('BurstOut', 185, 220, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 185, 220, Worm.L_ANIM, 'WormBody'))
 
@@ -261,24 +259,20 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition("Wake")
 		s.addCondition(CondActionGE(Worm.L_ANIM, 205.0))
 		s.addEvent("ForceExitShell", True)
-		s.addAction(ActHideDialogue())
 
 		s = s.createTransition("Chastise")
 		s.addCondition(CondEvent('ShellExited'))
-		s.addAction(ActShowDialogue("Sleeping in, eh? Don't worry, I won't tell anyone."))
+		s.addEvent("ShowDialogue", "Sleeping in, eh? Don't worry, I won't tell anyone.")
 
 		s = s.createTransition()
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActShowDialogue("I have something for you!"))
+		s.addCondition(CondEvent('DialogueDismissed'))
+		s.addEvent("ShowDialogue", "I have something for you!")
 
 		#
 		# Dig up letter
 		#
 		s = s.createTransition("Dig up letter")
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActHideDialogue())
+		s.addCondition(CondEvent('DialogueDismissed'))
 		s.addAction(ActAction('ParticleEmitMove', 2, 2, Worm.L_ANIM, "ParticleEmitterLoc"))
 		s.addAction(ActAction('BurstOut', 220, 280, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 220, 280, Worm.L_ANIM, 'WormBody'))
@@ -310,15 +304,15 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 279))
-		s.addAction(ActShowDialogue("Ta-da! Please deliver this \[envelope] for me."))
+		s.addEvent("ShowDialogue",
+				("Ta-da! Please deliver this \[envelope] for me.",
+						("Of course!", "I'm too sleepy...")))
 
 		#
 		# Give letter
 		#
 		s = s.createTransition("Give letter")
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActHideDialogue())
+		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActRemoveCamera('WormCamera_Envelope'))
 		s.addAction(ActAction('BurstOut', 290, 330, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 290, 330, Worm.L_ANIM, 'WormBody'))
@@ -330,15 +324,14 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 315))
 		s.addAction(ActGenericContext(letter_hide))
-		s.addAction(ActShowDialogue("Is that OK?"))
+		s.addEvent("ShowDialogue", "Is that OK?")
 
 		#
 		# Point to lighthouse
 		#
 		s = s.createTransition("Point to lighthouse")
-		s.addCondition(CondWait(4))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActShowDialogue("Great! Please take it to the lighthouse keeper."))
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Great! Please take it to the lighthouse keeper.")
 		s.addAction(ActAction('BurstOut', 330, 395, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 330, 395, Worm.L_ANIM, 'WormBody'))
 
@@ -346,25 +339,21 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondActionGE(Worm.L_ANIM, 360))
 		s.addAction(ActSetCamera('WormCamera_Lighthouse'))
 		s.addAction(ActSetFocalPoint('Torch'))
-		sce = bge.logic.getCurrentScene()
-		s.addAction(ActShowMarker(sce.objects['Torch']))
+		s.addAction(ActShowMarker('Torch'))
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 394))
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
+		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActRemoveCamera('WormCamera_Lighthouse'))
 		s.addAction(ActRemoveFocalPoint('Torch'))
 		s.addAction(ActShowMarker(None))
-		s.addAction(ActShowDialogue("See you later!"))
+		s.addEvent("ShowDialogue", "See you later!")
 		s.addAction(ActAction('BurstOut', 395, 420, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 395, 420, Worm.L_ANIM, 'WormBody'))
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 420))
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActHideDialogue())
+		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActAction('BurstOut', 420, 540, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 420, 540, Worm.L_ANIM, 'WormBody'))
 
@@ -489,35 +478,33 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondWait(2))
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
-		s.addAction(ActShowDialogue("Oh, hello Cargo!"))
+		s.addEvent("ShowDialogue", "Oh, hello Cargo!")
 
 		s = s.createTransition()
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActShowDialogue("Ah, a \[envelope] for me? Thanks."))
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
 
 		s = s.createTransition()
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActShowDialogue("I'm glad you're here, actually - I need you to deliver something for me, too!"))
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "I'm glad you're here, actually - I need "\
+				"you to deliver something for me, too!")
 
 		s = s.createTransition()
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActShowDialogue("I'm all out of sauce, you see. I'm parched! But work is busy, so I can't get to the sauce bar."))
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "I'm all out of sauce, you see. I'm "\
+				"parched! But work is busy, so I can't get to the sauce bar.")
 
 		s = s.createTransition()
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Please go to the bar and order me some "\
+				"black bean sauce. I love that stuff!")
 		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
 		s.addAction(ActSetFocalPoint('B_SauceBarSign'))
 		s.addAction(ActShowMarker(sce.objects['B_SauceBarSign']))
-		s.addAction(ActShowDialogue("Please go to the bar and order me some black bean sauce. I love that stuff!"))
 
 		s = s.createTransition()
-		s.addCondition(CondWait(4))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActShowDialogue("Thanks!"))
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Thanks!")
 		s.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
 		s.addAction(ActRemoveFocalPoint('B_SauceBarSign'))
 		s.addAction(ActShowMarker(None))
@@ -526,9 +513,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		# Return to game
 		#
 		s = s.createTransition("Return to game")
-		s.addCondition(CondWait(1))
-		s.addCondition(CondSensor('sReturn'))
-		s.addAction(ActHideDialogue())
+		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActRemoveCamera('LK_Cam_CU_LK'))
@@ -583,8 +568,8 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.eject(mainChar)
 		elif mainChar['HasShell']:
 			# Touched by a snail who is wearing a shell.
-			bxt.types.Event('ShowMessage', "You can't fit! Press X to drop your shell.").send()
-			print("Sent message")
+			bxt.types.Event('ShowDialogue',
+					"You can't fit! Press X to drop your shell.").send()
 			self.eject(mainChar)
 		elif self.snailInside:
 			print("Exiting because snail touched door.")

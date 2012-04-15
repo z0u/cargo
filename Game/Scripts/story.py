@@ -45,6 +45,12 @@ class Condition:
 	def enable(self, enabled):
 		pass
 
+	def evaluate(self):
+		raise NotImplementedError()
+
+	def get_short_name(self):
+		raise NotImplementedError()
+
 class CondSensor(Condition):
 	'''Allow the story to progress when a particular sensor is true.'''
 	def __init__(self, name):
@@ -52,7 +58,22 @@ class CondSensor(Condition):
 
 	def evaluate(self, c):
 		s = c.sensors[self.Name]
-		return s.positive and s.triggered
+		return s.positive
+
+	def get_short_name(self):
+		return " SE"
+
+class CondSensorNot(Condition):
+	'''Allow the story to progress when a particular sensor is false.'''
+	def __init__(self, name):
+		self.Name = name
+
+	def evaluate(self, c):
+		s = c.sensors[self.Name]
+		return not s.positive
+
+	def get_short_name(self):
+		return "SEN"
 
 class CondPropertyGE(Condition):
 	'''Allow the story to progress when a property matches an inequality. In
@@ -63,6 +84,9 @@ class CondPropertyGE(Condition):
 
 	def evaluate(self, c):
 		return c.owner[self.Name] >= self.Value
+
+	def get_short_name(self):
+		return "PGE"
 
 class CondActionGE(Condition):
 	def __init__(self, layer, frame, tap=False):
@@ -95,6 +119,9 @@ class CondActionGE(Condition):
 				return True
 			self.lastFrame = cfra
 
+	def get_short_name(self):
+		return "AGE"
+
 class CondEvent(Condition):
 	'''
 	Continue if an event is received.
@@ -121,6 +148,9 @@ class CondEvent(Condition):
 	def evaluate(self, c):
 		return self.triggered
 
+	def get_short_name(self):
+		return " EV"
+
 class CondEventEq(Condition):
 	'''
 	Continue if an event is received, and its body is equal to the specified
@@ -144,6 +174,9 @@ class CondEventEq(Condition):
 
 	def evaluate(self, c):
 		return self.triggered
+
+	def get_short_name(self):
+		return " EE"
 
 class CondEventNe(Condition):
 	'''
@@ -169,6 +202,9 @@ class CondEventNe(Condition):
 	def evaluate(self, c):
 		return self.triggered
 
+	def get_short_name(self):
+		return "ENE"
+
 class CondWait(Condition):
 	'''A condition that waits for a certain time after being enabled.'''
 	def __init__(self, duration):
@@ -184,6 +220,9 @@ class CondWait(Condition):
 
 	def evaluate(self, c):
 		return time.time() - self.duration > self.start
+
+	def get_short_name(self):
+		return "  W"
 
 #
 # Actions. These belong to and are executed by steps.
@@ -527,10 +566,10 @@ class State:
 		'''Check whether this state is ready to be transitioned to.'''
 		for condition in self.conditions:
 			if not condition.evaluate(c):
-				log.write("x")
+				log.write("%s:x " % condition.get_short_name())
 				return False
 			else:
-				log.write("o")
+				log.write("%s:o " % condition.get_short_name())
 		return True
 
 	def __str__(self):

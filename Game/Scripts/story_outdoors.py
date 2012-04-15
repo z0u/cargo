@@ -483,9 +483,15 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		# Set scene with a long shot camera.
 		#
 		s = self.rootState.createTransition("Init")
+		s.addCondition(CondSensor('Near'))
 		s.addAction(ActSuspendInput())
+		s.addWeakEvent("StartLoading", self)
 		s.addAction(ActSetCamera('LK_Cam_Long'))
 		s.addAction(ActSetFocalPoint('LighthouseKeeper'))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
+		s.addWeakEvent("FinishLoading", self)
 
 		s = s.createTransition("Close-up")
 		s.addCondition(CondWait(2))
@@ -494,11 +500,11 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addEvent("ShowDialogue", ("Oh, hello Cargo! What's up?",
 				("\[envelope]!", "Just saying \"hi\".")))
 
-		sdeliver = s.createTransition()
+		sdeliver = s.createTransition("delivery")
 		sdeliver.addCondition(CondEventNe("DialogueDismissed", 1))
 		sdeliver.addEvent("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
 
-		snothing = s.createTransition()
+		snothing = s.createTransition("nothing")
 		snothing.addCondition(CondEventEq("DialogueDismissed", 1))
 		snothing.addEvent("ShowDialogue", "OK - hi! But I'm kind of busy. Let's talk later.")
 		# Intermediate step, then jump to end
@@ -541,6 +547,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		syes.addTransition(s)
 		sno.addTransition(s)
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActStoreSet('/game/level/lkMissionStarted', True))
 
 		#
 		# Return to game
@@ -552,7 +559,11 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActRemoveCamera('LK_Cam_CU_LK'))
 		s.addAction(ActRemoveCamera('LK_Cam_CU_Cargo'))
 		s.addAction(ActRemoveFocalPoint('LighthouseKeeper'))
-#		s.addAction(ActStoreSet('/game/level/wormMissionStarted', True))
+
+		s = s.createTransition("Reset")
+		s.addCondition(CondSensorNot('Near'))
+		s.addTransition(self.rootState)
+
 
 class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''

@@ -479,8 +479,6 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		self.create_state_graph()
 
 	def create_state_graph(self):
-		sce = bge.logic.getCurrentScene()
-
 		#
 		# Set scene with a long shot camera.
 		#
@@ -493,13 +491,21 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondWait(2))
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
-		s.addEvent("ShowDialogue", "Oh, hello Cargo!")
+		s.addEvent("ShowDialogue", ("Oh, hello Cargo! What's up?",
+				("\[envelope]!", "Just saying \"hi\".")))
 
-		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addEvent("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
+		sdeliver = s.createTransition()
+		sdeliver.addCondition(CondEventNe("DialogueDismissed", 1))
+		sdeliver.addEvent("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
 
-		s = s.createTransition()
+		snothing = s.createTransition()
+		snothing.addCondition(CondEventEq("DialogueDismissed", 1))
+		snothing.addEvent("ShowDialogue", "OK - hi! But I'm kind of busy. Let's talk later.")
+		# Intermediate step, then jump to end
+		snothing = snothing.createTransition()
+		snothing.addCondition(CondEvent("DialogueDismissed"))
+
+		s = sdeliver.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "I'm glad you're here, actually - I need "\
 				"you to deliver something for me, too!")
@@ -509,26 +515,38 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addEvent("ShowDialogue", "I'm all out of sauce, you see. I'm "\
 				"parched! But work is busy, so I can't get to the sauce bar.")
 
-		s = s.createTransition()
+		s = s.createTransition("split")
 		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addEvent("ShowDialogue", "Please go to the bar and order me some "\
-				"black bean sauce. I love that stuff!")
+		s.addEvent("ShowDialogue", ("Please go to the bar and order me some "\
+				"black bean sauce.", ("Gross!", "No problem.")))
 		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
 		s.addAction(ActSetFocalPoint('B_SauceBarSign'))
-		s.addAction(ActShowMarker(sce.objects['B_SauceBarSign']))
+		s.addAction(ActShowMarker('B_SauceBarSign'))
 
-		s = s.createTransition()
+		sno = s.createTransition("no")
+		sno.addCondition(CondEventNe("DialogueDismissed", 1))
+		sno.addEvent("ShowDialogue", "Hey, no one asked you to drink it! Off you go.")
+		sno.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
+		sno.addAction(ActRemoveFocalPoint('B_SauceBarSign'))
+		sno.addAction(ActShowMarker(None))
+
+		syes = s.createTransition("yes")
+		syes.addCondition(CondEventEq("DialogueDismissed", 1))
+		syes.addEvent("ShowDialogue", "Thanks!")
+		syes.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
+		syes.addAction(ActRemoveFocalPoint('B_SauceBarSign'))
+		syes.addAction(ActShowMarker(None))
+
+		s = State("merge")
+		syes.addTransition(s)
+		sno.addTransition(s)
 		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addEvent("ShowDialogue", "Thanks!")
-		s.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
-		s.addAction(ActRemoveFocalPoint('B_SauceBarSign'))
-		s.addAction(ActShowMarker(None))
 
 		#
 		# Return to game
 		#
 		s = s.createTransition("Return to game")
-		s.addCondition(CondEvent("DialogueDismissed"))
+		snothing.addTransition(s)
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActRemoveCamera('LK_Cam_CU_LK'))

@@ -497,12 +497,16 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondWait(2))
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
+
+		s = s.createTransition()
 		s.addEvent("ShowDialogue", ("Oh, hello Cargo! What's up?",
 				("\[envelope]!", "Just saying \"hi\".")))
 
 		sdeliver = s.createTransition("delivery")
 		sdeliver.addCondition(CondEventNe("DialogueDismissed", 1))
-		sdeliver.addEvent("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
+		start, end = self.sg_accept_delivery()
+		sdeliver.addTransition(start)
+		sdeliver = end
 
 		snothing = s.createTransition("nothing")
 		snothing.addCondition(CondEventEq("DialogueDismissed", 1))
@@ -511,7 +515,35 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		snothing = snothing.createTransition()
 		snothing.addCondition(CondEvent("DialogueDismissed"))
 
-		s = sdeliver.createTransition()
+
+		start, end = self.sg_give_mission()
+		sdeliver.addTransition(start)
+
+		#
+		# Return to game
+		#
+		s = State("Return to game")
+		end.addTransition(s)
+		snothing.addTransition(s)
+		s.addAction(ActResumeInput())
+		s.addAction(ActRemoveCamera('LK_Cam_Long'))
+		s.addAction(ActRemoveCamera('LK_Cam_CU_LK'))
+		s.addAction(ActRemoveCamera('LK_Cam_CU_Cargo'))
+		s.addAction(ActRemoveFocalPoint('LighthouseKeeper'))
+
+		#
+		# Loop back to start when snail moves away.
+		#
+		s = s.createTransition("Reset")
+		s.addCondition(CondSensorNot('Near'))
+		s.addTransition(self.rootState)
+
+	def sg_accept_delivery(self):
+		s = State("delivery")
+		start = s
+		s.addEvent("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
+
+		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "I'm glad you're here, actually - I need "\
 				"you to deliver something for me, too!")
@@ -521,8 +553,15 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addEvent("ShowDialogue", "I'm all out of sauce, you see. I'm "\
 				"parched! But work is busy, so I can't get to the sauce bar.")
 
-		s = s.createTransition("split")
+		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+
+		end = s
+		return start, end
+
+	def sg_give_mission(self):
+		s = State("split")
+		start = s
 		s.addEvent("ShowDialogue", ("Please go to the bar and order me some "\
 				"black bean sauce.", ("Gross!", "No problem.")))
 		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
@@ -549,21 +588,8 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActStoreSet('/game/level/lkMissionStarted', True))
 
-		#
-		# Return to game
-		#
-		s = s.createTransition("Return to game")
-		snothing.addTransition(s)
-		s.addAction(ActResumeInput())
-		s.addAction(ActRemoveCamera('LK_Cam_Long'))
-		s.addAction(ActRemoveCamera('LK_Cam_CU_LK'))
-		s.addAction(ActRemoveCamera('LK_Cam_CU_Cargo'))
-		s.addAction(ActRemoveFocalPoint('LighthouseKeeper'))
-
-		s = s.createTransition("Reset")
-		s.addCondition(CondSensorNot('Near'))
-		s.addTransition(self.rootState)
-
+		end = s
+		return start, end
 
 class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''

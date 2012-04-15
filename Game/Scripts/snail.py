@@ -60,6 +60,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	MIN_SPEED = -3.0
 	CAMERA_SAFE_DIST = 10.0
 	SHELL_SCALE_FAC = 0.5
+	EYE_LOOK_FAC = 0.5
 
 	shell = bxt.types.weakprop('shell')
 
@@ -304,14 +305,14 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			eye.alignAxisToVect(gVec, 1)
 			orn = eye.localOrientation.to_quaternion()
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
-			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
+			channel.rotation_quaternion = oldOrn.slerp(orn, Snail.EYE_LOOK_FAC)
 
 		def reset_orn(eye):
 			channel = self.armature.channels[eye['channel']]
 			orn = mathutils.Quaternion()
 			orn.identity()
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
-			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
+			channel.rotation_quaternion = oldOrn.slerp(orn, Snail.EYE_LOOK_FAC)
 
 		targetList = c.sensors['sLookAt'].hitObjectList
 

@@ -96,6 +96,9 @@ class CondActionGE(Condition):
 			self.lastFrame = cfra
 
 class CondEvent(Condition):
+	'''
+	Continue if an event is received.
+	'''
 	def __init__(self, message):
 		self.message = message
 		self.triggered = False
@@ -119,6 +122,10 @@ class CondEvent(Condition):
 		return self.triggered
 
 class CondEventEq(Condition):
+	'''
+	Continue if an event is received, and its body is equal to the specified
+	value.
+	'''
 	def __init__(self, message, body):
 		self.message = message
 		self.body = body
@@ -133,6 +140,30 @@ class CondEventEq(Condition):
 
 	def on_event(self, evt):
 		if evt.message == self.message and evt.body == self.body:
+			self.triggered = True
+
+	def evaluate(self, c):
+		return self.triggered
+
+class CondEventNe(Condition):
+	'''
+	Continue if an event is received, and its body is NOT equal to the specified
+	value.
+	'''
+	def __init__(self, message, body):
+		self.message = message
+		self.body = body
+		self.triggered = False
+
+	def enable(self, enabled):
+		if enabled:
+			bxt.types.EventBus().add_listener(self)
+		else:
+			bxt.types.EventBus().remove_listener(self)
+			self.triggered = False
+
+	def on_event(self, evt):
+		if evt.message == self.message and evt.body != self.body:
 			self.triggered = True
 
 	def evaluate(self, c):

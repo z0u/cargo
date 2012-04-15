@@ -309,10 +309,27 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 						("Of course!", "I'm too sleepy...")))
 
 		#
-		# Give letter
+		# FORK - conversation splits.
 		#
-		s = s.createTransition("Give letter")
-		s.addCondition(CondEvent("DialogueDismissed"))
+		syes = s.createTransition("Yes")
+		# Use 'not equal' here, because it's safer than using two equals (in
+		# case the dialogue returns a value other than 1 or 0).
+		syes.addCondition(CondEventNe("DialogueDismissed", 1))
+		syes.addEvent("ShowDialogue", "Great!")
+
+		sno = s.createTransition("No")
+		sno.addCondition(CondEventEq("DialogueDismissed", 1))
+		sno.addEvent("ShowDialogue", "Oh, come on! It's your job, after all.")
+		# Lots of text, so wait for a second.
+		sno = sno.createTransition()
+		sno.addCondition(CondWait(1))
+
+		#
+		# Give letter - conversation merges.
+		#
+		s = State("Give letter")
+		syes.addTransition(s)
+		sno.addTransition(s)
 		s.addAction(ActRemoveCamera('WormCamera_Envelope'))
 		s.addAction(ActAction('BurstOut', 290, 330, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 290, 330, Worm.L_ANIM, 'WormBody'))
@@ -324,14 +341,12 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 315))
 		s.addAction(ActGenericContext(letter_hide))
-		s.addEvent("ShowDialogue", "Is that OK?")
 
 		#
 		# Point to lighthouse
 		#
 		s = s.createTransition("Point to lighthouse")
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addEvent("ShowDialogue", "Great! Please take it to the lighthouse keeper.")
+		s.addEvent("ShowDialogue", "Please take it to the lighthouse keeper.")
 		s.addAction(ActAction('BurstOut', 330, 395, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 330, 395, Worm.L_ANIM, 'WormBody'))
 

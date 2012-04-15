@@ -58,6 +58,12 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 	# Animation layers
 	L_DISPLAY = 0
 
+	ARM_HIDE_FRAME = 1
+	ARM_SHOW_FRAME = 8
+
+	OPT_0_FRAME = 1
+	OPT_1_FRAME = 3
+
 	# States
 	S_INIT = 1
 	S_HIDE_UPDATE = 2
@@ -72,13 +78,16 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 		self.armature = self.childrenRecursive['Dlg_FrameArmature']
 		self.frame = self.childrenRecursive['Dlg_Frame']
 
+		self.response = self.children['ResponseBox']
 		self.response_canvas = bxt.types.mutate(self.childrenRecursive['Rsp_TextCanvas'])
 		self.response_armature = self.childrenRecursive['Rsp_FrameArmature']
 		self.response_frame = self.childrenRecursive['Rsp_Frame']
+		self.response_cursor = self.childrenRecursive['Rsp_OptionCursor']
+		self.response_cursor_mesh = self.childrenRecursive['Rsp_OptionCursorMesh']
 		self.button = self.childrenRecursive['Dlg_OKButton']
 
 		self.options = None
-		self.selected_option = None
+		self.set_selected_option(None)
 		self.options_time = 0
 		self.options_visible = False
 		self.set_state(DialogueBox.S_IDLE)
@@ -104,8 +113,10 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 		self.show_options_later(delay)
 
 		start = self.armature.getActionFrame()
-		self.armature.playAction('DialogueBoxBoing', start, 8, layer=DialogueBox.L_DISPLAY)
-		self.frame.playAction('DB_FrameVis', start, 8, layer=DialogueBox.L_DISPLAY)
+		self.armature.playAction('DialogueBoxBoing', start,
+				DialogueBox.ARM_SHOW_FRAME, layer=DialogueBox.L_DISPLAY)
+		self.frame.playAction('DB_FrameVis', start,
+				DialogueBox.ARM_SHOW_FRAME, layer=DialogueBox.L_DISPLAY)
 
 		# Frame is visible immediately; button is shown later.
 		self.armature.setVisible(True, True)
@@ -117,8 +128,10 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 		self.hide_options()
 
 		start = self.armature.getActionFrame()
-		self.armature.playAction('DialogueBoxBoing', start, 1, layer=DialogueBox.L_DISPLAY)
-		self.frame.playAction('DB_FrameVis', start, 1, layer=DialogueBox.L_DISPLAY)
+		self.armature.playAction('DialogueBoxBoing', start,
+			 	DialogueBox.ARM_HIDE_FRAME, layer=DialogueBox.L_DISPLAY)
+		self.frame.playAction('DB_FrameVis', start,
+				DialogueBox.ARM_HIDE_FRAME, layer=DialogueBox.L_DISPLAY)
 
 		# Button is hidden immediately; frame is hidden later.
 		self.button.visible = False
@@ -136,34 +149,77 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 	def show_options(self):
 		if self.options is None:
 			self.button.visible = True
-			self.selected_option = None
+			self.set_selected_option(None)
 		else:
-			self.selected_option = 0
+			self.set_selected_option(0)
 			self.response_canvas.set_text("%s\n%s" % self.options)
-			self.response_armature.playAction('DialogueBoxBoing', 1, 8, layer=DialogueBox.L_DISPLAY)
-			self.response_frame.playAction('DB_FrameVis', 1, 8, layer=DialogueBox.L_DISPLAY)
+			start = self.response_armature.getActionFrame()
+			self.response_armature.playAction('DialogueBoxBoing', start,
+					DialogueBox.ARM_SHOW_FRAME, layer=DialogueBox.L_DISPLAY)
+			self.response_frame.playAction('DB_FrameVis', start,
+					DialogueBox.ARM_SHOW_FRAME, layer=DialogueBox.L_DISPLAY)
+			self.response_cursor_mesh.playAction('ButtonPulse', 1, 50,
+					layer=DialogueBox.L_DISPLAY, play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 			# Frame is shown immediately.
-			self.response_armature.setVisible(True, True)
+			self.response.setVisible(True, True)
 		self.options_visible = True
 
 	def hide_options(self):
 		if not self.options_visible:
 			return
-		self.selected_option = None
+		self.set_selected_option(None)
 		self.response_canvas.set_text("")
-		self.response_armature.playAction('DialogueBoxBoing', 8, 1, layer=DialogueBox.L_DISPLAY)
-		self.response_frame.playAction('DB_FrameVis', 8, 1, layer=DialogueBox.L_DISPLAY)
+		start = self.response_armature.getActionFrame()
+		self.response_armature.playAction('DialogueBoxBoing', start,
+				DialogueBox.ARM_HIDE_FRAME, layer=DialogueBox.L_DISPLAY)
+		self.response_frame.playAction('DB_FrameVis', start,
+				DialogueBox.ARM_HIDE_FRAME, layer=DialogueBox.L_DISPLAY)
+		self.response_cursor_mesh.stopAction(DialogueBox.L_DISPLAY)
+		self.response_cursor.setVisible(False, True)
 		# Frame is hidden at end of animation in hide_update.
 		self.options_visible = False
+
+	def set_selected_option(self, index):
+		self.selected_option = index
+		start = self.response_cursor.getActionFrame()
+		if index == 1:
+			end = DialogueBox.OPT_1_FRAME
+		else:
+			end = DialogueBox.OPT_0_FRAME
+		self.response_cursor.playAction('Rsp_OptionCursorMove', start, end,
+				layer=DialogueBox.L_DISPLAY)
 
 	def handle_bt_1(self, state):
 		if not self.options_visible:
 			return True
 
 		if state.triggered and state.positive:
-			self.hide()
 			bxt.types.Event("DialogueDismissed", self.selected_option).send()
+			self.hide()
 		return True
+
+	def handle_switch(self, state):
+		if state.direction > 0.1:
+			self.switch_option(True)
+		elif state.direction < -0.1:
+			self.switch_option(False)
+		return True
+
+	def handle_movement(self, state):
+		if state.direction.y > 0.1:
+			self.switch_option(False)
+		elif state.direction.y < -0.1:
+			self.switch_option(True)
+		return True
+
+	def switch_option(self, nxt):
+		if not self.options_visible or self.options is None:
+			return
+		# Only two options anyway.
+		if nxt:
+			self.set_selected_option(1)
+		else:
+			self.set_selected_option(0)
 
 	@bxt.types.expose
 	def show_update(self):
@@ -174,7 +230,7 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 	@bxt.types.expose
 	def hide_update(self):
 		if self.armature.getActionFrame() < 2:
-			self.response_armature.setVisible(False, True)
+			self.response.setVisible(False, True)
 			self.armature.setVisible(False, True)
 			self.set_state(DialogueBox.S_IDLE)
 

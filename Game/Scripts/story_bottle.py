@@ -114,12 +114,15 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			# way when crawling).
 			if not 'B_Inner' in sce.objects:
 				sce.addObject('B_Inner', self)
+				sce.addObject('BarKeeper', 'B_BK_SpawnPoint')
 			if 'B_Outer' in sce.objects:
 				sce.objects['B_Outer'].endObject()
 		else:
 			# Create bar exterior; destroy interior.
 			if 'B_Inner' in sce.objects:
 				sce.objects['B_Inner'].endObject()
+			if 'B_BK_SpawnPoint' in sce.objects:
+				sce.objects['B_BK_SpawnPoint'].endObject()
 			if not 'B_Outer' in sce.objects:
 				sce.addObject('B_Outer', self)
 		self.children['B_Rock'].visible = not isOpening

@@ -73,7 +73,7 @@ class CondSensorNot(Condition):
 		return not s.positive
 
 	def get_short_name(self):
-		return "SEN"
+		return " SN"
 
 class CondPropertyGE(Condition):
 	'''Allow the story to progress when a property matches an inequality. In
@@ -204,6 +204,30 @@ class CondEventNe(Condition):
 
 	def get_short_name(self):
 		return "ENE"
+
+class CondStoreEq(Condition):
+	def __init__(self, path, value, default=None):
+		self.path = path
+		self.value = value
+		self.default = default
+
+	def evaluate(self, c):
+		return self.value == store.get(self.path, self.default)
+
+	def get_short_name(self):
+		return "StE"
+
+class CondStoreNe(Condition):
+	def __init__(self, path, value, default=None):
+		self.path = path
+		self.value = value
+		self.default = default
+
+	def evaluate(self, c):
+		return self.value != store.get(self.path, self.default)
+
+	def get_short_name(self):
+		return "StN"
 
 class CondWait(Condition):
 	'''A condition that waits for a certain time after being enabled.'''

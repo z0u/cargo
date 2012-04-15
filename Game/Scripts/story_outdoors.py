@@ -479,6 +479,11 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		self.create_state_graph()
 
 	def create_state_graph(self):
+		'''
+		Create the state machine that drives interaction with the lighthouse
+		keeper.
+		@see ../../doc/story_states/LighthouseKeeper.dia
+		'''
 		#
 		# Set scene with a long shot camera.
 		#
@@ -498,32 +503,39 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
 
-		s = s.createTransition()
-		s.addEvent("ShowDialogue", ("Oh, hello Cargo! What's up?",
+		sfirstmeeting = s.createTransition()
+		sfirstmeeting.addCondition(CondStoreNe('/game/level/lkMissionStarted', True, False))
+		sfirstmeeting.addEvent("ShowDialogue", ("Oh, hello Cargo! What's up?",
 				("\[envelope]!", "Just saying \"hi\".")))
 
-		sdeliver = s.createTransition("delivery")
-		sdeliver.addCondition(CondEventNe("DialogueDismissed", 1))
-		start, end = self.sg_accept_delivery()
-		sdeliver.addTransition(start)
-		sdeliver = end
+		sdeliver1 = sfirstmeeting.createTransition("delivery1")
+		sdeliver1.addCondition(CondEventNe("DialogueDismissed", 1))
+		sdeliver1 = self.sg_accept_delivery([sdeliver1])
 
-		snothing = s.createTransition("nothing")
+		ssecondmeeting = s.createTransition()
+		ssecondmeeting.addCondition(CondStoreEq('/game/level/lkMissionStarted', True, False))
+		ssecondmeeting.addEvent("ShowDialogue", ("Hi again! What's up?",
+				("What am I to do again?", "Just saying \"hi\".")))
+
+		sdeliver2 = ssecondmeeting.createTransition("delivery2")
+		sdeliver2.addCondition(CondEventNe("DialogueDismissed", 1))
+
+		sdeliver_merged = self.sg_give_mission([sdeliver1, sdeliver2])
+
+		snothing = State("nothing")
+		sfirstmeeting.addTransition(snothing)
+		ssecondmeeting.addTransition(snothing)
 		snothing.addCondition(CondEventEq("DialogueDismissed", 1))
 		snothing.addEvent("ShowDialogue", "OK - hi! But I'm kind of busy. Let's talk later.")
 		# Intermediate step, then jump to end
 		snothing = snothing.createTransition()
 		snothing.addCondition(CondEvent("DialogueDismissed"))
 
-
-		start, end = self.sg_give_mission()
-		sdeliver.addTransition(start)
-
 		#
 		# Return to game
 		#
 		s = State("Return to game")
-		end.addTransition(s)
+		sdeliver_merged.addTransition(s)
 		snothing.addTransition(s)
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
@@ -538,9 +550,10 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondSensorNot('Near'))
 		s.addTransition(self.rootState)
 
-	def sg_accept_delivery(self):
+	def sg_accept_delivery(self, preceding_states):
 		s = State("delivery")
-		start = s
+		for ps in preceding_states:
+			ps.addTransition(s)
 		s.addEvent("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
 
 		s = s.createTransition()
@@ -556,12 +569,12 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 
-		end = s
-		return start, end
+		return s
 
-	def sg_give_mission(self):
+	def sg_give_mission(self, preceding_states):
 		s = State("split")
-		start = s
+		for ps in preceding_states:
+			ps.addTransition(s)
 		s.addEvent("ShowDialogue", ("Please go to the bar and order me some "\
 				"black bean sauce.", ("Gross!", "No problem.")))
 		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
@@ -588,8 +601,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActStoreSet('/game/level/lkMissionStarted', True))
 
-		end = s
-		return start, end
+		return s
 
 class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''

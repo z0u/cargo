@@ -56,7 +56,8 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		spawnPoint = sce.objects["LighthouseKeeperSpawn"]
 		ob = sce.addObject(obTemplate, spawnPoint)
 		bxt.bmath.copy_transform(spawnPoint, ob)
-		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
+		bxt.types.Event("TeleportSnail", "LK_SnailTalkPos").send()
+		#bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 
 	def kill_keeper(self):
 		try:
@@ -70,6 +71,7 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.inLocality = True
 		cbEvent = bxt.types.Event("EnterLighthouse")
 		bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+		store.set('/game/spawnPoint', 'SpawnTorch')
 
 	def leave(self):
 		# Remove the keeper to prevent its armature from chewing up resources.
@@ -119,6 +121,9 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
 		s.addWeakEvent("FinishLoading", self)
+		# Teleport here in addition to when the lighthouse keeper is first
+		# spawned, since this may be the second time the snail is approaching.
+		s.addEvent("TeleportSnail", "LK_SnailTalkPos")
 
 		s = s.createTransition("Close-up")
 		s.addCondition(CondWait(2))

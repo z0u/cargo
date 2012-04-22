@@ -277,10 +277,6 @@ class Director(impulse.Handler, metaclass=bxt.types.Singleton):
 	def on_event(self, event):
 		if event.message == 'MainCharacterSet':
 			self.mainCharacter = event.body
-		elif event.message == 'RelocatePlayer':
-			if self.mainCharacter is not None:
-				pos, rot = event.body
-				self.mainCharacter.relocate(pos, rot)
 		elif event.message == 'SuspendInput':
 			if event.body == True:
 				impulse.Input().add_handler(self, 'STORY')

@@ -21,6 +21,7 @@ import bxt
 from . import store
 from . import director
 from . import camera
+from .story import *
 
 class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''
@@ -34,7 +35,15 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		else:
 			self.children['BlinkenlightsRight'].setVisible(True, True)
 		self.snailInside = False
+		self.transition_delay = 0
 		self.open_window(False)
+		bxt.types.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'EnterBottle':
+			self.transition(True)
+		elif evt.message == 'ExitBottle':
+			self.transition(False)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -61,6 +70,12 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.transition(False)
 			return
 
+		if self.transition_delay > 0:
+			self.transition_delay -= 1
+			return
+		elif self.transition_delay < 0:
+			return
+
 		if not mainChar in door.hitObjectList:
 			return
 
@@ -73,35 +88,31 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 					"You can't fit! Press X to drop your shell.").send()
 			self.eject(mainChar)
 		elif self.snailInside:
-			print("Exiting because snail touched door.")
-			self.transition(False)
+			#print("Exiting because snail touched door.")
+			cbEvent = bxt.types.Event("ExitBottle")
+			bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+			self.transition_delay = -1
 		else:
-			print("Entering because snail touched door.")
-			self.transition(True)
+			#print("Entering because snail touched door.")
+			cbEvent = bxt.types.Event("EnterBottle")
+			bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+			self.transition_delay = -1
 
 	def transition(self, isEntering):
+		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 		if isEntering:
 			store.set('/game/spawnPoint', 'SpawnBottle')
 			self.open_window(True)
-
-			relocPoint = self.children['SpawnBottleInner']
-			transform = (relocPoint.worldPosition, relocPoint.worldOrientation)
-			bxt.types.Event('RelocatePlayer', transform).send()
-
+			bxt.types.Event('TeleportSnail', 'SpawnBottleInner').send()
 			camera.AutoCamera().add_goal(self.children['BottleCamera'])
 		else:
 			# Transitioning to outside; move camera to sensible location.
 			self.open_window(False)
-
-			relocPoint = self.children['SpawnBottle']
-			transform = (relocPoint.worldPosition, relocPoint.worldOrientation)
-			bxt.types.Event('RelocatePlayer', transform).send()
-
+			bxt.types.Event('TeleportSnail', 'SpawnBottle').send()
 			camera.AutoCamera().remove_goal(self.children['BottleCamera'])
-			cam = self.childrenRecursive['B_DoorCamera']
-			transform = (cam.worldPosition, cam.worldOrientation)
-			bxt.types.Event('RelocatePlayerCamera', transform).send()
+
 		self.snailInside = isEntering
+		self.transition_delay = 1
 
 	def eject(self, ob):
 		direction = self.children['B_Door'].getAxisVect(bxt.bmath.ZAXIS)
@@ -121,13 +132,73 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			# Create bar exterior; destroy interior.
 			if 'B_Inner' in sce.objects:
 				sce.objects['B_Inner'].endObject()
-			if 'B_BK_SpawnPoint' in sce.objects:
-				sce.objects['B_BK_SpawnPoint'].endObject()
+			if 'BarKeeper' in sce.objects:
+				sce.objects['BarKeeper'].endObject()
 			if not 'B_Outer' in sce.objects:
 				sce.addObject('B_Outer', self)
 		self.children['B_Rock'].visible = not isOpening
 		self.children['B_SoilCrossSection'].visible = isOpening
 
+
+class BarKeeper(Chapter, bge.types.BL_ArmatureObject):
+	L_IDLE = 0
+	L_ANIM = 1
+
+	def __init__(self, old_owner):
+		Chapter.__init__(self, old_owner)
+		#bxt.types.WeakEvent('StartLoading', self).send()
+		self.create_state_graph()
+
+	def create_state_graph(self):
+		'''
+		Create the state machine that drives interaction with the lighthouse
+		keeper.
+		@see ../../doc/story_states/LighthouseKeeper.dia
+		'''
+		#
+		# Set scene with a long shot camera.
+		#
+		s = self.rootState.createTransition("Init")
+		s.addCondition(CondSensor('Near'))
+		s.addAction(ActSuspendInput())
+		s.addWeakEvent("StartLoading", self)
+		#s.addAction(ActSetCamera('LK_Cam_Long'))
+		#s.addAction(ActSetFocalPoint('LighthouseKeeper'))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
+		s.addWeakEvent("FinishLoading", self)
+		s.addEvent("TeleportSnail", "BK_SnailTalkPos")
+
+		sdeliver = self.sg_firstmeeting([s])
+
+		#
+		# Return to game
+		#
+		s = State("Return to game")
+		sdeliver.addTransition(s)
+		s.addAction(ActResumeInput())
+		#s.addAction(ActRemoveCamera('LK_Cam_CU_Cargo'))
+		#s.addAction(ActRemoveFocalPoint('LighthouseKeeper'))
+
+		#
+		# Loop back to start when snail moves away.
+		#
+		s = s.createTransition("Reset")
+		s.addCondition(CondSensorNot('Near'))
+		s.addTransition(self.rootState)
+
+	def sg_firstmeeting(self, preceding_states):
+		s = State("delivery")
+		for ps in preceding_states:
+			ps.addTransition(s)
+		s.addEvent("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
+				("\[envelope].", "1 tomato sauce, please.")))
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+
+		return s
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''

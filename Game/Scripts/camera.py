@@ -64,16 +64,19 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		self.errorReported = False
 
 		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'Spawned')
+		bxt.types.EventBus().replay_last(self, 'TeleportSnail')
 
 	def on_event(self, evt):
-		if evt.message == 'Spawned':
-			spawnPoint = evt.body
-			if len(spawnPoint.children) <= 0:
-				return
-			pos = spawnPoint.children[0].worldPosition
-			orn = spawnPoint.children[0].worldOrientation
-			bxt.types.Event('RelocatePlayerCamera', (pos, orn)).send()
+		if evt.message == 'TeleportSnail':
+			self.on_teleport(evt.body)
+		elif evt.message == 'AddCameraGoal':
+			self.add_goal(evt.body)
+		elif evt.message == 'RemoveCameraGoal':
+			self.remove_goal(evt.body)
+		elif evt.message == 'AddFocusPoint':
+			self.add_focus_point(evt.body)
+		elif evt.message == 'RemoveFocusPoint':
+			self.remove_focus_point(evt.body)
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls
@@ -177,6 +180,13 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		RemoveGoal to restore the previous relationship. The camera position
 		isn't changed until update is called.
 		'''
+		if isinstance(goal, str):
+			try:
+				sce = bxt.utils.get_scene(goal)
+				goal = sce.objects[goal]
+			except KeyError or ValueError:
+				print("Warning: can't find goal %s." % goal)
+				return
 		# Set some defaults for properties.
 		bxt.utils.set_default_prop(goal, 'LocFac', 0.1)
 		bxt.utils.set_default_prop(goal, 'RotFac', 0.1)
@@ -200,6 +210,13 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		will switch to follow the next one on the stack. The transform isn't
 		changed until update is called.
 		'''
+		if isinstance(goal, str):
+			try:
+				sce = bxt.utils.get_scene(goal)
+				goal = sce.objects[goal]
+			except KeyError or ValueError:
+				print("Warning: can't find goal %s." % goal)
+				return
 		if not goal in self.queue:
 			return
 
@@ -213,13 +230,48 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	@bxt.types.expose
 	@bxt.utils.owner_cls
 	def add_focus_point(self, target):
+		if isinstance(target, str):
+			try:
+				sce = bxt.utils.get_scene(target)
+				target = sce.objects[target]
+			except KeyError or ValueError:
+				print("Warning: can't find focus point %s." % target)
+				return
 		bxt.utils.set_default_prop(target, 'FocusPriority', 1)
 		self.focusQueue.push(target, target['FocusPriority'])
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls
 	def remove_focus_point(self, target):
+		if isinstance(target, str):
+			try:
+				sce = bxt.utils.get_scene(target)
+				target = sce.objects[target]
+			except KeyError or ValueError:
+				print("Warning: can't find focus point %s." % target)
+				return
 		self.focusQueue.discard(target)
+
+	def on_teleport(self, spawn_point):
+		if isinstance(spawn_point, str):
+			try:
+				sce = bxt.utils.get_scene(spawn_point)
+				spawn_point = sce.objects[spawn_point]
+			except KeyError:
+				print("Warning: can't find spawn point %s" % spawn_point)
+				return
+		if len(spawn_point.children) <= 0:
+			return
+
+		spawn_camera = spawn_point.children[0]
+		pos = spawn_camera.worldPosition
+		orn = spawn_camera.worldOrientation
+		bxt.types.Event('RelocatePlayerCamera', (pos, orn)).send(0)
+
+		bxt.utils.set_default_prop(spawn_camera, 'InstantCut', True)
+		self.add_goal(spawn_camera)
+		bxt.types.WeakEvent('RemoveCameraGoal', spawn_camera).send(60)
+
 
 class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''Adds self as a goal when an attached sensor is touched by the main

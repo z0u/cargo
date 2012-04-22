@@ -649,21 +649,15 @@ class GameLevel(Level):
 		Level.__init__(self, old_owner)
 
 		scene = bge.logic.getCurrentScene()
-		spawnPointName = store.get('/game/spawnPoint',
-				self['defaultSpawnPoint'])
-		spawnPoint = None
-		try:
-			spawnPoint = scene.objects[spawnPointName]
-		except KeyError:
-			print("Error: spawn point %s not found." % spawnPointName)
-			spawnPoint = scene.objects[self['defaultSpawnPoint']]
-		print("Spawning snail at %s" % spawnPoint.name)
-		bxt.types.add_and_mutate_object(scene, 'Snail', spawnPoint)
+		spawn_point = store.get('/game/spawnPoint', self['defaultSpawnPoint'])
+		if not spawn_point in scene.objects:
+			print("Error: spawn point %s not found." % spawn_point)
+			spawn_point = self['defaultSpawnPoint']
+
+		bxt.types.add_and_mutate_object(scene, 'Snail', self)
+		bxt.types.Event('TeleportSnail', spawn_point).send()
 
 		bxt.types.EventBus().add_listener(self)
-
-		evt = bxt.types.WeakEvent('Spawned', spawnPoint)
-		bxt.types.EventBus().notify(evt)
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":

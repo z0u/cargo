@@ -110,6 +110,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.DEBUGpositions = [self.worldPosition.copy()]
 		impulse.Input().add_handler(self)
+		bxt.types.EventBus().replay_last(self, 'TeleportSnail')
 
 	def load_items(self):
 		scene = bge.logic.getCurrentScene()
@@ -260,6 +261,19 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			self.actuators['aAntiGravity'].force = antiG
 			# Artificial gravity is applied in local coordinates.
 			self.actuators['aArtificialGravity'].force = evt.body
+		elif evt.message == 'TeleportSnail':
+			self.teleport(evt.body)
+
+	def teleport(self, spawn_point):
+		print("Teleporting to %s." % spawn_point)
+		self.exit_shell(False)
+		if isinstance(spawn_point, str):
+			try:
+				spawn_point = self.scene.objects[spawn_point]
+			except KeyError:
+				print("Warning: can't find spawn point %s" % spawn_point)
+				return
+		bxt.bmath.copy_transform(spawn_point, self)
 
 	def update_eye_length(self):
 		def update_single(eyeRayOb):

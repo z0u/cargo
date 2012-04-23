@@ -270,14 +270,14 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.set_state(Marker.S_ACTIVE)
 
 	def hide(self):
-		self.setVisible(False, False)
+		self.children['MarkerMesh'].visible = False
 		self.set_state(Marker.S_INACTIVE)
 
 	@bxt.types.expose
 	def update(self):
 		if self.target is None:
 			self.set_state(Marker.S_INACTIVE)
-			self.setVisible(False, False)
+			self.children['MarkerMesh'].visible = False
 			return
 
 		t_sce = bxt.utils.get_scene(self.target)
@@ -310,9 +310,9 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		#print("Hit", hitob, hitloc)
 		if hitob is not None:
 			self.worldPosition = hitloc
-			self.setVisible(True, False)
+			self.children['MarkerMesh'].visible = True
 		else:
-			self.setVisible(False, False)
+			self.children['MarkerMesh'].visible = False
 
 
 class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):

@@ -21,6 +21,7 @@ import bxt
 from . import store
 from . import director
 from . import camera
+from . import snail
 from .story import *
 
 class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
@@ -140,7 +141,10 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.children['B_SoilCrossSection'].visible = isOpening
 
 
-class BarKeeper(Chapter, bge.types.BL_ArmatureObject):
+class BarKeeper(Chapter, bge.types.KX_GameObject):
+
+	_prefix = 'BK_'
+
 	L_IDLE = 0
 	L_ANIM = 1
 
@@ -199,6 +203,21 @@ class BarKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondEvent("DialogueDismissed"))
 
 		return s
+
+
+class BarKeeperArm(snail.NPCSnail):
+	_prefix = 'BKA_'
+
+	def __init__(self, old_owner):
+		snail.NPCSnail.__init__(self, old_owner)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def look(self, c):
+		s = c.sensors[0]
+		if s.hitObject is not None:
+			self.look_at(s.hitObject)
+
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''

@@ -23,6 +23,7 @@ import mathutils
 import bxt
 from . import store
 from . import ui
+from . import snail
 
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
@@ -564,45 +565,16 @@ class Subtitle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				text = ""
 			self.children['SubtitleCanvas']['Content'] = text
 
-class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class MenuSnail(snail.NPCSnail):
+
+	_prefix = 'MS_'
+
 	def __init__(self, old_owner):
-		self.armature = self.children['SnailArm_Min']
-		self.EyeLocL = self.armature.children['Eyeref_L']
-		self.EyeLocR = self.armature.children['Eyeref_R']
-		self.HeadLoc = self.armature.children['HeadLoc']
-		# Store the current orientation of the head bone. This is used to
-		# reduce the movement of the head, so that the eyes do most of the
-		# turning.
-		self.HeadLoc_rest = mathutils.Quaternion(self.armature.channels[
-				self.HeadLoc['channel']].rotation_quaternion)
+		snail.NPCSnail.__init__(self, old_owner)
 
 	@bxt.types.expose
-	def update(self):
+	def look(self):
 		target = InputHandler().current
-		if not target:
-			target = bge.logic.getCurrentScene().objects['Camera']
-		self.lookAt(target)
-
-	def lookAt(self, target):
-		'''Turn the eyes to face the target.'''
-		# This code is similar to Snail.Snail.lookAt. But there's probably not
-		# much scope for reuse.
-
-		def look(bone, target, restOrn = None):
-			channel = self.armature.channels[bone['channel']]
-			_, gVec, _ = bone.getVectTo(target)
-			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.bmath.ZAXIS), 2)
-			bone.alignAxisToVect(gVec, 1)
-			orn = bone.localOrientation.to_quaternion()
-
-			if restOrn:
-				orn = orn.slerp(restOrn, 0.6)
-
-			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
-			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
-
-		look(self.EyeLocL, target)
-		look(self.EyeLocR, target)
-		look(self.HeadLoc, target, self.HeadLoc_rest)
-
-		self.armature.update()
+		if target is None:
+			target = bge.logic.getCurrentScene().active_camera
+		self.look_at(target)

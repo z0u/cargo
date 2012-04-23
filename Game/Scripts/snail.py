@@ -312,21 +312,29 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		scene. Objects with a LookAt priority of less than zero will be ignored.
 		'''
 
-		def look_single(eye, target):
-			channel = self.armature.channels[eye['channel']]
-			_, gVec, _ = eye.getVectTo(target)
-			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.bmath.ZAXIS), 2)
-			eye.alignAxisToVect(gVec, 1)
-			orn = eye.localOrientation.to_quaternion()
-			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
-			channel.rotation_quaternion = oldOrn.slerp(orn, Snail.EYE_LOOK_FAC)
-
 		def reset_orn(eye):
 			channel = self.armature.channels[eye['channel']]
 			orn = mathutils.Quaternion()
 			orn.identity()
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
 			channel.rotation_quaternion = oldOrn.slerp(orn, Snail.EYE_LOOK_FAC)
+
+		def look_single(eye, direction):
+			channel = self.armature.channels[eye['channel']]
+			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.bmath.ZAXIS), 2)
+			eye.alignAxisToVect(direction, 1)
+			orn = eye.localOrientation.to_quaternion()
+			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
+			channel.rotation_quaternion = oldOrn.slerp(orn, Snail.EYE_LOOK_FAC)
+
+		def get_direction(eye, target):
+			_, gVec, _ = eye.getVectTo(target)
+			return gVec
+
+		def can_look(eye, direction):
+			'''Don't allow looking behind; the eyes twist!'''
+			dot = direction.dot(eye.parent.getAxisVect(bxt.bmath.YAXIS))
+			return dot > -0.4
 
 		targetList = c.sensors['sLookAt'].hitObjectList
 
@@ -348,8 +356,14 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			reset_orn(self.eyeLocR)
 			return
 
-		look_single(self.eyeLocL, nearest)
-		look_single(self.eyeLocR, nearest)
+		dir_L = get_direction(self.eyeLocL, nearest)
+		dir_R = get_direction(self.eyeLocR, nearest)
+		if (can_look(self.eyeLocL, dir_L) and can_look(self.eyeLocR, dir_R)):
+			look_single(self.eyeLocL, dir_L)
+			look_single(self.eyeLocR, dir_R)
+		else:
+			reset_orn(self.eyeLocL)
+			reset_orn(self.eyeLocR)
 
 	def size_shell(self):
 		'''Set the size of the carried shell based on the distance to the
@@ -876,3 +890,43 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			elif speedMultiplier < (1.0 - bxt.bmath.EPSILON):
 				speedStyle = Trail.S_SLOW
 			self.add_spot(speedStyle, touchedObject)
+
+
+class NPCSnail(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+
+	def __init__(self, old_owner):
+		self.EyeLocL = self.children['Eyeref_L']
+		self.EyeLocR = self.children['Eyeref_R']
+		self.HeadLoc = self.children['HeadLoc']
+		# Store the current orientation of the head bone. This is used to
+		# reduce the movement of the head, so that the eyes do most of the
+		# turning.
+		self.HeadLoc_rest = mathutils.Quaternion(self.channels[
+				self.HeadLoc['channel']].rotation_quaternion)
+
+	def look_at(self, target):
+		'''Turn the eyes to face the target.'''
+		# This code is similar to Snail.Snail.lookAt. But there's probably not
+		# much scope for reuse.
+
+		if target is None:
+			return
+
+		def _look(bone, target, restOrn = None):
+			channel = self.channels[bone['channel']]
+			_, gVec, _ = bone.getVectTo(target)
+			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.bmath.ZAXIS), 2)
+			bone.alignAxisToVect(gVec, 1)
+			orn = bone.localOrientation.to_quaternion()
+
+			if restOrn:
+				orn = orn.slerp(restOrn, 0.6)
+
+			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
+			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
+
+		_look(self.EyeLocL, target)
+		_look(self.EyeLocR, target)
+		_look(self.HeadLoc, target, self.HeadLoc_rest)
+
+		bge.types.BL_ArmatureObject.update(self)

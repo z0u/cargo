@@ -28,15 +28,6 @@ def hasLineOfSight(ob, other):
 	hitOb, _, _ = bxt.bmath.ray_cast_p2p(other, ob, prop = 'Ray')
 	return hitOb == None
 
-class CameraObserver:
-	'''
-	An observer of AutoCameras. One use for this is cameras in other scenes.
-	For example, the background camera sets its worldOrientation to be the same
-	as the camera in the game play scene, which is bound to the AutoCamera.
-	'''
-	def on_camera_moved(self, autoCamera):
-		pass
-
 class AutoCamera(metaclass=bxt.types.Singleton):
 	'''Manages the transform of the camera, and provides transitions between
 	camera locations. To transition to a new location, call PushGoal. The
@@ -59,6 +50,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		self.defaultLens = 22.0
 		self.queue = bxt.types.SafePriorityStack()
 		self.focusQueue = bxt.types.SafePriorityStack()
+		self.observers = bxt.types.SafeSet()
 		self.lastGoal = None
 		self.instantCut = False
 		self.errorReported = False
@@ -148,8 +140,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 
 		self._update_focal_depth()
 
-		evt = bxt.types.WeakEvent('CameraMoved', self)
-		bxt.types.EventBus().notify(evt)
+		for ob in self.observers:
+			ob.on_camera_moved(self)
 
 	def _update_focal_depth(self):
 		focalPoint = None
@@ -251,6 +243,11 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 				print("Warning: can't find focus point %s." % target)
 				return
 		self.focusQueue.discard(target)
+
+	def add_observer(self, observer):
+		# No need to have remove_observer; that happens automatically when the
+		# observer dies.
+		self.observers.add(observer)
 
 	def on_teleport(self, spawn_point):
 		if isinstance(spawn_point, str):
@@ -890,7 +887,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 # Helper for sensing when camera is inside something.
 #
 
-class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class CameraCollider(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Senses when the camera is inside something. This senses when the
 	camera touches a volumetric object, and then tracks to see when the camera
 	enters and leaves that object, adjusting the screen filter appropriately.'''
@@ -898,15 +895,11 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 	MAX_DIST = 1000.0
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().add_listener(self)
+		AutoCamera().add_observer(self)
 
-	def on_event(self, evt):
-		if evt.message == 'CameraMoved':
-			self.on_camera_moved(evt.body)
-
-	def on_camera_moved(self, autoCamera):
-		self.worldPosition = autoCamera.camera.worldPosition
-		pos = autoCamera.camera.worldPosition.copy()
+	def on_camera_moved(self, ac):
+		self.worldPosition = ac.camera.worldPosition
+		pos = ac.camera.worldPosition.copy()
 
 		direction = bxt.bmath.ZAXIS.copy()
 		ob = self.cast_for_water(pos, direction)
@@ -936,18 +929,11 @@ class CameraCollider(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_GameO
 # camera for viewing the background scene
 #
 
-class BackgroundCamera(CameraObserver, bxt.types.BX_GameObject, bge.types.KX_Camera):
-	'''Links a second camera to the main 3D camera. This second, background
-	camera will always match the orientation and zoom of the main camera. It is
-	guaranteed to update after the main one.'''
+class SkyBox(bxt.types.BX_GameObject, bge.types.KX_Camera):
+	'''Sticks to the camera to prevent lens distortion.'''
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().add_listener(self)
+		AutoCamera().add_observer(self)
 
-	def on_event(self, evt):
-		if evt.message == 'CameraMoved':
-			self.on_camera_moved(evt.body)
-
-	def on_camera_moved(self, autoCamera):
-		self.worldOrientation = autoCamera.camera.worldOrientation
-		self.lens = autoCamera.camera.lens
+	def on_camera_moved(self, ac):
+		self.worldPosition = ac.camera.worldPosition

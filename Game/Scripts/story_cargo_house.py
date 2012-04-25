@@ -15,9 +15,39 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bxt
+
 import bge
 
+from . import store
 from .story import *
+
+class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'CH_'
+
+	def __init__(self, old_owner):
+		self.load_npcs()
+		self.init_worm()
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def touched(self, c):
+		s = c.sensors['Near']
+		if s.hitObject is not None:
+			store.set('/game/spawnPoint', 'SpawnCargoHouse')
+
+	def load_npcs(self):
+		try:
+			bge.logic.LibLoad('//OutdoorsNPCLoader.blend', 'Scene',
+					load_actions=True)
+		except ValueError:
+			print('Warning: could not load characters.')
+
+	def init_worm(self):
+		sce = bge.logic.getCurrentScene()
+		if not store.get('/game/level/wormMissionStarted', False):
+			sce.addObject("G_Worm", "WormSpawn")
+			bxt.bmath.copy_transform(sce.objects['WormSpawn'], sce.objects['Worm'])
 
 class Worm(Chapter, bge.types.BL_ArmatureObject):
 	L_IDLE = 0

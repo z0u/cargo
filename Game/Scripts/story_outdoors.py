@@ -21,10 +21,8 @@ import mathutils
 import bxt
 
 from .story import *
-from . import director
-from . import store
-from Scripts import shells
 from . import shaders
+from . import inventory
 
 class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
@@ -40,55 +38,45 @@ class LevelOut(GameLevel):
 		# Load additional files
 		self.load_foaliage()
 		self.load_npcs()
-		self.init_worm()
+		self.load_items()
 
 		shaders.ShaderCtrl().set_mist_colour(
-				mathutils.Vector((0.749020, 0.737255, 0.745098)))
+				mathutils.Vector((0.565, 0.572, 0.578)))
 
 	def load_foaliage(self):
 		'''Load extra files'''
-		err = False
-
 		try:
 			bge.logic.LibLoad('//OutdoorsBase_flowers.blend', 'Scene',
 					load_actions=True)
 		except ValueError:
-			err = True
+			print('Warning: could not load foliage.')
 
 		if store.get('/opt/foliage', True):
 			try:
 				bge.logic.LibLoad('//OutdoorsBase_grass.blend', 'Scene',
 						load_actions=True)
 			except ValueError:
-				err = True
-
-		if err:
-			print('Error: Could not load foliage. Try reinstalling the game.')
-			evt = bxt.types.Event('ShowDialogue',
-				'Error: Could not load foliage. Try reinstalling the game.')
-			bxt.types.EventBus().notify(evt)
+				print('Warning: could not load foliage.')
 
 	def load_npcs(self):
 		try:
 			bge.logic.LibLoad('//OutdoorsNPCLoader.blend', 'Scene',
 					load_actions=True)
 		except ValueError:
-			print('Could not load characters. Try reinstalling the game.')
-			evt = bxt.types.Event('ShowDialogue',
-				'Could not load characters. Try reinstalling the game.')
-			bxt.types.EventBus().notify(evt)
+			print('Warning: could not load characters.')
 
-	def init_worm(self):
+	def load_items(self):
+		'''Place items around the level that have not been picked up yet.'''
 		sce = bge.logic.getCurrentScene()
-		if not store.get('/game/level/wormMissionStarted', False):
-			sce.addObject("G_Worm", "WormSpawn")
-			bxt.bmath.copy_transform(sce.objects['WormSpawn'], sce.objects['Worm'])
+		if not 'Shell' in sce.objectsInactive:
+			try:
+				bge.logic.LibLoad('//ItemLoader.blend', 'Scene', load_actions=True)
+			except ValueError:
+				print("Warning: failed to open ItemLoader. May be open already. "
+						"Proceeding...")
 
-class TestLevelCargoHouse(LevelOut):
-	'''A level loader for Cargo's house - local testing only (not used by
-	Outdoors.blend)'''
-
-	def __init__(self, oldOwner):
-		GameLevel.__init__(self, oldOwner)
-		self.load_npcs()
-		self.init_worm()
+		if not "BottleCap" in inventory.Shells().get_shells():
+			print("Adding bottle cap.")
+			sce.addObject("BottleCap", "BottleCapSpawn")
+		else:
+			print("Not adding bottle cap: already carrying.")

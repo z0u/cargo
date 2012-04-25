@@ -274,6 +274,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 				print("Warning: can't find spawn point %s" % spawn_point)
 				return
 		bxt.bmath.copy_transform(spawn_point, self)
+		self['BendAngleFore'] = 0.0
+		self['BendAngleAft'] = 0.0
 
 	def update_eye_length(self):
 		def update_single(eyeRayOb):

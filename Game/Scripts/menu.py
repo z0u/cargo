@@ -117,11 +117,10 @@ class InputHandler(metaclass=bxt.types.Singleton):
 		self.widgets.add(widget)
 
 	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
 	@bxt.utils.controller_cls
 	def mouseMove(self, c):
 		mOver = c.sensors['sMouseOver']
-		InputHandler().mouseOver(mOver)
+		self.mouseOver(mOver)
 
 	@bxt.types.expose
 	def mouseOver(self, mOver):
@@ -146,9 +145,9 @@ class InputHandler(metaclass=bxt.types.Singleton):
 	@bxt.utils.controller_cls
 	def mouseButton(self, c):
 		if bxt.utils.someSensorPositive():
-			InputHandler().mouseDown()
+			self.mouseDown()
 		else:
-			InputHandler().mouseUp()
+			self.mouseUp()
 
 	def mouseDown(self):
 		'''Send a mouse down event to the widget under the cursor.'''

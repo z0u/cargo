@@ -193,7 +193,7 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 		if not self.options_visible:
 			return True
 
-		if state.triggered and state.positive:
+		if state.activated:
 			bxt.types.Event("DialogueDismissed", self.selected_option).send()
 			self.hide()
 		return True

@@ -806,7 +806,13 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			self['SpeedMultiplier'] = min(mult + dr, 1.0)
 
 	def handle_bt_1(self, state):
-		if state.triggered and state.positive:
+		'''
+		Primary action: enter shell, or reclaim it if it is not being carried.
+		Note: No special logic is required to NOT enter the shell; if it's not
+		currently allowed (e.g. during dialogue), another input handler will be
+		registered above this one.
+		'''
+		if state.activated:
 			if self.has_state(Snail.S_INSHELL):
 				self.exit_shell(animate = True)
 			elif self.has_state(Snail.S_HASSHELL):
@@ -816,7 +822,12 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		return True
 
 	def handle_bt_2(self, state):
-		if state.triggered and state.positive:
+		'''Secondary action: drop shell.'''
+		if not store.get("/game/level/canDropShell", False):
+			# Can't drop shell until a special point in the game.
+			return True
+
+		if state.activated:
 			if self.has_state(Snail.S_HASSHELL):
 				self.drop_shell(animate = True)
 			elif self.has_state(Snail.S_NOSHELL):
@@ -824,6 +835,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		return True
 
 	def handle_switch(self, state):
+		'''Switch to next or previous shell.'''
 		if state.triggered and (self.has_state(Snail.S_HASSHELL) or
 				self.has_state(Snail.S_NOSHELL)):
 			if state.direction > 0.1:
@@ -833,7 +845,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		return True
 
 	def handle_bt_camera(self, state):
-		if state.triggered and state.positive:
+		'''Move camera to be directly behind the snail.'''
+		if state.activated:
 			bxt.types.Event('ResetCameraPos', None).send()
 		return True
 

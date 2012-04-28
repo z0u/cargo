@@ -38,7 +38,6 @@ class LevelOut(GameLevel):
 		# Load additional files
 		self.load_foaliage()
 		self.load_npcs()
-		self.load_items()
 
 		shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.565, 0.572, 0.578)))
@@ -65,18 +64,3 @@ class LevelOut(GameLevel):
 		except ValueError:
 			print('Warning: could not load characters.')
 
-	def load_items(self):
-		'''Place items around the level that have not been picked up yet.'''
-		sce = bge.logic.getCurrentScene()
-		if not 'Shell' in sce.objectsInactive:
-			try:
-				bge.logic.LibLoad('//ItemLoader.blend', 'Scene', load_actions=True)
-			except ValueError:
-				print("Warning: failed to open ItemLoader. May be open already. "
-						"Proceeding...")
-
-		if not "BottleCap" in inventory.Shells().get_shells():
-			print("Adding bottle cap.")
-			sce.addObject("BottleCap", "BottleCapSpawn")
-		else:
-			print("Not adding bottle cap: already carrying.")

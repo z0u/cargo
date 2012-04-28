@@ -22,13 +22,17 @@ import bxt
 from . import director
 from . import camera
 from . import impulse
+from . import inventory
 
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
 
 class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
+	_prefix = 'SB_'
+
 	S_INIT     = 1
 	S_IDLE     = 2
+	S_ANCHOR   = 17
 	S_CARRIED  = 3
 	S_OCCUPIED = 4
 	S_ALWAYS   = 16
@@ -58,6 +62,8 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 		self['NoPickupAnim'] = not animate
 		self['_DefaultLookAt'] = self['LookAt']
 		self['LookAt'] = -1
+		# Clear anchor flag, if it was set.
+		self.rem_state(ShellBase.S_ANCHOR)
 
 	def on_dropped(self):
 		'''Called when a snail drops this shell.'''
@@ -110,7 +116,7 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 				self.name)
 			return False
 
-		if state.triggered and state.positive:
+		if state.activated:
 			self.snail.exit_shell(animate = True)
 		return True
 
@@ -142,6 +148,18 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 		return self.has_state(ShellBase.S_OCCUPIED)
 	def is_carried(self):
 		return self.has_state(ShellBase.S_CARRIED)
+
+	@bxt.types.expose
+	def update_anchor(self):
+		if not self.has_state(ShellBase.S_ANCHOR):
+			return
+		self.worldPosition = self.anchorPos
+		self.worldOrientation = self.anchorOrn
+
+	def anchor(self):
+		self.add_state(ShellBase.S_ANCHOR)
+		self.anchorPos = self.worldPosition.copy()
+		self.anchorOrn = self.worldOrientation.copy()
 
 class Shell(ShellBase):
 
@@ -378,3 +396,23 @@ class BottleCap(ShellBase):
 			bxt.utils.add_state(self.occupier, 3)
 
 		return True
+
+def spawn_shell(c):
+	'''Place an item that has not been picked up yet.'''
+	o = c.owner
+
+	if o['shell'] in inventory.Shells().get_shells():
+		# Player has already picked up this shell.
+		return
+
+	# Ensure library has been loaded.
+	sce = bge.logic.getCurrentScene()
+	if not o['shell'] in sce.objectsInactive:
+		try:
+			bge.logic.LibLoad('//ItemLoader.blend', 'Scene', load_actions=True)
+		except ValueError:
+			# May have already been loaded. Continue.
+			pass
+
+	shell = bxt.types.add_and_mutate_object(sce, "BottleCap", o)
+	shell.anchor()

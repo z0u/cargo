@@ -118,6 +118,10 @@ class Button:
 		self.positive = False
 		self.triggered = False
 
+	@property
+	def activated(self):
+		return self.positive and self.triggered
+
 	def update(self):
 		positive = False
 		for key in self.keyboard_keys:
@@ -145,7 +149,10 @@ class DPad1D:
 		self.next = Button("next")
 		self.prev = Button("prev")
 		self.direction = 0.0
-		self.triggered = False
+
+	@property
+	def triggered(self):
+		return self.next.triggered or self.prev.triggered
 
 	def update(self):
 		self.next.update()
@@ -158,7 +165,6 @@ class DPad1D:
 			x -= 1.0
 
 		self.direction = x
-		self.triggered = self.next.triggered or self.prev.triggered
 
 	def __str__(self):
 		return "Button %s - direction: %s" % (self.name, self.direction)
@@ -176,7 +182,11 @@ class DPad2D:
 		self.left = Button("left")
 		self.right = Button("right")
 		self.direction = mathutils.Vector((0.0, 0.0))
-		self.triggered = False
+
+	@property
+	def triggered(self):
+		return (self.up.triggered or self.down.triggered or
+				self.left.triggered or self.right.triggered)
 
 	def update(self):
 		self.up.update()
@@ -198,8 +208,6 @@ class DPad2D:
 
 		self.direction.x = x
 		self.direction.y = y
-		self.triggered = (self.up.triggered or self.down.triggered or
-				self.left.triggered or self.right.triggered)
 
 	def __str__(self):
 		return "Button %s - direction: %s" % (self.name, self.direction)
@@ -229,6 +237,17 @@ class Handler:
 
 	def handle_bt_camera(self, state):
 		return True
+
+	@property
+	def default_handler_response(self):
+		try:
+			return self._default_handler_response
+		except AttributeError:
+			self._default_handler_response = True
+			return self._default_handler_response
+	@default_handler_response.setter
+	def default_handler_response(self, value):
+		self._default_handler_response = value
 
 class TestHandler(Handler):
 	def handle_movement(self, state):

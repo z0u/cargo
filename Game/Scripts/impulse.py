@@ -219,10 +219,10 @@ class Handler:
 		@param direction: The direction to move in (2D vector; +y is up).
 		@return: True if the input has been consumed.
 		'''
-		return True
+		return self.default_handler_response
 
 	def handle_switch(self, state):
-		return True
+		return self.default_handler_response
 
 	def handle_bt_1(self, state):
 		'''
@@ -230,13 +230,13 @@ class Handler:
 		@param state: The state of the button. state.positive, state.triggered
 		@return: True if the input has been consumed.
 		'''
-		return True
+		return self.default_handler_response
 
 	def handle_bt_2(self, state):
-		return True
+		return self.default_handler_response
 
 	def handle_bt_camera(self, state):
-		return True
+		return self.default_handler_response
 
 	@property
 	def default_handler_response(self):

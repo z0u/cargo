@@ -22,9 +22,10 @@ from . import store
 from . import director
 from . import camera
 from . import snail
+from . import impulse
 from .story import *
 
-class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''
 
 	_prefix = 'B_'
@@ -40,11 +41,20 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.open_window(False)
 		bxt.types.EventBus().add_listener(self)
 
+		# Only handle overridden input events (see impulse.Handler).
+		self.default_handler_response = False
+		self.shell_drop_initiated_at_door = False
+
 	def on_event(self, evt):
 		if evt.message == 'EnterBottle':
 			self.transition(True)
 		elif evt.message == 'ExitBottle':
 			self.transition(False)
+		elif evt.message == 'ShellDropped':
+			if self.shell_drop_initiated_at_door:
+				cbEvent = bxt.types.Event("EnterBottle")
+				bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+				self.shell_drop_initiated_at_door = False
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -60,6 +70,8 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		# Eject all objects other than the snail.
 		for ob in door.hitObjectList:
+			if ob.parent is not None:
+				continue
 			if not ob == mainChar:
 				# Only a snail can enter
 				self.eject(ob)
@@ -83,7 +95,7 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if not 'HasShell' in mainChar:
 			# Touched by an occupied shell.
 			self.eject(mainChar)
-		elif mainChar['HasShell']:
+		elif not self.snailInside and mainChar['HasShell']:
 			# Touched by a snail who is wearing a shell.
 			bxt.types.Event('ShowDialogue',
 					"You can't fit! Press X to drop your shell.").send()
@@ -99,6 +111,17 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
 			self.transition_delay = -1
 
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def drop_zone_touched(self, c):
+		'''Register self as an input handler to allow snail to drop shell.'''
+		s = c.sensors[0]
+		mainChar = director.Director().mainCharacter
+		if mainChar in s.hitObjectList:
+			impulse.Input().add_handler(self, 'STORY')
+		else:
+			impulse.Input().remove_handler(self)
+
 	def transition(self, isEntering):
 		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 		if isEntering:
@@ -111,6 +134,10 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.open_window(False)
 			bxt.types.Event('TeleportSnail', 'SpawnBottle').send()
 			camera.AutoCamera().remove_goal(self.children['BottleCamera'])
+			if not store.get("/game/canDropShell", False):
+				# Don't let a snail wander around with no shell until the time
+				# is right!
+				bxt.types.Event('ForceReclaimShell').send()
 
 		self.snailInside = isEntering
 		self.transition_delay = 1
@@ -140,6 +167,17 @@ class Bottle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.children['B_Rock'].visible = not isOpening
 		self.children['B_SoilCrossSection'].visible = isOpening
 
+	def handle_bt_2(self, state):
+		'''
+		Handle a drop-shell request when the snail is nearby. This is required
+		because the shell cannot be dropped at will until later in the game.
+		'''
+		if state.activated:
+			bxt.types.Event('ForceDropShell', True).send()
+			self.shell_drop_initiated_at_door = True
+		return True
+
+bxt.types.Event('TeleportSnail', "SpawnBottle").send(50)
 
 class BarKeeper(Chapter, bge.types.KX_GameObject):
 

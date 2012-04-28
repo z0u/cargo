@@ -254,6 +254,10 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			self.exit_shell(evt.body)
 		elif evt.message == 'ForceEnterShell':
 			self.enter_shell(evt.body)
+		elif evt.message == 'ForceDropShell':
+			self.drop_shell(evt.body)
+		elif evt.message == 'ForceReclaimShell':
+			self.reclaim_shell()
 		elif evt.message == 'GravityChanged':
 			antiG = evt.body.copy()
 			antiG.negate()
@@ -485,6 +489,9 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 	def reclaim_shell(self):
 		'''Reclaim a dropped shell.'''
+		if not self.has_state(Snail.S_NOSHELL):
+			return
+
 		shellName = inventory.Shells.get_equipped(self)
 		if shellName is not None:
 			self._switch(shellName)
@@ -546,6 +553,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		shell.setLinearVelocity(velocity)
 		shell.on_dropped()
 		self.recentlyDroppedItems.add(shell)
+
+		bxt.types.WeakEvent('ShellDropped', self).send()
 
 	def enter_shell(self, animate):
 		'''
@@ -823,7 +832,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 	def handle_bt_2(self, state):
 		'''Secondary action: drop shell.'''
-		if not store.get("/game/level/canDropShell", False):
+		if not store.get("/game/canDropShell", False):
 			# Can't drop shell until a special point in the game.
 			return True
 

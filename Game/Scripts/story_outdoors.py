@@ -23,13 +23,13 @@ import bxt
 from .story import *
 from . import shaders
 from . import inventory
+from . import jukebox
 
 class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
 		GameLevel.__init__(self, oldOwner)
 
-		#bxt.music.play("//Sound/Music/explore.ogg", volume=0.3)
-		bxt.music.play_permutation(
+		jukebox.Jukebox().play_permutation(self, 0,
 				"//Sound/cc-by/PondAmbience1.ogg",
 				"//Sound/cc-by/PondAmbience2.ogg",
 				"//Sound/cc-by/PondAmbience3.ogg",

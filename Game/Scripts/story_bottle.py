@@ -23,6 +23,7 @@ from . import director
 from . import camera
 from . import snail
 from . import impulse
+from . import jukebox
 from .story import *
 
 class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
@@ -131,7 +132,8 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			# Create bar interior; destroy exterior (so it doesn't get in the
 			# way when crawling).
 			if not 'B_Inner' in sce.objects:
-				sce.addObject('B_Inner', self)
+				inner = sce.addObject('B_Inner', self)
+				self.start_music(inner)
 			if 'B_Outer' in sce.objects:
 				sce.objects['B_Outer'].endObject()
 		else:
@@ -140,6 +142,14 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				sce.objects['B_Inner'].endObject()
 			if not 'B_Outer' in sce.objects:
 				sce.addObject('B_Outer', self)
+
+	def start_music(self, inner):
+		'''
+		Play the music for this locality. Don't need to stop it, because the
+		'inner' object gets destroyed when the player leaves.
+		'''
+		jukebox.Jukebox().play(inner, 1,
+				'//Sound/Music/explore.ogg')
 
 	def handle_bt_1(self, state):
 		'''Don't allow snail to reclaim shell when inside.'''

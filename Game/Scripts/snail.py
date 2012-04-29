@@ -88,6 +88,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		self.cargoHold = self.childrenRecursive['CargoHold']
 		self.shockwave = self.childrenRecursive['Shockwave']
 		self.cameraTrack = self.childrenRecursive['Head.2']
+		self.focal_points = [self.eyeLocL, self.eyeLocR, self]
 
 		# For path camera
 		self.localCoordinates = True
@@ -861,6 +862,9 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 	def get_camera_tracking_point(self):
 		return self.cameraTrack
+
+	def get_focal_points(self):
+		return self.focal_points[:]
 
 class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2

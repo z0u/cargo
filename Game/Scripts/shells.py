@@ -214,7 +214,19 @@ class WheelCameraAlignment:
 		return self.get_home_axes(camera, target)
 
 class Wheel(ShellBase):
+	# Speed needed to demolish stuff.
 	DESTRUCTION_SPEED = 5.0
+
+	TURN_SPEED = 2.0
+	# How much the turning speed affects forward speed
+	TURN_INFLUENCE = 0.6
+
+	ROT_SPEED = 10.0
+	# How quickly the wheel speeds up.
+	SPEED_FAC = 0.05
+
+	# How strongly the wheel tries to stay upright
+	ORN_FAC = 0.2
 
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
@@ -225,7 +237,7 @@ class Wheel(ShellBase):
 		vec = self.getAxisVect(ZAXIS)
 		vec.z = 0.0
 		vec.normalize
-		self.alignAxisToVect(vec, 2, self['OrnFac'])
+		self.alignAxisToVect(vec, 2)
 
 	def _reset_speed(self):
 		self.currentRotSpeed = 0.0
@@ -257,21 +269,23 @@ class Wheel(ShellBase):
 		# space.
 		#
 		self.currentTurnSpeed = bxt.bmath.lerp(self.currentTurnSpeed,
-				self['TurnSpeed'] * -direction.x, self['SpeedFac'])
-		self.applyRotation(ZAXIS * self.currentTurnSpeed, False)
+				Wheel.TURN_SPEED * -direction.x, Wheel.SPEED_FAC)
+		angv = ZAXIS * self.currentTurnSpeed
 
 		#
 		# Apply acceleration. The speed will be influenced by the rate that
 		# the wheel is being steered at (above).
 		#
-		turnStrength = abs(self.currentTurnSpeed) / self['TurnSpeed']
-		targetRotSpeed = self['RotSpeed'] * bxt.bmath.safe_invert(
-				turnStrength, self['TurnInfluence'])
+		turnStrength = abs(self.currentTurnSpeed) / Wheel.TURN_SPEED
+		targetRotSpeed = Wheel.ROT_SPEED * bxt.bmath.safe_invert(
+				turnStrength, Wheel.TURN_INFLUENCE)
 		targetRotSpeed *= direction.y
 
 		self.currentRotSpeed = bxt.bmath.lerp(self.currentRotSpeed,
-				targetRotSpeed, self['SpeedFac'])
-		self.setAngularVelocity(ZAXIS * self.currentRotSpeed, True)
+				targetRotSpeed, Wheel.SPEED_FAC)
+
+		angv2 = self.getAxisVect(ZAXIS) * self.currentRotSpeed
+		self.setAngularVelocity(angv + angv2, False)
 
 		return True
 

@@ -149,8 +149,16 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 			focalPoint = self.focusQueue.top()
 		except IndexError:
 			focalPoint = director.Director().mainCharacter
-			if focalPoint == None:
+			if focalPoint is None:
 				return
+
+		if hasattr(focalPoint, 'get_focal_points'):
+			# Pick the point that is closest to the camera.
+			points = focalPoint.get_focal_points()
+			if len(points) > 0:
+				key = bxt.bmath.DistanceKey(self.camera)
+				points.sort(key=key)
+				focalPoint = points[0]
 
 		cam = bge.logic.getCurrentScene().active_camera
 

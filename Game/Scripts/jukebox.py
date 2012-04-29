@@ -67,11 +67,14 @@ class Jukebox(metaclass=bxt.types.Singleton):
 		track = Track(files=files, volume=volume, loop=True, permute=False)
 		owner['_JukeboxTrack'] = track
 		self.stack.push(owner, priority)
+		self.update()
 
 	def play_permutation(self, owner, priority, *files, volume=1.0):
 		track = Track(files=files, volume=volume, loop=True, permute=True)
 		owner['_JukeboxTrack'] = track
 		self.stack.push(owner, priority)
+		self.update()
 
 	def stop(self, owner):
 		self.stack.discard(owner)
+		self.update()

@@ -31,11 +31,6 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'B_'
 
 	def __init__(self, oldOwner):
-		# Hide half of the lights until the end of the game.
-		if not store.get('/game/level/bottleLights', False):
-			self.children['BlinkenlightsRight'].setVisible(False, True)
-		else:
-			self.children['BlinkenlightsRight'].setVisible(True, True)
 		self.snailInside = False
 		self.transition_delay = 0
 		self.open_window(False)
@@ -110,13 +105,13 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			store.set('/game/spawnPoint', 'SpawnBottle')
 			self.open_window(True)
 			bxt.types.Event('TeleportSnail', 'SpawnBottleInner').send()
-			camera.AutoCamera().add_goal(self.children['BottleCamera'])
+			bxt.types.Event("AddCameraGoal", 'BottleCamera').send()
 			impulse.Input().add_handler(self, 'STORY')
 		else:
 			# Transitioning to outside; move camera to sensible location.
 			self.open_window(False)
 			bxt.types.Event('TeleportSnail', 'SpawnBottle').send()
-			camera.AutoCamera().remove_goal(self.children['BottleCamera'])
+			bxt.types.Event("RemoveCameraGoal", 'BottleCamera').send()
 			if not store.get("/game/canDropShell", False):
 				# Don't let a snail wander around with no shell until the time
 				# is right!
@@ -137,19 +132,14 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			# way when crawling).
 			if not 'B_Inner' in sce.objects:
 				sce.addObject('B_Inner', self)
-				sce.addObject('BarKeeper', 'B_BK_SpawnPoint')
 			if 'B_Outer' in sce.objects:
 				sce.objects['B_Outer'].endObject()
 		else:
 			# Create bar exterior; destroy interior.
 			if 'B_Inner' in sce.objects:
 				sce.objects['B_Inner'].endObject()
-			if 'BarKeeper' in sce.objects:
-				sce.objects['BarKeeper'].endObject()
 			if not 'B_Outer' in sce.objects:
 				sce.addObject('B_Outer', self)
-		self.children['B_Rock'].visible = not isOpening
-		self.children['B_SoilCrossSection'].visible = isOpening
 
 	def handle_bt_1(self, state):
 		'''Don't allow snail to reclaim shell when inside.'''
@@ -161,6 +151,21 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def handle_bt_2(self, state):
 		return True
+
+
+class BottleRock(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''A rock that hides itself when the snail enters the bar.'''
+	def __init__(self, old_owner):
+		bxt.types.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'EnterBottle':
+			self.visible = False
+			self.children['B_SoilCrossSection'].visible = True
+		elif evt.message == 'ExitBottle':
+			self.visible = True
+			self.children['B_SoilCrossSection'].visible = False
+
 
 class BottleDropZone(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''
@@ -204,7 +209,6 @@ class BottleDropZone(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_Game
 			self.shell_drop_initiated_at_door = True
 		return True
 
-bxt.types.Event('TeleportSnail', "SpawnBottle").send(50)
 
 class BarKeeper(Chapter, bge.types.KX_GameObject):
 
@@ -215,7 +219,6 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
-		#bxt.types.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()
 
 	def create_state_graph(self):
@@ -318,6 +321,11 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				lambda x: bxt.render.parse_colour(x["colour"]), self.lights))
 		self.targetCols = list(self.cols)
 		self.targetLampCol = bxt.render.BLACK.copy()
+
+		# Hide half of the lights until the end of the game.
+		if self['side'] == 'right':
+			if not store.get('/game/level/bottleLights', False):
+				self.setVisible(False, True)
 
 	@bxt.types.expose
 	def blink(self):

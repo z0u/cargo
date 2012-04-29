@@ -896,6 +896,7 @@ class CameraCollider(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		AutoCamera().add_observer(self)
+		self.set_filter_colour(None)
 
 	def on_camera_moved(self, ac):
 		self.worldPosition = ac.camera.worldPosition
@@ -911,11 +912,18 @@ class CameraCollider(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			ob = self.cast_for_water(pos, direction)
 
 		if ob != None:
-			evt = bxt.types.Event('ShowFilter', ob['VolumeCol'])
-			bxt.types.EventBus().notify(evt)
+			self.set_filter_colour(ob['VolumeCol'])
 		else:
-			evt = bxt.types.Event('ShowFilter', None)
-			bxt.types.EventBus().notify(evt)
+			self.set_filter_colour(None)
+
+	def set_filter_colour(self, colour):
+		try:
+			if colour == self.last_colour:
+				return
+		except AttributeError:
+			pass
+		self.last_colour = colour
+		bxt.types.Event('ShowFilter', colour).send()
 
 	def cast_for_water(self, pos, direction):
 		through = pos + direction * CameraCollider.MAX_DIST

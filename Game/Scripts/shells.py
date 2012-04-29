@@ -221,7 +221,7 @@ class Wheel(ShellBase):
 	# How much the turning speed affects forward speed
 	TURN_INFLUENCE = 0.6
 
-	ROT_SPEED = 10.0
+	ROT_SPEED = 20.0
 	# How quickly the wheel speeds up.
 	SPEED_FAC = 0.05
 

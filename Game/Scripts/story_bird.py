@@ -19,6 +19,6 @@ import bxt
 
 from .story import *
 
-class Bird(Chapter, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	def __init__(self, old_owner):
 		pass

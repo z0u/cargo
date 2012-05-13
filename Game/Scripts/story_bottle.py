@@ -265,12 +265,12 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s.addCondition(CondSensor('Near'))
 		s.addAction(ActSuspendInput())
 		s.addWeakEvent("StartLoading", self)
-		#s.addAction(ActSetCamera('LK_Cam_Long'))
-		#s.addAction(ActSetFocalPoint('LighthouseKeeper'))
 
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
 		s.addWeakEvent("FinishLoading", self)
+		s.addAction(ActSetCamera('BottleCamera_Close'))
+		s.addAction(ActSetFocalPoint('BK_LookTarget'))
 		s.addEvent("TeleportSnail", "BK_SnailTalkPos")
 
 		sdeliver = self.sg_firstmeeting([s])
@@ -281,8 +281,8 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s = State("Return to game")
 		sdeliver.addTransition(s)
 		s.addAction(ActResumeInput())
-		#s.addAction(ActRemoveCamera('LK_Cam_CU_Cargo'))
-		#s.addAction(ActRemoveFocalPoint('LighthouseKeeper'))
+		s.addAction(ActRemoveCamera('BottleCamera_Close'))
+		s.addAction(ActRemoveFocalPoint('BK_LookTarget'))
 
 		#
 		# Loop back to start when snail moves away.
@@ -295,21 +295,68 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s = State("delivery")
 		for ps in preceding_states:
 			ps.addTransition(s)
-		s.addAction(ActSetCamera('BottleCamera_Close'))
 		s.addEvent("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
 				("\[envelope].", "1 tomato sauce, please.")))
 
-		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addEvent('BirdArrived')
+		sauce = s.createTransition("sauce please")
+		sauce.addCondition(CondEventEq("DialogueDismissed", 1))
+		sauce.addEvent("ShowDialogue", "There you go.")
 
-		s = s.createTransition()
-		s.addCondition(CondWait(1))
-		s.addEvent("ShowDialogue", "What on earth was that!?")
-		s.addAction(ActRemoveCamera('BottleCamera_Close'))
+		sauce = sauce.createTransition()
+		sauce.addCondition(CondEvent("DialogueDismissed"))
 
-		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
+		sauce = sauce.createTransition()
+		sauce.addCondition(CondWait(2))
+		sauce.addEvent("ShowDialogue", "Be careful, Cargo. It's a strange day.")
+
+		sauce = sauce.createTransition()
+		sauce.addCondition(CondEvent("DialogueDismissed"))
+
+		sdeliver = s.createTransition("deliver")
+		sdeliver.addCondition(CondEventNe("DialogueDismissed", 1))
+		sdeliver.addEvent("ShowDialogue", "Ah, cheers for the letter. So, the "
+				"lighthouse keeper wants some more black bean sauce, eh?")
+
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondEvent("DialogueDismissed"))
+		sdeliver.addEvent("ShowDialogue", "She must be busy to not come here to get it herself.")
+
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondEvent("DialogueDismissed"))
+		sdeliver.addEvent("ShowDialogue", "Oh, the lighthouse is broken?")
+
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondEvent("DialogueDismissed"))
+		sdeliver.addEvent("ShowDialogue", "There has been a thief here too. You must have noticed the missing lights on your way in?")
+
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondEvent("DialogueDismissed"))
+		sdeliver.addEvent("ShowDialogue", "They disappeared just last night.")
+
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondEvent("DialogueDismissed"))
+		sdeliver.addEvent("ShowDialogue", "What is the island coming to? I can imagine this happening on Spider Isle, but not here.")
+
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondEvent("DialogueDismissed"))
+
+		# Bird arrives! Shake the camera about.
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondWait(2))
+		sdeliver.addAction(ActAction("BottleCamera_CloseAction", 1, 90, 0,
+				"BottleCamera_Close"))
+		sdeliver.addEvent('BirdArrived')
+
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondWait(1))
+		sdeliver.addEvent("ShowDialogue", "Look out! It's that cursed thing again. It must be back for the rest of the lights.")
+
+		sdeliver = sdeliver.createTransition()
+		sdeliver.addCondition(CondEvent("DialogueDismissed"))
+
+		s = State("merge")
+		sauce.addTransition(s)
+		sdeliver.addTransition(s)
 
 		return s
 

@@ -15,10 +15,83 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bge
+
 import bxt
 
+from . import shells
+from . import inventory
 from .story import *
+
+def factory():
+	scene = bge.logic.getCurrentScene()
+	if not "Bird" in scene.objectsInactive:
+		try:
+			bge.logic.LibLoad('//Bird_loader.blend', 'Scene', load_actions=True)
+		except ValueError as e:
+			print('Warning: could not load bird:', e)
+
+	return bxt.types.add_and_mutate_object(scene, "Bird", "Bird")
 
 class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	def __init__(self, old_owner):
-		pass
+		Chapter.__init__(self, old_owner)
+		# if at bottle...
+		if True:
+			self.pick_up_shell()
+			self.create_bottle_state_graph()
+
+	def create_bottle_state_graph(self):
+		def steal_shell():
+			inventory.Shells().discard("Shell")
+			bxt.types.Event('ShellChanged', 'new').send()
+
+		s = self.rootState.createTransition("Init")
+		s.addAction(ActSuspendInput())
+		s.addAction(ActSetCamera('B_BirdIntroCam'))
+		s.addAction(ActAction("B_BirdCloseCamAction", 1, 96, 0,
+			ob="B_BirdIntroCam"))
+		s.addAction(ActSetFocalPoint('Bi_Face'))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(3))
+		s.addWeakEvent("FinishLoading", self)
+		s.addEvent("ShowDialogue", "I'm taking your shell, isn't it!")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActGeneric(steal_shell))
+
+		#
+		# Return to game
+		#
+		s = s.createTransition("Return to game")
+		s.addAction(ActResumeInput())
+		s.addAction(ActRemoveCamera('B_BirdIntroCam'))
+		s.addAction(ActRemoveFocalPoint('Bi_Face'))
+
+	def pick_up(self, ob, left=True):
+		attach_point = self.children["Bi_FootHook.L"]
+
+		referential = ob
+		for child in ob.children:
+			if child.name.startswith("GraspHook"):
+				referential = child
+				break
+
+		# Similar to Snail._stow_shell
+		bxt.bmath.set_rel_orn(ob, attach_point, referential)
+		bxt.bmath.set_rel_pos(ob, attach_point, referential)
+		ob.setParent(attach_point)
+
+	def pick_up_shell(self):
+		try:
+			shell = self.scene.objects["Shell"]
+		except KeyError:
+			shell = shells.factory("Shell")
+		shell.localScale = (0.75, 0.75, 0.75)
+		self.pick_up(shell)
+		try:
+			shell.on_grasped()
+		except AttributeError as e:
+			print("Warning:", e)

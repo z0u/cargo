@@ -27,6 +27,18 @@ from . import inventory
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
 
+def factory(name):
+	scene = bge.logic.getCurrentScene()
+	if not name in scene.objectsInactive:
+		print("Loading shells")
+		try:
+			bge.logic.LibLoad('//ItemLoader.blend', 'Scene', load_actions=True)
+		except ValueError:
+			print("Warning: failed to open ItemLoader. May be open already. "
+					"Proceeding...")
+
+	return bxt.types.add_and_mutate_object(scene, name, name)
+
 class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 	_prefix = 'SB_'
 
@@ -35,6 +47,7 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 	S_ANCHOR   = 17
 	S_CARRIED  = 3
 	S_OCCUPIED = 4
+	S_GRASPED  = 5 # Liked CARRIED, but not carried by a snail.
 	S_ALWAYS   = 16
 
 	snail = bxt.types.weakprop('snail')
@@ -64,6 +77,10 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 		self['LookAt'] = -1
 		# Clear anchor flag, if it was set.
 		self.rem_state(ShellBase.S_ANCHOR)
+
+	def on_grasped(self):
+		self.set_state(ShellBase.S_GRASPED)
+		self.add_state(ShellBase.S_ALWAYS)
 
 	def on_dropped(self):
 		'''Called when a snail drops this shell.'''
@@ -116,14 +133,15 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 				self.name)
 			return False
 
-		if state.activated:
-			self.snail.exit_shell(animate = True)
+		if state.activated and hasattr(self.parent, "exit_shell"):
+			self.parent.exit_shell(animate = True)
 		return True
 
 	def save_location(self):
 		super(ShellBase, self).save_location()
-		if self.snail != None:
-			self.snail.inherit_safe_location(self)
+		if (self.parent is not None and
+				hasattr(self.parent, "inherit_safe_location")):
+			self.parent.inherit_safe_location(self)
 
 	def respawn(self, reason = None):
 		if self.is_occupied():
@@ -148,6 +166,8 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 		return self.has_state(ShellBase.S_OCCUPIED)
 	def is_carried(self):
 		return self.has_state(ShellBase.S_CARRIED)
+	def is_grasped(self):
+		return self.has_state(ShellBase.S_GRASPED)
 
 	@bxt.types.expose
 	def update_anchor(self):

@@ -114,18 +114,9 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		bxt.types.EventBus().replay_last(self, 'TeleportSnail')
 
 	def load_items(self):
-		scene = bge.logic.getCurrentScene()
-		if not "Shell" in scene.objectsInactive:
-			print("Loading shells")
-			try:
-				bge.logic.LibLoad('//ItemLoader.blend', 'Scene', load_actions=True)
-			except ValueError:
-				print("Warning: failed to open ItemLoader. May be open already. "
-						"Proceeding...")
-
 		shellName = inventory.Shells().get_equipped()
 		if shellName != None:
-			shell = bxt.types.add_and_mutate_object(scene, shellName, shellName)
+			shell = shells.factory(shellName)
 			self.equip_shell(shell, False)
 
 	@bxt.types.expose
@@ -392,6 +383,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		self.cargoHold.localScale = (scale, scale, scale)
 
 	def _stow_shell(self, shell):
+		# Similar to Bird.pick_up
 		shell.localScale = (1.0, 1.0, 1.0)
 		self.cargoHold.localScale = (1.0, 1.0, 1.0)
 		referential = shell.cargoHook
@@ -414,7 +406,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		for ob in collectables:
 			if isinstance(ob, shells.ShellBase):
-				if not ob.is_carried():
+				if not ob.is_carried() and not ob.is_grasped():
 					self.equip_shell(ob, True)
 					bxt.types.Event('ShellChanged', 'new').send()
 

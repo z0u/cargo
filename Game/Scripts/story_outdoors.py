@@ -61,6 +61,6 @@ class LevelOut(GameLevel):
 		try:
 			bge.logic.LibLoad('//OutdoorsNPCLoader.blend', 'Scene',
 					load_actions=True)
-		except ValueError:
-			print('Warning: could not load characters.')
+		except ValueError as e:
+			print('Warning: could not load characters:', e)
 

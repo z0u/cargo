@@ -24,6 +24,7 @@ from . import camera
 from . import snail
 from . import impulse
 from . import jukebox
+from . import story_bird
 from .story import *
 
 class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
@@ -38,12 +39,15 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		bxt.types.EventBus().add_listener(self)
 		# Only handle overridden input events (see impulse.Handler).
 		self.default_handler_response = False
+		self.bird_arrived = False
 
 	def on_event(self, evt):
 		if evt.message == 'EnterBottle':
-			self.transition(True)
+			self.enter_bottle()
 		elif evt.message == 'ExitBottle':
-			self.transition(False)
+			self.exit_bottle()
+		elif evt.message == 'BirdArrived':
+			self.bird_arrived = True
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -69,7 +73,7 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# that that's still the case.
 		if self.snailInside and not mainChar in safety.hitObjectList:
 			print("Exiting because snail not in safety.")
-			self.transition(False)
+			self.exit_bottle()
 			return
 
 		if self.transition_delay > 0:
@@ -100,27 +104,44 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
 			self.transition_delay = -1
 
-	def transition(self, isEntering):
-		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
-		if isEntering:
-			store.set('/game/spawnPoint', 'SpawnBottle')
-			self.open_window(True)
-			bxt.types.Event('TeleportSnail', 'SpawnBottleInner').send()
-			bxt.types.Event("AddCameraGoal", 'BottleCamera').send()
-			impulse.Input().add_handler(self, 'STORY')
-		else:
-			# Transitioning to outside; move camera to sensible location.
-			self.open_window(False)
-			bxt.types.Event('TeleportSnail', 'SpawnBottle').send()
-			bxt.types.Event("RemoveCameraGoal", 'BottleCamera').send()
-			if not store.get("/game/canDropShell", False):
-				# Don't let a snail wander around with no shell until the time
-				# is right!
-				bxt.types.Event('ForceReclaimShell').send()
-			impulse.Input().remove_handler(self)
+	def enter_bottle(self):
+		store.set('/game/spawnPoint', 'SpawnBottle')
+		self.open_window(True)
+		bxt.types.Event('TeleportSnail', 'SpawnBottleInner').send()
+		bxt.types.Event("AddCameraGoal", 'BottleCamera').send()
+		impulse.Input().add_handler(self, 'STORY')
 
-		self.snailInside = isEntering
+		self.snailInside = True
 		self.transition_delay = 1
+		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
+
+	def exit_bottle(self):
+		# Transitioning to outside; move camera to sensible location.
+		self.open_window(False)
+		bxt.types.Event('TeleportSnail', 'SpawnBottle').send()
+		bxt.types.Event("RemoveCameraGoal", 'BottleCamera').send()
+
+		if self.bird_arrived:
+			# The bird has interrupted the story (triggered by conversation with
+			# barkeeper).
+			# First, really make sure the snail hasn't got a shell. Just in
+			# case!
+			bxt.types.Event('ForceDropShell', False).send()
+			# Then spawn the bird.
+			spawn_point = self.scene.objects["Bird_SauceBar_Spawn"]
+			bird = story_bird.factory()
+			bxt.bmath.copy_transform(spawn_point, bird)
+			self.bird_arrived = False
+
+		elif not store.get("/game/canDropShell", False):
+			# Don't let a snail wander around with no shell until after the bird
+			# has taken one.
+			bxt.types.Event('ForceReclaimShell').send()
+		impulse.Input().remove_handler(self)
+
+		self.snailInside = False
+		self.transition_delay = 1
+		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 
 	def eject(self, ob):
 		direction = self.children['B_Door'].getAxisVect(bxt.bmath.ZAXIS)
@@ -276,6 +297,14 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 			ps.addTransition(s)
 		s.addEvent("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
 				("\[envelope].", "1 tomato sauce, please.")))
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent('BirdArrived')
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
+		s.addEvent("ShowDialogue", "What on earth was that!?")
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))

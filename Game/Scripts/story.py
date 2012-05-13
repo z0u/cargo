@@ -89,7 +89,7 @@ class CondPropertyGE(Condition):
 		return "PGE"
 
 class CondActionGE(Condition):
-	def __init__(self, layer, frame, tap=False):
+	def __init__(self, layer, frame, tap=False, ob=None):
 		'''
 		@param layer: The animation layer to watch.
 		@param frame: The frame to trigger from.
@@ -97,16 +97,25 @@ class CondActionGE(Condition):
 			the current frame is increasing. If the current frame decreases (as
 			it may when an animation is looping) the condition will be reset,
 			and may trigger again.
+		@param ob: The object whose action should be tested. If None, the object
+			that evaluates this condition is used.
 		'''
 		self.layer = layer
 		self.frame = frame
+		self.ob = ob
 
 		self.tap = tap
 		self.triggered = False
 		self.lastFrame = frame - 1
 
 	def evaluate(self, c):
-		cfra = c.owner.getActionFrame(self.layer)
+		ob = self.ob
+		if self.ob is None:
+			ob = c.owner
+		elif isinstance(ob, str):
+			ob = bge.logic.getCurrentScene().objects[ob]
+
+		cfra = ob.getActionFrame(self.layer)
 		if not self.tap:
 			# Simple mode
 			return cfra >= self.frame
@@ -290,18 +299,25 @@ class ActActuate(BaseAct):
 
 class ActAction(BaseAct):
 	def __init__(self, action, start, end, layer, targetDescendant=None,
-			play_mode=bge.logic.KX_ACTION_MODE_PLAY):
+			play_mode=bge.logic.KX_ACTION_MODE_PLAY, ob=None):
 		self.action = action
 		self.start = start
 		self.end = end
 		self.layer = layer
 		self.targetDescendant = targetDescendant
 		self.playMode = play_mode
+		self.ob = ob
 
 	def execute(self, c):
-		ob = c.owner
+		ob = self.ob
+		if self.ob is None:
+			ob = c.owner
+		elif isinstance(ob, str):
+			ob = bge.logic.getCurrentScene().objects[ob]
+
 		if self.targetDescendant != None:
 			ob = ob.childrenRecursive[self.targetDescendant]
+
 		ob.playAction(self.action, self.start, self.end, self.layer,
 			play_mode=self.playMode)
 
@@ -509,7 +525,7 @@ class State:
 		'''Actions will run when this state becomes active.'''
 		self.actions.append(action)
 
-	def addEvent(self, message, body):
+	def addEvent(self, message, body=None):
 		'''Convenience method to add an ActEvent action.'''
 		evt = bxt.types.Event(message, body)
 		self.actions.append(ActEvent(evt))

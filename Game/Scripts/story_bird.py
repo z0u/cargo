@@ -38,6 +38,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		Chapter.__init__(self, old_owner)
 		# if at bottle...
 		if True:
+			bxt.types.WeakEvent("StartLoading", self).send()
 			self.pick_up_shell()
 			self.create_bottle_state_graph()
 
@@ -49,26 +50,74 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = self.rootState.createTransition("Init")
 		s.addAction(ActSuspendInput())
 		s.addAction(ActSetCamera('B_BirdIntroCam'))
-		s.addAction(ActAction("B_BirdCloseCamAction", 1, 96, 0,
-			ob="B_BirdIntroCam"))
-		s.addAction(ActSetFocalPoint('Bi_Face'))
+		s.addAction(ActSetFocalPoint('Bi_FootHook.L'))
 
 		s = s.createTransition()
-		s.addCondition(CondWait(3))
+		s.addCondition(CondWait(0.5))
 		s.addWeakEvent("FinishLoading", self)
-		s.addEvent("ShowDialogue", "I'm taking your shell, isn't it!")
+		s.addAction(ActAction("B_BirdCloseCamAction", 1, 96, 0,
+			ob="B_BirdIntroCam"))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(2.5))
+		s.addAction(ActSetFocalPoint('Bi_Face'))
+		s.addAction(ActRemoveFocalPoint('Bi_FootHook.L'))
+		s.addEvent("ShowDialogue", "Ooh, look at this lovely red thing!")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", ("It's so shiny. It will really brighten up my nest!",
+				("Excuse me...", "Oi, that's my \[shell]!")))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActSetCamera('B_DoorCamera'))
+		s.addAction(ActRemoveCamera('B_BirdIntroCam'))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
+		s.addEvent("ShowDialogue", "Eh? You say it's yours?")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Couldn't be; it was just lying here! Finders keepers, I always say.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Tell you what, I'll make you a deal.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", ("If you can bring me 3 other shiny red things, I'll give this one to you.",
+				("That's not fair!", "I need it to do my job!")))
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Now now, you can't just go taking things from other people.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "If you want this \[shell], bring 3 red things to my nest at the top of the tree.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Toodles!")
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActGeneric(steal_shell))
 
 		#
-		# Return to game
+		# Return to game. Note that this actually destroys the bird.
 		#
 		s = s.createTransition("Return to game")
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('B_BirdIntroCam'))
+		s.addAction(ActRemoveCamera('B_DoorCamera'))
 		s.addAction(ActRemoveFocalPoint('Bi_Face'))
+		s.addAction(ActRemoveFocalPoint('Bi_FootHook.L'))
+		s.addAction(ActDestroy())
 
 	def pick_up(self, ob, left=True):
 		attach_point = self.children["Bi_FootHook.L"]

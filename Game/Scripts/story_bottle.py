@@ -295,6 +295,7 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s = State("delivery")
 		for ps in preceding_states:
 			ps.addTransition(s)
+		s.addAction(ActSetCamera('BottleCamera_Close'))
 		s.addEvent("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
 				("\[envelope].", "1 tomato sauce, please.")))
 
@@ -305,6 +306,7 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
 		s.addEvent("ShowDialogue", "What on earth was that!?")
+		s.addAction(ActRemoveCamera('BottleCamera_Close'))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))

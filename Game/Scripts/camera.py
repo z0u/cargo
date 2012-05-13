@@ -198,9 +198,14 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 
 		if self.queue.top() == goal and goal['InstantCut']:
 			# Goal is on top of the stack: it will be switched to next
-			self.instantCut = True
-			self.update()
+			if goal['InstantCut'] in (True, 'IN', 'BOTH'):
+				if DEBUG:
+					print("Cutting instantly to '%s' because InstantCut = %s" %
+							(goal.name, repr(goal['InstantCut'])))
+				self.instantCut = True
 
+		if self.instantCut:
+			self.update()
 		self.errorReported = False
 
 	@bxt.types.expose
@@ -220,12 +225,17 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if not goal in self.queue:
 			return
 
-		if self.queue.top() == goal and goal['InstantCut']:
+		if self.queue.top() == goal:
 			# Goal is on top of the stack: it's in use!
-			self.instantCut = True
-			self.update()
+			if goal['InstantCut'] in (True, 'OUT', 'BOTH'):
+				if DEBUG:
+					print("Cutting instantly from '%s' because InstantCut = %s" %
+							(goal.name, repr(goal['InstantCut'])))
+				self.instantCut = True
 
 		self.queue.discard(goal)
+		if self.instantCut:
+			self.update()
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls
@@ -273,7 +283,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		orn = spawn_camera.worldOrientation
 		bxt.types.Event('RelocatePlayerCamera', (pos, orn)).send(0)
 
-		bxt.utils.set_default_prop(spawn_camera, 'InstantCut', True)
+		bxt.utils.set_default_prop(spawn_camera, 'InstantCut', 'IN')
 		self.add_goal(spawn_camera)
 		bxt.types.WeakEvent('RemoveCameraGoal', spawn_camera).send(60)
 

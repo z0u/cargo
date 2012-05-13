@@ -98,10 +98,19 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActSetCamera('BirdCamera_BottleToNest'))
+		s.addAction(ActSetFocalPoint('Nest'))
+		s.addAction(ActShowMarker('Nest'))
 		s.addEvent("ShowDialogue", "If you want this \[shell], bring 3 red things to my nest at the top of the tree.")
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActRemoveFocalPoint('Nest'))
+		s.addAction(ActShowMarker(None))
+		s.addAction(ActRemoveCamera('BirdCamera_BottleToNest'))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
 		s.addEvent("ShowDialogue", "Toodles!")
 
 		s = s.createTransition()
@@ -115,8 +124,10 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('B_BirdIntroCam'))
 		s.addAction(ActRemoveCamera('B_DoorCamera'))
+		s.addAction(ActRemoveCamera('BirdCamera_BottleToNest'))
 		s.addAction(ActRemoveFocalPoint('Bi_Face'))
 		s.addAction(ActRemoveFocalPoint('Bi_FootHook.L'))
+		s.addAction(ActRemoveFocalPoint('Nest'))
 		s.addAction(ActDestroy())
 
 	def pick_up(self, ob, left=True):

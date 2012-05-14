@@ -275,10 +275,12 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 
 		# Split story.
 		# Note that these are added IN ORDER: if the first one fails, it will
-		# fall through to the second, and so on.
+		# fall through to the second, and so on. Therefore, the ones that come
+		# later in the story are listed first.
 		safterbottlecap = self.sg_afterbottlecap([s])
 		safterbird = self.sg_afterbird([s])
 		sbeforebird = self.sg_beforebird([s])
+		sbeforelighthouse = self.sg_beforelighthouse([s])
 
 		#
 		# Merge, and return to game
@@ -287,6 +289,7 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		safterbottlecap.addTransition(s)
 		safterbird.addTransition(s)
 		sbeforebird.addTransition(s)
+		sbeforelighthouse.addTransition(s)
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('BottleCamera_Close'))
 		s.addAction(ActRemoveFocalPoint('BK_LookTarget'))
@@ -298,10 +301,25 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s.addCondition(CondSensorNot('Near'))
 		s.addTransition(self.rootState)
 
+	def sg_beforelighthouse(self, preceding_states):
+		s = State("beforelighthouse")
+		for ps in preceding_states:
+			ps.addTransition(s)
+		s.addEvent("ShowDialogue", "Hi Cargo. What will it be, the usual?")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "There you go - one tomato sauce. Enjoy!")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		return s
+
 	def sg_beforebird(self, preceding_states):
 		s = State("beforebird")
 		for ps in preceding_states:
 			ps.addTransition(s)
+		s.addCondition(CondStore('/game/level/lkMissionStarted', True, False))
 		s.addEvent("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
 				("\[envelope].", "1 tomato sauce, please.")))
 
@@ -472,6 +490,10 @@ class BarKeeperArm(snail.NPCSnail):
 		s = c.sensors[0]
 		if s.hitObject is not None:
 			self.look_at(s.hitObject)
+
+
+def lighthouse_stub():
+	store.set('/game/level/lkMissionStarted', True)
 
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):

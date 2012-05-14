@@ -29,6 +29,7 @@ from . import director
 from . import store
 from . import impulse
 import time
+from Scripts import inventory
 
 DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
@@ -50,6 +51,17 @@ class Condition:
 
 	def get_short_name(self):
 		raise NotImplementedError()
+
+class CNot(Condition):
+	'''Inverts a condition.'''
+	def __init__(self, wrapped):
+		self.wrapped = wrapped
+
+	def evaluate(self, c):
+		return not self.wrapped.evaluate(c)
+
+	def get_short_name(self):
+		return self.wrapped.get_short_name()
 
 class CondSensor(Condition):
 	'''Allow the story to progress when a particular sensor is true.'''
@@ -187,10 +199,12 @@ class CondEventEq(Condition):
 	def get_short_name(self):
 		return " EE"
 
+# This cannot be replaced by CNot(CondEventEq)
 class CondEventNe(Condition):
 	'''
 	Continue if an event is received, and its body is NOT equal to the specified
-	value.
+	value. Note that this will not be True until the event is received;
+	therefore, this is NOT equivalent to CNot(CondEventEq).
 	'''
 	def __init__(self, message, body):
 		self.message = message
@@ -214,7 +228,7 @@ class CondEventNe(Condition):
 	def get_short_name(self):
 		return "ENE"
 
-class CondStoreEq(Condition):
+class CondStore(Condition):
 	def __init__(self, path, value, default=None):
 		self.path = path
 		self.value = value
@@ -226,17 +240,15 @@ class CondStoreEq(Condition):
 	def get_short_name(self):
 		return "StE"
 
-class CondStoreNe(Condition):
-	def __init__(self, path, value, default=None):
-		self.path = path
-		self.value = value
-		self.default = default
+class CondHasShell(Condition):
+	def __init__(self, name):
+		self.name = name
 
 	def evaluate(self, c):
-		return self.value != store.get(self.path, self.default)
+		return self.name in inventory.Shells().get_shells()
 
 	def get_short_name(self):
-		return "StN"
+		return " HS"
 
 class CondWait(Condition):
 	'''A condition that waits for a certain time after being enabled.'''
@@ -536,7 +548,15 @@ class State:
 		self.actions.append(ActEvent(evt))
 
 	def addTransition(self, state):
-		'''Transitions are other states.'''
+		'''
+		Transitions are links to other states. During evaluation, the state will
+		progress from this state to one of its transitions when all conditions
+		of that transition are satisfied.
+
+		Transitions are evaluated *in order*, i.e. if two transitions both have
+		their conditions met, the one that was added first is progressed to
+		next.
+		'''
 		self.transitions.append(state)
 
 	def createTransition(self, stateName=""):

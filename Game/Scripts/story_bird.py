@@ -116,6 +116,8 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActGeneric(steal_shell))
+		s.addAction(ActStoreSet('/game/level/birdTookShell', True))
+		s.addAction(ActStoreSet('/game/canDropShell', True))
 
 		#
 		# Return to game. Note that this actually destroys the bird.

@@ -273,13 +273,20 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s.addAction(ActSetFocalPoint('BK_LookTarget'))
 		s.addEvent("TeleportSnail", "BK_SnailTalkPos")
 
-		sdeliver = self.sg_firstmeeting([s])
+		# Split story.
+		# Note that these are added IN ORDER: if the first one fails, it will
+		# fall through to the second, and so on.
+		safterbottlecap = self.sg_afterbottlecap([s])
+		safterbird = self.sg_afterbird([s])
+		sbeforebird = self.sg_beforebird([s])
 
 		#
-		# Return to game
+		# Merge, and return to game
 		#
 		s = State("Return to game")
-		sdeliver.addTransition(s)
+		safterbottlecap.addTransition(s)
+		safterbird.addTransition(s)
+		sbeforebird.addTransition(s)
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('BottleCamera_Close'))
 		s.addAction(ActRemoveFocalPoint('BK_LookTarget'))
@@ -291,8 +298,8 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s.addCondition(CondSensorNot('Near'))
 		s.addTransition(self.rootState)
 
-	def sg_firstmeeting(self, preceding_states):
-		s = State("delivery")
+	def sg_beforebird(self, preceding_states):
+		s = State("beforebird")
 		for ps in preceding_states:
 			ps.addTransition(s)
 		s.addEvent("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
@@ -358,6 +365,98 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		sauce.addTransition(s)
 		sdeliver.addTransition(s)
 
+		return s
+
+	def sg_afterbird(self, preceding_states):
+		s = State("afterbird")
+		for ps in preceding_states:
+			ps.addTransition(s)
+		s.addCondition(CondStore('/game/level/birdTookShell', True, False))
+		s.addEvent("ShowDialogue", "Hi again, Cargo. Terribly sorry to hear about your shell!")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "That pesky bird needs to be taught a lesson!")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "It's no good charging up the tree: the bees won't allow it. They're very protective of their honey.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "But, first things first, eh? You need to get your shell back.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "I don't know how you'll get to the nest, but, hmm... shiny red things...")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(2))
+		s.addEvent("ShowDialogue", "Ah, that's right! This bottle used to have a bright red lid \[bottlecap]!")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "I used to use it as a door, but it washed away one day in heavy rain.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "I think I saw the \[bottlecap] on that little island near your house.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "The water is deep, though, so you'll have to figure out how to get there dry.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Quick, go and get it!")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		return s
+
+	def sg_afterbottlecap(self, preceding_states):
+		s = State("afterbottlecap")
+		for ps in preceding_states:
+			ps.addTransition(s)
+		s.addCondition(CondStore('/game/level/birdTookShell', True, False))
+		s.addCondition(CondHasShell('BottleCap'))
+		s.addEvent("ShowDialogue", ("Hi Cargo, what's happening?",
+				("\[bottlecap]!", "I'm thirsty.")))
+
+		## Second option.
+		sauce = s.createTransition("sauce please")
+		sauce.addCondition(CondEventEq("DialogueDismissed", 1))
+		sauce.addEvent("ShowDialogue", "More tomato sauce? There you go.")
+
+		sauce = sauce.createTransition()
+		sauce.addCondition(CondEvent("DialogueDismissed"))
+
+		## First option.
+		scap = s.createTransition("cap")
+		scap.addCondition(CondEventNe("DialogueDismissed", 1))
+		scap.addEvent("ShowDialogue", "You found my bottle cap! That's great news.")
+
+		scap = scap.createTransition()
+		scap.addCondition(CondEvent("DialogueDismissed"))
+		scap.addEvent("ShowDialogue", "It's OK, you can keep it. I like not having a door: I get more customers this way.")
+
+		scap = scap.createTransition()
+		scap.addCondition(CondEvent("DialogueDismissed"))
+		scap.addEvent("ShowDialogue", "Only two more shiny red things to go, eh? Sadly I haven't seen anything else that is shiny and red.")
+
+		scap = scap.createTransition()
+		scap.addCondition(CondEvent("DialogueDismissed"))
+		scap.addEvent("ShowDialogue", "You'll just have to keep looking.")
+
+		scap = scap.createTransition()
+		scap.addCondition(CondEvent("DialogueDismissed"))
+
+		s = State("merge")
+		sauce.addTransition(s)
+		scap.addTransition(s)
 		return s
 
 

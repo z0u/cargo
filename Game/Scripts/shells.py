@@ -133,8 +133,8 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 				self.name)
 			return False
 
-		if state.activated and hasattr(self.parent, "exit_shell"):
-			self.parent.exit_shell(animate = True)
+		if state.activated:
+			self.snail.exit_shell(animate = True)
 		return True
 
 	def save_location(self):
@@ -175,6 +175,7 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 			return
 		self.worldPosition = self.anchorPos
 		self.worldOrientation = self.anchorOrn
+		self.worldLinearVelocity = bxt.bmath.MINVECTOR
 
 	def anchor(self):
 		self.add_state(ShellBase.S_ANCHOR)

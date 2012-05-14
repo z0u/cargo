@@ -131,7 +131,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
 
 		sfirstmeeting = s.createTransition()
-		sfirstmeeting.addCondition(CondStoreNe('/game/level/lkMissionStarted', True, False))
+		sfirstmeeting.addCondition(CNot(CondStore('/game/level/lkMissionStarted', True, False)))
 		sfirstmeeting.addEvent("ShowDialogue", ("Oh, hello Cargo! What's up?",
 				("\[envelope]!", "Just saying \"hi\".")))
 
@@ -140,7 +140,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		sdeliver1 = self.sg_accept_delivery([sdeliver1])
 
 		ssecondmeeting = s.createTransition()
-		ssecondmeeting.addCondition(CondStoreEq('/game/level/lkMissionStarted', True, False))
+		ssecondmeeting.addCondition(CondStore('/game/level/lkMissionStarted', True, False))
 		ssecondmeeting.addEvent("ShowDialogue", ("Hi again! What's up?",
 				("What am I to do again?", "Just saying \"hi\".")))
 

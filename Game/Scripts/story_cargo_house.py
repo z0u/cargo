@@ -206,7 +206,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 279))
 		s.addEvent("ShowDialogue",
-				("Ta-da! Please deliver this \[envelope] for me.",
+				("Ta-da! Please deliver this express \[envelope] for me.",
 						("Of course!", "I'm too sleepy...")))
 
 		#
@@ -247,7 +247,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Point to lighthouse
 		#
 		s = s.createTransition("Point to lighthouse")
-		s.addEvent("ShowDialogue", "Please take it to the lighthouse keeper.")
+		s.addEvent("ShowDialogue", "Please take it to the lighthouse keeper as soon as possible. I have paid for express mail!")
 		s.addAction(ActAction('BurstOut', 330, 395, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 330, 395, Worm.L_ANIM, 'WormBody'))
 

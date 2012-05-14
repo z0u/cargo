@@ -127,8 +127,8 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition("Close-up")
 		s.addCondition(CondWait(2))
-		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
+		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 
 		sfirstmeeting = s.createTransition()
 		sfirstmeeting.addCondition(CNot(CondStore('/game/level/lkMissionStarted', True, False)))
@@ -153,7 +153,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		sfirstmeeting.addTransition(snothing)
 		ssecondmeeting.addTransition(snothing)
 		snothing.addCondition(CondEventEq("DialogueDismissed", 1))
-		snothing.addEvent("ShowDialogue", "OK - hi! But I'm kind of busy. Let's talk later.")
+		snothing.addEvent("ShowDialogue", "OK - hi! But it's hard work operating the lighthouse without a button! Let's talk later.")
 		# Intermediate step, then jump to end
 		snothing = snothing.createTransition()
 		snothing.addCondition(CondEvent("DialogueDismissed"))
@@ -185,13 +185,30 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addEvent("ShowDialogue", "I'm glad you're here, actually - I need "\
-				"you to deliver something for me, too!")
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
+		s.addEvent("ShowDialogue", "Oh no! It's a quote for a new button, and it's too expensive.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Blast! I can't believe someone stole it in the first place.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
+		s.addEvent("ShowDialogue", "Phew, this is thirsty work.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Can you deliver something for me too?")
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "I'm all out of sauce, you see. I'm "\
-				"parched! But work is busy, so I can't get to the sauce bar.")
+				"parched! But I'm stuck here, so I can't get to the sauce bar.")
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))

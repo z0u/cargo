@@ -311,7 +311,7 @@ class ActActuate(BaseAct):
 
 class ActAction(BaseAct):
 	def __init__(self, action, start, end, layer, targetDescendant=None,
-			play_mode=bge.logic.KX_ACTION_MODE_PLAY, ob=None):
+			play_mode=bge.logic.KX_ACTION_MODE_PLAY, ob=None, blendin=0.0):
 		self.action = action
 		self.start = start
 		self.end = end
@@ -319,6 +319,7 @@ class ActAction(BaseAct):
 		self.targetDescendant = targetDescendant
 		self.playMode = play_mode
 		self.ob = ob
+		self.blendin = blendin
 
 	def execute(self, c):
 		ob = self.ob
@@ -331,7 +332,7 @@ class ActAction(BaseAct):
 			ob = ob.childrenRecursive[self.targetDescendant]
 
 		ob.playAction(self.action, self.start, self.end, self.layer,
-			play_mode=self.playMode)
+			blendin=self.blendin, play_mode=self.playMode)
 
 	def __str__(self):
 		return "ActAction: %s, %d -> %d" % (self.action, self.start, self.end)

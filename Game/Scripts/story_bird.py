@@ -34,6 +34,9 @@ def factory():
 	return bxt.types.add_and_mutate_object(scene, "Bird", "Bird")
 
 class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+	L_IDLE = 0
+	L_ANIM = 1
+
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
 		# if at bottle...
@@ -51,6 +54,8 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActSuspendInput())
 		s.addAction(ActSetCamera('B_BirdIntroCam'))
 		s.addAction(ActSetFocalPoint('Bi_FootHook.L'))
+		s.addAction(ActAction('Bi_Excited', 1, 25, Bird.L_ANIM,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 
 		s = s.createTransition()
 		s.addCondition(CondWait(0.5))
@@ -65,18 +70,24 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addEvent("ShowDialogue", "Ooh, look at this lovely red thing!")
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addEvent("ShowDialogue", ("It's so shiny. It will really brighten up my nest!",
-				("Excuse me...", "Oi, that's my \[shell]!")))
-
-		s = s.createTransition()
 		s.addCondition(CondWait(1))
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActSetCamera('B_DoorCamera'))
 		s.addAction(ActRemoveCamera('B_BirdIntroCam'))
+		s.addAction(ActAction('Bi_SmashShell', 1, 12, Bird.L_ANIM,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
+
+		s = s.createTransition()
+		s.addCondition(CondWait(2))
+		s.addEvent("ShowDialogue", ("It's so shiny. It will really brighten up my nest!",
+				("Excuse me...", "Oi, that's my \[shell]!")))
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
 
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
+		s.addAction(ActAction('Bi_LookCargo', 1, 20, Bird.L_ANIM, blendin=2.0))
 		s.addEvent("ShowDialogue", "Eh? You say it's yours?")
 
 		s = s.createTransition()

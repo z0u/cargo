@@ -41,6 +41,10 @@ substitute it into this URL:
         By kangaroovindaloo (http://www.freesound.org/people/kangaroovindaloo/)
             Lajamanu Billabong Atmos - 147666 - CC-BY
 
+    May 22, 2012
+        By ERH (http://www.freesound.org/people/ERH/)
+            fr0608bg Grey Parrot.wav - 57327 - CC-BY
+
 
 
 == Sample catalogue ==
@@ -75,4 +79,7 @@ Swosh*.ogg
 PondAmbience*.ogg
     - 124486 by nsp
     - 147666 by kangaroovindaloo
+
+Bird*.ogg
+    - 57327 by ERH
 

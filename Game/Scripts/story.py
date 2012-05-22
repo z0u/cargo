@@ -52,6 +52,18 @@ class Condition:
 	def get_short_name(self):
 		raise NotImplementedError()
 
+	def find_source(self, c, ob_or_name, descendant_name=None):
+		ob = ob_or_name
+		if ob is None:
+			ob = c.owner
+		elif isinstance(ob, str):
+			ob = bge.logic.getCurrentScene().objects[ob]
+
+		if descendant_name is not None:
+			ob = ob.childrenRecursive[descendant_name]
+
+		return ob
+
 class CNot(Condition):
 	'''Inverts a condition.'''
 	def __init__(self, wrapped):
@@ -101,7 +113,7 @@ class CondPropertyGE(Condition):
 		return "PGE"
 
 class CondActionGE(Condition):
-	def __init__(self, layer, frame, tap=False, ob=None):
+	def __init__(self, layer, frame, tap=False, ob=None, targetDescendant=None):
 		'''
 		@param layer: The animation layer to watch.
 		@param frame: The frame to trigger from.
@@ -115,17 +127,14 @@ class CondActionGE(Condition):
 		self.layer = layer
 		self.frame = frame
 		self.ob = ob
+		self.descendant_name = targetDescendant
 
 		self.tap = tap
 		self.triggered = False
 		self.lastFrame = frame - 1
 
 	def evaluate(self, c):
-		ob = self.ob
-		if self.ob is None:
-			ob = c.owner
-		elif isinstance(ob, str):
-			ob = bge.logic.getCurrentScene().objects[ob]
+		ob = self.find_source(c, self.ob, self.descendant_name)
 
 		cfra = ob.getActionFrame(self.layer)
 		if not self.tap:
@@ -279,6 +288,18 @@ class BaseAct:
 	def __str__(self):
 		return self.__class__.__name__
 
+	def find_target(self, c, ob_or_name, descendant_name=None):
+		ob = ob_or_name
+		if ob is None:
+			ob = c.owner
+		elif isinstance(ob, str):
+			ob = bge.logic.getCurrentScene().objects[ob]
+
+		if descendant_name is not None:
+			ob = ob.childrenRecursive[descendant_name]
+
+		return ob
+
 class ActStoreSet(BaseAct):
 	'''Write to the save game file.'''
 	def __init__(self, path, value):
@@ -322,15 +343,7 @@ class ActAction(BaseAct):
 		self.blendin = blendin
 
 	def execute(self, c):
-		ob = self.ob
-		if self.ob is None:
-			ob = c.owner
-		elif isinstance(ob, str):
-			ob = bge.logic.getCurrentScene().objects[ob]
-
-		if self.targetDescendant != None:
-			ob = ob.childrenRecursive[self.targetDescendant]
-
+		ob = self.find_target(c, self.ob, self.targetDescendant)
 		ob.playAction(self.action, self.start, self.end, self.layer,
 			blendin=self.blendin, play_mode=self.playMode)
 

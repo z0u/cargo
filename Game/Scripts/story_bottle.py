@@ -372,8 +372,18 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 				"BottleCamera_Close"))
 		sdeliver.addEvent('BirdArrived')
 
+		stweet1 = sdeliver.createSubStep("Bird Sound 1")
+		stweet1.addCondition(CondActionGE(0, 20, ob="BottleCamera_Close", tap=True))
+		stweet1.addAction(ActSound('//Sound/cc-by/BirdTweet1.ogg'))
+
+		stweet2 = sdeliver.createSubStep("Bird Sound 2")
+		stweet2.addCondition(CondActionGE(0, 50, ob="BottleCamera_Close", tap=True))
+		stweet2.addAction(ActSound('//Sound/cc-by/BirdTweet2.ogg'))
+
 		sdeliver = sdeliver.createTransition()
 		sdeliver.addCondition(CondWait(1))
+		sdeliver.addSubStep(stweet1)
+		sdeliver.addSubStep(stweet2)
 		sdeliver.addEvent("ShowDialogue", "Look out! It's that cursed thing again. It must be back for the rest of the lights.")
 
 		sdeliver = sdeliver.createTransition()
@@ -494,6 +504,13 @@ class BarKeeperArm(snail.NPCSnail):
 
 def lighthouse_stub():
 	store.set('/game/level/lkMissionStarted', True)
+
+@bxt.utils.all_sensors_positive
+def test_bird():
+	sce = bge.logic.getCurrentScene()
+	spawn_point = sce.objects["Bird_SauceBar_Spawn"]
+	bird = story_bird.factory()
+	bxt.bmath.copy_transform(spawn_point, bird)
 
 
 class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):

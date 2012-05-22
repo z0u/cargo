@@ -68,6 +68,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetFocalPoint('Bi_Face'))
 		s.addAction(ActRemoveFocalPoint('Bi_FootHook.L'))
 		s.addEvent("ShowDialogue", "Ooh, look at this lovely red thing!")
+		s.addAction(ActSound('//Sound/cc-by/BirdSquarkLarge.ogg'))
 
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
@@ -77,18 +78,32 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActAction('Bi_SmashShell', 1, 12, Bird.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
+		sKnock = s.createSubStep("Knock sound")
+		sKnock.addCondition(CondActionGE(Bird.L_ANIM, 10.5, tap=True))
+		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.7,
+				pitchmax=0.76))
+
 		s = s.createTransition()
 		s.addCondition(CondWait(2))
+		s.addSubStep(sKnock)
 		s.addEvent("ShowDialogue", ("It's so shiny. It will really brighten up my nest!",
 				("Excuse me...", "Oi, that's my \[shell]!")))
+		s.addAction(ActSound('//Sound/cc-by/BirdTweet1.ogg'))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActAction('Bi_LookCargo', 1, 20, Bird.L_ANIM, blendin=2.0))
+
+		sKnock = s.createSubStep("Knock sound")
+		sKnock.addCondition(CondActionGE(Bird.L_ANIM, 9.5, tap=True))
+		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=0.2, pitchmin=0.7,
+				pitchmax=0.74))
 
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
-		s.addAction(ActAction('Bi_LookCargo', 1, 20, Bird.L_ANIM, blendin=2.0))
+		s.addSubStep(sKnock)
 		s.addEvent("ShowDialogue", "Eh? You say it's yours?")
+		s.addAction(ActSound('//Sound/cc-by/BirdQuestion1.ogg'))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
@@ -106,6 +121,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "Now now, you can't just go taking things from other people.")
+		s.addAction(ActSound('//Sound/cc-by/BirdStatement1.ogg'))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
@@ -123,6 +139,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
 		s.addEvent("ShowDialogue", "Toodles!")
+		s.addAction(ActSound('//Sound/cc-by/BirdSquarkSmall.ogg'))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))

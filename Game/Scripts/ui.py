@@ -344,7 +344,9 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			# Show the frame immediately, but wait for the animation to finish
 			# before showing the icon.
 			def cb():
-				icon.visible = True
+				if self.invalid or not self.currently_shown:
+					return
+				self.children["LS_Icon"].visible = True
 				if cbEvent != None:
 					print("Sending delayed event", cbEvent)
 					cbEvent.send(delay=2)
@@ -357,7 +359,9 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			# Hide the icon immediately, but wait for the animation to finish
 			# before hiding the frame.
 			def cb():
-				blackout.visible = False
+				if self.invalid or self.currently_shown:
+					return
+				self.children["LS_Blackout"].visible = False
 				if cbEvent != None:
 					cbEvent.send(delay=2)
 			icon.visible = False

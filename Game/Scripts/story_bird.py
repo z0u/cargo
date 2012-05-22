@@ -105,24 +105,40 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addEvent("ShowDialogue", "Eh? You say it's yours?")
 		s.addAction(ActSound('//Sound/cc-by/BirdQuestion1.ogg'))
 		s.addAction(ActSetCamera('B_BirdConverseCam'))
+		s.addAction(ActAction('Bi_Discuss_Idle', 1, 49, Bird.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
 		s = s.createTransition()
+		sKnock.addCondition(CondActionGE(Bird.L_ANIM, 20, tap=True))
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "Couldn't be; it was just lying here! Finders keepers, I always say.")
+		s.addAction(ActAction('Bi_Discuss', 1, 6, Bird.L_ANIM,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		sKnock.addCondition(CondActionGE(Bird.L_ANIM, 5, tap=True)) # One less than max for tolerance
 		s.addEvent("ShowDialogue", "Tell you what, I'll make you a deal.")
+		s.addAction(ActAction('Bi_Discuss', 6, 17, Bird.L_ANIM))
+		s.addAction(ActAction('Bi_Discuss_Idle', 100, 149, Bird.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		sKnock.addCondition(CondActionGE(Bird.L_ANIM, 17, tap=True))
 		s.addEvent("ShowDialogue", ("If you can bring me 3 other shiny red things, I'll give this one to you.",
 				("That's not fair!", "I need it to do my job!")))
+		s.addAction(ActAction('Bi_Discuss', 17, 36, Bird.L_ANIM))
+		s.addAction(ActAction('Bi_Discuss_Idle', 1, 49, Bird.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "Now now, you can't just go taking things from other people.")
 		s.addAction(ActSound('//Sound/cc-by/BirdStatement1.ogg'))
+		s.addAction(ActAction('Bi_Discuss', 36, 47, Bird.L_ANIM))
+		s.addAction(ActAction('Bi_Discuss_Idle', 200, 249, Bird.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
@@ -130,17 +146,23 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetFocalPoint('Nest'))
 		s.addAction(ActShowMarker('Nest'))
 		s.addEvent("ShowDialogue", "If you want this \[shell], bring 3 red things to my nest at the top of the tree.")
+		s.addAction(ActSound('//Sound/cc-by/BirdMutter.ogg'))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActRemoveFocalPoint('Nest'))
 		s.addAction(ActShowMarker(None))
+		s.addAction(ActRemoveCamera('B_BirdConverseCam'))
 		s.addAction(ActRemoveCamera('BirdCamera_BottleToNest'))
 
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
 		s.addEvent("ShowDialogue", "Toodles!")
-		s.addAction(ActSound('//Sound/cc-by/BirdSquarkSmall.ogg'))
+		s.addAction(ActAction('Bi_FlyAway', 1, 35, Bird.L_ANIM, blendin=5.0))
+		s.addAction(ActSound('//Sound/cc-by/BirdTweet2.ogg'))
+		s.addAction(ActRemoveFocalPoint('Bi_Face'))
+		s.addAction(ActRemoveFocalPoint('Bi_FootHook.L'))
+		s.addAction(ActRemoveFocalPoint('Nest'))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
@@ -157,9 +179,6 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActRemoveCamera('B_BirdConverseCam'))
 		s.addAction(ActRemoveCamera('B_DoorCamera'))
 		s.addAction(ActRemoveCamera('BirdCamera_BottleToNest'))
-		s.addAction(ActRemoveFocalPoint('Bi_Face'))
-		s.addAction(ActRemoveFocalPoint('Bi_FootHook.L'))
-		s.addAction(ActRemoveFocalPoint('Nest'))
 		s.addAction(ActDestroy())
 
 	def pick_up(self, ob, left=True):

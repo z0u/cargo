@@ -104,6 +104,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addSubStep(sKnock)
 		s.addEvent("ShowDialogue", "Eh? You say it's yours?")
 		s.addAction(ActSound('//Sound/cc-by/BirdQuestion1.ogg'))
+		s.addAction(ActSetCamera('B_BirdConverseCam'))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
@@ -153,6 +154,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition("Return to game")
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('B_BirdIntroCam'))
+		s.addAction(ActRemoveCamera('B_BirdConverseCam'))
 		s.addAction(ActRemoveCamera('B_DoorCamera'))
 		s.addAction(ActRemoveCamera('BirdCamera_BottleToNest'))
 		s.addAction(ActRemoveFocalPoint('Bi_Face'))

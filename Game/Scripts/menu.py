@@ -98,6 +98,7 @@ class InputHandler(metaclass=bxt.types.Singleton):
 			self._current = None
 		else:
 			self._current = weakref.ref(current)
+		bxt.types.WeakEvent("FocusChanged", current).send()
 	current = property(_getCurrent, _setCurrent)
 
 	# Getter and setter to allow use of weakref
@@ -564,16 +565,23 @@ class Subtitle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				text = ""
 			self.children['SubtitleCanvas']['Content'] = text
 
-class MenuSnail(snail.NPCSnail):
-
-	_prefix = 'MS_'
+class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
-		snail.NPCSnail.__init__(self, old_owner)
+		arm = bxt.types.add_and_mutate_object(self.scene, "SlugArm_Min",
+				self.children["SlugSpawnPos"])
+		arm.setParent(self)
+		arm.look_at("Camera")
+		arm.playAction("MenuSnail_Rest", 1, 1)
+		self.arm = arm
+		#self.arm.localScale = (0.75, 0.75, 0.75)
 
-	@bxt.types.expose
-	def look(self):
-		target = InputHandler().current
-		if target is None:
-			target = bge.logic.getCurrentScene().active_camera
-		self.look_at(target)
+		bxt.types.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == "FocusChanged":
+			if evt.body is None:
+				self.arm.look_at("Camera")
+			else:
+				self.arm.look_at(evt.body)
+

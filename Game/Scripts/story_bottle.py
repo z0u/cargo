@@ -250,6 +250,13 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
+		arm = bxt.types.add_and_mutate_object(self.scene, "SlugArm_Min",
+				self.children["SlugSpawnPos"])
+		arm.setParent(self)
+		arm.look_at("Snail")
+		arm.playAction("Slug_AtBar", 1, 50)
+		self.arm = arm
+		self.arm.localScale = (0.75, 0.75, 0.75)
 		self.create_state_graph()
 
 	def create_state_graph(self):
@@ -270,7 +277,7 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		s.addCondition(CondWait(1))
 		s.addWeakEvent("FinishLoading", self)
 		s.addAction(ActSetCamera('BottleCamera_Close'))
-		s.addAction(ActSetFocalPoint('BK_LookTarget'))
+		s.addAction(ActSetFocalPoint("SlugLookTarget"))
 		s.addEvent("TeleportSnail", "BK_SnailTalkPos")
 
 		# Split story.
@@ -292,7 +299,7 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		sbeforelighthouse.addTransition(s)
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('BottleCamera_Close'))
-		s.addAction(ActRemoveFocalPoint('BK_LookTarget'))
+		s.addAction(ActRemoveFocalPoint("SlugLookTarget"))
 
 		#
 		# Loop back to start when snail moves away.
@@ -486,20 +493,6 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 		sauce.addTransition(s)
 		scap.addTransition(s)
 		return s
-
-
-class BarKeeperArm(snail.NPCSnail):
-	_prefix = 'BKA_'
-
-	def __init__(self, old_owner):
-		snail.NPCSnail.__init__(self, old_owner)
-
-	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def look(self, c):
-		s = c.sensors[0]
-		if s.hitObject is not None:
-			self.look_at(s.hitObject)
 
 
 def lighthouse_stub():

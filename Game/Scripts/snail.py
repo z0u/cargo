@@ -364,6 +364,9 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			reset_orn(self.eyeLocL)
 			reset_orn(self.eyeLocR)
 
+	def get_look_target(self):
+		return self.childrenRecursive["SnailLookTarget"]
+
 	def size_shell(self):
 		'''Set the size of the carried shell based on the distance to the
 		camera. This prevents the shell from filling the screen when in tight
@@ -913,41 +916,47 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.add_spot(speedStyle, touchedObject)
 
 
-class NPCSnail(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class MinSnail(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+
+	_prefix = 'MS_'
+
+	LOOK_FAC = 0.2
+
+	look_goal = bxt.types.weakprop('look_goal')
 
 	def __init__(self, old_owner):
-		self.EyeLocL = self.children['Eyeref_L']
-		self.EyeLocR = self.children['Eyeref_R']
-		self.HeadLoc = self.children['HeadLoc']
-		# Store the current orientation of the head bone. This is used to
-		# reduce the movement of the head, so that the eyes do most of the
-		# turning.
-		self.HeadLoc_rest = mathutils.Quaternion(self.channels[
-				self.HeadLoc['channel']].rotation_quaternion)
+		con = self.constraints["LookTarget:Copy Location"]
+		con.enforce = 1.0
+		self.look_at(None)
 
-	def look_at(self, target):
-		'''Turn the eyes to face the target.'''
-		# This code is similar to Snail.Snail.lookAt. But there's probably not
-		# much scope for reuse.
+	@bxt.types.expose
+	def update_look(self):
+		# Stop tracking goal if it is behind the head.
+		con = self.constraints["LookTarget:Copy Location"]
+		head = self.children["SlugLookTarget"]
+		_, _, local_vec = head.getVectTo(self.look_goal)
 
-		if target is None:
-			return
+		if local_vec.y > 0.0:
+			con.active = True
+			con.enforce = min(con.enforce + MinSnail.LOOK_FAC, 1.0)
+			if con.target is not None:
+				con.target.worldPosition = bxt.bmath.lerp(
+					con.target.worldPosition, self.look_goal.worldPosition,
+					MinSnail.LOOK_FAC)
+		else:
+			con.enforce = max(con.enforce - MinSnail.LOOK_FAC, 0.0)
+			if con.enforce == 0.0:
+				con.active = False
 
-		def _look(bone, target, restOrn = None):
-			channel = self.channels[bone['channel']]
-			_, gVec, _ = bone.getVectTo(target)
-			bone.alignAxisToVect(bone.parent.getAxisVect(bxt.bmath.ZAXIS), 2)
-			bone.alignAxisToVect(gVec, 1)
-			orn = bone.localOrientation.to_quaternion()
+	def look_at(self, goal):
+		'''Turn the eyes to face the goal.'''
+		if isinstance(goal, str):
+			goal = self.scene.objects[goal]
 
-			if restOrn:
-				orn = orn.slerp(restOrn, 0.6)
+		if hasattr(goal, "get_look_target"):
+			goal = goal.get_look_target()
 
-			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
-			channel.rotation_quaternion = oldOrn.slerp(orn, 0.1)
+		if goal is None:
+			goal = self
 
-		_look(self.EyeLocL, target)
-		_look(self.EyeLocR, target)
-		_look(self.HeadLoc, target, self.HeadLoc_rest)
-
-		bge.types.BL_ArmatureObject.update(self)
+		self.look_goal = goal

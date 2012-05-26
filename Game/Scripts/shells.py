@@ -29,6 +29,7 @@ EPSILON = 0.001
 
 def factory(name):
 	scene = bge.logic.getCurrentScene()
+
 	if not name in scene.objectsInactive:
 		print("Loading shells")
 		try:
@@ -440,14 +441,6 @@ def spawn_shell(c):
 		# Player has already picked up this shell.
 		return
 
-	# Ensure library has been loaded.
-	sce = bge.logic.getCurrentScene()
-	if not o['shell'] in sce.objectsInactive:
-		try:
-			bge.logic.LibLoad('//ItemLoader.blend', 'Scene', load_actions=True)
-		except ValueError:
-			# May have already been loaded. Continue.
-			pass
-
-	shell = bxt.types.add_and_mutate_object(sce, "BottleCap", o)
+	shell = factory(o["shell"])
+	bxt.bmath.copy_transform(o, shell)
 	shell.anchor()

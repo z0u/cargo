@@ -111,6 +111,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.DEBUGpositions = [self.worldPosition.copy()]
 		impulse.Input().add_handler(self)
+		impulse.Input().add_sequence("udlr12", bxt.types.Event("GiveAllShells"))
 		bxt.types.EventBus().replay_last(self, 'TeleportSnail')
 
 	def load_items(self):
@@ -259,6 +260,11 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			self.actuators['aArtificialGravity'].force = evt.body
 		elif evt.message == 'TeleportSnail':
 			self.teleport(evt.body)
+		elif evt.message == 'GiveAllShells':
+			# Cheat ;)
+			for name in inventory.Shells().get_all_shells():
+				inventory.Shells().add(name)
+				bxt.types.Event('ShellChanged', 'new').send()
 
 	def teleport(self, spawn_point):
 		print("Teleporting to %s." % spawn_point)

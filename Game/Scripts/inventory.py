@@ -23,7 +23,7 @@ class Shells(metaclass=bxt.types.Singleton):
 	'''Helper class for handling shell inventory order.'''
 
 	# Shell names are stored in '/game/shellInventory' as a set.
-	SHELL_NAMES = ['Shell', 'BottleCap', 'Nut', 'Wheel', 'Thimble']
+	SHELL_NAMES = ['Shell', 'BottleCap', 'Nut', 'Wheel'] # 'Thimble'
 	DEFAULT_SHELLS = ['Shell']
 	DEFAULT_EQUIPPED = 'Shell'
 
@@ -69,6 +69,9 @@ class Shells(metaclass=bxt.types.Singleton):
 	def get_shells(self):
 		'''Get a list of all shells in the inventory.'''
 		return store.get('/game/shellInventory', Shells.DEFAULT_SHELLS)
+
+	def get_all_shells(self):
+		return Shells.SHELL_NAMES
 
 	def get_next(self, offset):
 		'''Get the next shell, relative to the equipped one. If no shell

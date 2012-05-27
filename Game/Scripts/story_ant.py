@@ -33,14 +33,63 @@ def factory():
 
 	return bxt.types.add_and_mutate_object(scene, "Ant", "Ant")
 
+class Honeypot(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+
+	_prefix = "HP_"
+
+	def __init__(self, old_owner):
+		Chapter.__init__(self, old_owner)
+		#bxt.types.WeakEvent("StartLoading", self).send()
+		ant1 = factory()
+		bxt.bmath.copy_transform(self.children["Ant1SpawnPoint"], ant1)
+		ant1.setParent(self)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def approach(self, c):
+		if c.sensors[0].positive:
+			bxt.types.Event("ApproachAnts").send()
+
 class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
 	L_ANIM = 1
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
-		bxt.types.WeakEvent("StartLoading", self).send()
+		#bxt.types.WeakEvent("StartLoading", self).send()
 		self.create_state_graph()
 
 	def create_state_graph(self):
-		pass
+		s = self.rootState.createTransition("Init")
+		s.addAction(ActAction('Ant_Digging1', 1, 42, Ant.L_ANIM,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
+
+		sKnock = s.createSubStep("Knock sound")
+		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 14.5, tap=True))
+		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.7,
+				pitchmax=0.76))
+
+		s = s.createTransition("Talk")
+		s.addCondition(CondEvent("ApproachAnts"))
+		s.addEvent("ShowDialogue", "Ho there, Cargo!")
+		s.addAction(ActAction('Ant_Digging1', 1, 1, Ant.L_ANIM)) # stop
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+
+		#
+		# Loop back to start.
+		#
+		s = s.createTransition("Reset")
+		s.addTransition(self.rootState)
+
+def oversee(c):
+	sce = bge.logic.getCurrentScene()
+	if c.sensors[0].positive:
+		if "Honeypot" not in sce.objects:
+			print("Creating honeypot")
+			sce.addObject("Honeypot", c.owner)
+	else:
+		if "Honeypot" in sce.objects:
+			print("Destroying honeypot")
+			sce.objects["Honeypot"].endObject()

@@ -370,11 +370,13 @@ class BottleCap(ShellBase):
 			self.rem_state(BottleCap.S_EMERGE)
 
 	@bxt.types.expose
-	def poll_jump_action(self):
+	@bxt.utils.controller_cls
+	def poll_jump_action(self, c):
 		'''Triggers a jump impulse at a certain point in the jump animation.'''
 		if self.occupier.getActionFrame(BottleCap.L_JUMP) >= 5:
 			self.jump()
 			self.rem_state(BottleCap.S_JUMP)
+			c.activate(c.actuators['aPlayJump'])
 
 	def start_jump(self, fwdMagnitude, leftMagnitude):
 		'''Plays the jump action. The actual impulse will be given at the right
@@ -410,8 +412,6 @@ class BottleCap(ShellBase):
 		# Apply the force.
 		#
 		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
-
-		bxt.sound.play_sample('//Sound/MouthPopOpen.ogg')
 
 	def handle_movement(self, state):
 		'''Make the cap jump around around based on user input.'''

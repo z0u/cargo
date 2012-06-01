@@ -353,12 +353,18 @@ class ActAction(BaseAct):
 class ActSound(BaseAct):
 	'''Plays a short sound.'''
 
-	def __init__(self, filename, vol=1, pitchmin=1, pitchmax=1, delay=0):
+	emitter = bxt.types.weakprop("emitter")
+
+	def __init__(self, filename, vol=1, pitchmin=1, pitchmax=1, delay=0,
+			emitter=None, maxdist=50.0):
 		self.filename = bge.logic.expandPath(filename)
 		self.volume = vol
 		self.pitchmin = pitchmin
 		self.pitchmax = pitchmax
 		self.delay = delay
+		self.emitter = emitter
+		self.maxdist = maxdist
+		self.mindist = maxdist / 5.0 # Just a guess, can change this if needed
 		self._factory = None
 
 	def _get_factory(self):
@@ -379,9 +385,25 @@ class ActSound(BaseAct):
 					bge.logic.getRandomFloat())
 			f = f.pitch(pitch)
 
-		# Play the sound, and throw away the handle.
+		# Play the sound
 		dev = aud.device()
-		dev.play(f)
+		handle = dev.play(f)
+
+		if self.emitter is not None:
+			if isinstance(self.emitter, str):
+				sce = bge.logic.getCurrentScene()
+				loc = sce.objects[self.emitter].worldPosition
+			elif hasattr(self.emitter, "worldPosition"):
+				loc = self.emitter.worldPosition
+			else:
+				loc = self.emitter
+			handle.location = loc
+			handle.relative = False
+			handle.distance_maximum = self.maxdist
+			handle.distance_reference = self.mindist
+			handle.attenuation = 10.0
+
+		# Throw away the handle now
 
 	def __str__(self):
 		return "ActSound: %s" % self.filename

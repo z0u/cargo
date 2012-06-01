@@ -16,7 +16,7 @@
 #
 
 import bge
-from bge import logic
+import aud
 
 import bxt
 from . import director, store
@@ -79,6 +79,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		self.defaultLens = camera.lens
 		bxt.utils.get_scene(camera).active_camera = camera
 
+		aud.device().distance_model = aud.AUD_DISTANCE_MODEL_INVERSE_CLAMPED
+
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def init_filters(self, c):
@@ -139,6 +141,11 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		self.lastGoal = currentGoal
 
 		self._update_focal_depth()
+
+		dev = aud.device()
+		dev.listener_location = self.camera.worldPosition
+		dev.listener_orientation = self.camera.worldOrientation.to_quaternion()
+		dev.listener_velocity = (0.0, 0.0, 0.0)
 
 		for ob in self.observers:
 			ob.on_camera_moved(self)

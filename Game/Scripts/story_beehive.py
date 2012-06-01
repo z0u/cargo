@@ -140,7 +140,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		self.isTouchingPlayer = isTouchingPlayer
 		if isTouchingPlayer:
-			bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', True))
+			bxt.types.Event('GameModeChanged', 'Cutscene').send()
 		else:
-			bxt.types.EventBus().notify(bxt.types.Event('SuspendInput', False))
+			bxt.types.Event('GameModeChanged', 'Playing').send()
 		self.update_camera()

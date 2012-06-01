@@ -277,8 +277,8 @@ class Director(impulse.Handler, metaclass=bxt.types.Singleton):
 	def on_event(self, event):
 		if event.message == 'MainCharacterSet':
 			self.mainCharacter = event.body
-		elif event.message == 'SuspendInput':
-			if event.body == True:
+		elif event.message == 'GameModeChanged':
+			if event.body != 'Playing':
 				impulse.Input().add_handler(self, 'STORY')
 			else:
 				impulse.Input().remove_handler(self)

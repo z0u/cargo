@@ -312,12 +312,12 @@ class ActStoreSet(BaseAct):
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
 	def execute(self, c):
-		bxt.types.Event('SuspendInput', True).send()
+		bxt.types.Event('GameModeChanged', 'Cutscene').send()
 
 class ActResumeInput(BaseAct):
 	'''Let the player move around.'''
 	def execute(self, c):
-		bxt.types.Event('SuspendInput', False).send()
+		bxt.types.Event('GameModeChanged', 'Playing').send()
 
 class ActActuate(BaseAct):
 	'''Activate an actuator.'''

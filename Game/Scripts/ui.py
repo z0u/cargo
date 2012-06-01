@@ -403,8 +403,8 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if evt.message == self['event']:
 			self.targetFraction = evt.body
 			try:
-				self.parent.indicatorChanged()
-			except:
+				self.parent.indicator_changed()
+			except AttributeError:
 				print('Warning: indicator %s is not attached to a gauge.' %
 						self.name)
 
@@ -422,16 +422,42 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 #bxt.types.Event("TimeSet", 0.0).send(50)
 #bxt.types.Event("TimeSet", 0.0).send(100)
 
-class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):	
-	S_HIDDEN  = 1
+__mode = 'Playing'
+@bxt.utils.all_sensors_positive
+def test_game_mode():
+	global __mode
+	if __mode == 'Playing':
+		__mode = 'Cutscene'
+	else:
+		__mode = 'Playing'
+	bxt.types.Event('GameModeChanged', __mode).send()
+
+class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	S_INIT = 1
 	S_VISIBLE = 2
 	S_HIDING  = 3
+	S_HIDDEN  = 4
 
 	def __init__(self, old_owner):
+		self.set_state(self.S_HIDDEN)
+		self.force_hide = False
+
 		for child in self.children:
 			Indicator(child)
 
-	def indicatorChanged(self):
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
+
+	def on_event(self, evt):
+		if evt.message == 'GameModeChanged':
+			self.force_hide = evt.body != 'Playing'
+			self.indicator_changed()
+
+	def indicator_changed(self):
+		if self.force_hide:
+			self.hide()
+			return
+
 		maximum = 0.0
 		for child in self.children:
 			if child.__class__ == Indicator:

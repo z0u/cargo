@@ -49,8 +49,7 @@ class SessionManager(metaclass=bxt.types.Singleton):
 		if event.message == 'showSavedGameDetails':
 			# The session ID indicates which saved game is being used.
 			store.setSessionId(event.body)
-			evt = bxt.types.Event('showScreen', 'LoadDetailsScreen')
-			bxt.types.EventBus().notify(evt)
+			bxt.types.Event('pushScreen', 'LoadDetailsScreen'). send()
 
 		elif event.message == 'startGame':
 			# Show the loading screen and send another message to start the game
@@ -69,8 +68,7 @@ class SessionManager(metaclass=bxt.types.Singleton):
 			# Remove all stored items that match the current path.
 			for key in store.list('/game/'):
 				store.unset(key)
-			evt = bxt.types.Event('showScreen', 'LoadingScreen')
-			bxt.types.EventBus().notify(evt)
+			bxt.types.Event('setScreen', 'LoadingScreen').send()
 
 		elif event.message == 'quit':
 			cbEvent = bxt.types.Event('reallyQuit')
@@ -90,8 +88,30 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 	downCurrent = bxt.types.weakprop("downCurrent")
 
 	def __init__(self, old_owner):
-		bxt.types.Event('GameModeChanged', 'Menu').send()
+		self.screen_stack = []
 		impulse.Input().add_handler(self, 'MENU')
+
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.Event('setScreen', 'LoadingScreen').send()
+		bxt.types.Event('GameModeChanged', 'Menu').send()
+
+	def on_event(self, evt):
+		if evt.message == 'setScreen':
+			self.screen_stack = [evt.body]
+			self.update_screen()
+		elif evt.message == 'pushScreen':
+			self.screen_stack.append(evt.body)
+			self.update_screen()
+		elif evt.message == 'popScreen':
+			if len(self.screen_stack) > 0:
+				self.screen_stack.pop()
+			self.update_screen()
+
+	def update_screen(self):
+		if len(self.screen_stack) > 0:
+			bxt.types.Event('showScreen', self.screen_stack[-1]).send()
+		else:
+			bxt.types.Event('showScreen', 'LoadingScreen').send()
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -155,7 +175,8 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 
 	def handle_bt_2(self, state):
 		'''Escape from current screen (keyboard/joypad).'''
-		# Not implemented yet.
+		if state.activated:
+			bxt.types.Event('popScreen').send()
 		return True
 
 	def handle_movement(self, state):
@@ -209,8 +230,6 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 ################
 # Widget classes
 ################
-
-bxt.types.EventBus().notify(bxt.types.Event('showScreen', 'LoadingScreen'))
 
 class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	'''A camera that adjusts its position depending on which screen is
@@ -460,21 +479,12 @@ class ConfirmationPage(Widget):
 		elif event.message == 'confirmation':
 			text, self.onConfirm, self.onConfirmBody = event.body.split('::')
 			self.children['ConfirmText']['Content'] = text
-			evt = bxt.types.Event('showScreen', 'ConfirmationDialogue')
-			bxt.types.EventBus().notify(evt)
-
-		elif event.message == 'cancel':
-			if self.visible:
-				evt = bxt.types.Event('showScreen', self.lastScreen)
-				bxt.types.EventBus().notify(evt)
-				self.children['ConfirmText']['Content'] = ""
+			bxt.types.Event('pushScreen', 'ConfirmationDialogue').send()
 
 		elif event.message == 'confirm':
 			if self.visible:
-				evt = bxt.types.Event('showScreen', self.lastScreen)
-				bxt.types.EventBus().notify(evt)
-				evt = bxt.types.Event(self.onConfirm, self.onConfirmBody)
-				bxt.types.EventBus().notify(evt)
+				bxt.types.Event('popScreen').send()
+				bxt.types.Event(self.onConfirm, self.onConfirmBody).send()
 				self.children['ConfirmText']['Content'] = ""
 
 class GameDetailsPage(Widget):

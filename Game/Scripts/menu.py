@@ -82,37 +82,11 @@ class InputHandler(metaclass=bxt.types.Singleton):
 
 	_prefix = 'IH_'
 
+	current = bxt.types.weakprop("current")
+	downCurrent = bxt.types.weakprop("downCurrent")
+
 	def __init__(self):
 		self.widgets = bxt.types.SafeSet()
-		self._current = None
-		self._downCurrent = None
-
-	# Getter and setter to allow use of weakref
-	def _getCurrent(self):
-		if self._current == None:
-			return None
-		else:
-			return self._current()
-	def _setCurrent(self, current):
-		if current == None:
-			self._current = None
-		else:
-			self._current = weakref.ref(current)
-		bxt.types.WeakEvent("FocusChanged", current).send()
-	current = property(_getCurrent, _setCurrent)
-
-	# Getter and setter to allow use of weakref
-	def _getDownCurrent(self):
-		if self._downCurrent == None:
-			return None
-		else:
-			return self._downCurrent()
-	def _setDownCurrent(self, downcurrent):
-		if downcurrent == None:
-			self._downCurrent = None
-		else:
-			self._downCurrent = weakref.ref(downcurrent)
-	downCurrent = property(_getDownCurrent, _setDownCurrent)
 
 	def addWidget(self, widget):
 		self.widgets.add(widget)
@@ -136,11 +110,8 @@ class InputHandler(metaclass=bxt.types.Singleton):
 		if newFocus == self.current:
 			return
 
-		if self.current:
-			self.current.exit()
-		if newFocus != None:
-			newFocus.enter()
 		self.current = newFocus
+		bxt.types.WeakEvent("FocusChanged", self.current).send()
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -305,11 +276,15 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def enter(self):
 		if not self.sensitive:
 			return
+		if self.has_state(Widget.S_FOCUS):
+			return
 		self.add_state(Widget.S_FOCUS)
 		self.rem_state(Widget.S_DEFOCUS)
 		self.updateTargetFrame()
 
-	def exit(self):
+	def leave(self):
+		if not self.has_state(Widget.S_FOCUS):
+			return
 		self.add_state(Widget.S_DEFOCUS)
 		self.rem_state(Widget.S_FOCUS)
 		self.updateTargetFrame()
@@ -345,6 +320,11 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				self.show()
 			else:
 				self.hide()
+		if evt.message == 'FocusChanged':
+			if evt.body is not self:
+				self.leave()
+			else:
+				self.enter()
 
 	def hide(self):
 		self.setVisible(False, False)

@@ -25,7 +25,7 @@ DEBUG = False
 class Input(metaclass=bxt.types.Singleton):
 	_prefix = ""
 
-	PRI = {'PLAYER': 0, 'STORY': 1, 'DIALOGUE': 2}
+	PRI = {'PLAYER': 0, 'STORY': 1, 'DIALOGUE': 2, 'MENU': 3}
 
 	def __init__(self):
 		self.handlers = bxt.types.SafePriorityStack()

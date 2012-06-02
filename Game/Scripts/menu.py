@@ -16,6 +16,7 @@
 #
 
 import weakref
+import math
 
 import bge
 import mathutils
@@ -24,6 +25,7 @@ import bxt
 from . import store
 from . import ui
 from . import snail
+from . import impulse
 
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
@@ -77,24 +79,26 @@ class SessionManager(metaclass=bxt.types.Singleton):
 		elif event.message == 'reallyQuit':
 			bge.logic.endGame()
 
-class InputHandler(metaclass=bxt.types.Singleton):
+class MenuController(impulse.Handler, bxt.types.BX_GameObject,
+		bge.types.KX_GameObject):
+
 	'''Manages UI elements: focus and click events.'''
 
-	_prefix = 'IH_'
+	_prefix = 'MC_'
 
 	current = bxt.types.weakprop("current")
 	downCurrent = bxt.types.weakprop("downCurrent")
 
-	def __init__(self):
-		self.widgets = bxt.types.SafeSet()
-
-	def addWidget(self, widget):
-		self.widgets.add(widget)
+	def __init__(self, old_owner):
+		bxt.types.Event('GameModeChanged', 'Menu').send()
+		impulse.Input().add_handler(self, 'MENU')
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def mouseMove(self, c):
+		bge.render.showMouse(True)
 		mOver = c.sensors['sMouseOver']
+		mOver.usePulseFocus = True
 		self.mouseOver(mOver)
 
 	@bxt.types.expose
@@ -107,27 +111,30 @@ class InputHandler(metaclass=bxt.types.Singleton):
 				break
 			newFocus = newFocus.parent
 
-		if newFocus == self.current:
-			return
-
-		self.current = newFocus
-		bxt.types.WeakEvent("FocusChanged", self.current).send()
+		self.focus(newFocus)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def mouseButton(self, c):
 		if bxt.utils.someSensorPositive():
-			self.mouseDown()
+			self.press()
 		else:
-			self.mouseUp()
+			self.release()
 
-	def mouseDown(self):
+	def focus(self, widget):
+		if widget is self.current:
+			return
+
+		self.current = widget
+		bxt.types.WeakEvent("FocusChanged", widget).send()
+
+	def press(self):
 		'''Send a mouse down event to the widget under the cursor.'''
 		if self.current:
 			self.current.down()
 			self.downCurrent = self.current
 
-	def mouseUp(self):
+	def release(self):
 		'''Send a mouse up event to the widget under the cursor. If that widget
 		also received the last mouse down event, it will be sent a click event
 		in addition to (after) the up event.'''
@@ -137,66 +144,67 @@ class InputHandler(metaclass=bxt.types.Singleton):
 				self.downCurrent.click()
 		self.downCurrent = None
 
-	def on_event(self, event):
-		if event.message == 'sensitivityChanged':
-			# Not implemented. Eventually, this should update the visual state
-			# of the current button.
-			pass
+	def handle_bt_1(self, state):
+		'''Activate current widget (keyboard/joypad).'''
+		if state.triggered:
+			if state.positive:
+				self.press()
+			else:
+				self.release()
+		return True
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
-	def focusNext(self):
-		'''Switch to the next widget according to tab-order.'''
-		# TODO
-		pass
+	def handle_bt_2(self, state):
+		'''Escape from current screen (keyboard/joypad).'''
+		# Not implemented yet.
+		return True
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
-	def focusPrevious(self):
-		'''Switch to the previous widget according to tab-order.'''
-		# TODO
-		pass
+	def handle_movement(self, state):
+		'''Switch to neighbouring widgets (keyboard/joypad).'''
+		if not state.triggered or state.bias.magnitude < 0.1:
+			return True
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
-	def focusLeft(self):
-		'''Switch to the widget to the left of current.'''
-		# TODO
-		pass
+		bge.render.showMouse(False)
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
-	def focusRight(self):
-		'''Switch to the widget to the right of current.'''
-		# TODO
-		pass
+		widget = self.find_next_widget(state.bias)
+		if widget is not None:
+			self.focus(widget)
+		return True
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
-	def focusUp(self):
-		'''Switch to the widget above current.'''
-		# TODO
-		pass
+	def find_next_widget(self, direction):
+		cam = self.scene.active_camera
+		if self.current is not None:
+			loc = self.current.worldPosition
+		else:
+			loc = mathutils.Vector((0.0, 0.0, 0.0))
+		world_direction = bxt.bmath.to_world_vec(cam, direction.resized(3))
+		world_direction.normalize()
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
-	def focusDown(self):
-		'''Switch to the widget below current.'''
-		# TODO
-		pass
+		# Iterate over widgets, assigning each one a score - based on the
+		# direction of the movement and the location of the current widget.
+		best_widget = None
+		best_score = 0.0
+		for ob in self.scene.objects:
+			if not 'Widget' in ob or not ob.is_visible or not ob.sensitive:
+				continue
+			ob_dir = ob.worldPosition - loc
+			dist = ob_dir.magnitude
+			if dist == 0.0:
+				continue
+			score_dist = 1.0 / (dist * dist)
 
-################
-# Global sensors
-################
+			ob_dir.normalize()
+			score_dir = ob_dir.dot(world_direction)
+			if score_dir < 0.0:
+				continue
+			score_dir = math.pow(score_dir, 0.5)
 
-@bxt.utils.controller
-def controllerInit(c):
-	'''Initialise the menu'''
-	bge.render.showMouse(True)
-	mOver = c.sensors['sMouseOver']
-	mOver.usePulseFocus = True
-	evt = bxt.types.Event('GameModeChanged', 'Menu')
-	bxt.types.EventBus().notify(evt)
+			score = score_dir * score_dist
+			if score > best_score:
+				best_score = score
+				best_widget = ob
+
+		return best_widget
+
 
 ################
 # Widget classes
@@ -265,11 +273,9 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		self.sensitive = True
-		self.active = False
 		self['Widget'] = True
 		self.show()
 
-		InputHandler().addWidget(self)
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'showScreen')
 
@@ -320,7 +326,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				self.show()
 			else:
 				self.hide()
-		if evt.message == 'FocusChanged':
+
+		elif evt.message == 'FocusChanged':
 			if evt.body is not self:
 				self.leave()
 			else:
@@ -333,12 +340,14 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.rem_state(Widget.S_DOWN)
 		self.rem_state(Widget.S_FOCUS)
 		self.updateTargetFrame()
+		self.is_visible = False
 
 	def show(self):
 		self.setVisible(True, False)
 		self.add_state(Widget.S_VISIBLE)
 		self.rem_state(Widget.S_HIDDEN)
 		self.updateTargetFrame()
+		self.is_visible = True
 
 	def updateTargetFrame(self):
 		targetFrame = Widget.IDLE_FRAME

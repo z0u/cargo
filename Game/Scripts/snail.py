@@ -872,11 +872,14 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_SLOW = 3
 	S_FAST = 4
 
+	NUM_SPOTS = 16
+
 	def __init__(self, old_owner):
 		self.lastMinorPos = self.worldPosition.copy()
 		self.lastMajorPos = self.lastMinorPos.copy()
 		self.paused = False
 		self.spotIndex = 0
+		self.warned = False
 
 	def add_spot(self, speedStyle, touchedObject):
 		'''
@@ -887,18 +890,25 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		@param speedStyle: The style to apply to the new spot. One of [S_SLOW,
 			S_NORMAL, S_FAST].
 		'''
-		self.spotIndex = (self.spotIndex + 1) % len(self.children)
+		self.spotIndex = (self.spotIndex + 1) % Trail.NUM_SPOTS
 
-		spot = self.children[self.spotIndex]
-		spotI = self.scene.addObject(spot, self)
+		spot_name = "Trail.{:03d}".format(self.spotIndex + 1)
+		try:
+			spot = self.scene.addObject(spot_name, self)
+		except:
+			if not self.warned:
+				print("Couldn't find trail '%s' in scene '%s'" %
+						(spot_name, self.scene))
+			self.warned = True
+			return
 
 		#
 		# Attach the spot to the object that the snail is crawling on.
 		#
 		if touchedObject != None:
-			spotI.setParent(touchedObject)
+			spot.setParent(touchedObject)
 
-		bxt.utils.set_state(spotI, speedStyle)
+		bxt.utils.set_state(spot, speedStyle)
 
 	def moved(self, speedMultiplier, touchedObject):
 		pos = self.worldPosition

@@ -100,6 +100,8 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 			self.screen_stack = [evt.body]
 			self.update_screen()
 		elif evt.message == 'pushScreen':
+			if evt.body in self.screen_stack:
+				self.screen_stack.remove(evt.body)
 			self.screen_stack.append(evt.body)
 			self.update_screen()
 		elif evt.message == 'popScreen':

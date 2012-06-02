@@ -109,9 +109,31 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 
 	def update_screen(self):
 		if len(self.screen_stack) > 0:
-			bxt.types.Event('showScreen', self.screen_stack[-1]).send()
+			screen_name = self.screen_stack[-1]
 		else:
-			bxt.types.Event('showScreen', 'LoadingScreen').send()
+			screen_name = 'LoadingScreen'
+		bxt.types.Event('showScreen', screen_name).send()
+
+		# Previous widget is probably hidden now; switch to default for this
+		# screen.
+		widget = None
+		if screen_name == 'LoadingScreen':
+			gamenum = store.getSessionId()
+			for ob in self.scene.objects:
+				if ob.name == 'SaveButton_T' and ob['onClickBody'] == gamenum:
+					widget = ob
+					break
+		elif screen_name == 'CreditsScreen':
+			widget = self.scene.objects['Btn_Crd_Load']
+		elif screen_name == 'OptionsScreen':
+			widget = self.scene.objects['Btn_Opt_Load']
+		elif screen_name == 'LoadDetailsScreen':
+			widget = self.scene.objects['Btn_StartGame']
+		elif screen_name == 'ConfirmationDialogue':
+			widget = self.scene.objects['Btn_Cancel']
+
+		if widget is not None:
+			self.focus(widget)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

@@ -25,6 +25,5 @@ clean:
 	rm -f *.blend?
 
 distclean: clean
-	rm -f OutdoorsBase_grass.blend OutdoorsBase_flowers.blend
 	rm -f *.bgeconf
 

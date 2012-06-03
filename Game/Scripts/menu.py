@@ -550,8 +550,9 @@ class NamePage(Widget):
 	mouse events.'''
 
 	MODEMAP = {
-		'LOWERCASE': "abcdefghijklmnopqrstuvwxyz!!!!!!!",
-		'UPPERCASE': "ABCDEFGHIJKLMNOPQRSTUVWXYZ!!!!!!!"
+		'LOWERCASE':  "abcdefghijklmnopqrstuvwxyz",
+		'UPPERCASE':  "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+		'NUMBERWANG': "1234567890"
 		}
 	MAX_NAME_LEN = 6
 
@@ -563,12 +564,31 @@ class NamePage(Widget):
 	def on_event(self, evt):
 		if evt.message == 'characterEntered':
 			self.add_character(evt.body)
+
 		elif evt.message == 'acceptName':
 			name = self.children['NamePageName'].get_text()
 			if len(name) > 0:
 				store.put('/game/name', name)
 				bxt.types.Event('popScreen').send()
 				bxt.types.Event('pushScreen', 'LoadDetailsScreen').send()
+
+		elif evt.message == 'capsLockToggle':
+			if self.mode == 'UPPERCASE':
+				self.mode = 'LOWERCASE'
+			else:
+				self.mode = 'UPPERCASE'
+			self.lay_out_keymap()
+
+		elif evt.message == 'numLockToggle':
+			if self.mode == 'NUMBERWANG':
+				self.mode = 'LOWERCASE'
+			else:
+				self.mode = 'NUMBERWANG'
+			self.lay_out_keymap()
+
+		elif evt.message == 'backspace':
+			self.pop_character()
+
 		else:
 			Widget.on_event(self, evt)
 
@@ -577,6 +597,10 @@ class NamePage(Widget):
 		name += char
 		name = name[:NamePage.MAX_NAME_LEN]
 		self.children['NamePageName'].set_text(name)
+
+	def pop_character(self):
+		name = self.children['NamePageName'].get_text()
+		self.children['NamePageName'].set_text(name[0:-1])
 
 	def updateVisibility(self, visible):
 		Widget.updateVisibility(self, visible)
@@ -597,7 +621,11 @@ class NamePage(Widget):
 		buttons = [b for b in self.children if isinstance(b, CharButton)]
 		buttons.sort(key=grid_key)
 		for i, child in enumerate(buttons):
-			child.set_char(keymap[i])
+			try:
+				char = keymap[i]
+			except IndexError:
+				char = ''
+			child.set_char(char)
 
 class CharButton(Button):
 	'''A button for the on-screen keyboard.'''

@@ -529,6 +529,13 @@ class GameDetailsPage(Widget):
 			self.children['StoryDetails']['Content'] = store.get(
 				'/game/storySummary', 'Start a new game.')
 
+class OptionsPage(Widget):
+	'''A dumb widget that can show and hide itself, but doesn't respond to
+	mouse events.'''
+	def __init__(self, old_owner):
+		Widget.__init__(self, old_owner)
+		self.setSensitive(False)
+
 class CreditsPage(Widget):
 	'''Controls the display of credits.'''
 	DELAY = 180

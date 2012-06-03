@@ -781,10 +781,8 @@
          x="216.99557"
          y="757" /></text>
     <path
-       sodipodi:nodetypes="cccccccccc"
-       inkscape:connector-curvature="0"
-       d="m 246,728 -20,20 m 0,-20 20,20 m -46,-10 20,-20 40,0 0,40 -40,0 z"
-       style="opacity:0.8;fill:none;stroke:#000000;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter1143)"
-       id="path1068" />
+       id="path1068"
+       style="opacity:0.8;fill:#000000;stroke:none;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;fill-opacity:1;filter:url(#filter1143)"
+       d="m 200,738 20,-20 40,0 0,40 -40,0 z m 27.78125,-11.78125 -3.5625,3.5625 8.21875,8.21875 -8.21875,8.21875 3.5625,3.5625 8.21875,-8.21875 8.21875,8.21875 3.5625,-3.5625 L 239.5625,738 l 8.21875,-8.21875 -3.5625,-3.5625 -8.21875,8.21875 -8.21875,-8.21875 z" />
   </g>
 </svg>

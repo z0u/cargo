@@ -550,9 +550,9 @@ class NamePage(Widget):
 	mouse events.'''
 
 	MODEMAP = {
-		'LOWERCASE':  "abcdefghijklmnopqrstuvwxyz",
-		'UPPERCASE':  "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-		'NUMBERWANG': "1234567890"
+		'LOWERCASE':  "abcdefghij""klmnopqrs""tuvwxyz",
+		'UPPERCASE':  "ABCDEFGHIJ""KLMNOPQRS""TUVWXYZ",
+		'NUMBERWANG': "1234567890""@$%&*-+!?""()\"':;/"
 		}
 	MAX_NAME_LEN = 6
 

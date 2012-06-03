@@ -105,7 +105,7 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.transition_delay = -1
 
 	def enter_bottle(self):
-		store.set('/game/spawnPoint', 'SpawnBottle')
+		store.put('/game/spawnPoint', 'SpawnBottle')
 		self.open_window(True)
 		bxt.types.Event('TeleportSnail', 'SpawnBottleInner').send()
 		bxt.types.Event("AddCameraGoal", 'BottleCamera').send()
@@ -496,7 +496,7 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 
 
 def lighthouse_stub():
-	store.set('/game/level/lkMissionStarted', True)
+	store.put('/game/level/lkMissionStarted', True)
 
 @bxt.utils.all_sensors_positive
 def test_bird():

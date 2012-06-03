@@ -48,7 +48,7 @@ class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			except ValueError:
 				print('Failed to add object %s' % pieceName)
 		self.endObject()
-		store.set('/game/level/treeDoorBroken', True)
+		store.put('/game/level/treeDoorBroken', True)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

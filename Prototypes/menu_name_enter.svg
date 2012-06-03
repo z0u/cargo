@@ -408,7 +408,8 @@
        y1="18.273666"
        x2="445.05804"
        y2="403.27368"
-       gradientUnits="userSpaceOnUse" />
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.108943,0,0,1,-12.855035,0)" />
     <filter
        id="filter976"
        inkscape:label="Crumpled Plastic"
@@ -612,7 +613,8 @@
       <feComposite
          id="feComposite1102"
          operator="out"
-         in="SourceGraphic" />
+         in="SourceGraphic"
+         in2="result5" />
       <feTurbulence
          id="feTurbulence1106"
          seed="25"
@@ -1310,10 +1312,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="-9.90278"
-     inkscape:cy="126.61905"
+     inkscape:cx="174.59722"
+     inkscape:cy="165.61905"
      inkscape:document-units="px"
-     inkscape:current-layer="layer2"
+     inkscape:current-layer="layer3"
      showgrid="false"
      width="0px"
      height="0px"
@@ -1358,8 +1360,8 @@
      id="layer4"
      inkscape:label="Layer#2">
     <path
-       style="display:inline;color:#000000;fill:url(#linearGradient974);fill-opacity:1;fill-rule:nonzero;stroke:#c2c2b7;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;overflow:visible;enable-background:accumulate"
-       d="m 117.99999,59.999992 c 140.27896,-7.89125 274,-2.666667 411,-4 4.51861,112.444968 0.21951,174.983698 0,258.999988 -136.66667,0 -276.78049,-3.44716 -410,0 2.03391,-79.2655 -0.61738,-170.90142 -1,-254.999988 z"
+       style="color:#000000;fill:url(#linearGradient974);fill-opacity:1;fill-rule:nonzero;stroke:#c2c2b7;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       d="m 118.00023,59.999992 c 155.56137,-7.89125 303.85038,-2.666667 455.77557,-4 5.01088,112.444968 0.24342,174.983698 0,258.999988 -151.55555,0 -306.93379,-3.44716 -454.66663,0 2.25549,-79.2655 -0.68464,-170.90142 -1.10894,-254.999988 z"
        id="rect3979"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccc" />
@@ -1604,6 +1606,14 @@
        y="258.12134"
        rx="5.999999"
        ry="6" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect4104"
+       id="use1112"
+       width="636"
+       height="362"
+       transform="translate(0,149.58074)" />
   </g>
   <g
      inkscape:groupmode="layer"
@@ -1939,6 +1949,17 @@
          sodipodi:role="line"
          id="tspan4878"
          x="261.58203"
-         y="291.24265">Cancel</tspan></text>
+         y="291.24265">Clear</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:29.84981346px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-indent:0;text-align:center;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:middle;baseline-shift:baseline;color:#000000;color-interpolation:sRGB;color-interpolation-filters:linearRGB;fill:#3d4255;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;clip-rule:nonzero;font-family:Sans;-inkscape-font-specification:Sans Bold"
+       x="154.375"
+       y="288"
+       id="text1114"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan1116"
+         x="154.375"
+         y="288">#</tspan></text>
   </g>
 </svg>

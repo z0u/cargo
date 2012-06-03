@@ -307,7 +307,7 @@ class ActStoreSet(BaseAct):
 		self.value = value
 
 	def execute(self, c):
-		store.set(self.path, self.value)
+		store.put(self.path, self.value)
 
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
@@ -740,8 +740,8 @@ class GameLevel(Level):
 def load_level(caller, level, spawnPoint):
 	print('Loading next level: %s, %s' % (level, spawnPoint))
 
-	store.set('/game/levelFile', level)
-	store.set('/game/spawnPoint', spawnPoint)
+	store.put('/game/levelFile', level)
+	store.put('/game/spawnPoint', spawnPoint)
 	store.save()
 
 	callback = bxt.types.Event('LoadLevel')

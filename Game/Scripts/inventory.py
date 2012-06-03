@@ -35,12 +35,12 @@ class Shells(metaclass=bxt.types.Singleton):
 		'''Set the name of the shell that is being carried. If it is not already
 		in the inventory, it will be added.'''
 		self.add(name)
-		store.set('/game/equippedShell', name)
+		store.put('/game/equippedShell', name)
 
 	def unequip(self):
 		'''Remove the current shell. This does not remove it from the
 		inventory.'''
-		store.set('/game/equippedShell', None)
+		store.put('/game/equippedShell', None)
 
 	@staticmethod
 	def shellkey(item):
@@ -53,7 +53,7 @@ class Shells(metaclass=bxt.types.Singleton):
 		if not name in shells:
 			shells.append(name)
 			shells.sort(key=Shells.shellkey)
-			store.set('/game/shellInventory', shells)
+			store.put('/game/shellInventory', shells)
 
 	def discard(self, name):
 		'''Remove a shell from the inventory. If it is equipped, it will be
@@ -64,7 +64,7 @@ class Shells(metaclass=bxt.types.Singleton):
 		shells = self.get_shells()
 		if name in shells:
 			shells.remove(name)
-			store.set('/game/shellInventory', shells)
+			store.put('/game/shellInventory', shells)
 
 	def get_shells(self):
 		'''Get a list of all shells in the inventory.'''

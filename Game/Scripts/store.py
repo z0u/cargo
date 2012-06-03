@@ -22,33 +22,36 @@ DEBUG = False
 
 __dirty = False
 
-def getSessionId():
+def get_session_id():
 	'''Get the ID of the current session.'''
 	try:
 		return logic.globalDict['/_sessionId']
 	except KeyError:
 		return 0
 
-def setSessionId(id):
+def set_session_id(identifier):
 	'''Set the ID of the current session.'''
 	global __dirty
-	logic.globalDict['/_sessionId'] = id
+	logic.globalDict['/_sessionId'] = identifier
 	__dirty = True
 
-def resolve(path):
-	rp = str(path).replace('/game/', '/savedGames/%s/' % str(getSessionId()), 1)
+def resolve(path, session=None, level=None):
+	if session is None:
+		session = str(get_session_id())
+	rp = str(path).replace('/game/', '/savedGames/%s/' % str(session), 1)
 	if '/level/' in rp:
-		level = get('/game/levelFile')
-		rp = str(rp).replace('/level/', '/_levels/%s/' % level, 1)
+		if level is None:
+			level = get('/game/levelFile')
+		rp = str(rp).replace('/level/', '/_levels/%s/' % str(level), 1)
 	return rp
 
-def get(path, defaultValue = None):
+def get(path, defaultValue=None, session=None, level=None):
 	'''
 	Get a value from persistent storage. By convention, there are three well-
 	known base paths:
 	 - /opt/: Global options.
 	 - /_savedGames/N/: Data specific to saved game 'N'.
-	 - /game/: Data specific to the current game, as determined by getSessionId.
+	 - /game/: Data specific to the current game, as determined by get_session_id.
 			  E.g. if the current session is game 0, /game/ == /_savedGames/0/.
 			  NOTE: The path must start with '/game/', not '/game'.
 	 - /level/: Data specific to the current level in the current game.
@@ -62,41 +65,41 @@ def get(path, defaultValue = None):
 		other things evaluate as True.
 	'''
 
-	p = resolve(path)
+	p = resolve(path, session=session, level=level)
 	try:
 		if DEBUG:
-			print("store.get(%s) ->" % path, logic.globalDict[p])
+			print("store.get(%s) ->" % p, logic.globalDict[p])
 		return logic.globalDict[p]
 	except KeyError:
 		if DEBUG:
-			print("store.get(%s) ->" % path, defaultValue)
-		set(path, defaultValue)
+			print("store.get(%s) ->" % p, defaultValue)
+		put(p, defaultValue)
 		return defaultValue
 
-def set(path, value):
+def put(path, value, session=None, level=None):
 	'''Set a value in persistent storage. The data will be saved to file the
 	next time save() is called.'''
-	p = resolve(path)
+	p = resolve(path, session=session, level=level)
 	global __dirty
 	if DEBUG:
-		print("store.set(%s) <-" % path, value)
+		print("store.put(%s) <-" % p, value)
 	logic.globalDict[p] = value
 	__dirty = True
 
-def unset(path):
+def unset(path, session=None, level=None):
 	'''Delete a value from persistent storage.'''
 	global __dirty
 
-	p = resolve(path)
+	p = resolve(path, session=session, level=level)
 	if p in logic.globalDict:
 		if DEBUG:
-			print("store.unset(%s)" % path)
+			print("store.unset(%s)" % p)
 		del(logic.globalDict[p])
 		__dirty = True
 
-def list(path='/'):
+def search(path='/', session=None, level=None):
 	'''Returns a copy of the store keys for iteration.'''
-	p = resolve(path)
+	p = resolve(path, session=session, level=level)
 	keys = []
 	for k in logic.globalDict.keys():
 		if k.startswith(p):

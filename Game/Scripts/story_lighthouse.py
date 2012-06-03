@@ -71,7 +71,7 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.inLocality = True
 		cbEvent = bxt.types.Event("EnterLighthouse")
 		bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
-		store.set('/game/spawnPoint', 'SpawnTorch')
+		store.put('/game/spawnPoint', 'SpawnTorch')
 
 	def leave(self):
 		# Remove the keeper to prevent its armature from chewing up resources.

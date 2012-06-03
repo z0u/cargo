@@ -48,8 +48,11 @@ class SessionManager(metaclass=bxt.types.Singleton):
 	def on_event(self, event):
 		if event.message == 'showSavedGameDetails':
 			# The session ID indicates which saved game is being used.
-			store.setSessionId(event.body)
-			bxt.types.Event('pushScreen', 'LoadDetailsScreen'). send()
+			store.set_session_id(event.body)
+			if len(store.get('/game/name', '')) == 0:
+				bxt.types.Event('pushScreen', 'NameScreen').send()
+			else:
+				bxt.types.Event('pushScreen', 'LoadDetailsScreen').send()
 
 		elif event.message == 'startGame':
 			# Show the loading screen and send another message to start the game
@@ -66,7 +69,7 @@ class SessionManager(metaclass=bxt.types.Singleton):
 
 		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.
-			for key in store.list('/game/'):
+			for key in store.search('/game/'):
 				store.unset(key)
 			bxt.types.Event('setScreen', 'LoadingScreen').send()
 
@@ -86,6 +89,8 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 
 	current = bxt.types.weakprop("current")
 	downCurrent = bxt.types.weakprop("downCurrent")
+
+	DIRECTION_TOLERANCE = 0.1
 
 	def __init__(self, old_owner):
 		self.screen_stack = []
@@ -120,7 +125,7 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 		# screen.
 		widget = None
 		if screen_name == 'LoadingScreen':
-			gamenum = store.getSessionId()
+			gamenum = store.get_session_id()
 			for ob in self.scene.objects:
 				if ob.name == 'SaveButton_T' and ob['onClickBody'] == gamenum:
 					widget = ob
@@ -239,7 +244,7 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 
 			ob_dir.normalize()
 			score_dir = ob_dir.dot(world_direction)
-			if score_dir < 0.0:
+			if score_dir < MenuController.DIRECTION_TOLERANCE:
 				continue
 			score_dir = math.pow(score_dir, 0.5)
 
@@ -442,11 +447,15 @@ class Button(Widget):
 class SaveButton(Button):
 	def __init__(self, old_owner):
 		Button.__init__(self, old_owner)
-		self.id = 0
 
 	def updateVisibility(self, visible):
 		super(SaveButton, self).updateVisibility(visible)
 		self.children['IDCanvas'].setVisible(visible, True)
+		if not visible:
+			return
+
+		name = store.get('/game/name', '', session=self['onClickBody'])
+		self.children['IDCanvas'].set_text(name)
 
 class Checkbox(Button):
 	def __init__(self, old_owner):
@@ -462,7 +471,7 @@ class Checkbox(Button):
 		self.checked = not self.checked
 		self.updateCheckFace()
 		if 'dataBinding' in self:
-			store.set(self['dataBinding'], self.checked)
+			store.put(self['dataBinding'], self.checked)
 		super(Checkbox, self).click()
 
 	def updateVisibility(self, visible):
@@ -525,7 +534,7 @@ class GameDetailsPage(Widget):
 
 		if visible:
 			self.children['GameName']['Content'] = store.get(
-				'/game/title', 'Game %d' % (store.getSessionId() + 1))
+				'/game/name', '')
 			self.children['StoryDetails']['Content'] = store.get(
 				'/game/storySummary', 'Start a new game.')
 
@@ -535,6 +544,73 @@ class OptionsPage(Widget):
 	def __init__(self, old_owner):
 		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
+
+class NamePage(Widget):
+	'''A dumb widget that can show and hide itself, but doesn't respond to
+	mouse events.'''
+
+	MODEMAP = {
+		'LOWERCASE': "abcdefghijklmnopqrstuvwxyz!!!!!!!",
+		'UPPERCASE': "ABCDEFGHIJKLMNOPQRSTUVWXYZ!!!!!!!"
+		}
+	MAX_NAME_LEN = 6
+
+	def __init__(self, old_owner):
+		Widget.__init__(self, old_owner)
+		self.setSensitive(False)
+		self.mode = 'LOWERCASE'
+
+	def on_event(self, evt):
+		if evt.message == 'characterEntered':
+			self.add_character(evt.body)
+		elif evt.message == 'acceptName':
+			name = self.children['NamePageName'].get_text()
+			if len(name) > 0:
+				store.put('/game/name', name)
+				bxt.types.Event('popScreen').send()
+				bxt.types.Event('pushScreen', 'LoadDetailsScreen').send()
+		else:
+			Widget.on_event(self, evt)
+
+	def add_character(self, char):
+		name = self.children['NamePageName'].get_text()
+		name += char
+		name = name[:NamePage.MAX_NAME_LEN]
+		self.children['NamePageName'].set_text(name)
+
+	def updateVisibility(self, visible):
+		Widget.updateVisibility(self, visible)
+		self.children['NamePageTitle'].setVisible(visible, True)
+		self.children['NamePageName'].setVisible(visible, True)
+		if visible:
+			name = store.get('/game/name', '')
+			self.children['NamePageName'].set_text(name)
+			self.lay_out_keymap()
+
+	def lay_out_keymap(self):
+		def grid_key(ob):
+			'''Sorting function for a grid, left-right, top-bottom.'''
+			pos = ob.worldPosition
+			return pos.x + -pos.z * 1000.0
+
+		keymap = NamePage.MODEMAP[self.mode]
+		buttons = [b for b in self.children if isinstance(b, CharButton)]
+		buttons.sort(key=grid_key)
+		for i, child in enumerate(buttons):
+			child.set_char(keymap[i])
+
+class CharButton(Button):
+	'''A button for the on-screen keyboard.'''
+	def __init__(self, old_owner):
+		Button.__init__(self, old_owner)
+
+	def updateVisibility(self, visible):
+		super(CharButton, self).updateVisibility(visible)
+		self.children['CharCanvas'].setVisible(visible, True)
+
+	def set_char(self, char):
+		self.children['CharCanvas'].set_text(char)
+		self['onClickBody'] = char
 
 class CreditsPage(Widget):
 	'''Controls the display of credits.'''

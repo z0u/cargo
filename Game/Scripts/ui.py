@@ -810,6 +810,9 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def set_text(self, text):
 		self['Content'] = text
 
+	def get_text(self):
+		return self['Content']
+
 	@bxt.types.expose
 	def render_next_char(self):
 		'''

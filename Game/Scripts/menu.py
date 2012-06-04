@@ -533,10 +533,10 @@ class GameDetailsPage(Widget):
 			child.setVisible(visible, True)
 
 		if visible:
-			self.children['GameName']['Content'] = store.get(
-				'/game/name', '')
-			self.children['StoryDetails']['Content'] = store.get(
-				'/game/storySummary', 'Start a new game.')
+			name = store.get('/game/name', '')
+			summary = store.get('/game/storySummary', 'Start a new game.')
+			self.childrenRecursive['GameName'].set_text(name)
+			self.children['StoryDetails'].set_text(summary)
 
 class OptionsPage(Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to

@@ -305,8 +305,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_DEFOCUS = 3
 	S_DOWN = 4
 	S_UP = 5
-	S_HIDDEN = 6
-	S_VISIBLE = 7
+	S_HIDING = 16
+	S_VISIBLE = 17
 
 	FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
 
@@ -322,7 +322,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		self.sensitive = True
 		self['Widget'] = True
-		self.show()
+		self.hide()
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'showScreen')
@@ -382,24 +382,25 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				self.enter()
 
 	def hide(self):
+		self.is_visible = False
 		self.setVisible(False, False)
-		self.add_state(Widget.S_HIDDEN)
-		self.rem_state(Widget.S_VISIBLE)
 		self.rem_state(Widget.S_DOWN)
 		self.rem_state(Widget.S_FOCUS)
+		self.add_state(Widget.S_HIDING)
+		self.rem_state(Widget.S_VISIBLE)
 		self.updateTargetFrame()
-		self.is_visible = False
 
 	def show(self):
-		self.setVisible(True, False)
-		self.add_state(Widget.S_VISIBLE)
-		self.rem_state(Widget.S_HIDDEN)
-		self.updateTargetFrame()
 		self.is_visible = True
+		self.setVisible(True, False)
+		self.rem_state(Widget.S_HIDING)
+		self.add_state(Widget.S_VISIBLE)
+		self.updateTargetFrame()
+		self.updateVisibility(True)
 
-	def updateTargetFrame(self):
+	def get_anim_range(self):
 		targetFrame = Widget.IDLE_FRAME
-		if self.has_state(Widget.S_HIDDEN):
+		if not self.is_visible:
 			targetFrame = Widget.HIDDEN_FRAME
 		elif self.has_state(Widget.S_FOCUS):
 			if self.has_state(Widget.S_DOWN):
@@ -408,26 +409,21 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				targetFrame = Widget.FOCUS_FRAME
 		else:
 			targetFrame = Widget.IDLE_FRAME
-		self['targetFrame'] = targetFrame
+
+		cfra = max(self.getActionFrame(), 1.0)
+		return cfra, targetFrame
+
+	def updateTargetFrame(self):
+		# Progress animation from current frame to target frame.
+		start, end = self.get_anim_range()
+		self.playAction("Widget", start, end)
 
 	@bxt.types.expose
 	def update(self):
-		targetFrame = self['targetFrame']
-		frame = self['frame']
-		oldFrame = frame
-		if frame < targetFrame:
-			frame = min(frame + Widget.FRAME_RATE, targetFrame)
-		else:
-			frame = max(frame - Widget.FRAME_RATE, targetFrame)
-		self['frame'] = frame
-
-		if frame == 1.0:
+		'''Checks whether a widget is fully hidden yet.'''
+		if self.getActionFrame() <= 1.0:
 			self.updateVisibility(False)
-		elif oldFrame == 1.0:
-			self.updateVisibility(True)
-
-		c = bge.logic.getCurrentController()
-		c.activate(c.actuators[0])
+			self.rem_state(Widget.S_HIDING)
 
 	def updateVisibility(self, visible):
 		self.setVisible(visible, True)
@@ -446,6 +442,7 @@ class Button(Widget):
 
 class SaveButton(Button):
 	def __init__(self, old_owner):
+		bxt.types.mutate(self.children['IDCanvas'])
 		Button.__init__(self, old_owner)
 
 	def updateVisibility(self, visible):
@@ -459,8 +456,8 @@ class SaveButton(Button):
 
 class Checkbox(Button):
 	def __init__(self, old_owner):
-		Button.__init__(self, old_owner)
 		self.checked = False
+		Button.__init__(self, old_owner)
 		if 'dataBinding' in self:
 			self.checked = store.get(self['dataBinding'], self['dataDefault'])
 		self.updateCheckFace()
@@ -487,10 +484,11 @@ class Checkbox(Button):
 			self.children['CheckOff'].setVisible(False, True)
 			self.children['CheckOn'].setVisible(False, True)
 
-	def update(self):
-		super(Checkbox, self).update()
-		self.children['CheckOff']['frame'] = self['frame']
-		self.children['CheckOn']['frame'] = self['frame']
+	def updateTargetFrame(self):
+		start, end = self.get_anim_range()
+		Button.updateTargetFrame(self)
+		self.children['CheckOff'].playAction("Button_OnlyColour", start, end)
+		self.children['CheckOn'].playAction("Button_OnlyColour", start, end)
 
 class ConfirmationPage(Widget):
 	def __init__(self, old_owner):
@@ -524,6 +522,8 @@ class GameDetailsPage(Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to
 	mouse events.'''
 	def __init__(self, old_owner):
+		bxt.types.mutate(self.childrenRecursive['GameName'])
+		bxt.types.mutate(self.children['StoryDetails'])
 		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
@@ -557,9 +557,10 @@ class NamePage(Widget):
 	MAX_NAME_LEN = 6
 
 	def __init__(self, old_owner):
+		bxt.types.mutate(self.children['NamePageName'])
+		self.mode = 'LOWERCASE'
 		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
-		self.mode = 'LOWERCASE'
 
 	def on_event(self, evt):
 		if evt.message == 'characterEntered':

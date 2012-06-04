@@ -797,6 +797,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		glyphInstance = logic.getCurrentScene().addObject(glyph,
 			self, 0)
 		glyphInstance.setParent(self)
+		glyphInstance['StartVisible'] = self.visible
 		glyphInstance.color = bxt.render.parse_colour(self['colour'])
 		glyphInstance.localPosition = [pos[0], pos[1], 0.0]
 

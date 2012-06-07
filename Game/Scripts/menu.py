@@ -97,7 +97,7 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 		impulse.Input().add_handler(self, 'MENU')
 
 		bxt.types.EventBus().add_listener(self)
-		bxt.types.Event('setScreen', 'LoadingScreen').send()
+		bxt.types.Event('setScreen', 'LoadingScreen').send(2)
 		bxt.types.Event('GameModeChanged', 'Menu').send()
 
 	def on_event(self, evt):
@@ -145,6 +145,8 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def mouseMove(self, c):
+		if not c.sensors['sMouseMove'].positive:
+			return
 		bge.render.showMouse(True)
 		mOver = c.sensors['sMouseOver']
 		mOver.usePulseFocus = True
@@ -322,6 +324,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		self.sensitive = True
 		self['Widget'] = True
+		self.original_position = self.localPosition.copy()
 		self.hide()
 
 		bxt.types.EventBus().add_listener(self)
@@ -427,6 +430,11 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def updateVisibility(self, visible):
 		self.setVisible(visible, True)
+		if visible:
+			self.localPosition = self.original_position
+		else:
+			self.localPosition = self.original_position
+			self.localPosition.y += 100.0
 
 	def setSensitive(self, sensitive):
 		oldv = self.sensitive
@@ -558,13 +566,16 @@ class NamePage(Widget):
 
 	def __init__(self, old_owner):
 		bxt.types.mutate(self.children['NamePageName'])
-		self.mode = 'LOWERCASE'
+		self.mode = 'UPPERCASE'
 		Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
 	def on_event(self, evt):
 		if evt.message == 'characterEntered':
 			self.add_character(evt.body)
+			if self.mode == 'UPPERCASE':
+				self.mode = 'LOWERCASE'
+			self.lay_out_keymap()
 
 		elif evt.message == 'acceptName':
 			name = self.children['NamePageName'].get_text()
@@ -610,6 +621,7 @@ class NamePage(Widget):
 		if visible:
 			name = store.get('/game/name', '')
 			self.children['NamePageName'].set_text(name)
+			self.mode = 'UPPERCASE'
 			self.lay_out_keymap()
 
 	def lay_out_keymap(self):

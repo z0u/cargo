@@ -56,8 +56,8 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
-		#bxt.types.WeakEvent("StartLoading", self).send()
 		self.create_state_graph()
+		self.pick = self.childrenRecursive['Ant_Pick']
 
 	def create_state_graph(self):
 		s = self.rootState.createTransition("Init")
@@ -71,6 +71,7 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition("Talk")
 		s.addCondition(CondEvent("ApproachAnts"))
+		s.addCondition(CondActionGE(Ant.L_ANIM, 38, tap=True))
 		s.addAction(ActSuspendInput())
 		s.addWeakEvent("StartLoading", self)
 
@@ -81,8 +82,43 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetFocalPoint("Ant"))
 		s.addEvent("TeleportSnail", "HP_SnailTalkPos")
 
-		s.addEvent("ShowDialogue", "Ho there, Cargo!")
+		# Raises head, takes deep breath
+
+		s = s.createTransition()
+		s.addEvent("ShowDialogue", "Mmmm, smell that?")
 		s.addAction(ActAction('Ant_Digging1', 1, 1, Ant.L_ANIM)) # stop
+
+		# Gestures fiercely at Cargo
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActGeneric(self.drop_pick))
+		s.addEvent("ShowDialogue", "Doesn't it smell amazing? So sweet! So sugary!")
+
+		# Holds fist tight, eyes roll upwards
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "I've got to have it! But this lousy tree won't give.")
+
+		# Tries to tear hole open with bare hands
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Drat! This crack is too small, even for me.")
+
+		# Leans on door with one hand; the other drops, tired
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "If only I had something stronger...")
+
+		# Picks up mattock, and glares at the door
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActGeneric(self.pick_up))
+		s.addEvent("ShowDialogue", "I would smash my way through!")
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
@@ -95,6 +131,15 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActRemoveCamera('AntMidCam'))
 		s.addAction(ActRemoveFocalPoint("Ant"))
 		s.addTransition(self.rootState)
+
+	def pick_up(self):
+		''';)'''
+		bxt.bmath.copy_transform(self.children['Ant_RH_Hook'], self.pick)
+		self.pick.setParent(self.children['Ant_RH_Hook'])
+
+	def drop_pick(self):
+		'''Release the pick, and leave it stuck where it is.'''
+		self.pick.removeParent()
 
 def oversee(c):
 	sce = bge.logic.getCurrentScene()

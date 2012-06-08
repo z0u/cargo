@@ -101,7 +101,6 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 		s.addAction(ActAction('HP_AntConverse', 70, 90, Ant.L_ANIM, blendin=5.0))
 		s.addAction(ActAction('HP_AntConverse_Cam', 70, 90, 0, ob='AntCloseCam'))
-
 		sdrop_pick = s.createSubStep("Adjust influence")
 		sdrop_pick.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
 				1.0, 0.0, 70.0, 80.0, Ant.L_ANIM))
@@ -111,13 +110,18 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActActionStop(Ant.L_IDLE))
-		s.addAction(ActAction('HP_AntConverse', 95, 110, Ant.L_ANIM, blendin=2.0))
+		s.addAction(ActAction('HP_AntConverse', 95, 140, Ant.L_ANIM, blendin=2.0))
 		s.addEvent("ShowDialogue", "I've got to have it! But this lousy tree won't give.")
+		sswitch_cam = s.createSubStep("Switch camera")
+		sswitch_cam.addCondition(CondActionGE(Ant.L_ANIM, 126))
+		sswitch_cam.addAction(ActRemoveCamera('AntCloseCam'))
+		sswitch_cam.addAction(ActSetCamera('AntMidCam'))
 
 		# Tries to tear hole open with bare hands
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addCondition(CondActionGE(Ant.L_ANIM, 120))
 		s.addEvent("ShowDialogue", "Drat! This crack is too small, even for me.")
 
 		# Leans on door with one hand; the other drops, tired

@@ -36,7 +36,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	_prefix = 'AC_'
 
 	COLLISION_BIAS = 0.8
-	MIN_FOCAL_DIST = 5.0
+	MIN_FOCAL_DIST = 3.0
 	FOCAL_FAC = 0.1
 
 	camera = bxt.types.weakprop('camera')

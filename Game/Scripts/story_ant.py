@@ -78,22 +78,26 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
 		s.addWeakEvent("FinishLoading", self)
-		s.addAction(ActSetCamera('AntMidCam'))
-		s.addAction(ActSetFocalPoint("Ant"))
+		s.addAction(ActSetFocalPoint('Ant'))
+		s.addAction(ActSetCamera('AntCloseCam'))
 		s.addEvent("TeleportSnail", "HP_SnailTalkPos")
 
 		# Raises head, takes deep breath
 
 		s = s.createTransition()
+		s.addCondition(CondActionGE(Ant.L_ANIM, 10))
 		s.addEvent("ShowDialogue", "Mmmm, smell that?")
-		s.addAction(ActAction('Ant_Digging1', 1, 1, Ant.L_ANIM)) # stop
+		s.addAction(ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
 
 		# Gestures fiercely at Cargo
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addCondition(CondActionGE(Ant.L_ANIM, 30))
 		s.addAction(ActGeneric(self.drop_pick))
 		s.addEvent("ShowDialogue", "Doesn't it smell amazing? So sweet! So sugary!")
+		s.addAction(ActAction('HP_AntConverse', 30, 50, Ant.L_ANIM))
+		s.addAction(ActAction('HP_AntConverse_Cam', 30, 50, 0, ob='AntCloseCam'))
 
 		# Holds fist tight, eyes roll upwards
 
@@ -128,8 +132,9 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		#
 		s = s.createTransition("Reset")
 		s.addAction(ActResumeInput())
+		s.addAction(ActRemoveCamera('AntCloseCam'))
 		s.addAction(ActRemoveCamera('AntMidCam'))
-		s.addAction(ActRemoveFocalPoint("Ant"))
+		s.addAction(ActRemoveFocalPoint('Ant'))
 		s.addTransition(self.rootState)
 
 	def pick_up(self):
@@ -140,6 +145,9 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	def drop_pick(self):
 		'''Release the pick, and leave it stuck where it is.'''
 		self.pick.removeParent()
+
+	def get_focal_points(self):
+		return [self.children['Ant_Face'], self]
 
 def oversee(c):
 	sce = bge.logic.getCurrentScene()

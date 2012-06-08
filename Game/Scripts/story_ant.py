@@ -71,6 +71,16 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition("Talk")
 		s.addCondition(CondEvent("ApproachAnts"))
+		s.addAction(ActSuspendInput())
+		s.addWeakEvent("StartLoading", self)
+
+		s = s.createTransition()
+		s.addCondition(CondWait(1))
+		s.addWeakEvent("FinishLoading", self)
+		s.addAction(ActSetCamera('AntMidCam'))
+		s.addAction(ActSetFocalPoint("Ant"))
+		s.addEvent("TeleportSnail", "HP_SnailTalkPos")
+
 		s.addEvent("ShowDialogue", "Ho there, Cargo!")
 		s.addAction(ActAction('Ant_Digging1', 1, 1, Ant.L_ANIM)) # stop
 
@@ -81,6 +91,9 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		# Loop back to start.
 		#
 		s = s.createTransition("Reset")
+		s.addAction(ActResumeInput())
+		s.addAction(ActRemoveCamera('AntMidCam'))
+		s.addAction(ActRemoveFocalPoint("Ant"))
 		s.addTransition(self.rootState)
 
 def oversee(c):

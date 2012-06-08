@@ -331,6 +331,7 @@ class ActActuate(BaseAct):
 		return "ActActuate: %s" % self.ActuatorName
 
 class ActAction(BaseAct):
+	'''Plays an animation.'''
 	def __init__(self, action, start, end, layer, targetDescendant=None,
 			play_mode=bge.logic.KX_ACTION_MODE_PLAY, ob=None, blendin=0.0):
 		self.action = action
@@ -349,6 +350,35 @@ class ActAction(BaseAct):
 
 	def __str__(self):
 		return "ActAction: %s, %d -> %d" % (self.action, self.start, self.end)
+
+class ActConstraintFade(BaseAct):
+	'''
+	Adjusts the strength of a constraint on an armature over a range of frames
+	of an animation. It is recommended that this be used in a sub-step with no
+	condition.
+	'''
+	def __init__(self, bone_name, constraint_name, fac1, fac2, frame1, frame2,
+			layer, ob=None, target_descendant=None):
+		self.name = "{}:{}".format(bone_name, constraint_name)
+		self.fac1 = fac1
+		self.fac2 = fac2
+		self.frame1 = frame1
+		self.frame2 = frame2
+		self.layer = layer
+		self.target_descendant = target_descendant
+		self.ob = ob
+
+	def execute(self, c):
+		ob = self.find_target(c, self.ob, self.target_descendant)
+		con = ob.constraints[self.name]
+		cfra = ob.getActionFrame(self.layer)
+		k = bxt.bmath.unlerp(self.frame1, self.frame2, cfra)
+		power = bxt.bmath.clamp(0.0, 1.0,
+				bxt.bmath.lerp(self.fac1, self.fac2, k))
+		con.enforce = power
+
+	def __str__(self):
+		return "ActConstraintFade: %s" % (self.name)
 
 class ActSound(BaseAct):
 	'''Plays a short sound.'''

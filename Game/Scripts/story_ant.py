@@ -99,6 +99,11 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActAction('HP_AntConverse', 30, 50, Ant.L_ANIM))
 		s.addAction(ActAction('HP_AntConverse_Cam', 30, 50, 0, ob='AntCloseCam'))
 
+		sKnock = s.createSubStep("Adjust influence")
+		sKnock.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
+				1.0, 0.0, 30.0, 40.0, Ant.L_ANIM))
+
+
 		# Holds fist tight, eyes roll upwards
 
 		s = s.createTransition()

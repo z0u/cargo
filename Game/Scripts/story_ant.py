@@ -87,27 +87,31 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Ant.L_ANIM, 10))
 		s.addEvent("ShowDialogue", "Mmmm, smell that?")
+		s.addAction(ActAction('HP_AntConverse', 30, 70, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.addAction(ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
 
 		# Gestures fiercely at Cargo
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addCondition(CondActionGE(Ant.L_ANIM, 30))
 		s.addAction(ActGeneric(self.drop_pick))
 		s.addEvent("ShowDialogue", "Doesn't it smell amazing? So sweet! So sugary!")
-		s.addAction(ActAction('HP_AntConverse', 30, 50, Ant.L_ANIM))
-		s.addAction(ActAction('HP_AntConverse_Cam', 30, 50, 0, ob='AntCloseCam'))
+		s.addAction(ActAction('HP_AntConverse', 90, 93, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
+		s.addAction(ActAction('HP_AntConverse', 70, 90, Ant.L_ANIM, blendin=5.0))
+		s.addAction(ActAction('HP_AntConverse_Cam', 70, 90, 0, ob='AntCloseCam'))
 
-		sKnock = s.createSubStep("Adjust influence")
-		sKnock.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
-				1.0, 0.0, 30.0, 40.0, Ant.L_ANIM))
-
+		sdrop_pick = s.createSubStep("Adjust influence")
+		sdrop_pick.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
+				1.0, 0.0, 70.0, 80.0, Ant.L_ANIM))
 
 		# Holds fist tight, eyes roll upwards
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActActionStop(Ant.L_IDLE))
+		s.addAction(ActAction('HP_AntConverse', 95, 110, Ant.L_ANIM, blendin=2.0))
 		s.addEvent("ShowDialogue", "I've got to have it! But this lousy tree won't give.")
 
 		# Tries to tear hole open with bare hands

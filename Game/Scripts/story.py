@@ -351,6 +351,20 @@ class ActAction(BaseAct):
 	def __str__(self):
 		return "ActAction: %s, %d -> %d" % (self.action, self.start, self.end)
 
+class ActActionStop(BaseAct):
+	'''Stops an animation.'''
+	def __init__(self, layer, targetDescendant=None, ob=None):
+		self.layer = layer
+		self.targetDescendant = targetDescendant
+		self.ob = ob
+
+	def execute(self, c):
+		ob = self.find_target(c, self.ob, self.targetDescendant)
+		ob.stopAction(self.layer)
+
+	def __str__(self):
+		return "ActActionStop: %d" % self.layer
+
 class ActConstraintFade(BaseAct):
 	'''
 	Adjusts the strength of a constraint on an armature over a range of frames

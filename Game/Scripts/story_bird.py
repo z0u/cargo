@@ -56,6 +56,8 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetFocalPoint('Bi_FootHook.L'))
 		s.addAction(ActAction('Bi_Excited', 1, 25, Bird.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
+		s.addAction(ActMusicPlay('//Sound/Music/Bird1.ogg'))
+		s.addEvent("SetStoryLight", "SB_BirdLight")
 
 		s = s.createTransition()
 		s.addCondition(CondWait(0.5))
@@ -179,6 +181,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActRemoveCamera('B_BirdConverseCam'))
 		s.addAction(ActRemoveCamera('B_DoorCamera'))
 		s.addAction(ActRemoveCamera('BirdCamera_BottleToNest'))
+		s.addEvent("SetStoryLight", None)
 		s.addAction(ActDestroy())
 
 	def pick_up(self, ob, left=True):

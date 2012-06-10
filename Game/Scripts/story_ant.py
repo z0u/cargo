@@ -61,19 +61,21 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	def create_state_graph(self):
 		s = self.rootState.createTransition("Init")
+		s.addAction(ActConstraintSet("Hand.L", "Copy Transforms", 1.0))
 		s.addAction(ActAction('Ant_Digging1', 1, 42, Ant.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 
 		sKnock = s.createSubStep("Knock sound")
 		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 14.5, tap=True))
-		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.7,
-				pitchmax=0.76, emitter=self, maxdist=50.0))
+		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
+				pitchmax=0.76, emitter=self, maxdist=75.0))
 
 		s = s.createTransition("Talk")
 		s.addCondition(CondEvent("ApproachAnts"))
-		s.addCondition(CondActionGE(Ant.L_ANIM, 38, tap=True))
 		s.addAction(ActSuspendInput())
 		s.addWeakEvent("StartLoading", self)
+
+		# Start conversation
 
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
@@ -81,15 +83,15 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActSetFocalPoint('Ant'))
 		s.addAction(ActSetCamera('AntCloseCam'))
 		s.addEvent("TeleportSnail", "HP_SnailTalkPos")
-
+		# Reset camera pos
+		s.addAction(ActAction('HP_AntConverse_Cam', 1, 1, 0, ob='AntCloseCam'))
+		s.addAction(ActAction('HP_AntCrackCam', 1, 1, 0, ob='AntCrackCam'))
 		# Raises head, takes deep breath
-
-		s = s.createTransition()
-		s.addCondition(CondActionGE(Ant.L_ANIM, 10))
 		s.addEvent("ShowDialogue", "Mmmm, smell that?")
 		s.addAction(ActAction('HP_AntConverse', 30, 70, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.addAction(ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
+		s.addAction(ActMusicPlay('//Sound/Music/Ants1.ogg'))
 
 		# Gestures fiercely at Cargo
 
@@ -111,31 +113,34 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActActionStop(Ant.L_IDLE))
 		s.addAction(ActAction('HP_AntConverse', 95, 140, Ant.L_ANIM, blendin=2.0))
-		s.addEvent("ShowDialogue", "I've got to have it! But this lousy tree won't give.")
+		s.addEvent("ShowDialogue", "I've got to have it! But this wood is just too strong.")
 		sswitch_cam = s.createSubStep("Switch camera")
 		sswitch_cam.addCondition(CondActionGE(Ant.L_ANIM, 126))
-		sswitch_cam.addAction(ActRemoveCamera('AntCloseCam'))
-		sswitch_cam.addAction(ActSetCamera('AntMidCam'))
+		sswitch_cam.addAction(ActSetCamera('AntCrackCam'))
 
 		# Tries to tear hole open with bare hands
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addCondition(CondActionGE(Ant.L_ANIM, 120))
-		s.addEvent("ShowDialogue", "Drat! This crack is too small, even for me.")
+		s.addCondition(CondActionGE(Ant.L_ANIM, 140))
+		s.addEvent("ShowDialogue", "... And this crack is too small, even for me.")
+		s.addAction(ActAction('HP_AntCrackCam', 140, 250, 0,
+				ob='AntCrackCam'))
 
 		# Leans on door with one hand; the other drops, tired
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "If only I had something stronger...")
+		s.addAction(ActSetCamera('AntMidCam'))
+		s.addAction(ActRemoveCamera('AntCrackCam'))
 
 		# Picks up mattock, and glares at the door
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActGeneric(self.pick_up))
-		s.addEvent("ShowDialogue", "I would smash my way through!")
+		s.addEvent("ShowDialogue", "But I won't give up!")
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
@@ -146,8 +151,10 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition("Reset")
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('AntCloseCam'))
+		s.addAction(ActRemoveCamera('AntCrackCam'))
 		s.addAction(ActRemoveCamera('AntMidCam'))
 		s.addAction(ActRemoveFocalPoint('Ant'))
+		s.addAction(ActMusicStop())
 		s.addTransition(self.rootState)
 
 	def pick_up(self):
@@ -172,3 +179,9 @@ def oversee(c):
 		if "Honeypot" in sce.objects:
 			print("Destroying honeypot")
 			sce.objects["Honeypot"].endObject()
+
+def test_anim():
+	sce = bge.logic.getCurrentScene()
+	ant = sce.objects['Ant']
+	ant = bxt.types.mutate(ant)
+	ant.playAction('AntActionTEST', 1, 120, 0)

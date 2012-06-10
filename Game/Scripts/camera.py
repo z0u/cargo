@@ -127,6 +127,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 			self.camera.worldOrientation = currentGoal.worldOrientation
 			if hasattr(currentGoal, 'lens'):
 				self.camera.lens = currentGoal.lens
+			self._update_focal_depth(instant=True)
 			self.instantCut = False
 
 		bxt.bmath.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
@@ -140,7 +141,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 
 		self.lastGoal = currentGoal
 
-		self._update_focal_depth()
+		self._update_focal_depth(instant=False)
 
 		dev = aud.device()
 		dev.listener_location = self.camera.worldPosition
@@ -150,7 +151,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		for ob in self.observers:
 			ob.on_camera_moved(self)
 
-	def _update_focal_depth(self):
+	def _update_focal_depth(self, instant=False):
 		focalPoint = None
 		try:
 			focalPoint = self.focusQueue.top()
@@ -175,9 +176,14 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		z = vecTo.project(cam.getAxisVect((0.0, 0.0, 1.0))).magnitude
 		z = max(z, AutoCamera.MIN_FOCAL_DIST)
 		depth = 1.0 - cam.near / z
-		cam['focalDepth'] = bxt.bmath.lerp(cam['focalDepth'], depth,
-				AutoCamera.FOCAL_FAC)
+		if instant:
+			cam['focalDepth'] = depth
+		else:
+			cam['focalDepth'] = bxt.bmath.lerp(cam['focalDepth'], depth,
+					AutoCamera.FOCAL_FAC)
 
+		# This bit doesn't need to be interpolated; the lens value is already
+		# interpolated in 'update'.
 		cam['blurRadius'] = cam['baseBlurRadius'] * (cam.lens / self.defaultLens)
 
 	@bxt.types.expose

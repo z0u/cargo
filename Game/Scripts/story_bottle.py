@@ -169,8 +169,7 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		Play the music for this locality. Don't need to stop it, because the
 		'inner' object gets destroyed when the player leaves.
 		'''
-		jukebox.Jukebox().play(inner, 1,
-				'//Sound/Music/explore.ogg')
+		jukebox.Jukebox().play(inner, 1, '//Sound/Music/explore.ogg')
 
 	def handle_bt_1(self, state):
 		'''Don't allow snail to reclaim shell when inside.'''

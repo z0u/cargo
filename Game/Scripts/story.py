@@ -16,6 +16,7 @@
 #
 
 from sys import stdout
+import time
 
 import bge
 import mathutils
@@ -28,8 +29,8 @@ from . import camera
 from . import director
 from . import store
 from . import impulse
-import time
-from Scripts import inventory
+from . import inventory
+from . import jukebox
 
 DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
@@ -365,6 +366,27 @@ class ActActionStop(BaseAct):
 	def __str__(self):
 		return "ActActionStop: %d" % self.layer
 
+class ActConstraintSet(BaseAct):
+	'''
+	Adjusts the strength of a constraint on an armature over a range of frames
+	of an animation. It is recommended that this be used in a sub-step with no
+	condition.
+	'''
+	def __init__(self, bone_name, constraint_name, fac, ob=None,
+			target_descendant=None):
+		self.name = "{}:{}".format(bone_name, constraint_name)
+		self.fac = fac
+		self.target_descendant = target_descendant
+		self.ob = ob
+
+	def execute(self, c):
+		ob = self.find_target(c, self.ob, self.target_descendant)
+		con = ob.constraints[self.name]
+		con.enforce = self.fac
+
+	def __str__(self):
+		return "ActConstraintSet: %s" % (self.name)
+
 class ActConstraintFade(BaseAct):
 	'''
 	Adjusts the strength of a constraint on an armature over a range of frames
@@ -451,6 +473,50 @@ class ActSound(BaseAct):
 
 	def __str__(self):
 		return "ActSound: %s" % self.filename
+
+class ActMusicPlay(BaseAct):
+	'''
+	Plays a music track. The previous track will be stopped, but will remain
+	queued in the jukebox.
+
+	Music is associated with a real object (the 'target'). If the object dies,
+	the music will stop. To stop music manually, use ActMusicStop with the same
+	object. To use the current object as the target, set ob=None and
+	target_descendant=None.
+	'''
+	def __init__(self, *filepaths, volume=1.0, loop=True, ob=None, target_descendant=None):
+		self.filepaths = filepaths
+		self.volume = volume
+		self.loop = loop
+		self.target_descendant = target_descendant
+		self.ob = ob
+
+	def execute(self, c):
+		# Play the track. Use priority 1 for this kind of music, because it's
+		# important for the story.
+		ob = self.find_target(c, self.ob, self.target_descendant)
+		jukebox.Jukebox().play(ob, 1, *self.filepaths, volume=self.volume)
+
+	def __str__(self):
+		return "ActMusicPlay: %s" % str(self.filepaths)
+
+class ActMusicStop(BaseAct):
+	'''
+	Stops a music track. The previous track on the jukebox stack will then play
+	again.
+
+	Music is associated with a real object. See ActMusicPlay for details.
+	'''
+	def __init__(self, ob=None, target_descendant=None):
+		self.target_descendant = target_descendant
+		self.ob = ob
+
+	def execute(self, c):
+		ob = self.find_target(c, self.ob, self.target_descendant)
+		jukebox.Jukebox().stop(ob)
+
+	def __str__(self):
+		return "ActMusicStop"
 
 class ActShowMarker(BaseAct):
 	'''Show a marker on the screen that points to an object.'''

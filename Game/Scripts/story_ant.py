@@ -107,39 +107,48 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		sdrop_pick.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
 				1.0, 0.0, 70.0, 80.0, Ant.L_ANIM))
 
-		# Holds fist tight, eyes roll upwards
+		# Holds fists tight; then, gestures towards the tree
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActActionStop(Ant.L_IDLE))
 		s.addAction(ActAction('HP_AntConverse', 95, 140, Ant.L_ANIM, blendin=2.0))
-		s.addEvent("ShowDialogue", "I've got to have it! But this wood is just too strong.")
+		s.addEvent("ShowDialogue", "I've got to have it! But this wood is just too strong,")
 		sswitch_cam = s.createSubStep("Switch camera")
-		sswitch_cam.addCondition(CondActionGE(Ant.L_ANIM, 126))
+		sswitch_cam.addCondition(CondActionGE(Ant.L_ANIM, 126, tap=True))
 		sswitch_cam.addAction(ActSetCamera('AntCrackCam'))
+		sswitch_cam.addAction(ActAction('HP_AntCrackCam', 140, 360, 0,
+				ob='AntCrackCam'))
 
 		# Tries to tear hole open with bare hands
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addCondition(CondActionGE(Ant.L_ANIM, 140))
-		s.addEvent("ShowDialogue", "... And this crack is too small, even for me.")
-		s.addAction(ActAction('HP_AntCrackCam', 140, 250, 0,
-				ob='AntCrackCam'))
+		s.addEvent("ShowDialogue", "... and this crack is too small, even for me.")
+		s.addAction(ActAction('HP_AntConverse', 255, 283, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
+		s.addAction(ActAction('HP_AntConverse', 240, 255, Ant.L_ANIM, blendin=2.0))
+		s.addAction(ActRemoveCamera('AntCrackCam'))
+		s.addAction(ActSetCamera('AntCrackCamIn'))
 
 		# Leans on door with one hand; the other drops, tired
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "If only I had something stronger...")
-		s.addAction(ActSetCamera('AntMidCam'))
-		s.addAction(ActRemoveCamera('AntCrackCam'))
+		s.addAction(ActAction('HP_AntConverse', 300, 347, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
+		s.addAction(ActAction('HP_AntConverse', 290, 300, Ant.L_ANIM, blendin=1.0))
+		s.addAction(ActRemoveCamera('AntCrackCamIn'))
+		s.addAction(ActSetCamera('AntCloseCam'))
 
 		# Picks up mattock, and glares at the door
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActGeneric(self.pick_up))
+		s.addAction(ActActionStop(Ant.L_IDLE))
 		s.addEvent("ShowDialogue", "But I won't give up!")
 
 		s = s.createTransition()
@@ -152,9 +161,11 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('AntCloseCam'))
 		s.addAction(ActRemoveCamera('AntCrackCam'))
+		s.addAction(ActRemoveCamera('AntCrackCamIn'))
 		s.addAction(ActRemoveCamera('AntMidCam'))
 		s.addAction(ActRemoveFocalPoint('Ant'))
 		s.addAction(ActMusicStop())
+		s.addAction(ActActionStop(Ant.L_IDLE))
 		s.addTransition(self.rootState)
 
 	def pick_up(self):

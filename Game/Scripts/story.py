@@ -121,7 +121,10 @@ class CondActionGE(Condition):
 		@param tap: If True, the condition will only evaluate True once while
 			the current frame is increasing. If the current frame decreases (as
 			it may when an animation is looping) the condition will be reset,
-			and may trigger again.
+			and may trigger again. This is often required for sub-steps;
+			otherwise, the actions will trigger every frame until the parent
+			progresses to the next state. This is especially true for starting
+			animations and sounds.
 		@param ob: The object whose action should be tested. If None, the object
 			that evaluates this condition is used.
 		'''

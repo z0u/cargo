@@ -111,13 +111,17 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActActionStop(Ant.L_IDLE))
-		s.addAction(ActAction('HP_AntConverse', 95, 140, Ant.L_ANIM, blendin=2.0))
+		s.addAction(ActAction('HP_AntConverse', 95, 160, Ant.L_ANIM, blendin=2.0))
 		s.addEvent("ShowDialogue", "I've got to have it! But this wood is just too strong,")
 		sswitch_cam = s.createSubStep("Switch camera")
 		sswitch_cam.addCondition(CondActionGE(Ant.L_ANIM, 126, tap=True))
 		sswitch_cam.addAction(ActSetCamera('AntCrackCam'))
 		sswitch_cam.addAction(ActAction('HP_AntCrackCam', 140, 360, 0,
 				ob='AntCrackCam'))
+		sloop = s.createSubStep("Loop")
+		sloop.addCondition(CondActionGE(Ant.L_ANIM, 160, tap=True))
+		sloop.addAction(ActAction('HP_AntConverse', 160, 230, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		# Sizes up door with hands in front of his eyes
 
@@ -159,14 +163,18 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		sgrab_pickL = s.createSubStep("Grab pick - left hand")
 		sgrab_pickL.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
 				0.0, 1.0, 401.0, 403.0, Ant.L_ANIM))
+		sloop = s.createSubStep("Loop")
+		sloop.addCondition(CondActionGE(Ant.L_ANIM, 407, tap=True))
+		sloop.addAction(ActAction('HP_AntConverse', 407, 440, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		# Play the first bit of the digging animation
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addAction(ActAction('HP_AntConverse', 407, 437, Ant.L_ANIM, blendin=1.0))
+		s.addAction(ActAction('HP_AntConverse', 440, 470, Ant.L_ANIM, blendin=1.0))
 		sKnock = s.createSubStep("Knock sound")
-		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 433.5, tap=True))
+		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 466.5, tap=True))
 		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
 				pitchmax=0.76, emitter=self, maxdist=75.0))
 
@@ -174,7 +182,7 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		# Loop back to start.
 		#
 		s = s.createTransition("Reset")
-		s.addCondition(CondActionGE(Ant.L_ANIM, 437))
+		s.addCondition(CondActionGE(Ant.L_ANIM, 470))
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('AntCloseCam'))
 		s.addAction(ActRemoveCamera('AntCrackCam'))

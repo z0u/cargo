@@ -62,11 +62,10 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	def create_state_graph(self):
 		s = self.rootState.createTransition("Init")
 		s.addAction(ActConstraintSet("Hand.L", "Copy Transforms", 1.0))
-		s.addAction(ActAction('Ant_Digging1', 1, 42, Ant.L_ANIM,
+		s.addAction(ActAction('Ant_Digging1', 1, 38, Ant.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-
 		sKnock = s.createSubStep("Knock sound")
-		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 14.5, tap=True))
+		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 34.5, tap=True))
 		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
 				pitchmax=0.76, emitter=self, maxdist=75.0))
 
@@ -161,13 +160,21 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		sgrab_pickL.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
 				0.0, 1.0, 401.0, 403.0, Ant.L_ANIM))
 
+		# Play the first bit of the digging animation
+
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActAction('HP_AntConverse', 407, 437, Ant.L_ANIM, blendin=1.0))
+		sKnock = s.createSubStep("Knock sound")
+		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 433.5, tap=True))
+		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
+				pitchmax=0.76, emitter=self, maxdist=75.0))
 
 		#
 		# Loop back to start.
 		#
 		s = s.createTransition("Reset")
+		s.addCondition(CondActionGE(Ant.L_ANIM, 437))
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('AntCloseCam'))
 		s.addAction(ActRemoveCamera('AntCrackCam'))

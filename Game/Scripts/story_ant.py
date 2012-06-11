@@ -105,7 +105,7 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActAction('HP_AntConverse_Cam', 70, 90, 0, ob='AntCloseCam'))
 		sdrop_pick = s.createSubStep("Adjust influence")
 		sdrop_pick.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
-				1.0, 0.0, 70.0, 80.0, Ant.L_ANIM))
+				1.0, 0.0, 70.0, 76.0, Ant.L_ANIM))
 
 		# Holds fists tight; then, gestures towards the tree
 
@@ -120,36 +120,46 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		sswitch_cam.addAction(ActAction('HP_AntCrackCam', 140, 360, 0,
 				ob='AntCrackCam'))
 
-		# Tries to tear hole open with bare hands
+		# Sizes up door with hands in front of his eyes
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addCondition(CondActionGE(Ant.L_ANIM, 140))
 		s.addEvent("ShowDialogue", "... and this crack is too small, even for me.")
-		s.addAction(ActAction('HP_AntConverse', 255, 283, Ant.L_IDLE,
-				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 		s.addAction(ActAction('HP_AntConverse', 240, 255, Ant.L_ANIM, blendin=2.0))
 		s.addAction(ActRemoveCamera('AntCrackCam'))
 		s.addAction(ActSetCamera('AntCrackCamIn'))
+		sloop = s.createSubStep("Loop")
+		sloop.addCondition(CondActionGE(Ant.L_ANIM, 255, tap=True))
+		sloop.addAction(ActAction('HP_AntConverse', 255, 283, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
-		# Leans on door with one hand; the other drops, tired
+		# Pauses to consider
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addEvent("ShowDialogue", "If only I had something stronger...")
-		s.addAction(ActAction('HP_AntConverse', 300, 347, Ant.L_IDLE,
-				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 		s.addAction(ActAction('HP_AntConverse', 290, 300, Ant.L_ANIM, blendin=1.0))
 		s.addAction(ActRemoveCamera('AntCrackCamIn'))
 		s.addAction(ActSetCamera('AntCloseCam'))
+		sloop = s.createSubStep("Loop")
+		sloop.addCondition(CondActionGE(Ant.L_ANIM, 300, tap=True))
+		sloop.addAction(ActAction('HP_AntConverse', 300, 347, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		# Picks up mattock, and glares at the door
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addAction(ActGeneric(self.pick_up))
 		s.addAction(ActActionStop(Ant.L_IDLE))
+		s.addAction(ActAction('HP_AntConverse', 360, 407, Ant.L_ANIM, blendin=1.0))
 		s.addEvent("ShowDialogue", "But I won't give up!")
+		sgrab_pickR = s.createSubStep("Grab pick - right hand")
+		sgrab_pickR.addCondition(CondActionGE(Ant.L_ANIM, 370.5, tap=True))
+		sgrab_pickR.addAction(ActGeneric(self.pick_up))
+		sgrab_pickL = s.createSubStep("Grab pick - left hand")
+		sgrab_pickL.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
+				0.0, 1.0, 401.0, 403.0, Ant.L_ANIM))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))

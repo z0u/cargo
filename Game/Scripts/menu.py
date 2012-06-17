@@ -138,6 +138,11 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 			widget = self.scene.objects['Btn_StartGame']
 		elif screen_name == 'ConfirmationDialogue':
 			widget = self.scene.objects['Btn_Cancel']
+		elif screen_name == 'NameScreen':
+			for ob in self.scene.objects:
+				if ob.name == 'CharButton_T' and ob['_old_name'] == 'Btn_Char.FIRST':
+					widget = ob
+					break
 
 		if widget is not None:
 			self.focus(widget)
@@ -224,7 +229,7 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 
 	def find_next_widget(self, direction):
 		cam = self.scene.active_camera
-		if self.current is not None:
+		if self.current is not None and self.current.is_visible:
 			loc = self.current.worldPosition
 		else:
 			loc = mathutils.Vector((0.0, 0.0, 0.0))
@@ -325,6 +330,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.sensitive = True
 		self['Widget'] = True
 		self.original_position = self.localPosition.copy()
+		self.is_visible = False
 		self.hide()
 
 		bxt.types.EventBus().add_listener(self)

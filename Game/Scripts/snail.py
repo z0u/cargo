@@ -833,8 +833,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		return True
 
 	def handle_bt_2(self, state):
-		'''Secondary action: drop shell.'''
-		if not store.get("/game/canDropShell", False):
+		shells = inventory.Shells().get_shells()
+		if len(shells) == 1 and shells[0] == "Shell":
 			# Can't drop shell until a special point in the game.
 			return True
 

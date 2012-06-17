@@ -621,14 +621,17 @@ class NamePage(Widget):
 		if visible:
 			name = store.get('/game/name', '')
 			self.children['NamePageName'].set_text(name)
-			self.mode = 'UPPERCASE'
-			self.lay_out_keymap()
+			self.mode = 'LOWERCASE'
+			# Lay out keys later - once the buttons have had a change to draw
+			# once; otherwise the order can get stuffed up.
+			bxt.types.Event('capsLockToggle').send(1.0)
 
 	def lay_out_keymap(self):
 		def grid_key(ob):
 			'''Sorting function for a grid, left-right, top-bottom.'''
 			pos = ob.worldPosition
-			return pos.x + -pos.z * 1000.0
+			score = pos.x + -pos.z * 100.0
+			return score
 
 		keymap = NamePage.MODEMAP[self.mode]
 		buttons = [b for b in self.children if isinstance(b, CharButton)]

@@ -61,6 +61,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	CAMERA_SAFE_DIST = 10.0
 	SHELL_SCALE_FAC = 0.5
 	EYE_LOOK_FAC = 0.5
+	SHELL_POP_SPEED = 40.0
 
 	shell = bxt.types.weakprop('shell')
 
@@ -193,6 +194,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.orient_segment(self.children['Head.0'])
 		self.orient_segment(self.children['Tail.0'])
+		self.armature.update()
 
 		self.frameCounter += 1
 
@@ -549,7 +551,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		velocity = bxt.bmath.ZAXIS.copy()
 		velocity.x += 0.5 - bge.logic.getRandomFloat()
 		velocity = self.getAxisVect(velocity)
-		velocity *= self['ShellPopForce']
+		velocity *= Snail.SHELL_POP_SPEED
 		shell = self.unequip_shell()
 
 		shell.setLinearVelocity(velocity)

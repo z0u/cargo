@@ -152,7 +152,9 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 			# (so presumably the snail will be told to respawn too).
 			pass
 		else:
-			super(ShellBase, self).respawn(reason)
+			# This should only happen if the snail dropped the shell, in which
+			# case it can be reclaimed by pressing a button.
+			self.endObject()
 
 	def on_drown(self):
 		if self.snail:

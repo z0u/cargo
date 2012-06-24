@@ -59,7 +59,7 @@ class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			total_influence = total_influence + influence
 		total_influence = total_influence * self['InfluenceMultiplier']
 
-		self.influence = total_influence
+		self.influence = bxt.bmath.lerp(self.influence, total_influence, 0.5)
 		self.add_state(BendyLeaf.S_UPDATING)
 
 	@bxt.types.expose

@@ -49,12 +49,25 @@ uniform float bgl_RenderedTextureHeight;
 uniform float focalDepth;
 uniform float blurRadius;
 
-vec4 get_colour(vec2 offset) {
-    return texture2D(bgl_RenderedTexture, gl_TexCoord[0].st + offset);
+//
+// Get the coordinates that should be sampled for a given offset.
+// These will be clamped to be within the image, to prevent fuzzy
+// black borders from appearing around the image.
+//
+vec2 get_coord(in vec2 offset) {
+    vec2 halftexel = vec2(1.0) / vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
+    vec2 maxcoord = vec2(1.0) - halftexel;
+    return clamp(gl_TexCoord[0].st + offset, halftexel, maxcoord);
 }
-float get_depth(vec2 offset) {
-    return texture2D(bgl_DepthTexture, gl_TexCoord[0].st + offset).r;
+
+vec4 get_colour(vec2 co) {
+    return texture2D(bgl_RenderedTexture, co);
 }
+
+float get_depth(vec2 co) {
+    return texture2D(bgl_DepthTexture, co).r;
+}
+
 float get_blur(float depth) {
     // Depth buffer is inverse linear. Find the difference between this
     // and the focal depth, and convert back to something like world
@@ -81,11 +94,13 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
     float idepth;
     float contrib;
     vec4 col;
+    vec2 co;
 
     // Use the focus of the current point to drive the filter radius.
     offset *= blur * blurRadius;
+    co = get_coord(offset);
 
-    col = get_colour(offset);
+    col = get_colour(co);
 
     // If the sample is closer than the current pixel (depth-wise), modulate its
     // influence by how blurry it is. I.e. if it is fully in-focus, it will not
@@ -94,7 +109,7 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
     // and Tricks with DirectX 9".
     // http://developer.amd.com/media/gpu_assets/ShaderX2_Real-TimeDepthOfFieldSimulation.pdf
 
-    idepth = get_depth(offset);
+    idepth = get_depth(co);
     if (idepth < depth)
         contrib = get_blur(idepth);
     else
@@ -102,14 +117,14 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
 
     // Ignore samples that are totally black. This avoids blurring the screen border.
     // NOTE: no truly black pixels in the scene will be blurred!
-    contrib *= min(1.0, col.r * 1000000.0);
+    //contrib *= min(1.0, col.r * 1000000.0);
 
     influence += contrib;
     return col * contrib;
 }
 
 void main(void) {
-    float depth = get_depth(vec2(0.0));
+    float depth = get_depth(gl_TexCoord[0].st);
     float aspect = bgl_RenderedTextureWidth / bgl_RenderedTextureHeight;
     vec2 blur = vec2(get_blur(depth)) * vec2(1.0, aspect);
     vec4 col = vec4(0.0);

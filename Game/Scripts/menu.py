@@ -435,7 +435,10 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.rem_state(Widget.S_HIDING)
 
 	def updateVisibility(self, visible):
-		self.setVisible(visible, True)
+		for descendant in self.childrenRecursive:
+			if 'alwayshide' in descendant:
+				continue
+			descendant.visible = visible
 		if visible:
 			self.localPosition = self.original_position
 		else:
@@ -475,8 +478,16 @@ class Checkbox(Button):
 		if 'dataBinding' in self:
 			self.checked = store.get(self['dataBinding'], self['dataDefault'])
 		self.updateCheckFace()
-		self.children['CheckBoxCanvas']['Content'] = self['label']
-		self.children['CheckBoxCanvas']['colour'] = self['colour']
+
+		# Create a clickable box around the text.
+		canvas = self.children['CheckBoxCanvas']
+		canvas = bxt.types.mutate(canvas)
+		canvas['Content'] = self['label']
+		canvas['colour'] = self['colour']
+		canvas.render()
+		hitbox = self.children['Checkbox_hitbox']
+		hitbox.localScale.x = canvas.textwidth * canvas.localScale.x
+		hitbox.localScale.y = canvas.textheight * canvas.localScale.y
 
 	def click(self):
 		self.checked = not self.checked
@@ -487,7 +498,6 @@ class Checkbox(Button):
 
 	def updateVisibility(self, visible):
 		super(Checkbox, self).updateVisibility(visible)
-		self.children['CheckBoxCanvas'].setVisible(visible, True)
 		self.updateCheckFace()
 
 	def updateCheckFace(self):

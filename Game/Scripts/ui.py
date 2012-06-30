@@ -610,6 +610,8 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.set_default_prop('Instant', False)
 		self.set_default_prop('Font', 'Sans')
 		self.lastHash = None
+		self.textwidth = 0.0
+		self.textheight = 0.0
 		self.clear()
 
 	def clear(self):
@@ -744,6 +746,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		x = 0.0
 		y = 0.0
 		font = self.get_font()
+		totalwidth = 0.0
 
 		for i, glyph in enumerate(glyphString):
 			width = glyph['Width']
@@ -781,6 +784,12 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			pos = (gx, gy)
 			self.glyphString.append((glyph, width, pos))
 			x += width
+			if x > totalwidth:
+				totalwidth = x
+
+		totalheight = -y + font['lineHeight']
+		self.textwidth = totalwidth
+		self.textheight = totalheight
 
 	def _render_next_char(self):
 		if not self['Rendering']:

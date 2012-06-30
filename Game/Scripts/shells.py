@@ -252,9 +252,19 @@ class Wheel(ShellBase):
 	# How strongly the wheel tries to stay upright
 	ORN_FAC = 0.2
 
+	# How much gravity the wheel feels while driving fast (affects jumping).
+	FLY_POWER = 1.0 / 3.0
+
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 		self._reset_speed()
+		self.fly_power = 0.0
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'GravityChanged')
+
+	def on_event(self, evt):
+		if evt.message == 'GravityChanged':
+			self.fly_power = evt.body * -(1.0 - Wheel.FLY_POWER)
 
 	def orient(self):
 		'''Try to make the wheel sit upright.'''
@@ -287,6 +297,12 @@ class Wheel(ShellBase):
 		#
 		direction = state.direction.copy()
 		direction.y = max(direction.y * 0.5 + 0.5, 0.01)
+
+		#
+		# For jumping: when driving fast, reduce gravity!
+		#
+		if direction.y > 0.5:
+			self.applyForce(self.fly_power)
 
 		#
 		# Turn (steer). Note that this is applied to the Z axis, but in world

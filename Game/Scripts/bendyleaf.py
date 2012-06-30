@@ -29,6 +29,7 @@ class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	def __init__(self, old_owner):
 		self.skin = self.find_descendant([('Type', 'Skin')])
 		self.bend_angle = self['MinAngle']
+		self.target_influence = 0.0
 		self.influence = 0.0
 		self.velocity = 0.0
 		self.add_state(BendyLeaf.S_UPDATING)
@@ -58,12 +59,13 @@ class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			influence = influence * ob['DynamicMass']
 			total_influence = total_influence + influence
 		total_influence = total_influence * self['InfluenceMultiplier']
+		self.target_influence = total_influence
 
-		self.influence = bxt.bmath.lerp(self.influence, total_influence, 0.5)
 		self.add_state(BendyLeaf.S_UPDATING)
 
 	@bxt.types.expose
 	def update(self):
+		self.influence = bxt.bmath.lerp(self.influence, self.target_influence, 0.5)
 		target_bend_angle = bxt.bmath.lerp(self['MinAngle'], self['MaxAngle'], self.influence)
 
 		difference = target_bend_angle - self.bend_angle

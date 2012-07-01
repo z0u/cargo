@@ -34,7 +34,7 @@ class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def touched(self, c):
 		s = c.sensors['Near']
 		if s.hitObject is not None:
-			store.put('/game/spawnPoint', 'SpawnCargoHouse')
+			store.put('/game/level/spawnPoint', 'SpawnCargoHouse')
 
 	def load_npcs(self):
 		try:

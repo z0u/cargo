@@ -41,7 +41,7 @@ def resolve(path, session=None, level=None):
 	rp = str(path).replace('/game/', '/savedGames/%s/' % str(session), 1)
 	if '/level/' in rp:
 		if level is None:
-			level = get('/game/levelFile')
+			level = get('/game/levelFile', session=session)
 		rp = str(rp).replace('/level/', '/_levels/%s/' % str(level), 1)
 	return rp
 

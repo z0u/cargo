@@ -834,7 +834,8 @@ class GameLevel(Level):
 		Level.__init__(self, old_owner)
 
 		scene = bge.logic.getCurrentScene()
-		spawn_point = store.get('/game/spawnPoint', self['defaultSpawnPoint'])
+		spawn_point = store.get('/game/level/spawnPoint',
+				self['defaultSpawnPoint'])
 		if not spawn_point in scene.objects:
 			print("Error: spawn point %s not found." % spawn_point)
 			spawn_point = self['defaultSpawnPoint']
@@ -854,7 +855,7 @@ def load_level(caller, level, spawnPoint):
 	print('Loading next level: %s, %s' % (level, spawnPoint))
 
 	store.put('/game/levelFile', level)
-	store.put('/game/spawnPoint', spawnPoint)
+	store.put('/game/level/spawnPoint', spawnPoint, level=level)
 	store.save()
 
 	callback = bxt.types.Event('LoadLevel')

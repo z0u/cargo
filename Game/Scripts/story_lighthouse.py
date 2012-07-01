@@ -71,7 +71,7 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.inLocality = True
 		cbEvent = bxt.types.Event("EnterLighthouse")
 		bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
-		store.put('/game/spawnPoint', 'SpawnTorch')
+		store.put('/game/level/spawnPoint', 'SpawnTorch')
 
 	def leave(self):
 		# Remove the keeper to prevent its armature from chewing up resources.
@@ -84,12 +84,12 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def touched(self, c):
 		if self.inLocality:
 			# Check whether the snail is leaving.
-			sNear = c.sensors["Near"]
+			sNear = c.sensors['Near']
 			if not director.Director().mainCharacter in sNear.hitObjectList:
 				self.leave()
 		else:
 			# Check whether the snail is entering.
-			sCollision = c.sensors[0]
+			sCollision = c.sensors['Collision']
 			if director.Director().mainCharacter in sCollision.hitObjectList:
 				self.arrive()
 

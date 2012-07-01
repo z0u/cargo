@@ -62,6 +62,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	SHELL_SCALE_FAC = 0.5
 	EYE_LOOK_FAC = 0.5
 	SHELL_POP_SPEED = 40.0
+	WATER_DAMPING = 0.5
 
 	shell = bxt.types.weakprop('shell')
 
@@ -648,6 +649,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		bxt.types.WeakEvent('MainCharacterSet', self).send()
 		# Temporarily use a path camera while exiting the shell - it's smoother!
 		bxt.types.Event('SetCameraType', 'PathCamera').send()
+		bxt.types.Event('OxygenSet', self['Oxygen']).send()
 
 	def on_exit_shell(self):
 		'''Called when the snail has finished its exit shell
@@ -689,8 +691,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		self.enter_shell(animate=True)
 
 	def on_oxygen_set(self):
-		evt = bxt.types.Event('OxygenSet', self['Oxygen'])
-		bxt.types.EventBus().notify(evt)
+		if not self.has_state(Snail.S_INSHELL):
+			bxt.types.Event('OxygenSet', self['Oxygen']).send()
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -739,6 +741,9 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		# Apply forward/backward motion.
 		#
 		speed = self['NormalSpeed'] * self['SpeedMultiplier'] * direction.y
+		if 'SubmergedFactor' in self:
+			# Don't go so fast when under water!
+			speed *= 1.0 - Snail.WATER_DAMPING * self['SubmergedFactor']
 		self.applyMovement((0.0, speed, 0.0), True)
 		self.decay_speed()
 

@@ -162,8 +162,7 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 
 	def on_oxygen_set(self):
 		if self.is_occupied():
-			self.snail['Oxygen'] = self['Oxygen']
-			self.snail.on_oxygen_set()
+			bxt.types.Event('OxygenSet', self['Oxygen']).send()
 
 	def is_occupied(self):
 		return self.has_state(ShellBase.S_OCCUPIED)

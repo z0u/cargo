@@ -22,8 +22,6 @@ import bxt
 
 from .story import *
 from . import shaders
-from . import inventory
-from . import jukebox
 
 class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
@@ -33,7 +31,7 @@ class LevelOut(GameLevel):
 				"//Sound/cc-by/PondAmbience1.ogg",
 				"//Sound/cc-by/PondAmbience2.ogg",
 				"//Sound/cc-by/PondAmbience3.ogg",
-				volume=0.7)
+				volume=1.0)
 
 		# Load additional files
 		self.load_foaliage()

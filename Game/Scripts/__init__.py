@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bxt
+
 from . import camera
 from . import director
 from . import lodtree
@@ -29,3 +31,10 @@ director.Director()
 lodtree.LODManager()
 menu.SessionManager()
 ui.HUDState()
+
+# Some basic configuration
+bxt.sound.set_volume("Mush_Spore", 0.15)
+bxt.sound.set_volume("FlowerPowSound", 0.2)
+bxt.sound.set_volume("Wheel", 0.5)
+bxt.sound.set_volume("Shell", 8.0)
+bxt.sound.set_volume("BottleCap", 1.0)

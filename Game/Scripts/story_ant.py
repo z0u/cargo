@@ -48,7 +48,9 @@ class Honeypot(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	@bxt.utils.controller_cls
 	def approach(self, c):
 		if c.sensors[0].positive:
-			bxt.types.Event("ApproachAnts").send()
+			player = c.sensors[0].hitObject
+			if not player.is_in_shell:
+				bxt.types.Event("ApproachAnts").send()
 
 class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0

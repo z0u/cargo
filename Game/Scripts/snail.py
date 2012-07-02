@@ -874,6 +874,14 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	def get_focal_points(self):
 		return self.focal_points[:]
 
+	@property
+	def has_shell(self):
+		return self.has_state(Snail.S_HASSHELL)
+
+	@property
+	def is_in_shell(self):
+		return self.has_state(Snail.S_INSHELL)
+
 class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2
 	S_SLOW = 3

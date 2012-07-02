@@ -175,14 +175,12 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 	def update_anchor(self):
 		if not self.has_state(ShellBase.S_ANCHOR):
 			return
-		self.worldPosition = self.anchorPos
-		self.worldOrientation = self.anchorOrn
+		bxt.bmath.copy_transform(self.anchor_ob, self)
 		self.worldLinearVelocity = bxt.bmath.MINVECTOR
 
-	def anchor(self):
+	def anchor(self, anchor_ob):
 		self.add_state(ShellBase.S_ANCHOR)
-		self.anchorPos = self.worldPosition.copy()
-		self.anchorOrn = self.worldOrientation.copy()
+		self.anchor_ob = anchor_ob
 
 class Shell(ShellBase):
 
@@ -460,4 +458,4 @@ def spawn_shell(c):
 
 	shell = factory(o["shell"])
 	bxt.bmath.copy_transform(o, shell)
-	shell.anchor()
+	shell.anchor(c.owner)

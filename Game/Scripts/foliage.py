@@ -45,25 +45,79 @@ class SBParticle:
 		self.Velocity = self.Velocity * (1.0 - self.Damping)
 		self.Frame = self.Frame + self.Velocity
 
-class GrassBlade(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = 'GB_'
 
-	@bxt.types.profile('Scripts.foliage.GrassBlade.__init__')
-	def __init__(self, old_owner):
-		self.bbox = bxt.bmath.Box2D(
-				0.0 - self['GrassRadY'], 0.0 - self['GrassRadZ'],
-				self['GrassRadY'], self['GrassRadZ'])
+	S_INIT = 1
+	S_UPDATE = 2
 
+	def __init__(self, old_owner):
 		self.Segments = []
 		for i in range(0, self['nSegments']):
 			p = SBParticle(self['Spring'], self['Damping'], i)
 			self.Segments.append(p)
 
+		self.intrusion = ZERO2.copy()
 		self.LastBaseFrame = ZERO2.copy()
 
 		if DEBUG:
 			for child in self.children:
 				child.color = bxt.render.BLACK
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def collide(self, c):
+		#
+		# Find the offset of the base.
+		#
+		s = c.sensors['Near']
+		vec = ZERO2.copy()
+		for col in s.hitObjectList:
+			vec = vec + self.get_collision_force(col)
+		self['BladeXBase'] = vec.x
+		self['BladeYBase'] = vec.y
+		self.intrusion = vec
+		if vec.magnitude > 0.0:
+			self.add_state(FlexibleObject.S_UPDATE)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def update(self, c):
+		linkDisplacement = self.intrusion - self.LastBaseFrame
+		self.LastBaseFrame = self.intrusion.copy()
+
+		#
+		# Provide input to other logic paths (a sensor might watch this).
+		#
+		self['Acceleration'] = linkDisplacement.magnitude
+
+		#
+		# Move each link in the opposite direction to the preceding link.
+		#
+		max_offset = 0.0
+		for s in self.Segments:
+			s.Frame = s.Frame - linkDisplacement
+			s.update_dynamics()
+			self[s.XProp] = s.Frame.x
+			self[s.YProp] = s.Frame.y
+			max_offset = max(max_offset, abs(s.Frame.x), abs(s.Frame.y),
+					abs(s.Velocity.x), abs(s.Velocity.y))
+			linkDisplacement = s.Velocity
+
+		if max_offset < 0.1:
+			self.rem_state(FlexibleObject.S_UPDATE)
+
+		for act in c.actuators:
+			c.activate(act)
+
+class GrassBlade(FlexibleObject):
+
+	@bxt.types.profile('Scripts.foliage.GrassBlade.__init__')
+	def __init__(self, old_owner):
+		FlexibleObject.__init__(self, old_owner)
+		self.bbox = bxt.bmath.Box2D(
+				0.0 - self['GrassRadY'], 0.0 - self['GrassRadZ'],
+				self['GrassRadY'], self['GrassRadZ'])
 
 	def get_collision_force(self, collider):
 		#
@@ -103,36 +157,16 @@ class GrassBlade(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 		return cPos
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def collide(self, c):
-		#
-		# Find the offset of the base.
-		#
-		s = c.sensors['Near']
-		vec = ZERO2.copy()
-		for col in s.hitObjectList:
-			vec = vec + self.get_collision_force(col)
-		self['BladeXBase'] = vec.x
-		self['BladeYBase'] = vec.y
+class Web(FlexibleObject):
+	def __init__(self, old_owner):
+		FlexibleObject.__init__(self, old_owner)
 
-		linkDisplacement = vec - self.LastBaseFrame
-		self.LastBaseFrame = vec
-
-		#
-		# Provide input to other logic paths (a sensor might watch this).
-		#
-		self['Acceleration'] = linkDisplacement.magnitude
-
-		#
-		# Move each link in the opposite direction to the preceding link.
-		#
-		for s in self.Segments:
-			s.Frame = s.Frame - linkDisplacement
-			s.update_dynamics()
-			self[s.XProp] = s.Frame.x
-			self[s.YProp] = s.Frame.y
-			linkDisplacement = s.Velocity
-
-		for act in c.actuators:
-			c.activate(act)
+	def get_collision_force(self, collider):
+		cPos = bxt.bmath.to_local(self, collider.worldPosition)
+		colRad = collider['LODRadius']
+		if cPos.z < 0:
+			intrusion = cPos.z + colRad
+		else:
+			intrusion = cPos.z - colRad
+		intrusion = bxt.bmath.clamp(-colRad, colRad, intrusion) * 100.0
+		return mathutils.Vector((intrusion, intrusion))

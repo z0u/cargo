@@ -32,37 +32,64 @@ class Actor(bxt.types.BX_GameObject):
 	and can float (and drown!) in water.'''
 
 	SANITY_RAY_LENGTH = 10000.0
+	SAFE_QUEUE_LENGTH = 10
+	MIN_SAFE_DIST = 1.0
 
 	touchedObject = bxt.types.weakprop('touchedObject')
 
 	def __init__(self):
-		self.save_location()
 		self._currentLinV = bxt.bmath.MINVECTOR.copy()
 		self.lastLinV = bxt.bmath.MINVECTOR.copy()
 		self.localCoordinates = False
 		self.touchedObject = None
 		# Set property to allow logic bricks to find actors.
 		self["Actor"] = True
+		# This property is controlled by bxt.water
+		self["SubmergedFactor"] = 0.0
+		self.safe_positions = []
+		self.safe_orientations = []
+
 		Director().add_actor(self)
 
 	@bxt.types.expose
-	def save_location(self):
-		'''Save the location of the owner for later. This may happen when the
-		object touches a safe point.'''
-		self.safePosition = self.worldPosition.copy()
-		self.safeOrientation = self.worldOrientation.copy()
+	@bxt.utils.controller_cls
+	def save_location(self, c):
+		'''Save the location of the owner for later.'''
+		if self["SubmergedFactor"] > 0.0:
+			# Water is inherently unsafe
+			return
+		if not c.sensors['sSafe'].positive:
+			return
+		if c.sensors['sUnsafe'].positive:
+			return
 
-	def inherit_safe_location(self, otherActor):
-		self.safePosition = otherActor.safePosition
-		self.safeOrientation = otherActor.safeOrientation
+		pos = self.worldPosition.copy()
+		orn = self.worldOrientation.copy()
+		try:
+			if (pos - self.safe_positions[0]).magnitude < Actor.MIN_SAFE_DIST:
+				return
+		except IndexError:
+			pass
+
+		self._save_location(pos, orn)
+
+	def _save_location(self, pos, orn):
+		# Store a queue of safe locations. In the event of a respawn, the oldest
+		# one will be used; this makes it more likely that the respawn will
+		# happen in a comfortable place.
+		self.safe_positions.insert(0, pos)
+		self.safe_orientations.insert(0, orn)
+		# Truncate
+		self.safe_positions = self.safe_positions[:Actor.SAFE_QUEUE_LENGTH]
+		self.safe_orientations = self.safe_orientations[:Actor.SAFE_QUEUE_LENGTH]
 
 	def relocate(self, pos, rot):
 		self.worldPosition = pos
 		self.worldOrientation = rot
 
 	def respawn(self, reason = None):
-		self.worldPosition = self.safePosition
-		self.worldOrientation = self.safeOrientation
+		self.worldPosition = self.safe_positions[-1]
+		self.worldOrientation = self.safe_orientations[-1]
 		self.setLinearVelocity(bxt.bmath.MINVECTOR)
 		self.setAngularVelocity(bxt.bmath.MINVECTOR)
 		if self == Director().mainCharacter and reason != None:

@@ -152,11 +152,11 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 			self.snail.exit_shell(animate = True)
 		return True
 
-	def save_location(self):
-		super(ShellBase, self).save_location()
-		if (self.parent is not None and
-				hasattr(self.parent, "inherit_safe_location")):
-			self.parent.inherit_safe_location(self)
+	def _save_location(self, pos, orn):
+		if not self.is_occupied:
+			return
+		director.Actor._save_location(self, pos, orn)
+		self.snail._save_location(pos, orn)
 
 	def respawn(self, reason = None):
 		if self.is_occupied:

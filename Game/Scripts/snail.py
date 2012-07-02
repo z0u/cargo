@@ -418,7 +418,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		for ob in collectables:
 			if isinstance(ob, shells.ShellBase):
-				if not ob.is_carried() and not ob.is_grasped():
+				if not ob.is_carried and not ob.is_grasped:
 					self.equip_shell(ob, True)
 					bxt.types.Event('ShellChanged', 'new').send()
 

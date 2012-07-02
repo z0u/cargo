@@ -97,7 +97,9 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Peer out of ground
 		#
 		s = s.createTransition("Begin")
+		s.addCondition(CondEvent('ShellEntered'))
 		s.addCondition(CondEvent('DialogueDismissed'))
+		s.addEvent('AnchorShell', 'CH_ShellAnchor')
 		s.addWeakEvent("FinishLoading", self)
 		s.addAction(ActGenericContext(spray_dirt, 10, 15.0))
 		s.addAction(ActAction('BurstOut', 1, 75, Worm.L_ANIM))

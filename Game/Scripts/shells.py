@@ -67,6 +67,18 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 		self.set_state(ShellBase.S_IDLE)
 		self.add_state(ShellBase.S_ALWAYS)
 
+		bxt.types.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'AnchorShell':
+			# Only respond to this message if this shell has an owner.
+			if self.is_occupied:
+				if isinstance(evt.body, str):
+					anchor = self.scene.objects[evt.body]
+				else:
+					anchor = evt.body
+				self.anchor(anchor)
+
 	def on_picked_up(self, snail, animate):
 		'''Called when a snail picks up this shell.'''
 		self.snail = snail
@@ -118,6 +130,8 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 		self['CurrentBuoyancy'] = self['Buoyancy']
 		if self.occupier:
 			bxt.utils.set_state(self.occupier, 1)
+		# Clear anchor flag, if it was set.
+		self.rem_state(ShellBase.S_ANCHOR)
 
 	def on_post_exit(self):
 		'''Called when the snail has finished its exit shell
@@ -129,7 +143,7 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 		return False
 
 	def handle_bt_1(self, state):
-		if not self.is_occupied():
+		if not self.is_occupied:
 			print("Warning: Shell %s received impulse when not occupied." %
 				self.name)
 			return False
@@ -145,9 +159,9 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 			self.parent.inherit_safe_location(self)
 
 	def respawn(self, reason = None):
-		if self.is_occupied():
+		if self.is_occupied:
 			self.snail.respawn(reason)
-		elif self.is_carried():
+		elif self.is_carried:
 			# Do nothing: shell is being carried, but snail is still in control
 			# (so presumably the snail will be told to respawn too).
 			pass
@@ -161,13 +175,16 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 			self.snail.damage(amount=1)
 
 	def on_oxygen_set(self):
-		if self.is_occupied():
+		if self.is_occupied:
 			bxt.types.Event('OxygenSet', self['Oxygen']).send()
 
+	@property
 	def is_occupied(self):
 		return self.has_state(ShellBase.S_OCCUPIED)
+	@property
 	def is_carried(self):
 		return self.has_state(ShellBase.S_CARRIED)
+	@property
 	def is_grasped(self):
 		return self.has_state(ShellBase.S_GRASPED)
 
@@ -256,10 +273,10 @@ class Wheel(ShellBase):
 		ShellBase.__init__(self, old_owner)
 		self._reset_speed()
 		self.fly_power = 0.0
-		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_event(self, evt):
+		ShellBase.on_event(self, evt)
 		if evt.message == 'GravityChanged':
 			self.fly_power = evt.body * -(1.0 - Wheel.FLY_POWER)
 
@@ -327,7 +344,7 @@ class Wheel(ShellBase):
 		return True
 
 	def can_destroy_stuff(self):
-		if not self.is_occupied():
+		if not self.is_occupied:
 			return False
 		if self.get_last_linear_velocity().magnitude < Wheel.DESTRUCTION_SPEED:
 			return False

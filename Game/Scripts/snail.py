@@ -270,7 +270,6 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 				bxt.types.Event('ShellChanged', 'new').send()
 
 	def teleport(self, spawn_point):
-		print("Teleporting to %s." % spawn_point)
 		self.exit_shell(False)
 		if isinstance(spawn_point, str):
 			try:

@@ -21,6 +21,15 @@ import bxt
 from . import director
 from .story import *
 
+def factory(sce):
+	if not "Firefly" in sce.objectsInactive:
+		try:
+			bge.logic.LibLoad('//Firefly_loader.blend', 'Scene', load_actions=True)
+		except ValueError as e:
+			print('Warning: could not load firefly:', e)
+
+	return bxt.types.add_and_mutate_object(sce, "Firefly", "Firefly")
+
 class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Watches for Cargo's approach of the lighthouse, and creates the
 	lighthouse keeper in response.'''
@@ -47,27 +56,19 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def spawn_keeper(self):
 		# Need to use self.scene here because we might be called from another
 		# scene (due to the event bus).
-		sce = self.scene
-		if "LighthouseKeeper" in sce.objects:
-			print("Warning: tried to create LighthouseKeeperSet twice.")
-			return
-
-		obTemplate = sce.objectsInactive["LighthouseKeeperSet"]
-		spawnPoint = sce.objects["LighthouseKeeperSpawn"]
-		ob = sce.addObject(obTemplate, spawnPoint)
-		bxt.bmath.copy_transform(spawnPoint, ob)
+		lk = factory(self.scene)
+		spawnPoint = self.scene.objects["LK_FireflySpawn"]
+		bxt.bmath.copy_transform(spawnPoint, lk)
 		bxt.types.Event("TeleportSnail", "LK_SnailTalkPos").send()
-		#bxt.types.Event("ShowLoadingScreen", (False, None)).send()
 
 	def kill_keeper(self):
 		try:
-			ob = self.scene.objects["LighthouseKeeperSet"]
+			ob = self.scene.objects["Firefly"]
 			ob.endObject()
 		except KeyError:
-			print("Warning: could not delete LighthouseKeeperSet")
+			print("Warning: could not delete Firefly")
 
 	def arrive(self):
-		print("Arriving at lighthouse.")
 		self.inLocality = True
 		cbEvent = bxt.types.Event("EnterLighthouse")
 		bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
@@ -75,7 +76,6 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def leave(self):
 		# Remove the keeper to prevent its armature from chewing up resources.
-		print("Leaving lighthouse.")
 		self.kill_keeper()
 		self.inLocality = False
 
@@ -112,15 +112,14 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		# Set scene with a long shot camera.
 		#
 		s = self.rootState.createTransition("Init")
-		s.addCondition(CondSensor('Near'))
 		s.addAction(ActSuspendInput())
 		s.addWeakEvent("StartLoading", self)
-		s.addAction(ActSetCamera('LK_Cam_Long'))
-		s.addAction(ActSetFocalPoint('LighthouseKeeper'))
 
 		s = s.createTransition()
 		s.addCondition(CondWait(1))
 		s.addWeakEvent("FinishLoading", self)
+		s.addAction(ActSetCamera('LK_Cam_Long'))
+		s.addAction(ActSetFocalPoint('FF_Face'))
 		# Teleport here in addition to when the lighthouse keeper is first
 		# spawned, since this may be the second time the snail is approaching.
 		s.addEvent("TeleportSnail", "LK_SnailTalkPos")
@@ -168,13 +167,16 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActRemoveCamera('LK_Cam_CU_LK'))
 		s.addAction(ActRemoveCamera('LK_Cam_CU_Cargo'))
-		s.addAction(ActRemoveFocalPoint('LighthouseKeeper'))
+		s.addAction(ActRemoveFocalPoint('FF_Face'))
 
 		#
 		# Loop back to start when snail moves away.
 		#
-		s = s.createTransition("Reset")
+		s = s.createTransition()
 		s.addCondition(CondSensorNot('Near'))
+
+		s = s.createTransition("Reset")
+		s.addCondition(CondSensor('Near'))
 		s.addTransition(self.rootState)
 
 	def sg_accept_delivery(self, preceding_states):

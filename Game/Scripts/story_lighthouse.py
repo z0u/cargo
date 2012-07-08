@@ -123,12 +123,15 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		# Teleport here in addition to when the lighthouse keeper is first
 		# spawned, since this may be the second time the snail is approaching.
 		s.addEvent("TeleportSnail", "LK_SnailTalkPos")
-		s.addAction(ActAction('LK_Converse', 1, 60, LighthouseKeeper.L_ANIM))
+		s.addAction(ActAction('LK_Greet', 1, 80, LighthouseKeeper.L_ANIM))
 
 		s = s.createTransition("Close-up")
-		s.addCondition(CondActionGE(LighthouseKeeper.L_ANIM, 40))
+		s.addCondition(CondActionGE(LighthouseKeeper.L_ANIM, 32))
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
+
+		s = s.createTransition()
+		s.addCondition(CondActionGE(LighthouseKeeper.L_ANIM, 70))
 
 		sfirstmeeting = s.createTransition()
 		sfirstmeeting.addCondition(CNot(CondStore('/game/level/lkMissionStarted', True, False)))
@@ -167,8 +170,14 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 		s.addAction(ActRemoveCamera('LK_Cam_CU_LK'))
-		s.addAction(ActRemoveCamera('LK_Cam_CU_Cargo'))
 		s.addAction(ActRemoveFocalPoint('FF_Face'))
+
+		#
+		# Play idle animation
+		#
+		s = s.createTransition()
+		s.addAction(ActAction('LK_WorkingHard', 1, 36, LighthouseKeeper.L_ANIM,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=4.0))
 
 		#
 		# Loop back to start when snail moves away.

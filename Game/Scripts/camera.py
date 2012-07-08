@@ -39,7 +39,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	COLLISION_BIAS = 0.8
 	MIN_FOCAL_DIST = 4.0
 	FOCAL_FAC = 0.1
-	BLUR_MULT_ACCEL = 0.005
+	BLUR_MULT_ACCEL = 0.001
 	BLUR_MULT_MAX = 10.0
 	BLUR_MULT_DAMP = 0.1
 
@@ -196,17 +196,14 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 				pow((cam.lens / self.defaultLens), 2) * \
 				self.blurMultiplier
 
-		if self.blurMultiplier > 1.0:
-			accel = -AutoCamera.BLUR_MULT_ACCEL
-		elif self.blurMultiplier < 1.0:
-			accel = AutoCamera.BLUR_MULT_ACCEL
-		else:
-			accel = 0.0
-		self.blurMultiplier, self.blurMultVelocity = bxt.bmath.integrate(
-				self.blurMultiplier, self.blurMultVelocity,
-				accel, AutoCamera.BLUR_MULT_DAMP)
-		self.blurMultiplier = bxt.bmath.clamp(0.0, AutoCamera.BLUR_MULT_MAX,
-				self.blurMultiplier)
+		diff = 1.0 - self.blurMultiplier
+		accel = diff * AutoCamera.BLUR_MULT_ACCEL
+		if abs(diff) > 0.01 or abs(self.blurMultVelocity) > 0.01:
+			self.blurMultiplier, self.blurMultVelocity = bxt.bmath.integrate(
+					self.blurMultiplier, self.blurMultVelocity,
+					accel, AutoCamera.BLUR_MULT_DAMP)
+			self.blurMultiplier = bxt.bmath.clamp(0.0, AutoCamera.BLUR_MULT_MAX,
+					self.blurMultiplier)
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls

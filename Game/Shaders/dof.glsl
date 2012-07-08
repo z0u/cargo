@@ -37,6 +37,8 @@ uniform sampler2D bgl_DepthTexture;
 uniform float bgl_RenderedTextureWidth;
 uniform float bgl_RenderedTextureHeight;
 
+vec2 dimensions;
+vec2 dimensions_inv;
 vec2 halftexel;
 vec2 maxcoord;
 
@@ -58,7 +60,14 @@ uniform float blurRadius;
 // black borders from appearing around the image.
 //
 vec2 get_coord(in vec2 offset) {
-    return clamp(gl_TexCoord[0].st + offset, halftexel, maxcoord);
+    vec2 co = gl_TexCoord[0].st + offset;
+    co = clamp(co, halftexel, maxcoord);
+    return co;
+}
+// Round to the nearest texel to prevent colour bleeding.
+vec2 nearest_texel(in vec2 coord) {
+    vec2 co = floor(coord * dimensions) + vec2(0.5);
+    return co * dimensions_inv;
 }
 
 vec4 get_colour(vec2 co) {
@@ -100,7 +109,7 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
 
     // Use the focus of the current point to drive the filter radius.
     offset *= blur * blurRadius;
-    co = get_coord(offset);
+    co = nearest_texel(get_coord(offset));
 
     col = get_colour(co);
 
@@ -126,7 +135,9 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
 }
 
 void main(void) {
-    halftexel = vec2(1.0) / vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
+    dimensions = vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
+    dimensions_inv = 1.0 / dimensions;
+    halftexel = vec2(0.5) / vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
     maxcoord = vec2(1.0) - halftexel;
 
     float depth = get_depth(gl_TexCoord[0].st);

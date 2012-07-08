@@ -38,7 +38,6 @@ class Honeypot(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = "HP_"
 
 	def __init__(self, old_owner):
-		Chapter.__init__(self, old_owner)
 		#bxt.types.WeakEvent("StartLoading", self).send()
 		ant1 = factory()
 		bxt.bmath.copy_transform(self.children["Ant1SpawnPoint"], ant1)

@@ -37,6 +37,9 @@ uniform sampler2D bgl_DepthTexture;
 uniform float bgl_RenderedTextureWidth;
 uniform float bgl_RenderedTextureHeight;
 
+vec2 halftexel;
+vec2 maxcoord;
+
 //
 // Uniforms set as game object properties (see logic buttons). focalDepth should
 // be set as:
@@ -55,8 +58,6 @@ uniform float blurRadius;
 // black borders from appearing around the image.
 //
 vec2 get_coord(in vec2 offset) {
-    vec2 halftexel = vec2(1.0) / vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
-    vec2 maxcoord = vec2(1.0) - halftexel;
     return clamp(gl_TexCoord[0].st + offset, halftexel, maxcoord);
 }
 
@@ -90,6 +91,7 @@ float get_blur(float depth) {
 //              due to occlusion and different z-depths, a sample may
 //              contribute a smaller fraction of its colour.
 //
+
 vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
     float idepth;
     float contrib;
@@ -124,6 +126,9 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
 }
 
 void main(void) {
+    halftexel = vec2(1.0) / vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
+    maxcoord = vec2(1.0) - halftexel;
+
     float depth = get_depth(gl_TexCoord[0].st);
     float aspect = bgl_RenderedTextureWidth / bgl_RenderedTextureHeight;
     vec2 blur = vec2(get_blur(depth)) * vec2(1.0, aspect);
@@ -153,6 +158,6 @@ void main(void) {
     gl_FragColor = col / influence;
 
     // For debugging the blur factor
-    //gl_FragColor = vec4(get_blur(depth));
-    //gl_FragColor = vec4(depth);
+    //gl_FragColor = mix(vec4(get_blur(depth)), gl_FragColor, 0.0000001);
+    //gl_FragColor = mix(vec4(depth), gl_FragColor, 0.0000001);
 }

@@ -69,13 +69,12 @@ class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		target_bend_angle = bxt.bmath.lerp(self['MinAngle'], self['MaxAngle'], self.influence)
 
 		difference = target_bend_angle - self.bend_angle
-		self.velocity = self.velocity + difference * self['acceleration']
-		self.velocity *= 1.0 - self['damping']
-		self.bend_angle += self.velocity
+		self.bend_angle, self.velocity = bxt.bmath.integrate(
+				self.bend_angle, self.velocity,
+				difference * self['acceleration'], self['damping'])
 
 		self.playAction('LeafBend', self.bend_angle, self.bend_angle)
 
 		if abs(self.velocity) < 0.0001 and abs(difference) < 0.0001:
 			# At rest
 			self.rem_state(BendyLeaf.S_UPDATING)
-

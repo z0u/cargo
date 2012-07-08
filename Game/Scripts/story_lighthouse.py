@@ -123,15 +123,16 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		# Teleport here in addition to when the lighthouse keeper is first
 		# spawned, since this may be the second time the snail is approaching.
 		s.addEvent("TeleportSnail", "LK_SnailTalkPos")
+		s.addAction(ActAction('LK_Converse', 1, 60, LighthouseKeeper.L_ANIM))
 
 		s = s.createTransition("Close-up")
-		s.addCondition(CondWait(2))
+		s.addCondition(CondActionGE(LighthouseKeeper.L_ANIM, 40))
 		s.addAction(ActSetCamera('LK_Cam_CU_LK'))
 		s.addAction(ActRemoveCamera('LK_Cam_Long'))
 
 		sfirstmeeting = s.createTransition()
 		sfirstmeeting.addCondition(CNot(CondStore('/game/level/lkMissionStarted', True, False)))
-		sfirstmeeting.addEvent("ShowDialogue", ("Oh, hello Cargo! What's up?",
+		sfirstmeeting.addEvent("ShowDialogue", ("Cargo! What's up?",
 				("\[envelope]!", "Just saying \"hi\".")))
 
 		sdeliver1 = sfirstmeeting.createTransition("delivery1")

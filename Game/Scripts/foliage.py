@@ -41,9 +41,10 @@ class SBParticle:
 
 	def update_dynamics(self):
 		'''Accelerate the particle towards (0, 0)'''
-		self.Velocity = self.Velocity - (self.Frame * self.Spring)
-		self.Velocity = self.Velocity * (1.0 - self.Damping)
-		self.Frame = self.Frame + self.Velocity
+		accel = self.Frame * -self.Spring
+		self.Frame, self.Velocity = bxt.bmath.integrate(
+				self.Frame, self.Velocity,
+				accel, self.Damping)
 
 class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = 'GB_'
@@ -57,6 +58,7 @@ class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			p = SBParticle(self['Spring'], self['Damping'], i)
 			self.Segments.append(p)
 
+		self.jolt_frames = 0
 		self.intrusion = ZERO2.copy()
 		self.LastBaseFrame = ZERO2.copy()
 
@@ -89,7 +91,17 @@ class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		#
 		# Provide input to other logic paths (a sensor might watch this).
 		#
-		self['Acceleration'] = linkDisplacement.magnitude
+		if self.jolt_frames == 0 and linkDisplacement.magnitude > 15.0:
+			self['Jolted'] = True
+			self.jolt_frames = 100
+			if 'JoltMessage' in self:
+				evt = bxt.types.Event(self['JoltMessage'])
+				if 'JoltBody' in self:
+					evt.body = self['JoltBody']
+				evt.send()
+		elif self.jolt_frames > 0:
+			self['Jolted'] = False
+			self.jolt_frames -= 1
 
 		#
 		# Move each link in the opposite direction to the preceding link.

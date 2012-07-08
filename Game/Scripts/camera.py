@@ -20,6 +20,7 @@ import aud
 
 import bxt
 from . import director, store
+from bxt.bmath import clamp
 
 DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
@@ -38,6 +39,9 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	COLLISION_BIAS = 0.8
 	MIN_FOCAL_DIST = 4.0
 	FOCAL_FAC = 0.1
+	BLUR_MULT_ACCEL = 0.005
+	BLUR_MULT_MAX = 10.0
+	BLUR_MULT_DAMP = 0.1
 
 	camera = bxt.types.weakprop('camera')
 	lastGoal = bxt.types.weakprop('lastGoal')
@@ -48,6 +52,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		'''
 		self.camera = None
 		self.defaultLens = 22.0
+		self.blurMultiplier = 1.0
+		self.blurMultVelocity = 0.0
 		self.queue = bxt.types.SafePriorityStack()
 		self.focusQueue = bxt.types.SafePriorityStack()
 		self.observers = bxt.types.SafeSet()
@@ -69,6 +75,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 			self.add_focus_point(evt.body)
 		elif evt.message == 'RemoveFocusPoint':
 			self.remove_focus_point(evt.body)
+		elif evt.message == 'BlurAdd':
+			self.blurMultVelocity += evt.body
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls
@@ -184,7 +192,21 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 
 		# This bit doesn't need to be interpolated; the lens value is already
 		# interpolated in 'update'.
-		cam['blurRadius'] = cam['baseBlurRadius'] * (cam.lens / self.defaultLens)
+		cam['blurRadius'] = cam['baseBlurRadius'] * \
+				pow((cam.lens / self.defaultLens), 2) * \
+				self.blurMultiplier
+
+		if self.blurMultiplier > 1.0:
+			accel = -AutoCamera.BLUR_MULT_ACCEL
+		elif self.blurMultiplier < 1.0:
+			accel = AutoCamera.BLUR_MULT_ACCEL
+		else:
+			accel = 0.0
+		self.blurMultiplier, self.blurMultVelocity = bxt.bmath.integrate(
+				self.blurMultiplier, self.blurMultVelocity,
+				accel, AutoCamera.BLUR_MULT_DAMP)
+		self.blurMultiplier = bxt.bmath.clamp(0.0, AutoCamera.BLUR_MULT_MAX,
+				self.blurMultiplier)
 
 	@bxt.types.expose
 	@bxt.utils.owner_cls

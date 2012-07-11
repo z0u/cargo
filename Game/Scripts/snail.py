@@ -557,7 +557,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		shell.on_dropped()
 		self.recentlyDroppedItems.add(shell)
 
-		bxt.types.WeakEvent('ShellDropped', self).send()
+		bxt.types.WeakEvent('ShellDropped', shell).send()
 
 	def enter_shell(self, animate):
 		'''

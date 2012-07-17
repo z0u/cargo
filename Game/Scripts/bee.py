@@ -22,8 +22,18 @@ import bxt
 
 def spawn(c):
 	sce = bge.logic.getCurrentScene()
-	bee = bxt.types.add_and_mutate_object(sce, 'WorkerBee', c.owner)
+	bee = factory(sce)
+	bxt.bmath.copy_transform(c.owner, bee)
 	bee.path = sce.objects[c.owner['path']]
+
+def factory(scene):
+	if not "WorkerBee" in scene.objectsInactive:
+		try:
+			bge.logic.LibLoad('//Bee_loader.blend', 'Scene', load_actions=True)
+		except ValueError as e:
+			print('Warning: could not load bee:', e)
+
+	return bxt.types.add_and_mutate_object(scene, "WorkerBee", "WorkerBee")
 
 class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'WB_'
@@ -38,25 +48,35 @@ class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		self.path = None
 		self.hint = 0
-		self.set_lift(mathutils.Vector((0.0, 0.0, 9.8)))
+		self.set_lift(mathutils.Vector((0.0, 0.0, -9.8)))
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'GravityChanged':
-			self.set_lift(evt.body.negate())
+			self.set_lift(evt.body)
 
 	def set_lift(self, gravity):
-		self.lift = (gravity / bge.logic.getLogicTicRate()) * WorkerBee.LIFT_FAC
+		lift = gravity.copy()
+		lift.negate()
+		lift = (lift / bge.logic.getLogicTicRate()) * WorkerBee.LIFT_FAC
+		self.lift = lift
 
 	@bxt.types.expose
 	def fly(self):
 		if self.path is None:
 			return
+
+		# Find target: either enemy or waypoint.
+		snail = self.get_nearby_snail()
+		if snail is not None:
+			next_point = snail.worldPosition
+		else:
+			next_point = self.get_next_waypoint()
+
+		# Approach target
 		cpos = self.worldPosition
-		next_point, self.hint = self.path.get_next(cpos, WorkerBee.RELAX_DIST,
-				self.hint)
 		accel = (next_point - cpos).normalized() * WorkerBee.ACCEL
 		accel += self.lift
 		pos, vel = bxt.bmath.integrate(cpos, self.worldLinearVelocity,
@@ -64,12 +84,30 @@ class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.worldPosition = pos
 		self.worldLinearVelocity = vel
 
-class DirectionalPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	@bxt.utils.controller_cls
+	def get_nearby_snail(self, c):
+		s = c.sensors[0]
+		if not s.positive:
+			return None
+
+		snail = s.hitObject
+		if snail.is_in_shell:
+			return None
+		else:
+			return snail
+
+	def get_next_waypoint(self):
+		cpos = self.worldPosition
+		next_point, self.hint = self.path.get_next(cpos, WorkerBee.RELAX_DIST,
+				self.hint)
+		return next_point
+
+class DirectedPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	DEFAULT_STRIDE = 2
 
 	def __init__(self, old_owner):
-		self.set_default_prop('stride', DirectionalPath.DEFAULT_STRIDE)
+		self.set_default_prop('stride', DirectedPath.DEFAULT_STRIDE)
 
 	def init_path(self):
 		me = self.meshes[0]

@@ -61,13 +61,14 @@ uniform float blurRadius;
 //
 vec2 get_coord(in vec2 offset) {
     vec2 co = gl_TexCoord[0].st + offset;
-    co = clamp(co, halftexel, maxcoord);
     return co;
 }
 // Round to the nearest texel to prevent colour bleeding.
 vec2 nearest_texel(in vec2 coord) {
     vec2 co = floor(coord * dimensions) + vec2(0.5);
-    return co * dimensions_inv;
+    co *= dimensions_inv;
+    co = clamp(co, halftexel, maxcoord);
+    return co;
 }
 
 vec4 get_colour(vec2 co) {
@@ -126,22 +127,22 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
     else
         contrib = 1.0;
 
-    // Ignore samples that are totally black. This avoids blurring the screen border.
-    // NOTE: no truly black pixels in the scene will be blurred!
-    //contrib *= min(1.0, col.r * 1000000.0);
-
     influence += contrib;
     return col * contrib;
 }
 
 void main(void) {
     dimensions = vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
-    dimensions_inv = 1.0 / dimensions;
-    halftexel = vec2(0.5) / vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
+
+    // Hack for incorrect texture size
+    dimensions += vec2(1.0);
+
+    dimensions_inv = vec2(1.0) / dimensions;
+    halftexel = vec2(0.5) / dimensions;
     maxcoord = vec2(1.0) - halftexel;
 
     float depth = get_depth(gl_TexCoord[0].st);
-    float aspect = bgl_RenderedTextureWidth / bgl_RenderedTextureHeight;
+    float aspect = dimensions.x / dimensions.y;
     vec2 blur = vec2(get_blur(depth)) * vec2(1.0, aspect);
     vec4 col = vec4(0.0);
     float influence = 0.000001;
@@ -171,4 +172,7 @@ void main(void) {
     // For debugging the blur factor
     //gl_FragColor = mix(vec4(get_blur(depth)), gl_FragColor, 0.0000001);
     //gl_FragColor = mix(vec4(depth), gl_FragColor, 0.0000001);
+
+    // Diff against original colour
+    //gl_FragColor = abs(gl_FragColor - texture2D(bgl_RenderedTexture, gl_TexCoord[0].st));
 }

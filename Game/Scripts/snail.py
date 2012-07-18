@@ -64,6 +64,10 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	SHELL_POP_SPEED = 40.0
 	WATER_DAMPING = 0.5
 
+	# For shrooms
+	MAX_INTOXICATION = 140
+	INTOXICATION_HIT = 60
+
 	shell = bxt.types.weakprop('shell')
 
 	def __init__(self, old_owner):
@@ -95,12 +99,12 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		# For path camera
 		self.localCoordinates = True
 
-		self.frameCounter = 0
-
 		self.load_items()
 
 		self['Oxygen'] = 1.0
 		self.on_oxygen_set()
+
+		self.intoxication_level = 0
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
@@ -134,6 +138,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		self.orient()
 		self.update_eye_length()
 		self.size_shell()
+		if self.intoxication_level > 0:
+			self.intoxication_level -= 1
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
@@ -196,8 +202,6 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		self.orient_segment(self.children['Head.0'])
 		self.orient_segment(self.children['Tail.0'])
 		self.armature.update()
-
-		self.frameCounter += 1
 
 	def orient_segment(self, parentSegment):
 		name = parentSegment.name[:-2]
@@ -268,6 +272,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			for name in inventory.Shells().get_all_shells():
 				inventory.Shells().add(name)
 				bxt.types.Event('ShellChanged', 'new').send()
+		elif evt.message == 'HitMushroom':
+			self.hit_mushroom()
 
 	def teleport(self, spawn_point):
 		self.exit_shell(False)
@@ -685,6 +691,12 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		evt = bxt.types.Event('HealthSet', value / self.maxHealth)
 		bxt.types.EventBus().notify(evt)
 
+	def damage(self, amount=1):
+		body = self.childrenRecursive['SnailBody']
+		body.playAction('SnailDamage_Body', 1, 100, 0, blendin=1)
+		body.setActionFrame(1, 0)
+		director.VulnerableActor.damage(self, amount=amount)
+
 	def shock(self):
 		self.enter_shell(animate=True)
 
@@ -713,6 +725,13 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			self['SpeedMultiplier'] = speed
 		elif speed < 1.0 and self['SpeedMultiplier'] > speed:
 			self['SpeedMultiplier'] = speed
+
+	def hit_mushroom(self):
+		bxt.types.Event('BlurAdd', 0.5).send()
+		self.intoxication_level += Snail.INTOXICATION_HIT
+		if self.intoxication_level >= Snail.MAX_INTOXICATION:
+			self.damage()
+			self.intoxication_level = 0
 
 	@bxt.types.expose
 	def start_crawling(self):

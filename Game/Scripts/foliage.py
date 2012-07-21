@@ -24,6 +24,23 @@ DEBUG = False
 
 ZERO2 = mathutils.Vector((0.0, 0.0))
 
+class Clover(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	'''A health powerup.'''
+
+	_prefix = 'CL_'
+
+	def __init__(self, old_owner):
+		pass
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def touched(self, c):
+		s = c.sensors[0]
+		if s.hitObject is not None and hasattr(s.hitObject, "heal"):
+			s.hitObject.heal()
+			self.scene.addObject("Clover_dynamic", self)
+			self.endObject()
+
 class SBParticle:
 	'''A 2D softbody particle. Always tries to return to (0, 0). Set the Frame
 	property directly to displace the particle; then call update_dynamics to

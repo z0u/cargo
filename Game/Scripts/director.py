@@ -215,6 +215,9 @@ class VulnerableActor(Actor):
 		if value <= 0:
 			self.die()
 
+	def heal(self, amount=1):
+		self.set_health(self.get_health() + amount)
+
 	def damage(self, amount=1):
 		'''Inflict damage on the actor. If this results in a health of zero, the
 		actor will die.

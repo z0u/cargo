@@ -307,6 +307,17 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		update_single(self.eyeRayL)
 		update_single(self.eyeRayR)
 
+	def pull_eyes_in(self):
+		'''
+		Cause the eyes to shrink back. This is a manual control; usually, the
+		eyes will be managed automatically in update_eye_length.
+		'''
+		def update_single(eyeRayOb):
+			channel = self.armature.channels[eyeRayOb['channel']]
+			channel.scale = (1.0, 0.1, 1.0)
+		update_single(self.eyeRayL)
+		update_single(self.eyeRayR)
+
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def look(self, c):
@@ -689,10 +700,15 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			body.stopAction(0)
 			body.playAction('SnailDamage_Body', 1, 100, 0)
 			body.setActionFrame(1, 0)
+			bxt.sound.play_random_sample(['//Sound/cc-by/HealthDown1.ogg', 
+					'//Sound/cc-by/HealthDown2.ogg',
+					'//Sound/cc-by/HealthDown3.ogg'])
+			self.pull_eyes_in()
 		elif diff > 0:
 			body.stopAction(0)
 			body.playAction('SnailHeal_Body', 1, 100, 0)
 			body.setActionFrame(1, 0)
+			bxt.sound.play_sample('//Sound/cc-by/HealthUp.ogg')
 		bxt.types.Event('HealthSet', value / self.maxHealth).send()
 
 	def heal(self, amount=1):

@@ -45,6 +45,14 @@ substitute it into this URL:
         By ERH (http://www.freesound.org/people/ERH/)
             fr0608bg Grey Parrot.wav - 57327 - CC-BY
 
+    July 22, 2012
+        By Corsica_S (http://www.freesound.org/people/Corsica_S/)
+            cd_flipper_06.flac - 34632 - CC-BY
+            cd_flipper_07.flac - 34633 - CC-BY
+        By batchku (http://www.freesound.org/people/batchku/)
+            mb-guh-chi-hah-1 001.aif - 9944 - CC-0
+            mb-guh-chi-hah-1-013.aif - 9956 - CC-0
+            mb-guh-chi-hah-1-029.aif - 9972 - CC-0
 
 
 == Sample catalogue ==
@@ -83,3 +91,13 @@ PondAmbience*.ogg
 Bird*.ogg
     - 57327 by ERH
 
+HealthUp.ogg
+    - 34632, 34633 by Corsica_S
+
+HealthWarning.ogg
+    - 34632 by Corsica_S
+
+HealthDown1.ogg
+    - 9944 by batchku
+    - 9956 by batchku
+    - 9972 by batchku

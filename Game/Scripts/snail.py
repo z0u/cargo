@@ -64,6 +64,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	SHELL_POP_SPEED = 40.0
 	WATER_DAMPING = 0.5
 
+	HEALTH_WARNING_DELAY = 180 # 3s
+
 	# For shrooms
 	MAX_INTOXICATION = 140
 	INTOXICATION_HIT = 60
@@ -105,6 +107,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		self.on_oxygen_set()
 
 		self.intoxication_level = 0
+		self.health_warn_tics = 0
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
@@ -127,7 +130,12 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			self.equip_shell(shell, False)
 
 	@bxt.types.expose
-	def update(self):
+	def alive(self):
+		'''Miscellaneous things to update while alive.'''
+		self.health_warning()
+
+	@bxt.types.expose
+	def crawl(self):
 		self.orient()
 		self.update_eye_length()
 		self.size_shell()
@@ -717,6 +725,19 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	def shock(self):
 		self.enter_shell(animate=True)
 
+	def health_warning(self):
+		'''Plays a sound every few seconds when health is low.'''
+		if self.get_health() > 1:
+			return
+
+		if self.health_warn_tics == 1:
+			bxt.sound.play_sample('//Sound/cc-by/HealthWarning.ogg', volume=0.5)
+
+		if self.health_warn_tics > 0:
+			self.health_warn_tics -= 1
+		else:
+			self.health_warn_tics = Snail.HEALTH_WARNING_DELAY
+
 	def on_oxygen_set(self):
 		if not self.has_state(Snail.S_INSHELL):
 			bxt.types.Event('OxygenSet', self['Oxygen']).send()
@@ -827,7 +848,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		if self['SpeedMultiplier'] > 1.0:
 			targetBendAngleAft /= self['SpeedMultiplier']
 
-		# These actually get applied in update.
+		# These actually get applied in crawl.
 		self['BendAngleFore'] = bxt.bmath.lerp(self['BendAngleFore'],
 				targetBendAngleFore, self['BendFactor'])
 

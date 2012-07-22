@@ -65,6 +65,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	WATER_DAMPING = 0.5
 
 	HEALTH_WARNING_DELAY = 180 # 3s
+	SHOCK_DURATION = 30 # 2s
 
 	# For shrooms
 	MAX_INTOXICATION = 140
@@ -108,6 +109,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.intoxication_level = 0
 		self.health_warn_tics = 0
+		self.shock_tics = 0
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
@@ -723,7 +725,23 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		self.damage(amount=-amount)
 
 	def shock(self):
+		self.add_state(Snail.S_SHOCKED)
+		self.rem_state(Snail.S_CRAWLING)
+		self.rem_state(Snail.S_FALLING)
 		self.enter_shell(animate=True)
+		self.shock_tics = Snail.SHOCK_DURATION
+		self.localLinearVelocity.z += 10.0
+
+	@bxt.types.expose
+	def shock_update(self):
+		'''Count down to become un-shocked.'''
+		if self.shock_tics > 0:
+			self.shock_tics -= 1
+			return
+
+		if not self.has_state(Snail.S_INSHELL):
+			self.add_state(Snail.S_FALLING)
+		self.rem_state(Snail.S_SHOCKED)
 
 	def health_warning(self):
 		'''Plays a sound every few seconds when health is low.'''

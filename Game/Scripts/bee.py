@@ -24,7 +24,8 @@ def spawn(c):
 	sce = bge.logic.getCurrentScene()
 	bee = factory(sce)
 	bxt.bmath.copy_transform(c.owner, bee)
-	bee.path = sce.objects[c.owner['path']]
+	path = sce.objects[c.owner['path']]
+	bee.path = bxt.types.mutate(path)
 
 def factory(scene):
 	if not "WorkerBee" in scene.objectsInactive:
@@ -33,7 +34,7 @@ def factory(scene):
 		except ValueError as e:
 			print('Warning: could not load bee:', e)
 
-	return bxt.types.add_and_mutate_object(scene, "WorkerBee", "WorkerBee")
+	return bxt.types.add_and_mutate_object(scene, "WorkerBee")
 
 class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'WB_'
@@ -66,6 +67,7 @@ class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	@bxt.types.expose
 	def fly(self):
 		if self.path is None:
+			print("Warning: bee has no path.")
 			return
 
 		# Find target: either enemy or waypoint.

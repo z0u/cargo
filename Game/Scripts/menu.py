@@ -35,7 +35,7 @@ CREDITS = [
 	("Textures", "Alex Fraser, Junki Wano"),
 	("Music", "Robert Leigh"),
 	("Programming", "Alex Fraser, Mark Triggs"),
-	("Sound Effects", "Alex Fraser, freesound.org users: 3bagbrew, FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, qubodup, thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S", "batchku"),
+	("Sound Effects", "Alex Fraser, freesound.org users: 3bagbrew, FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, qubodup, thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S, batchku, satrebor, gherat"),
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
 	("Made With", "Blender, Bullet, The GIMP and Inkscape")]
 
@@ -183,6 +183,8 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 
 		self.current = widget
 		bxt.types.WeakEvent("FocusChanged", widget).send()
+		if widget is not None:
+			bxt.sound.play_sample("//Sound/cc-by/BtnFocus.ogg")
 
 	def press(self):
 		'''Send a mouse down event to the widget under the cursor.'''
@@ -374,6 +376,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				body = self['onClickBody']
 			evt = bxt.types.Event(msg, body)
 			bxt.types.EventBus().notify(evt)
+		bxt.sound.play_sample("//Sound/cc-by/BtnClick.ogg")
 
 	def on_event(self, evt):
 		if evt.message == 'showScreen':

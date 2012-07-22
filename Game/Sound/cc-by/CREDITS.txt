@@ -53,6 +53,10 @@ substitute it into this URL:
             mb-guh-chi-hah-1 001.aif - 9944 - CC-0
             mb-guh-chi-hah-1-013.aif - 9956 - CC-0
             mb-guh-chi-hah-1-029.aif - 9972 - CC-0
+        By satrebor (http://www.freesound.org/people/satrebor/)
+            click.wav - 113218 - CC-0
+        By gherat (http://www.freesound.org/people/gherat/)
+            button_master 069.aif - 139653 - CC-0
 
 
 == Sample catalogue ==
@@ -101,3 +105,10 @@ HealthDown1.ogg
     - 9944 by batchku
     - 9956 by batchku
     - 9972 by batchku
+
+BtnClick.ogg
+    - 113218 by satrebor
+
+BtnFocus.ogg
+    - 139653 by gherat
+

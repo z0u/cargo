@@ -2,7 +2,8 @@
 Story:            Alex Fraser[1], Lara Mikocki, Lev Lafayette
 Sound effects:    Alex Fraser, Freesound[2] users: 3bagbrew, FreqMan,
                   HerbertBoland, Percy Duke, klakmart, aUREa, qubodup, thetruwu,
-                  nsp, kangaroovindaloo, ERH, Corsica_S, batchku
+                  nsp, kangaroovindaloo, ERH, Corsica_S, batchku, satrebor,
+                  gherat
 Music:            Robert Leigh
 Concept art:      Alex Fraser, Lara Mikocki, Junki Wano
 Storyboards:      Alex Fraser

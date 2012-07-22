@@ -127,13 +127,6 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			self.equip_shell(shell, False)
 
 	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def debug_collisions(self, c):
-		if not DEBUG:
-			return
-		print(c.sensors[0].hitObjectList)
-
-	@bxt.types.expose
 	def update(self):
 		self.orient()
 		self.update_eye_length()
@@ -687,15 +680,23 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			print(pos)
 
 	def set_health(self, value):
+		current = self.get_health()
 		super(Snail, self).set_health(value)
-		evt = bxt.types.Event('HealthSet', value / self.maxHealth)
-		bxt.types.EventBus().notify(evt)
 
-	def damage(self, amount=1):
+		diff = self.get_health() - current
 		body = self.childrenRecursive['SnailBody']
-		body.playAction('SnailDamage_Body', 1, 100, 0, blendin=1)
-		body.setActionFrame(1, 0)
-		director.VulnerableActor.damage(self, amount=amount)
+		if diff < 0:
+			body.stopAction(0)
+			body.playAction('SnailDamage_Body', 1, 100, 0)
+			body.setActionFrame(1, 0)
+		elif diff > 0:
+			body.stopAction(0)
+			body.playAction('SnailHeal_Body', 1, 100, 0)
+			body.setActionFrame(1, 0)
+		bxt.types.Event('HealthSet', value / self.maxHealth).send()
+
+	def heal(self, amount=1):
+		self.damage(amount=-amount)
 
 	def shock(self):
 		self.enter_shell(animate=True)

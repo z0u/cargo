@@ -181,7 +181,7 @@ class VulnerableActor(Actor):
 	_prefix = 'VA_'
 
 	# The number of logic ticks between damages from a particular object
-	DAMAGE_FREQUENCY = 60
+	DAMAGE_FREQUENCY = 120 # 2 seconds
 
 	def __init__(self, maxHealth = 1):
 		Actor.__init__(self)
@@ -197,7 +197,10 @@ class VulnerableActor(Actor):
 		self.damage(amount=1)
 
 	def get_health(self):
-		return self['Health']
+		try:
+			return self['Health']
+		except KeyError:
+			return self.maxHealth
 
 	def set_health(self, value):
 		'''Set the health of the actor. If this results in a health of zero, the
@@ -205,18 +208,9 @@ class VulnerableActor(Actor):
 		if value > self.maxHealth:
 			value = self.maxHealth
 
-		try:
-			if self['Health'] == value:
-				return
-		except KeyError:
-			pass
-
 		self['Health'] = value
 		if value <= 0:
 			self.die()
-
-	def heal(self, amount=1):
-		self.set_health(self.get_health() + amount)
 
 	def damage(self, amount=1):
 		'''Inflict damage on the actor. If this results in a health of zero, the
@@ -234,31 +228,25 @@ class VulnerableActor(Actor):
 	@bxt.utils.controller_cls
 	def damage_auto(self, c):
 		'''Should be attached to a Near or Collision sensor that looks for
-		objects with the Damage property.'''
-		def apply_damage(ob):
+		objects with the Damage property. Note that this is used for healing,
+		too (when an object has a Damage property with a negative value).'''
+		for ob in c.sensors[0].hitObjectList:
+			aid = id(ob)
+			if aid in self.attackerIds:
+				# Wait before attacking again.
+				continue
+
 			if 'Shock' in ob and ob['Shock']:
+				# This is shocking damage!
 				self.shock()
 			self.damage(ob['Damage'])
+			self.attackerIds[aid] = VulnerableActor.DAMAGE_FREQUENCY
 
-		# Walk the list of attackers and decide which ones will actually deal
-		# damage on this frame.
-		currentAttackers = []
-		for ob in c.sensors[0].hitObjectList:
-			aId = id(ob)
-			currentAttackers.append(aId)
-			if aId in self.attackerIds:
-				self.attackerIds[aId] -= 1
-				if self.attackerIds[aId] <= 0:
-					apply_damage(ob)
-					self.attackerIds[aId] = VulnerableActor.DAMAGE_FREQUENCY
-			else:
-				apply_damage(ob)
-				self.attackerIds[aId] = VulnerableActor.DAMAGE_FREQUENCY
-
-		# Remove stale attackers.
-		for aId in list(self.attackerIds.keys()):
-			if aId not in currentAttackers:
-				del self.attackerIds[aId]
+		# Count down to next attack.
+		for aid in list(self.attackerIds.keys()):
+			self.attackerIds[aid] -= 1
+			if self.attackerIds[aid] <= 0:
+				del self.attackerIds[aid]
 
 	def die(self):
 		'''Called when the actor runs out of health. The default action is for

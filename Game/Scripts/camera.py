@@ -141,14 +141,19 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		bxt.bmath.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
 		bxt.bmath.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
 
+		# Update focal length.
 		targetLens = self.defaultLens
 		if hasattr(currentGoal, 'lens'):
 			targetLens = currentGoal.lens
-		self.camera.lens = bxt.bmath.lerp(self.camera.lens, targetLens,
-				currentGoal['RotFac'])
+		# Interpolate FOV, not focal length - the latter is non-linear.
+		fov = 1.0 / self.camera.lens
+		target_fov = 1.0 / targetLens
+		fov = bxt.bmath.lerp(fov, target_fov, currentGoal['RotFac'])
+		self.camera.lens = 1.0 / fov
 
 		self.lastGoal = currentGoal
 
+		# Update depth of field (blur).
 		self._update_focal_depth(instant=False)
 
 		dev = aud.device()

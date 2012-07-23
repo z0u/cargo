@@ -231,15 +231,20 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		s = State("split")
 		for ps in preceding_states:
 			ps.addTransition(s)
-		s.addEvent("ShowDialogue", ("Please go to the bar and order me some "\
-				"black bean sauce.", ("Gross!", "No problem.")))
+
 		s.addAction(ActSetCamera('LK_Cam_SauceBar'))
 		s.addAction(ActSetFocalPoint('B_SauceBarSign'))
 		s.addAction(ActShowMarker('B_SauceBarSign'))
 
+		s = s.createTransition()
+		s.addEvent("ShowDialogue", ("Please go to the bar and order me some "\
+				"black bean sauce.", ("Gross!", "No problem.")))
+		s.addAction(ActSetCamera('LK_Cam_SauceBar_zoom'))
+
 		sno = s.createTransition("no")
 		sno.addCondition(CondEventNe("DialogueDismissed", 1))
 		sno.addEvent("ShowDialogue", "Hey, no one asked you to drink it! Off you go.")
+		sno.addAction(ActRemoveCamera('LK_Cam_SauceBar_zoom'))
 		sno.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
 		sno.addAction(ActRemoveFocalPoint('B_SauceBarSign'))
 		sno.addAction(ActShowMarker(None))
@@ -247,6 +252,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		syes = s.createTransition("yes")
 		syes.addCondition(CondEventEq("DialogueDismissed", 1))
 		syes.addEvent("ShowDialogue", "Thanks!")
+		syes.addAction(ActRemoveCamera('LK_Cam_SauceBar_zoom'))
 		syes.addAction(ActRemoveCamera('LK_Cam_SauceBar'))
 		syes.addAction(ActRemoveFocalPoint('B_SauceBarSign'))
 		syes.addAction(ActShowMarker(None))

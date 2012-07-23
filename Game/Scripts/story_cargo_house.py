@@ -260,8 +260,12 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addAction(ActShowMarker('Torch'))
 
 		s = s.createTransition()
+		s.addAction(ActSetCamera('WormCamera_Lighthouse_zoom'))
+
+		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 394))
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActRemoveCamera('WormCamera_Lighthouse_zoom'))
 		s.addAction(ActRemoveCamera('WormCamera_Lighthouse'))
 		s.addAction(ActRemoveFocalPoint('Torch'))
 		s.addAction(ActShowMarker(None))
@@ -282,6 +286,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondActionGE(Worm.L_ANIM, 460))
 		s.addAction(ActAction('SodFade', 120, 200, 0, 'Sods'))
 		s.addAction(ActResumeInput())
+		s.addAction(ActRemoveCamera('WormCamera_Lighthouse_zoom'))
 		s.addAction(ActRemoveCamera('WormCamera_Converse'))
 		s.addAction(ActRemoveFocalPoint('CargoHoldAuto'))
 		s.addAction(ActStoreSet('/game/level/wormMissionStarted', True))

@@ -22,7 +22,14 @@ import bxt
 
 DEBUG = False
 
+INITIAL_REPEAT_DELAY = 30
+REPEAT_DELAY = 5
+
 class Input(metaclass=bxt.types.Singleton):
+	'''
+	Provides a unified interface to input devices such as keyboard and
+	joysticks.
+	'''
 	_prefix = ""
 
 	PRI = {'PLAYER': 0, 'STORY': 1, 'DIALOGUE': 2, 'MENU': 3}
@@ -54,6 +61,7 @@ class Input(metaclass=bxt.types.Singleton):
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def process(self, c):
+		'''Distribute all events to the listeners.'''
 		#joy_axis = c.sensors['Joystick_axis']
 		#joy_btn = c.sensors['Joystick_btn']
 
@@ -88,6 +96,10 @@ class Input(metaclass=bxt.types.Singleton):
 		self.check_sequences()
 
 	def check_sequences(self):
+		'''
+		Build up strings of button presses, looking for known combinations.
+		Primarily for things like cheats, but could be used for combo moves too.
+		'''
 		# Add all pressed buttons to the sequence.
 		new_char = False
 		for btn in self.buttons:
@@ -115,6 +127,7 @@ class Input(metaclass=bxt.types.Singleton):
 			self.sequence = self.sequence[-self.max_seq_len:]
 
 	def load_config(self):
+		'''Bind keys and buttons to the interfaces.'''
 		self.dp_move.up.keyboard_keys.append(bge.events.UPARROWKEY)
 		self.dp_move.up.keyboard_keys.append(bge.events.WKEY)
 		self.dp_move.down.keyboard_keys.append(bge.events.DOWNARROWKEY)
@@ -153,6 +166,8 @@ class Input(metaclass=bxt.types.Singleton):
 			self.max_seq_len = len(sequence)
 
 class Button:
+	'''A simple button (0 dimensions).'''
+
 	def __init__(self, name, char):
 		self.name = name
 		self.char = char
@@ -164,6 +179,11 @@ class Button:
 
 	@property
 	def activated(self):
+		'''
+		True if the button is down on this frame, for the first time. On the
+		following frame, this will be false even if the button is still held
+		down.
+		'''
 		return self.positive and self.triggered
 
 	def update(self):
@@ -191,7 +211,8 @@ class Button:
 
 class DPad1D:
 	'''
-	Accumulates directional input (one dimension).
+	Accumulates directional input (1 dimension). Useful for things like L/R
+	shoulder buttons.
 	'''
 
 	def __init__(self, name, char_next, char_prev):
@@ -250,7 +271,7 @@ class DPad1D:
 
 class DPad2D:
 	'''
-	Accumulates directional input (two dimensions) - from directional pads,
+	Accumulates directional input (2 dimensions) - from directional pads,
 	joysticks, and nominated keyboard keys.
 	'''
 
@@ -268,6 +289,8 @@ class DPad2D:
 		self.bias = mathutils.Vector((0.0, 0.0))
 		self.dominant = None
 		self.triggered = False
+		self.triggered_repeat = False
+		self.repeat_delay = 0
 
 	def update(self):
 		self.up.update()
@@ -322,8 +345,16 @@ class DPad2D:
 			self.dominant = dominant
 			self.bias = bias
 			self.triggered = True
+			self.triggered_repeat = True
+			self.repeat_delay = INITIAL_REPEAT_DELAY
+		elif self.repeat_delay <= 0:
+			self.triggered = False
+			self.triggered_repeat = True
+			self.repeat_delay = REPEAT_DELAY
 		else:
 			self.triggered = False
+			self.triggered_repeat = False
+			self.repeat_delay -= 1
 
 	def get_char(self):
 		"""
@@ -337,6 +368,14 @@ class DPad2D:
 		return "Button %s - direction: %s" % (self.name, self.direction)
 
 class Handler:
+	'''
+	Use as a mixin to handle input from the user. Any methods that are not
+	overridden will do nothing. By default, non-overridden functions will
+	capture the event (preventing further processing from lower-priority
+	handlers). To allow such events to pass through, set
+	self.default_handler_response = False.
+	'''
+
 	def handle_movement(self, state):
 		'''
 		Handle a movement request from the user.
@@ -374,6 +413,7 @@ class Handler:
 		self._default_handler_response = value
 
 class TestHandler(Handler):
+	'''Prints input state changes.'''
 	def handle_movement(self, state):
 		print(state)
 		return True

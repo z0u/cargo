@@ -91,10 +91,14 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 	downCurrent = bxt.types.weakprop("downCurrent")
 
 	DIRECTION_TOLERANCE = 0.1
+	SOUND_DELAY_TICS = 5
 
 	def __init__(self, old_owner):
 		self.screen_stack = []
 		impulse.Input().add_handler(self, 'MENU')
+
+		# Don't play the first focus sound.
+		self.sound_delay = MenuController.SOUND_DELAY_TICS
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.Event('setScreen', 'LoadingScreen').send(2)
@@ -113,6 +117,11 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 			if len(self.screen_stack) > 0:
 				self.screen_stack.pop()
 			self.update_screen()
+
+	@bxt.types.expose
+	def pulse(self):
+		if self.sound_delay > 0:
+			self.sound_delay -= 1
 
 	def update_screen(self):
 		if len(self.screen_stack) > 0:
@@ -183,8 +192,9 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 
 		self.current = widget
 		bxt.types.WeakEvent("FocusChanged", widget).send()
-		if widget is not None:
-			bxt.sound.play_sample("//Sound/cc-by/BtnFocus.ogg")
+		if widget is not None and self.sound_delay <= 0:
+			bxt.sound.play_sample("//Sound/cc-by/BtnFocus.ogg", volume=0.2)
+			self.sound_delay = MenuController.SOUND_DELAY_TICS
 
 	def press(self):
 		'''Send a mouse down event to the widget under the cursor.'''
@@ -199,6 +209,12 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 		if self.downCurrent:
 			self.downCurrent.up()
 			if self.current == self.downCurrent:
+				# Always play click sound, but then disallow other sounds like
+				# focus. Note that this must happen before click() is called,
+				# or the focus sound will play anyway.
+				bxt.sound.play_sample("//Sound/cc-by/BtnClick.ogg")
+				self.sound_delay = MenuController.SOUND_DELAY_TICS
+
 				self.downCurrent.click()
 		self.downCurrent = None
 
@@ -219,7 +235,7 @@ class MenuController(impulse.Handler, bxt.types.BX_GameObject,
 
 	def handle_movement(self, state):
 		'''Switch to neighbouring widgets (keyboard/joypad).'''
-		if not state.triggered or state.bias.magnitude < 0.1:
+		if not state.triggered_repeat or state.bias.magnitude < 0.1:
 			return True
 
 		bge.render.showMouse(False)
@@ -376,7 +392,6 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				body = self['onClickBody']
 			evt = bxt.types.Event(msg, body)
 			bxt.types.EventBus().notify(evt)
-		bxt.sound.play_sample("//Sound/cc-by/BtnClick.ogg")
 
 	def on_event(self, evt):
 		if evt.message == 'showScreen':

@@ -39,7 +39,9 @@ class HUDState(metaclass=bxt.types.Singleton):
 		elif evt.message == "FinishLoading":
 			self.loaders.discard(evt.body)
 			if len(self.loaders) == 0:
-				bxt.types.Event("ShowLoadingScreen", (False, None)).send()
+				# Send event on next frame, to ensure shaders have been
+				# compiled.
+				bxt.types.Event("ShowLoadingScreen", (False, None)).send(.001)
 
 
 def test_input(c):

@@ -68,6 +68,7 @@ vec2 nearest_texel(in vec2 coord) {
     vec2 co = floor(coord * dimensions) + vec2(0.5);
     co *= dimensions_inv;
     co = clamp(co, halftexel, maxcoord);
+    //vec2 co = clamp(coord, halftexel, maxcoord);
     return co;
 }
 
@@ -114,18 +115,10 @@ vec4 blur_sample(float depth, vec2 blur, vec2 offset, inout float influence) {
 
     col = get_colour(co);
 
-    // If the sample is closer than the current pixel (depth-wise), modulate its
-    // influence by how blurry it is. I.e. if it is fully in-focus, it will not
-    // contribute at all. This part was taken from the paper "Real-Time Depth
-    // of Field Simulation", from "From ShaderX2 \u2013 Shader Programming Tips
-    // and Tricks with DirectX 9".
-    // http://developer.amd.com/media/gpu_assets/ShaderX2_Real-TimeDepthOfFieldSimulation.pdf
-
+    // Modulate the strength of the influence by how near the sample is
+    // to the focal plane.
     idepth = get_depth(co);
-    if (idepth < depth)
-        contrib = get_blur(idepth);
-    else
-        contrib = 1.0;
+    contrib = get_blur(idepth);
 
     influence += contrib;
     return col * contrib;
@@ -147,25 +140,26 @@ void main(void) {
     vec4 col = vec4(0.0);
     float influence = 0.000001;
 
-    // Bokeh: Spiral (18 samples)
-    col += blur_sample(depth, blur, vec2(-0.842387, 0.253423), influence);
-    col += blur_sample(depth, blur, vec2(-0.822194, -0.185772), influence);
-    col += blur_sample(depth, blur, vec2(-0.584927, -0.559341), influence);
-    col += blur_sample(depth, blur, vec2(-0.176021, -0.746126), influence);
-    col += blur_sample(depth, blur, vec2(0.263175, -0.660306), influence);
-    col += blur_sample(depth, blur, vec2(0.566068, -0.337219), influence);
-    col += blur_sample(depth, blur, vec2(0.571117, 0.112073), influence);
-    col += blur_sample(depth, blur, vec2(0.248030, 0.420015), influence);
-    col += blur_sample(depth, blur, vec2(-0.191166, 0.329147), influence);
-    col += blur_sample(depth, blur, vec2(-0.862580, 0.033825), influence);
-    col += blur_sample(depth, blur, vec2(-0.721229, -0.407894), influence);
-    col += blur_sample(depth, blur, vec2(-0.398143, -0.683023), influence);
-    col += blur_sample(depth, blur, vec2(0.058722, -0.743601), influence);
-    col += blur_sample(depth, blur, vec2(0.444911, -0.524004), influence);
-    col += blur_sample(depth, blur, vec2(0.608978, -0.117621), influence);
-    col += blur_sample(depth, blur, vec2(0.439863, 0.306430), influence);
-    col += blur_sample(depth, blur, vec2(0.008239, 0.435159), influence);
-    col += blur_sample(depth, blur, vec2(-0.287082, 0.104501), influence);
+    // Bokeh: Spiral2 (19 samples)
+    col += blur_sample(depth, blur, vec2(0.511072, -0.000000), influence);
+    col += blur_sample(depth, blur, vec2(0.533611, -0.194219), influence);
+    col += blur_sample(depth, blur, vec2(0.478504, -0.401513), influence);
+    col += blur_sample(depth, blur, vec2(0.340714, -0.590135), influence);
+    col += blur_sample(depth, blur, vec2(0.128190, -0.727000), influence);
+    col += blur_sample(depth, blur, vec2(-0.138051, -0.782923), influence);
+    col += blur_sample(depth, blur, vec2(-0.425893, -0.737668), influence);
+    col += blur_sample(depth, blur, vec2(-0.696006, -0.584019), influence);
+    col += blur_sample(depth, blur, vec2(-0.907139, -0.330172), influence);
+    col += blur_sample(depth, blur, vec2(-1.000000, -0.000000), influence);
+    col += blur_sample(depth, blur, vec2(-0.053361, 0.019422), influence);
+    col += blur_sample(depth, blur, vec2(-0.087001, 0.073002), influence);
+    col += blur_sample(depth, blur, vec2(-0.085179, 0.147534), influence);
+    col += blur_sample(depth, blur, vec2(-0.039443, 0.223692), influence);
+    col += blur_sample(depth, blur, vec2(0.049304, 0.279615), influence);
+    col += blur_sample(depth, blur, vec2(0.170357, 0.295067), influence);
+    col += blur_sample(depth, blur, vec2(0.304503, 0.255508), influence);
+    col += blur_sample(depth, blur, vec2(0.426889, 0.155375), influence);
+    col += blur_sample(depth, blur, vec2(0.000000, 0.000000), influence);
 
     gl_FragColor = col / influence;
 

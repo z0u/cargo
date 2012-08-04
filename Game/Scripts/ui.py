@@ -530,8 +530,8 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		player = director.Director().mainCharacter
 		if player is None:
 			return
-		loc = player.worldPosition
-		self.centre_page(loc)
+		self.centre_page(player.worldPosition)
+		self.rotate_marker(player.worldOrientation)
 
 	def init_uv(self):
 		canvas = self.children['MapPage']
@@ -543,6 +543,11 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		HALF = mathutils.Vector((0.5, 0.5))
 		for v, orig in zip(bxt.utils.iterate_verts(canvas), self.orig_uv):
 			v.UV = (((orig + uvc) - HALF) / self.zoom) + HALF
+
+	def rotate_marker(self, orn):
+		marker = self.children['MapDirection']
+		marker.localOrientation = orn
+		marker.alignAxisToVect(bxt.bmath.ZAXIS)
 
 	def world_to_uv(self, loc2D):
 		uvc = loc2D - self.offset

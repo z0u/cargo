@@ -873,9 +873,14 @@ class GameLevel(Level):
 		else:
 			off_y = 0.0
 
+		if 'MapZoom' in self:
+			zoom = self['MapZoom']
+		else:
+			zoom = 1.0
+
 		scale = mathutils.Vector((scale_x, scale_y))
 		offset = mathutils.Vector((off_x, off_y))
-		bxt.types.Event('SetMap', (map_file, scale, offset)).send()
+		bxt.types.Event('SetMap', (map_file, scale, offset, zoom)).send()
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":

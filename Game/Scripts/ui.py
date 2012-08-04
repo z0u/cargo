@@ -492,6 +492,7 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.init_uv()
 		self.scale = mathutils.Vector((1.0, 1.0))
 		self.offset = mathutils.Vector((0.0, 0.0))
+		self.zoom = 1.0
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
@@ -506,7 +507,7 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		elif evt.message == 'SetMap':
 			self.set_map(*evt.body)
 
-	def set_map(self, file_name, scale, offset):
+	def set_map(self, file_name, scale, offset, zoom):
 		'''Load a texture from an image file and display it as the map.'''
 		canvas = self.children['MapPage']
 
@@ -522,6 +523,7 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		self.scale = scale
 		self.offset = offset
+		self.zoom = zoom
 
 	@bxt.types.expose
 	def update(self):
@@ -537,9 +539,10 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def centre_page(self, loc):
 		canvas = self.children['MapPage']
-		uvc = self.world_to_uv(loc.xy)
+		uvc = self.world_to_uv(loc.xy) * self.zoom
+		HALF = mathutils.Vector((0.5, 0.5))
 		for v, orig in zip(bxt.utils.iterate_verts(canvas), self.orig_uv):
-			v.UV = orig + uvc
+			v.UV = (((orig + uvc) - HALF) / self.zoom) + HALF
 
 	def world_to_uv(self, loc2D):
 		uvc = loc2D - self.offset

@@ -18,12 +18,12 @@
 import time
 
 import bge
-from bge import logic
 import mathutils
 
 import bxt
 from . import inventory
 from . import impulse
+from . import director
 
 
 class HUDState(metaclass=bxt.types.Singleton):
@@ -478,6 +478,84 @@ class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.set_state(self.S_HIDING)
 
 
+class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'Map_'
+
+	S_INIT = 1
+	S_VISIBLE = 2
+	S_HIDING  = 3
+	S_HIDDEN  = 4
+
+	def __init__(self, old_owner):
+		self.set_state(self.S_HIDDEN)
+		self.force_hide = False
+		self.init_uv()
+		self.scale = mathutils.Vector((1.0, 1.0))
+		self.offset = mathutils.Vector((0.0, 0.0))
+
+		bxt.types.EventBus().add_listener(self)
+		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
+		bxt.types.EventBus().replay_last(self, 'SetMap')
+
+	def on_event(self, evt):
+		if evt.message == 'GameModeChanged':
+			if evt.body == 'Playing':
+				self.show()
+			else:
+				self.hide()
+		elif evt.message == 'SetMap':
+			self.set_map(*evt.body)
+
+	def set_map(self, file_name, scale, offset):
+		'''Load a texture from an image file and display it as the map.'''
+		canvas = self.children['MapPage']
+
+		matid = bge.texture.materialID(canvas, 'MAMapPage')
+		tex = bge.texture.Texture(canvas, matid)
+		source = bge.texture.ImageFFmpeg(bge.logic.expandPath(file_name))
+
+		tex.source = source
+		tex.refresh(False)
+
+		# Must be stored, or it will be freed.
+		bge.logic.maptex = tex
+
+		self.scale = scale
+		self.offset = offset
+
+	@bxt.types.expose
+	def update(self):
+		player = director.Director().mainCharacter
+		if player is None:
+			return
+		loc = player.worldPosition
+		self.centre_page(loc)
+
+	def init_uv(self):
+		canvas = self.children['MapPage']
+		self.orig_uv = [v.UV.copy() for v in bxt.utils.iterate_verts(canvas)]
+
+	def centre_page(self, loc):
+		canvas = self.children['MapPage']
+		uvc = self.world_to_uv(loc.xy)
+		for v, orig in zip(bxt.utils.iterate_verts(canvas), self.orig_uv):
+			v.UV = orig + uvc
+
+	def world_to_uv(self, loc2D):
+		uvc = loc2D - self.offset
+		uvc.x /= self.scale.x
+		uvc.y /= self.scale.y
+		return uvc
+
+	def show(self):
+		if not self.has_state(self.S_VISIBLE):
+			self.set_state(self.S_VISIBLE)
+
+	def hide(self):
+		if self.has_state(self.S_VISIBLE):
+			self.set_state(self.S_HIDING)
+
+
 class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''Displays the current shells in a scrolling view on the side of the
 	screen.'''
@@ -567,7 +645,7 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		pool = self.children['I_IconPool']
 		for shellName in inventory.Shells.SHELL_NAMES:
 			for _ in range(5):
-				icon = logic.getCurrentScene().addObject(
+				icon = bge.logic.getCurrentScene().addObject(
 						'Icon_%s_static' % shellName, pool)
 				icon.setParent(pool)
 				icon.localScale = (0.1, 0.1, 0.1)
@@ -694,7 +772,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return glyphDict['undefined']
 
 	def get_font(self):
-		font = logic.getCurrentScene().objectsInactive[self['Font']]
+		font = bge.logic.getCurrentScene().objectsInactive[self['Font']]
 		if not '_glyphDict' in font:
 			self.parse_font(font)
 		return font
@@ -804,7 +882,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		glyph, width, pos = self.glyphString[self.currentChar]
 
-		glyphInstance = logic.getCurrentScene().addObject(glyph,
+		glyphInstance = bge.logic.getCurrentScene().addObject(glyph,
 			self, 0)
 		glyphInstance.setParent(self)
 		glyphInstance['StartVisible'] = self.visible

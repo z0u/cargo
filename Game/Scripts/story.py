@@ -833,6 +833,12 @@ class GameLevel(Level):
 	def __init__(self, old_owner):
 		Level.__init__(self, old_owner)
 
+		self.spawn()
+		self.set_map()
+
+		bxt.types.EventBus().add_listener(self)
+
+	def spawn(self):
 		scene = bge.logic.getCurrentScene()
 		spawn_point = store.get('/game/level/spawnPoint',
 				self['defaultSpawnPoint'])
@@ -843,7 +849,33 @@ class GameLevel(Level):
 		bxt.types.add_and_mutate_object(scene, 'Snail', self)
 		bxt.types.Event('TeleportSnail', spawn_point).send()
 
-		bxt.types.EventBus().add_listener(self)
+	def set_map(self):
+		if 'Map' not in self:
+			return
+
+		map_file = self['Map']
+
+		if 'MapScaleX' in self:
+			scale_x = self['MapScaleX']
+		else:
+			scale_x = 1.0
+		if 'MapScaleY' in self:
+			scale_y = self['MapScaleY']
+		else:
+			scale_y = 1.0
+
+		if 'MapOffsetX' in self:
+			off_x = self['MapOffsetX']
+		else:
+			off_x = 0.0
+		if 'MapOffsetY' in self:
+			off_y = self['MapOffsetY']
+		else:
+			off_y = 0.0
+
+		scale = mathutils.Vector((scale_x, scale_y))
+		offset = mathutils.Vector((off_x, off_y))
+		bxt.types.Event('SetMap', (map_file, scale, offset)).send()
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":

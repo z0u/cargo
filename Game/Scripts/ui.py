@@ -490,9 +490,9 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.set_state(self.S_HIDDEN)
 		self.force_hide = False
 		self.init_uv()
-		self.scale = mathutils.Vector((1.0, 1.0))
+		self.scale = mathutils.Vector((100.0, 100.0))
 		self.offset = mathutils.Vector((0.0, 0.0))
-		self.zoom = 1.0
+		self.zoom = 2.0
 
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
@@ -530,8 +530,12 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		player = director.Director().mainCharacter
 		if player is None:
 			return
-		self.centre_page(player.worldPosition)
-		self.rotate_marker(player.worldOrientation)
+
+		pos = player.worldPosition
+		orn = player.worldOrientation
+		self.centre_page(pos)
+		self.rotate_marker(orn)
+		self.orient_horizon(orn)
 
 	def init_uv(self):
 		canvas = self.children['MapPage']
@@ -548,6 +552,10 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		marker = self.children['MapDirection']
 		marker.localOrientation = orn
 		marker.alignAxisToVect(bxt.bmath.ZAXIS)
+
+	def orient_horizon(self, orn):
+		hball = self.childrenRecursive['HorizonBall']
+		hball.localOrientation = orn.inverted()
 
 	def world_to_uv(self, loc2D):
 		uvc = loc2D - self.offset

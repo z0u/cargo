@@ -128,9 +128,6 @@ vec4 blur_sample(in vec2 blur, in vec2 offset, inout float influence) {
 void main(void) {
     dimensions = vec2(bgl_RenderedTextureWidth, bgl_RenderedTextureHeight);
 
-    // Hack for incorrect texture size
-    dimensions += vec2(1.0);
-
     dimensions_inv = vec2(1.0) / dimensions;
     halftexel = vec2(0.5) / dimensions;
     maxcoord = vec2(1.0) - halftexel;

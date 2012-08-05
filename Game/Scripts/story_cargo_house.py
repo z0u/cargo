@@ -26,8 +26,7 @@ class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'CH_'
 
 	def __init__(self, old_owner):
-		self.load_npcs()
-		self.init_worm()
+		pass
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -35,19 +34,24 @@ class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		s = c.sensors['Near']
 		if s.hitObject is not None:
 			store.put('/game/level/spawnPoint', 'SpawnCargoHouse')
-
-	def load_npcs(self):
-		try:
-			bge.logic.LibLoad('//OutdoorsNPCLoader.blend', 'Scene',
-					load_actions=True)
-		except ValueError:
-			print('Warning: could not load characters.')
+			self.init_worm()
+			jukebox.Jukebox().play(self, 1, '//Sound/Music/House2.ogg')
+		else:
+			jukebox.Jukebox().stop(self)
 
 	def init_worm(self):
-		sce = bge.logic.getCurrentScene()
 		if not store.get('/game/level/wormMissionStarted', False):
-			sce.addObject("G_Worm", "WormSpawn")
-			bxt.bmath.copy_transform(sce.objects['WormSpawn'], sce.objects['Worm'])
+			worm = factory(self.scene)
+			bxt.bmath.copy_transform(self.scene.objects['WormSpawn'], worm)
+
+def factory(sce):
+	if not "Worm" in sce.objectsInactive:
+		try:
+			bge.logic.LibLoad('//Worm_loader.blend', 'Scene', load_actions=True)
+		except ValueError as e:
+			print('Warning: could not load worm:', e)
+
+	return bxt.types.add_and_mutate_object(sce, "Worm", "Worm")
 
 class Worm(Chapter, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
@@ -89,6 +93,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addEvent("ForceEnterShell", False)
 		s.addAction(ActSetCamera('WormCamera_Enter'))
 		s.addAction(ActSetFocalPoint('CargoHoldAuto'))
+		s.addAction(ActMusicPlay('//Sound/Music/Worm1.ogg'))
 		s.addEvent("ShowDialogue", "Press Return to start.")
 		s.addAction(ActAction('ParticleEmitMove', 1, 1, Worm.L_ANIM, "ParticleEmitterLoc"))
 		s.addAction(ActGenericContext(letter_manual))
@@ -278,6 +283,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActAction('BurstOut', 420, 540, Worm.L_ANIM))
 		s.addAction(ActAction('BurstOut_S', 420, 540, Worm.L_ANIM, 'WormBody'))
+		s.addAction(ActMusicStop())
 
 		#
 		# Return to game

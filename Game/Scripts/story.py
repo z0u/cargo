@@ -487,18 +487,22 @@ class ActMusicPlay(BaseAct):
 	object. To use the current object as the target, set ob=None and
 	target_descendant=None.
 	'''
-	def __init__(self, *filepaths, volume=1.0, loop=True, ob=None, target_descendant=None):
+	def __init__(self, *filepaths, volume=1.0, loop=True, ob=None,
+			target_descendant=None, priority=2):
+
 		self.filepaths = filepaths
 		self.volume = volume
 		self.loop = loop
 		self.target_descendant = target_descendant
 		self.ob = ob
+		self.priority = priority
 
 	def execute(self, c):
 		# Play the track. Use priority 1 for this kind of music, because it's
 		# important for the story.
 		ob = self.find_target(c, self.ob, self.target_descendant)
-		jukebox.Jukebox().play(ob, 1, *self.filepaths, volume=self.volume)
+		jukebox.Jukebox().play(ob, self.priority, *self.filepaths,
+				volume=self.volume)
 
 	def __str__(self):
 		return "ActMusicPlay: %s" % str(self.filepaths)

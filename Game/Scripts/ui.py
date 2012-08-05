@@ -585,6 +585,9 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	FRAME_CENTRE = 41.0
 	FRAME_NEXT = 31.0
 
+	BG_FRAME_SHOW = 11
+	BG_FRAME_HIDE = 1
+
 	S_UPDATING = 2
 	S_IDLE = 3
 
@@ -592,8 +595,7 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.initialise_icon_pool()
 
 		self.update_icons()
-		self['targetFrame'] = Inventory.FRAME_HIDE
-		self.set_state(Inventory.S_UPDATING)
+		self.hide()
 		bxt.types.EventBus().add_listener(self)
 		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
 
@@ -610,11 +612,27 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		elif evt.message == 'GameModeChanged':
 			if evt.body == 'Playing':
-				self['targetFrame'] = Inventory.FRAME_CENTRE
-				self.set_state(Inventory.S_UPDATING)
+				self.show()
 			else:
-				self['targetFrame'] = Inventory.FRAME_HIDE
-				self.set_state(Inventory.S_UPDATING)
+				self.hide()
+
+	def show(self):
+		self['targetFrame'] = Inventory.FRAME_CENTRE
+		self.set_state(Inventory.S_UPDATING)
+
+		background = self.scene.objects['I_Background']
+		cfra = background.getActionFrame()
+		background.playAction('I_BackgroundAction', cfra,
+				Inventory.BG_FRAME_SHOW)
+
+	def hide(self):
+		self['targetFrame'] = Inventory.FRAME_HIDE
+		self.set_state(Inventory.S_UPDATING)
+
+		background = self.scene.objects['I_Background']
+		cfra = background.getActionFrame()
+		background.playAction('I_BackgroundAction', cfra,
+				Inventory.BG_FRAME_HIDE)
 
 	def set_item(self, index, shellName):
 		hook = self.children['I_IconHook_' + str(index)]

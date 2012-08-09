@@ -68,7 +68,7 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		sKnock = s.createSubStep("Knock sound")
 		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 34.5, tap=True))
 		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
-				pitchmax=0.76, emitter=self, maxdist=75.0))
+				pitchmax=0.76, emitter=self, maxdist=40.0))
 
 		s = s.createTransition("Talk")
 		s.addCondition(CondEvent("ApproachAnts"))

@@ -295,6 +295,7 @@ class Wheel(ShellBase):
 		ShellBase.on_pre_enter(self)
 		self._reset_speed()
 		bxt.types.Event('SetCameraType', 'PathCamera').send()
+		bxt.sound.play_sample('//Sound/CarStart.ogg')
 
 	def on_entered(self):
 		ShellBase.on_entered(self)
@@ -302,6 +303,12 @@ class Wheel(ShellBase):
 		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
 		alignment = WheelCameraAlignment()
 		bxt.types.Event('SetCameraAlignment', alignment).send()
+		bxt.sound.play_sample('//Sound/cc-by/Driving.ogg', loop=True)
+
+	def on_exited(self):
+		ShellBase.on_exited(self)
+		bxt.sound.play_sample('//Sound/DoorOpenClose.ogg')
+		bxt.sound.stop('//Sound/cc-by/Driving.ogg')
 
 	def handle_movement(self, state):
 		self.orient()
@@ -408,7 +415,6 @@ class BottleCap(ShellBase):
 		if self.occupier.getActionFrame(BottleCap.L_JUMP) >= 5:
 			self.jump()
 			self.rem_state(BottleCap.S_JUMP)
-			c.activate(c.actuators['aPlayJump'])
 
 	def start_jump(self, fwdMagnitude, leftMagnitude):
 		'''Plays the jump action. The actual impulse will be given at the right
@@ -445,6 +451,9 @@ class BottleCap(ShellBase):
 		#
 		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
 
+		bxt.sound.play_sample('//Sound/MouthPopOpen.ogg', pitchmin=0.9,
+				pitchmax=1.0, ob=self)
+
 	def handle_movement(self, state):
 		'''Make the cap jump around around based on user input.'''
 		self.orient()
@@ -464,6 +473,14 @@ class BottleCap(ShellBase):
 			bxt.utils.add_state(self.occupier, 3)
 
 		return True
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def land(self, c):
+		if not c.sensors[0].positive:
+			return
+		bxt.sound.play_sample('//Sound/MouthPopClose.ogg', pitchmin=0.9,
+				pitchmax=1.0, ob=self)
 
 def spawn_shell(c):
 	'''Place an item that has not been picked up yet.'''

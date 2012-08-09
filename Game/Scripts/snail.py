@@ -1001,10 +1001,12 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def moved(self, speedMultiplier, touchedObject):
 		pos = self.worldPosition
 
+		triggered = False
 		distMajor = (pos - self.lastMajorPos).magnitude
 		if distMajor > self['TrailSpacingMajor']:
 			self.lastMajorPos = pos.copy()
 			self.paused = not self.paused
+			triggered = True
 
 		if self.paused:
 			return
@@ -1018,7 +1020,16 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			elif speedMultiplier < (1.0 - bxt.bmath.EPSILON):
 				speedStyle = Trail.S_SLOW
 			self.add_spot(speedStyle, touchedObject)
+			if triggered and speedStyle == Trail.S_FAST:
+				self.play_sound()
 
+	def play_sound(self):
+		files = (
+			'//Sound/cc-by/Slither1.ogg',
+			'//Sound/cc-by/Slither2.ogg',
+			'//Sound/cc-by/Slither3.ogg')
+		bxt.sound.play_random_sample(files, volume=0.5, pitchmin=0.7,
+				pitchmax=1.2, ob=self)
 
 class MinSnail(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 

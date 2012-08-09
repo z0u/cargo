@@ -436,43 +436,8 @@ class ActSound(BaseAct):
 		self.mindist = maxdist / 5.0 # Just a guess, can change this if needed
 		self._factory = None
 
-	def _get_factory(self):
-		if self._factory == None:
-			f = aud.Factory.file(self.filename)
-			if self.volume != 1:
-				f = f.volume(self.volume)
-			if self.delay > 0:
-				f = f.delay(self.delay)
-			self._factory = f
-		return self._factory
-	factory = property(_get_factory) 
-
 	def execute(self, c):
-		f = self.factory
-		if self.pitchmax != 1 or self.pitchmin != 1:
-			pitch = bxt.bmath.lerp(self.pitchmin, self.pitchmax,
-					bge.logic.getRandomFloat())
-			f = f.pitch(pitch)
-
-		# Play the sound
-		dev = aud.device()
-		handle = dev.play(f)
-
-		if self.emitter is not None:
-			if isinstance(self.emitter, str):
-				sce = bge.logic.getCurrentScene()
-				loc = sce.objects[self.emitter].worldPosition
-			elif hasattr(self.emitter, "worldPosition"):
-				loc = self.emitter.worldPosition
-			else:
-				loc = self.emitter
-			handle.location = loc
-			handle.relative = False
-			handle.distance_maximum = self.maxdist
-			handle.distance_reference = self.mindist
-			handle.attenuation = 10.0
-
-		# Throw away the handle now
+		bxt.sound.play_sample(self.filename, self.volume, self.pitchmin, self.pitchmax, self.emitter, self.mindist, self.maxdist)
 
 	def __str__(self):
 		return "ActSound: %s" % self.filename

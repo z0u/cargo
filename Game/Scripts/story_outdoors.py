@@ -31,7 +31,7 @@ class LevelOut(GameLevel):
 				"//Sound/cc-by/PondAmbience1.ogg",
 				"//Sound/cc-by/PondAmbience2.ogg",
 				"//Sound/cc-by/PondAmbience3.ogg",
-				volume=1.0)
+				volume=1.5)
 
 		# Load additional files
 		self.load_foaliage()

@@ -206,11 +206,28 @@ class Shell(ShellBase):
 
 		self.rolling_sound = bxt.sound.Sample('//Sound/cc-by/Rolling.ogg')
 		self.rolling_sound.loop = True
-		self.rolling_sound.owner = self
+		self.rolling_sound.add_effect(bxt.sound.Localise(self))
+		self.rolling_sound.add_effect(bxt.sound.FadeByLinV(self))
+
+	@bxt.types.expose
+	def rolling(self):
+		if not self['OnGround']:
+			self.rolling_sound.stop()
+			return
+
+		self.rolling_sound.play()
 
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		bxt.types.Event('SetCameraType', 'PathCamera').send()
+
+	def on_exited(self):
+		ShellBase.on_exited(self)
+		self.rolling_sound.add_effect(bxt.sound.FadeOut())
+
+#	def on_post_exit(self):
+#		ShellBase.on_post_exit(self)
+#		self.rolling_sound.stop()
 
 	def handle_movement(self, state):
 		'''Make the shell roll around based on user input.'''
@@ -282,8 +299,9 @@ class Wheel(ShellBase):
 		self.fly_power = 0.0
 
 		self.driving_sound = bxt.sound.Sample('//Sound/cc-by/Driving.ogg')
-		self.driving_sound.owner = self
 		self.driving_sound.loop = True
+		self.driving_sound.add_effect(bxt.sound.Localise(self))
+		self.driving_sound.add_effect(bxt.sound.PitchByAngV(self))
 
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
 
@@ -392,12 +410,12 @@ class BottleCap(ShellBase):
 		self.jump_sound = bxt.sound.Sample('//Sound/MouthPopOpen.ogg')
 		self.jump_sound.pitchmin = 0.9
 		self.jump_sound.pitchmax = 1.0
-		self.jump_sound.owner = self
+		self.jump_sound.add_effect(bxt.sound.Localise(self))
 
 		self.land_sound = bxt.sound.Sample('//Sound/MouthPopClose.ogg')
 		self.land_sound.pitchmin = 0.9
 		self.land_sound.pitchmax = 1.0
-		self.land_sound.owner = self
+		self.land_sound.add_effect(bxt.sound.Localise(self))
 
 	def orient(self):
 		'''Try to make the cap sit upright, and face the direction of travel.'''

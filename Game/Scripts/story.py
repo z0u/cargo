@@ -426,10 +426,12 @@ class ActSound(BaseAct):
 		self.sample.volume = vol
 		self.sample.pitchmin = pitchmin
 		self.sample.pitchmax = pitchmax
-		self.sample.owner = emitter
-		self.sample.distmax = maxdist
-		# Just a guess, can change this if needed
-		self.sample.distmin = maxdist / 5.0
+
+		if emitter is not None:
+			# Just a guess, can change this if needed
+			mindist = maxdist / 5.0
+			self.sample.add_effect(bxt.sound.Localise(
+					emitter, distmin=mindist,distmax=maxdist))
 
 	def execute(self, c):
 		self.sample.copy().play()

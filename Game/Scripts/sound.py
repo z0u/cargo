@@ -28,14 +28,14 @@ def dry_leaf(c):
 			'//Sound/cc-by/Crunch1.ogg',
 			'//Sound/cc-by/Crunch2.ogg',
 			'//Sound/cc-by/Crunch3.ogg')
-	sample.owner = c.owner
+	sample.add_effect(bxt.sound.Localise(c.owner))
 	sample.play()
 
 def dandelion(c):
 	sample = bxt.sound.Sample(
 			'//Sound/cc-by/Swosh1.ogg',
 			'//Sound/cc-by/Swosh2.ogg')
-	sample.owner = c.owner
+	sample.add_effect(bxt.sound.Localise(c.owner))
 	sample.play()
 
 def ripple(c):
@@ -45,5 +45,5 @@ def ripple(c):
 			'//Sound/Puddle3.ogg',
 			'//Sound/Puddle4.ogg')
 	sample.volume = 0.5
-	sample.owner = c.owner
+	sample.add_effect(bxt.sound.Localise(c.owner))
 	sample.play()

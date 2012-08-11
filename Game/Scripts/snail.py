@@ -978,7 +978,7 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.sound.volume = 0.5
 		self.sound.pitchmin = 0.7
 		self.sound.pitchmax = 1.2
-		self.sound.owner = self
+		self.sound.add_effect(bxt.sound.Localise(self))
 
 	def add_spot(self, speedStyle, touchedObject):
 		'''

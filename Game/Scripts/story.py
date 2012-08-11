@@ -15,20 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from sys import stdout
 import time
 
 import bge
 import mathutils
-import aud
 
 import bxt
 
-from . import ui
 from . import camera
 from . import director
 from . import store
-from . import impulse
 from . import inventory
 from . import jukebox
 
@@ -424,23 +420,22 @@ class ActSound(BaseAct):
 
 	emitter = bxt.types.weakprop("emitter")
 
-	def __init__(self, filename, vol=1, pitchmin=1, pitchmax=1, delay=0,
-			emitter=None, maxdist=50.0):
-		self.filename = bge.logic.expandPath(filename)
-		self.volume = vol
-		self.pitchmin = pitchmin
-		self.pitchmax = pitchmax
-		self.delay = delay
-		self.emitter = emitter
-		self.maxdist = maxdist
-		self.mindist = maxdist / 5.0 # Just a guess, can change this if needed
-		self._factory = None
+	def __init__(self, filename, vol=1, pitchmin=1, pitchmax=1, emitter=None,
+			maxdist=50.0):
+		self.sample = bxt.sound.Sample(filename)
+		self.sample.volume = vol
+		self.sample.pitchmin = pitchmin
+		self.sample.pitchmax = pitchmax
+		self.sample.owner = emitter
+		self.sample.distmax = maxdist
+		# Just a guess, can change this if needed
+		self.sample.distmin = maxdist / 5.0
 
 	def execute(self, c):
-		bxt.sound.play_sample(self.filename, self.volume, self.pitchmin, self.pitchmax, self.emitter, self.mindist, self.maxdist)
+		self.sample.copy().play()
 
 	def __str__(self):
-		return "ActSound: %s" % self.filename
+		return "ActSound: %s" % self.sample
 
 class ActMusicPlay(BaseAct):
 	'''

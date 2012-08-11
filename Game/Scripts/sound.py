@@ -24,22 +24,26 @@
 import bxt
 
 def dry_leaf(c):
-	files = (
-		'//Sound/cc-by/Crunch1.ogg',
-		'//Sound/cc-by/Crunch2.ogg',
-		'//Sound/cc-by/Crunch3.ogg')
-	bxt.sound.play_random_sample(files, ob=c.owner)
+	sample = bxt.sound.Sample(
+			'//Sound/cc-by/Crunch1.ogg',
+			'//Sound/cc-by/Crunch2.ogg',
+			'//Sound/cc-by/Crunch3.ogg')
+	sample.owner = c.owner
+	sample.play()
 
 def dandelion(c):
-	files = (
-		'//Sound/cc-by/Swosh1.ogg',
-		'//Sound/cc-by/Swosh2.ogg')
-	bxt.sound.play_random_sample(files, ob=c.owner)
+	sample = bxt.sound.Sample(
+			'//Sound/cc-by/Swosh1.ogg',
+			'//Sound/cc-by/Swosh2.ogg')
+	sample.owner = c.owner
+	sample.play()
 
 def ripple(c):
-	files = (
-		'//Sound/Puddle1.ogg',
-		'//Sound/Puddle2.ogg',
-		'//Sound/Puddle3.ogg',
-		'//Sound/Puddle4.ogg')
-	bxt.sound.play_random_sample(files, volume=0.5, ob=c.owner)
+	sample = bxt.sound.Sample(
+			'//Sound/Puddle1.ogg',
+			'//Sound/Puddle2.ogg',
+			'//Sound/Puddle3.ogg',
+			'//Sound/Puddle4.ogg')
+	sample.volume = 0.5
+	sample.owner = c.owner
+	sample.play()

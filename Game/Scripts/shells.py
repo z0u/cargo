@@ -201,6 +201,13 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 
 class Shell(ShellBase):
 
+	def __init__(self, old_owner):
+		ShellBase.__init__(self, old_owner)
+
+		self.rolling_sound = bxt.sound.Sample('//Sound/cc-by/Rolling.ogg')
+		self.rolling_sound.loop = True
+		self.rolling_sound.owner = self
+
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		bxt.types.Event('SetCameraType', 'PathCamera').send()
@@ -273,6 +280,11 @@ class Wheel(ShellBase):
 		ShellBase.__init__(self, old_owner)
 		self._reset_speed()
 		self.fly_power = 0.0
+
+		self.driving_sound = bxt.sound.Sample('//Sound/cc-by/Driving.ogg')
+		self.driving_sound.owner = self
+		self.driving_sound.loop = True
+
 		bxt.types.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_event(self, evt):
@@ -295,7 +307,7 @@ class Wheel(ShellBase):
 		ShellBase.on_pre_enter(self)
 		self._reset_speed()
 		bxt.types.Event('SetCameraType', 'PathCamera').send()
-		bxt.sound.play_sample('//Sound/CarStart.ogg')
+		bxt.sound.Sample('//Sound/CarStart.ogg').play()
 
 	def on_entered(self):
 		ShellBase.on_entered(self)
@@ -303,12 +315,12 @@ class Wheel(ShellBase):
 		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
 		alignment = WheelCameraAlignment()
 		bxt.types.Event('SetCameraAlignment', alignment).send()
-		bxt.sound.play_sample('//Sound/cc-by/Driving.ogg', loop=True)
+		self.driving_sound.play()
 
 	def on_exited(self):
 		ShellBase.on_exited(self)
-		bxt.sound.play_sample('//Sound/DoorOpenClose.ogg')
-		bxt.sound.stop('//Sound/cc-by/Driving.ogg')
+		self.driving_sound.stop()
+		bxt.sound.Sample('//Sound/DoorOpenClose.ogg').play()
 
 	def handle_movement(self, state):
 		self.orient()
@@ -373,6 +385,19 @@ class BottleCap(ShellBase):
 	L_JUMP = 2   # Jumping
 
 	_prefix = 'BC_'
+
+	def __init__(self, old_owner):
+		ShellBase.__init__(self, old_owner)
+
+		self.jump_sound = bxt.sound.Sample('//Sound/MouthPopOpen.ogg')
+		self.jump_sound.pitchmin = 0.9
+		self.jump_sound.pitchmax = 1.0
+		self.jump_sound.owner = self
+
+		self.land_sound = bxt.sound.Sample('//Sound/MouthPopClose.ogg')
+		self.land_sound.pitchmin = 0.9
+		self.land_sound.pitchmax = 1.0
+		self.land_sound.owner = self
 
 	def orient(self):
 		'''Try to make the cap sit upright, and face the direction of travel.'''
@@ -450,9 +475,7 @@ class BottleCap(ShellBase):
 		# Apply the force.
 		#
 		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
-
-		bxt.sound.play_sample('//Sound/MouthPopOpen.ogg', pitchmin=0.9,
-				pitchmax=1.0, ob=self)
+		self.jump_sound.play()
 
 	def handle_movement(self, state):
 		'''Make the cap jump around around based on user input.'''
@@ -475,12 +498,8 @@ class BottleCap(ShellBase):
 		return True
 
 	@bxt.types.expose
-	@bxt.utils.controller_cls
-	def land(self, c):
-		if not c.sensors[0].positive:
-			return
-		bxt.sound.play_sample('//Sound/MouthPopClose.ogg', pitchmin=0.9,
-				pitchmax=1.0, ob=self)
+	def land(self):
+		self.land_sound.play()
 
 def spawn_shell(c):
 	'''Place an item that has not been picked up yet.'''

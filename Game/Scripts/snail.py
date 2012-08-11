@@ -17,14 +17,12 @@
 
 import mathutils
 import bge
-from bge import render
-from bge import logic
 
 import bxt
 
 from . import director
 from . import inventory
-from Scripts import store, shells, camera, impulse
+from Scripts import shells, camera, impulse
 
 DEBUG = False
 
@@ -563,7 +561,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		self.rem_state(Snail.S_HASSHELL)
 		self.play_shell_action("PopShell", 18, self.on_drop_shell, animate, 15)
-		bxt.sound.play_sample('//Sound/cc-by/BottleOpen.ogg')
+
+		bxt.sound.Sample('//Sound/cc-by/BottleOpen.ogg').play()
 
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
@@ -710,15 +709,16 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			body.stopAction(0)
 			body.playAction('SnailDamage_Body', 1, 100, 0)
 			body.setActionFrame(1, 0)
-			bxt.sound.play_random_sample(['//Sound/cc-by/HealthDown1.ogg', 
+			bxt.sound.Sample(
+					'//Sound/cc-by/HealthDown1.ogg', 
 					'//Sound/cc-by/HealthDown2.ogg',
-					'//Sound/cc-by/HealthDown3.ogg'])
+					'//Sound/cc-by/HealthDown3.ogg').play()
 			self.pull_eyes_in()
 		elif diff > 0:
 			body.stopAction(0)
 			body.playAction('SnailHeal_Body', 1, 100, 0)
 			body.setActionFrame(1, 0)
-			bxt.sound.play_sample('//Sound/cc-by/HealthUp.ogg')
+			bxt.sound.Sample('//Sound/cc-by/HealthUp.ogg').play()
 		bxt.types.Event('HealthSet', value / self.maxHealth).send()
 
 	def heal(self, amount=1):
@@ -749,7 +749,9 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			return
 
 		if self.health_warn_tics == 1:
-			bxt.sound.play_sample('//Sound/cc-by/HealthWarning.ogg', volume=0.5)
+			sample = bxt.sound.Sample('//Sound/cc-by/HealthWarning.ogg')
+			sample.volume = 0.5
+			sample.play()
 
 		if self.health_warn_tics > 0:
 			self.health_warn_tics -= 1
@@ -969,6 +971,15 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.spotIndex = 0
 		self.warned = False
 
+		self.sound = bxt.sound.Sample(
+			'//Sound/cc-by/Slither1.ogg',
+			'//Sound/cc-by/Slither2.ogg',
+			'//Sound/cc-by/Slither3.ogg')
+		self.sound.volume = 0.5
+		self.sound.pitchmin = 0.7
+		self.sound.pitchmax = 1.2
+		self.sound.owner = self
+
 	def add_spot(self, speedStyle, touchedObject):
 		'''
 		Add a spot where the snail is now. Actually, this only adds a spot half
@@ -1021,15 +1032,7 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				speedStyle = Trail.S_SLOW
 			self.add_spot(speedStyle, touchedObject)
 			if triggered and speedStyle == Trail.S_FAST:
-				self.play_sound()
-
-	def play_sound(self):
-		files = (
-			'//Sound/cc-by/Slither1.ogg',
-			'//Sound/cc-by/Slither2.ogg',
-			'//Sound/cc-by/Slither3.ogg')
-		bxt.sound.play_random_sample(files, volume=0.5, pitchmin=0.7,
-				pitchmax=1.2, ob=self)
+				self.sound.copy().play()
 
 class MinSnail(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 

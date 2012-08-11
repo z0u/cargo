@@ -187,22 +187,24 @@ class GrassBlade(FlexibleObject):
 		return cPos
 
 def flower_sound(c):
-	files = (
+	sample = bxt.sound.Sample(
 		'//Sound/cc-by/Bell2.ogg',
 		'//Sound/cc-by/Bell3.ogg',
 		'//Sound/cc-by/Bell4.ogg',
 		'//Sound/cc-by/Bell1.ogg')
-	bxt.sound.play_random_sample(files, ob=c.owner)
+	sample.owner = c.owner
+	sample.play()
 
 def mushroom_sound(c):
-	files = (
+	sample = bxt.sound.Sample(
 		'//Sound/cc-by/jaw-harp21.ogg',
 		'//Sound/cc-by/jaw-harp4.ogg',
 		'//Sound/cc-by/jaw-harp3.ogg',
 		'//Sound/cc-by/jaw-harp19.ogg',
 		'//Sound/cc-by/jaw-harp2.ogg',
 		'//Sound/cc-by/jaw-harp20.ogg')
-	bxt.sound.play_random_sample(files, ob=c.owner)
+	sample.owner = c.owner
+	sample.play()
 
 class Web(FlexibleObject):
 	def __init__(self, old_owner):

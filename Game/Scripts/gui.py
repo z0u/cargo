@@ -35,7 +35,8 @@ class UiController(impulse.Handler, bxt.types.BX_GameObject,
 	downCurrent = bxt.types.weakprop("downCurrent")
 
 	DIRECTION_TOLERANCE = 0.1
-	SOUND_DELAY_TICS = 5
+	#SOUND_DELAY_TICS = 5
+	SOUND_DELAY_TICS = 0
 
 	def __init__(self, old_owner):
 		self.screen_stack = []
@@ -43,6 +44,10 @@ class UiController(impulse.Handler, bxt.types.BX_GameObject,
 
 		# Don't play the first focus sound.
 		self.sound_delay = UiController.SOUND_DELAY_TICS
+		self.focus_sound = bxt.sound.Sample("//Sound/cc-by/BtnFocus.ogg")
+		self.focus_sound.volume = 0.2
+		self.click_sound = bxt.sound.Sample("//Sound/cc-by/BtnClick.ogg")
+		self.click_sound.volume = 0.2
 
 		bxt.types.EventBus().add_listener(self)
 
@@ -119,7 +124,7 @@ class UiController(impulse.Handler, bxt.types.BX_GameObject,
 		self.current = widget
 		bxt.types.WeakEvent("FocusChanged", widget).send()
 		if widget is not None and self.sound_delay <= 0:
-			bxt.sound.play_sample("//Sound/cc-by/BtnFocus.ogg", volume=0.2)
+			self.focus_sound.play()
 			self.sound_delay = UiController.SOUND_DELAY_TICS
 
 	def press(self):
@@ -138,7 +143,7 @@ class UiController(impulse.Handler, bxt.types.BX_GameObject,
 				# Always play click sound, but then disallow other sounds like
 				# focus. Note that this must happen before click() is called,
 				# or the focus sound will play anyway.
-				bxt.sound.play_sample("//Sound/cc-by/BtnClick.ogg")
+				self.click_sound.play()
 				self.sound_delay = UiController.SOUND_DELAY_TICS
 
 				self.downCurrent.click()

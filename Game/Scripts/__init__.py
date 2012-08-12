@@ -31,12 +31,3 @@ director.Director()
 lodtree.LODManager()
 menu.SessionManager()
 ui.HUDState()
-
-# Some basic configuration
-bxt.sound.set_volume("Mush_Spore", 0.15)
-bxt.sound.set_volume("FlowerPowSound", 0.2)
-bxt.sound.set_volume("DryLeaf", 0.5)
-bxt.sound.set_volume("Dandelion_Ctl", 0.7)
-bxt.sound.set_volume("Wheel", 0.5)
-bxt.sound.set_volume("Shell", 8.0)
-bxt.sound.set_volume("BottleCap", 1.0)

@@ -35,9 +35,9 @@ class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if s.hitObject is not None:
 			store.put('/game/level/spawnPoint', 'SpawnCargoHouse')
 			self.init_worm()
-			jukebox.Jukebox().play(self, 1, '//Sound/Music/House2.ogg')
+			bxt.sound.Jukebox().play_files(self, 1, '//Sound/Music/House2.ogg')
 		else:
-			jukebox.Jukebox().stop(self)
+			bxt.sound.Jukebox().stop(self)
 
 	def init_worm(self):
 		if not store.get('/game/level/wormMissionStarted', False):
@@ -306,9 +306,3 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 	def isInsideWorld(self):
 		return True
-
-@bxt.utils.controller
-def worm_knock_sound(c):
-	frame = c.owner['ActionFrame']
-	if (frame > 187 and frame < 189) or (frame > 200 and frame < 201):
-		bxt.sound.play_with_random_pitch(c)

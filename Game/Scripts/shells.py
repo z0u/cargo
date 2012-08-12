@@ -223,7 +223,7 @@ class Shell(ShellBase):
 
 	def on_exited(self):
 		ShellBase.on_exited(self)
-		self.rolling_sound.add_effect(bxt.sound.FadeOut())
+		self.rolling_sound.add_effect(bxt.sound.Fader())
 
 #	def on_post_exit(self):
 #		ShellBase.on_post_exit(self)

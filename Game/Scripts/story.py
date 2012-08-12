@@ -26,7 +26,6 @@ from . import camera
 from . import director
 from . import store
 from . import inventory
-from . import jukebox
 
 DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
@@ -463,7 +462,7 @@ class ActMusicPlay(BaseAct):
 		# Play the track. Use priority 1 for this kind of music, because it's
 		# important for the story.
 		ob = self.find_target(c, self.ob, self.target_descendant)
-		jukebox.Jukebox().play(ob, self.priority, *self.filepaths,
+		bxt.sound.Jukebox().play_files(ob, self.priority, *self.filepaths,
 				volume=self.volume)
 
 	def __str__(self):
@@ -482,7 +481,7 @@ class ActMusicStop(BaseAct):
 
 	def execute(self, c):
 		ob = self.find_target(c, self.ob, self.target_descendant)
-		jukebox.Jukebox().stop(ob)
+		bxt.sound.Jukebox().stop(ob)
 
 	def __str__(self):
 		return "ActMusicStop"

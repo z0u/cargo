@@ -27,7 +27,7 @@ class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
 		GameLevel.__init__(self, oldOwner)
 
-		jukebox.Jukebox().play_permutation(self, 0,
+		bxt.sound.Jukebox().play_permutation(self, 0,
 				"//Sound/cc-by/PondAmbience1.ogg",
 				"//Sound/cc-by/PondAmbience2.ogg",
 				"//Sound/cc-by/PondAmbience3.ogg",

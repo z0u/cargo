@@ -82,14 +82,27 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def touched(self, c):
+		sNear = c.sensors['Near']
+		sCollision = c.sensors['Collision']
+
+		# Music is controlled by near sensor only.
+		if sNear.triggered:
+			if sNear.positive:
+				bxt.sound.Jukebox().play_files(self, 1,
+						'//Sound/Music/Lighthouse_loop.ogg',
+						introfile='//Sound/Music/Lighthouse_intro.ogg')
+			else:
+				bxt.sound.Jukebox().stop(self)
+
+		# Firefly lifecycle is controller by near and touch sensor. This object
+		# maintains a state (inLocality) to prevent the firefly from being
+		# spawned again when leaving the top of the lighthouse.
 		if self.inLocality:
 			# Check whether the snail is leaving.
-			sNear = c.sensors['Near']
 			if not director.Director().mainCharacter in sNear.hitObjectList:
 				self.leave()
 		else:
 			# Check whether the snail is entering.
-			sCollision = c.sensors['Collision']
 			if director.Director().mainCharacter in sCollision.hitObjectList:
 				self.arrive()
 

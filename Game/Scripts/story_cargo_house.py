@@ -35,7 +35,7 @@ class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if s.hitObject is not None:
 			store.put('/game/level/spawnPoint', 'SpawnCargoHouse')
 			self.init_worm()
-			bxt.sound.Jukebox().play_files(self, 1, '//Sound/Music/House2.ogg')
+			bxt.sound.Jukebox().play_files(self, 1, '//Sound/Music/House.ogg')
 		else:
 			bxt.sound.Jukebox().stop(self)
 

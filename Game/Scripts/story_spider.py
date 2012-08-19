@@ -19,6 +19,15 @@ import bxt
 
 from .story import *
 
+def factory(sce):
+	if not "Spider" in sce.objectsInactive:
+		try:
+			bge.logic.LibLoad('//Spider_loader.blend', 'Scene', load_actions=True)
+		except ValueError as e:
+			print('Warning: could not load spider:', e)
+
+	return bxt.types.add_and_mutate_object(sce, "Spider", "Spider")
+
 class SpiderIsle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	_prefix = "SI_"
@@ -30,6 +39,27 @@ class SpiderIsle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def on_event(self, evt):
 		if evt.message == 'ShellDropped':
 			self.play_flying_cutscene(evt.body)
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def approach_centre(self, c):
+		if c.sensors[0].positive:
+			if 'Spider' in self.scene.objects:
+				return
+			spider = factory(self.scene)
+			spawn_point = self.scene.objects['Spider_SpawnPoint']
+			bxt.bmath.copy_transform(spawn_point, spider)
+		else:
+			if 'Spider' not in self.scene.objects:
+				return
+			spider = self.scene.objects['Spider']
+			spider.endObject()
+
+	@bxt.types.expose
+	@bxt.utils.controller_cls
+	def approach_web(self, c):
+		if c.sensors[0].positive:
+			bxt.types.Event('ApproachWeb').send()
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -49,6 +79,33 @@ class SpiderIsle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return
 
 		bxt.types.add_and_mutate_object(self.scene, "FlyingCutscene", self)
+
+
+class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+	L_IDLE = 0
+	L_ANIM = 1
+
+	def __init__(self, old_owner):
+		Chapter.__init__(self, old_owner)
+		self.create_state_graph()
+
+	def create_state_graph(self):
+		s = self.rootState.createTransition("Init")
+		s.addCondition(CondEvent("ApproachWeb"))
+		s.addAction(ActSuspendInput())
+		s.addAction(ActSetFocalPoint('Spider'))
+		s.addAction(ActSetCamera("SpiderCam"))
+		s.addEvent("ShowDialogue", "Boo!")
+
+		s = s.createTransition("Clean up")
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActResumeInput())
+		s.addAction(ActRemoveFocalPoint('Spider'))
+		s.addAction(ActRemoveCamera("SpiderCam"))
+
+	def get_focal_points(self):
+		return [self.children['Spider_Face'], self]
+
 
 class FlyingCutscene(Chapter, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
@@ -109,19 +166,3 @@ class FlyingCutscene(Chapter, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		anchor = self.children['FC_SnailShoot']
 		bxt.bmath.copy_transform(anchor, snail)
 		snail.localLinearVelocity = bxt.bmath.YAXIS * 75.0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

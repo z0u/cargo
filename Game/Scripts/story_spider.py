@@ -60,6 +60,8 @@ class SpiderIsle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def approach_web(self, c):
 		if c.sensors[0].positive:
 			bxt.types.Event('ApproachWeb').send()
+		else:
+			bxt.types.Event('LeaveWeb').send()
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls
@@ -95,6 +97,9 @@ class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActSuspendInput())
 		s.addAction(ActSetFocalPoint('Spider'))
 		s.addAction(ActSetCamera("SpiderCam"))
+
+		s = s.createTransition()
+		s.addAction(ActSetCamera("SpiderCam_CU"))
 		s.addEvent("ShowDialogue", "Boo!")
 
 		s = s.createTransition("Clean up")
@@ -102,6 +107,11 @@ class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveFocalPoint('Spider'))
 		s.addAction(ActRemoveCamera("SpiderCam"))
+		s.addAction(ActRemoveCamera("SpiderCam_CU"))
+
+		s = s.createTransition("Reset")
+		s.addCondition(CondEvent("LeaveWeb"))
+		s.addTransition(self.rootState)
 
 	def get_focal_points(self):
 		return [self.children['Spider_Face'], self]

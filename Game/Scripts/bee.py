@@ -112,12 +112,8 @@ class DirectedPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.set_default_prop('stride', DirectedPath.DEFAULT_STRIDE)
 
 	def init_path(self):
-		me = self.meshes[0]
-		self.path = []
 		mat = self.worldTransform
-		for i in range(me.getVertexArrayLength(0)):
-			vert = me.getVertex(0, i)
-			self.path.append(mat * vert.XYZ)
+		self.path = [mat * v.XYZ for v in bxt.utils.iterate_verts(self)]
 
 	def get_next(self, pos, relax_dist, hint=0):
 		try:

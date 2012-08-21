@@ -100,7 +100,44 @@ class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 		s = s.createTransition()
 		s.addAction(ActSetCamera("SpiderCam_CU"))
-		s.addEvent("ShowDialogue", "Boo!")
+		s.addEvent("ShowDialogue", "Who goes there?")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Ah, where are my manners? Welcome, my dear! Forgive me; I don't get many visitors.")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "It's strange, don't you think? Who could resist the beauty of Spider Isle?")
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "Ah, I see you're admiring my collection. Isn't it marvellous?")
+
+		# START SPLIT 1
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", ("I bet you've never seen the like on Tree Island.",
+			("What about the Lighthouse?", "The Sauce Bar, madam!")))
+
+		storch = s.createTransition("torch")
+		storch.addCondition(CondEventEq("DialogueDismissed", 0))
+		storch.addEvent("ShowDialogue", "... Yes. The torch is quite a piece.")
+
+		sbar = s.createTransition("bar")
+		sbar.addCondition(CondEventEq("DialogueDismissed", 1))
+		sbar.addEvent("ShowDialogue", "Oh ho, but it is full of slugs!\n...Mind you, they do serve a smashing gravy.")
+
+		s = State()
+		storch.addTransition(s)
+		sbar.addTransition(s)
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "I suppose you may find the occasional trinket there...")
+		# END SPLIT 1
+
+		s = s.createTransition()
+		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addEvent("ShowDialogue", "But the unique bay of Spider Isle gathers a volume of treasure that other islands simply cannot compete with.")
 
 		s = s.createTransition("Clean up")
 		s.addCondition(CondEvent("DialogueDismissed"))

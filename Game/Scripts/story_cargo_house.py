@@ -143,19 +143,22 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addCondition(CondActionGE(Worm.L_ANIM, 185.0))
 		s.addAction(ActSetCamera('WormCamera_Knock'))
 		s.addEvent("ShowDialogue", "Wake up, Cargo!")
-		s.addAction(ActAction('BurstOut', 185, 198, Worm.L_ANIM,
+		s.addAction(ActAction('BurstOut', 187, 200, Worm.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-		s.addAction(ActAction('BurstOut_S', 185, 198, Worm.L_ANIM, 'WormBody'))
+		s.addAction(ActAction('BurstOut_S', 187, 200, Worm.L_ANIM, 'WormBody'))
 
 		sKnock = s.createSubStep("Knock sound")
-		sKnock.addCondition(CondActionGE(Worm.L_ANIM, 187, tap=True))
+		sKnock.addCondition(CondActionGE(Worm.L_ANIM, 189, tap=True))
 		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.8,
 				pitchmax= 1.1))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent('DialogueDismissed'))
-		s.addAction(ActAction('BurstOut', 185, 220, Worm.L_ANIM))
-		s.addAction(ActAction('BurstOut_S', 185, 220, Worm.L_ANIM, 'WormBody'))
+		s.addCondition(CondActionGE(Worm.L_ANIM, 199))
+		s.addAction(ActAction('BurstOut', 200, 220, Worm.L_ANIM))
+		s.addAction(ActAction('BurstOut_S', 200, 220, Worm.L_ANIM, 'WormBody'))
+		s.addAction(ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.8,
+				pitchmax= 1.1))
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 200.0))
@@ -254,9 +257,10 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		# Point to lighthouse
 		#
 		s = s.createTransition("Point to lighthouse")
+		s.addCondition(CondActionGE(Worm.L_ANIM, 330))
 		s.addEvent("ShowDialogue", "Please take it to the lighthouse keeper as soon as possible. I have paid for express mail!")
-		s.addAction(ActAction('BurstOut', 330, 395, Worm.L_ANIM))
-		s.addAction(ActAction('BurstOut_S', 330, 395, Worm.L_ANIM, 'WormBody'))
+		s.addAction(ActAction('BurstOut', 360, 395, Worm.L_ANIM))
+		s.addAction(ActAction('BurstOut_S', 360, 395, Worm.L_ANIM, 'WormBody'))
 
 		s = s.createTransition()
 		s.addCondition(CondActionGE(Worm.L_ANIM, 360))

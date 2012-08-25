@@ -90,6 +90,7 @@ class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
 		self.create_state_graph()
+		self.playAction('Spider_conv', 1, 1)
 
 	def create_state_graph(self):
 		s = self.rootState.createTransition("Init")
@@ -101,9 +102,12 @@ class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s = s.createTransition()
 		s.addAction(ActSetCamera("SpiderCam_CU"))
 		s.addEvent("ShowDialogue", "Who goes there?")
+		s.addAction(ActAction('Spider_conv', 1, 80, Spider.L_ANIM))
 
 		s = s.createTransition()
 		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addAction(ActRemoveCamera("SpiderCam_CU"))
+		s.addAction(ActSetCamera("SpiderCam_Side"))
 		s.addEvent("ShowDialogue", "Ah, where are my manners? Welcome, my dear! Forgive me; I don't get many visitors.")
 
 		s = s.createTransition()
@@ -143,8 +147,9 @@ class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addCondition(CondEvent("DialogueDismissed"))
 		s.addAction(ActResumeInput())
 		s.addAction(ActRemoveFocalPoint('Spider'))
-		s.addAction(ActRemoveCamera("SpiderCam"))
+		s.addAction(ActRemoveCamera("SpiderCam_Side"))
 		s.addAction(ActRemoveCamera("SpiderCam_CU"))
+		s.addAction(ActRemoveCamera("SpiderCam"))
 
 		s = s.createTransition("Reset")
 		s.addCondition(CondEvent("LeaveWeb"))

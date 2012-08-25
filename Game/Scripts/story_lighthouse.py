@@ -90,7 +90,8 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			if sNear.positive:
 				bxt.sound.Jukebox().play_files(self, 1,
 						'//Sound/Music/Lighthouse_loop.ogg',
-						introfile='//Sound/Music/Lighthouse_intro.ogg')
+						introfile='//Sound/Music/Lighthouse_intro.ogg',
+						volume=0.7)
 			else:
 				bxt.sound.Jukebox().stop(self)
 

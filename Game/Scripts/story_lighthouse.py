@@ -115,6 +115,8 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		Chapter.__init__(self, old_owner)
 		#bxt.types.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()
+		self.playAction('LK_Breathing', 1, 36, LighthouseKeeper.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=4.0)
 
 	def create_state_graph(self):
 		'''
@@ -171,9 +173,15 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 		ssecondmeeting.addTransition(snothing)
 		snothing.addCondition(CondEventEq("DialogueDismissed", 1))
 		snothing.addEvent("ShowDialogue", "OK - hi! But it's hard work operating the lighthouse without a button! Let's talk later.")
+		snothing.addAction(ActAction('LK_Goodbye', 1, 80, LighthouseKeeper.L_ANIM))
 		# Intermediate step, then jump to end
 		snothing = snothing.createTransition()
+		snothing.addCondition(CondActionGE(LighthouseKeeper.L_ANIM, 80))
 		snothing.addCondition(CondEvent("DialogueDismissed"))
+		snothing.addAction(ActAction('LK_Goodbye', 80, 90, LighthouseKeeper.L_ANIM))
+
+		snothing = snothing.createTransition()
+		snothing.addCondition(CondActionGE(LighthouseKeeper.L_ANIM, 90))
 
 		#
 		# Return to game

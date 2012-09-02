@@ -34,6 +34,34 @@ class LevelBeehive(GameLevel):
 				'//Sound/Music/bumbly.wav',
 				volume=0.4)
 
+def init_conveyor(c):
+	o = c.owner
+	cpath = o.children['ConveyorBelt']
+	bxt.anim.play_children_with_offset(cpath.children, 'ConveyorBelt_SegAction',
+		1, 401)
+
+	peg1 = o.children['ConveyorPeg.1']
+	peg1.playAction('ConveryorPegAction', 1, 61,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+	peg2 = o.children['ConveyorPeg.2']
+	peg2.playAction('ConveryorPegAction', 1, 61,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+
+	crusher1 = o.children['ConveyorCrusher_root.1']
+	crusher1loc = crusher1.children[0]
+	crusher1loc.playAction('ConveyorCrusher_Loc.1Action', 1, 401,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+	crusher1rot = crusher1loc.children[0]
+	crusher1rot.playAction('ConveyorCrusher_RotAction', 1, 61,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+
+	crusher2 = o.children['ConveyorCrusher_root.2']
+	crusher2loc = crusher2.children[0]
+	crusher2loc.playAction('ConveyorCrusher_Loc.2Action', 1, 401,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+	crusher2rot = crusher2loc.children[0]
+	crusher2rot.playAction('ConveyorCrusher_RotAction', 1, 61,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 
 def init_lower_buckets(c):
 	o = c.owner

@@ -34,7 +34,18 @@ class LevelBeehive(GameLevel):
 				'//Sound/Music/bumbly.wav',
 				volume=0.4)
 
+
+def init_lower_buckets(c):
+	o = c.owner
+	bxt.anim.play_children_with_offset(o.children, 'BucketsLower',
+		Bucket.FRAME_MIN, Bucket.FRAME_MAX, layer=Bucket.L_ANIM)
+
 class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+	L_ANIM = 0
+
+	FRAME_MIN = 1
+	FRAME_MAX = 400
+
 	DIR_UP = 1
 	DIR_DOWN = 2
 
@@ -99,7 +110,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.update_camera()
 
 	def frame_changed(self):
-		frame = self['Frame']
+		frame = self.getActionFrame(Bucket.L_ANIM) % Bucket.FRAME_MAX
 		if frame < 170:
 			self.set_direction(Bucket.DIR_UP)
 		else:

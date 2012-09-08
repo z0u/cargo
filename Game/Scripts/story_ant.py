@@ -17,11 +17,11 @@
 
 import bge
 
-import bxt
+import bxt.types
+import bxt.bmath
+import bxt.utils
 
-from . import shells
-from . import inventory
-from .story import *
+from Scripts.story import *
 
 def factory():
 	scene = bge.logic.getCurrentScene()

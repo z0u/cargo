@@ -17,9 +17,13 @@
 
 import bge
 
-import bxt
-from . import director
-from .story import *
+import bxt.types
+import bxt.bmath
+import bxt.utils
+import bxt.sound
+
+import Scripts.director
+from Scripts.story import *
 
 def factory(sce):
 	if not "Firefly" in sce.objectsInactive:
@@ -72,7 +76,7 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.inLocality = True
 		cbEvent = bxt.types.Event("EnterLighthouse")
 		bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
-		store.put('/game/level/spawnPoint', 'SpawnTorch')
+		Scripts.store.put('/game/level/spawnPoint', 'SpawnTorch')
 
 	def leave(self):
 		# Remove the keeper to prevent its armature from chewing up resources.
@@ -100,11 +104,11 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# spawned again when leaving the top of the lighthouse.
 		if self.inLocality:
 			# Check whether the snail is leaving.
-			if not director.Director().mainCharacter in sNear.hitObjectList:
+			if not Scripts.director.Director().mainCharacter in sNear.hitObjectList:
 				self.leave()
 		else:
 			# Check whether the snail is entering.
-			if director.Director().mainCharacter in sCollision.hitObjectList:
+			if Scripts.director.Director().mainCharacter in sCollision.hitObjectList:
 				self.arrive()
 
 class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):

@@ -23,7 +23,7 @@ import mathutils
 import bxt.types
 import bxt.utils
 
-from . import impulse
+import Scripts.impulse
 
 DEBUG = False
 
@@ -272,7 +272,7 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 	def on_previous(self, pos, trig):
 		pass
 
-class Director(impulse.Handler, metaclass=bxt.types.Singleton):
+class Director(Scripts.impulse.Handler, metaclass=bxt.types.Singleton):
 	_prefix = ''
 
 	SLOW_TICS_PER_FRAME = 10
@@ -297,9 +297,9 @@ class Director(impulse.Handler, metaclass=bxt.types.Singleton):
 			self.mainCharacter = event.body
 		elif event.message == 'GameModeChanged':
 			if event.body != 'Playing':
-				impulse.Input().add_handler(self, 'STORY')
+				Scripts.impulse.Input().add_handler(self, 'STORY')
 			else:
-				impulse.Input().remove_handler(self)
+				Scripts.impulse.Input().remove_handler(self)
 
 	@bxt.types.expose
 	def update(self):

@@ -21,7 +21,7 @@
 #
 
 
-import bxt
+import bxt.sound
 
 def dry_leaf(c):
 	sample = bxt.sound.Sample(

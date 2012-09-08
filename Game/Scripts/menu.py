@@ -17,10 +17,10 @@
 
 import bge
 
-import bxt
+import bxt.types
 
-from . import gui
-from . import store
+import Scripts.gui
+import Scripts.store
 
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
@@ -43,8 +43,8 @@ class SessionManager(metaclass=bxt.types.Singleton):
 	def on_event(self, event):
 		if event.message == 'showSavedGameDetails':
 			# The session ID indicates which saved game is being used.
-			store.set_session_id(event.body)
-			if len(store.get('/game/name', '')) == 0:
+			Scripts.store.set_session_id(event.body)
+			if len(Scripts.store.get('/game/name', '')) == 0:
 				bxt.types.Event('pushScreen', 'NameScreen').send()
 			else:
 				bxt.types.Event('pushScreen', 'LoadDetailsScreen').send()
@@ -58,14 +58,14 @@ class SessionManager(metaclass=bxt.types.Singleton):
 		elif event.message == 'LoadLevel':
 			# Load the level indicated in the save game. This is called after
 			# the loading screen has been shown.
-			level = store.get('/game/levelFile', '//Outdoors.blend')
-			store.save()
+			level = Scripts.store.get('/game/levelFile', '//Outdoors.blend')
+			Scripts.store.save()
 			bge.logic.startGame(level)
 
 		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.
-			for key in store.search('/game/'):
-				store.unset(key)
+			for key in Scripts.store.search('/game/'):
+				Scripts.store.unset(key)
 			bxt.types.Event('setScreen', 'LoadingScreen').send()
 
 		elif event.message == 'quit':
@@ -76,16 +76,16 @@ class SessionManager(metaclass=bxt.types.Singleton):
 			bge.logic.endGame()
 
 
-class MenuController(gui.UiController):
+class MenuController(Scripts.gui.UiController):
 
 	def __init__(self, old_owner):
-		gui.UiController.__init__(self, old_owner)
+		Scripts.gui.UiController.__init__(self, old_owner)
 		bxt.types.Event('setScreen', 'LoadingScreen').send(2)
 		bxt.types.Event('GameModeChanged', 'Menu').send()
 
 	def get_default_widget(self, screen_name):
 		if screen_name == 'LoadingScreen':
-			gamenum = store.get_session_id()
+			gamenum = Scripts.store.get_session_id()
 			for ob in self.scene.objects:
 				if ob.name == 'SaveButton_T' and ob['onClickBody'] == gamenum:
 					return ob
@@ -99,7 +99,7 @@ class MenuController(gui.UiController):
 			return self.scene.objects['Btn_Cancel']
 		elif screen_name == 'NameScreen':
 			for ob in self.scene.objects:
-				if ob.name == 'CharButton_T' and ob['_old_name'] == 'Btn_Char.FIRST':
+				if ob.name == 'CharButton_T' and ob._orig_name == 'Btn_Char.FIRST':
 					return ob
 
 		return None
@@ -144,10 +144,10 @@ class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
 			frame = max(frame - Camera.FRAME_RATE, targetFrame)
 		self['frame'] = frame
 
-class SaveButton(gui.Button):
+class SaveButton(Scripts.gui.Button):
 	def __init__(self, old_owner):
 		bxt.types.mutate(self.children['IDCanvas'])
-		gui.Button.__init__(self, old_owner)
+		Scripts.gui.Button.__init__(self, old_owner)
 
 	def updateVisibility(self, visible):
 		super(SaveButton, self).updateVisibility(visible)
@@ -155,15 +155,15 @@ class SaveButton(gui.Button):
 		if not visible:
 			return
 
-		name = store.get('/game/name', '', session=self['onClickBody'])
+		name = Scripts.store.get('/game/name', '', session=self['onClickBody'])
 		self.children['IDCanvas'].set_text(name)
 
-class Checkbox(gui.Button):
+class Checkbox(Scripts.gui.Button):
 	def __init__(self, old_owner):
 		self.checked = False
-		gui.Button.__init__(self, old_owner)
+		Scripts.gui.Button.__init__(self, old_owner)
 		if 'dataBinding' in self:
-			self.checked = store.get(self['dataBinding'], self['dataDefault'])
+			self.checked = Scripts.store.get(self['dataBinding'], self['dataDefault'])
 		self.updateCheckFace()
 
 		# Create a clickable box around the text.
@@ -180,7 +180,7 @@ class Checkbox(gui.Button):
 		self.checked = not self.checked
 		self.updateCheckFace()
 		if 'dataBinding' in self:
-			store.put(self['dataBinding'], self.checked)
+			Scripts.store.put(self['dataBinding'], self.checked)
 		super(Checkbox, self).click()
 
 	def updateVisibility(self, visible):
@@ -197,17 +197,17 @@ class Checkbox(gui.Button):
 
 	def updateTargetFrame(self):
 		start, end = self.get_anim_range()
-		gui.Button.updateTargetFrame(self)
+		Scripts.gui.Button.updateTargetFrame(self)
 		self.children['CheckOff'].playAction("Button_OnlyColour", start, end)
 		self.children['CheckOn'].playAction("Button_OnlyColour", start, end)
 
-class ConfirmationPage(gui.Widget):
+class ConfirmationPage(Scripts.gui.Widget):
 	def __init__(self, old_owner):
 		self.lastScreen = ''
 		self.currentScreen = ''
 		self.onConfirm = ''
 		self.onConfirmBody = ''
-		gui.Widget.__init__(self, old_owner)
+		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
 	def on_event(self, event):
@@ -229,13 +229,13 @@ class ConfirmationPage(gui.Widget):
 				bxt.types.Event(self.onConfirm, self.onConfirmBody).send()
 				self.children['ConfirmText']['Content'] = ""
 
-class GameDetailsPage(gui.Widget):
+class GameDetailsPage(Scripts.gui.Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to
 	mouse events.'''
 	def __init__(self, old_owner):
 		bxt.types.mutate(self.childrenRecursive['GameName'])
 		bxt.types.mutate(self.children['StoryDetails'])
-		gui.Widget.__init__(self, old_owner)
+		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
 	def updateVisibility(self, visible):
@@ -244,19 +244,19 @@ class GameDetailsPage(gui.Widget):
 			child.setVisible(visible, True)
 
 		if visible:
-			name = store.get('/game/name', '')
-			summary = store.get('/game/storySummary', 'Start a new game.')
+			name = Scripts.store.get('/game/name', '')
+			summary = Scripts.store.get('/game/storySummary', 'Start a new game.')
 			self.childrenRecursive['GameName'].set_text(name)
 			self.children['StoryDetails'].set_text(summary)
 
-class OptionsPage(gui.Widget):
+class OptionsPage(Scripts.gui.Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to
 	mouse events.'''
 	def __init__(self, old_owner):
-		gui.Widget.__init__(self, old_owner)
+		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
-class NamePage(gui.Widget):
+class NamePage(Scripts.gui.Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to
 	mouse events.'''
 
@@ -270,7 +270,7 @@ class NamePage(gui.Widget):
 	def __init__(self, old_owner):
 		bxt.types.mutate(self.children['NamePageName'])
 		self.mode = 'UPPERCASE'
-		gui.Widget.__init__(self, old_owner)
+		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
 	def on_event(self, evt):
@@ -283,7 +283,7 @@ class NamePage(gui.Widget):
 		elif evt.message == 'acceptName':
 			name = self.children['NamePageName'].get_text()
 			if len(name) > 0:
-				store.put('/game/name', name)
+				Scripts.store.put('/game/name', name)
 				bxt.types.Event('popScreen').send()
 				bxt.types.Event('pushScreen', 'LoadDetailsScreen').send()
 
@@ -305,7 +305,7 @@ class NamePage(gui.Widget):
 			self.pop_character()
 
 		else:
-			gui.Widget.on_event(self, evt)
+			Scripts.gui.Widget.on_event(self, evt)
 
 	def add_character(self, char):
 		name = self.children['NamePageName'].get_text()
@@ -318,11 +318,11 @@ class NamePage(gui.Widget):
 		self.children['NamePageName'].set_text(name[0:-1])
 
 	def updateVisibility(self, visible):
-		gui.Widget.updateVisibility(self, visible)
+		Scripts.gui.Widget.updateVisibility(self, visible)
 		self.children['NamePageTitle'].setVisible(visible, True)
 		self.children['NamePageName'].setVisible(visible, True)
 		if visible:
-			name = store.get('/game/name', '')
+			name = Scripts.store.get('/game/name', '')
 			self.children['NamePageName'].set_text(name)
 			self.mode = 'LOWERCASE'
 			# Lay out keys later - once the buttons have had a change to draw
@@ -346,10 +346,10 @@ class NamePage(gui.Widget):
 				char = ''
 			child.set_char(char)
 
-class CharButton(gui.Button):
+class CharButton(Scripts.gui.Button):
 	'''A button for the on-screen keyboard.'''
 	def __init__(self, old_owner):
-		gui.Button.__init__(self, old_owner)
+		Scripts.gui.Button.__init__(self, old_owner)
 
 	def updateVisibility(self, visible):
 		super(CharButton, self).updateVisibility(visible)
@@ -359,12 +359,12 @@ class CharButton(gui.Button):
 		self.children['CharCanvas'].set_text(char)
 		self['onClickBody'] = char
 
-class CreditsPage(gui.Widget):
+class CreditsPage(Scripts.gui.Widget):
 	'''Controls the display of credits.'''
 	DELAY = 180
 
 	def __init__(self, old_owner):
-		gui.Widget.__init__(self, old_owner)
+		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 		self.index = 0
 		self.delayTimer = 0

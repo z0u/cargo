@@ -18,7 +18,9 @@
 import bge
 import mathutils
 
-import bxt
+import bxt.bmath
+import bxt.types
+import bxt.utils
 
 def spawn(c):
 	sce = bge.logic.getCurrentScene()

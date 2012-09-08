@@ -15,8 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from bge import logic
-import bxt
+import bge
+
+import bxt.utils
 
 DEBUG = False
 
@@ -25,14 +26,14 @@ __dirty = False
 def get_session_id():
 	'''Get the ID of the current session.'''
 	try:
-		return logic.globalDict['/_sessionId']
+		return bge.logic.globalDict['/_sessionId']
 	except KeyError:
 		return 0
 
 def set_session_id(identifier):
 	'''Set the ID of the current session.'''
 	global __dirty
-	logic.globalDict['/_sessionId'] = identifier
+	bge.logic.globalDict['/_sessionId'] = identifier
 	__dirty = True
 
 def resolve(path, session=None, level=None):
@@ -68,8 +69,8 @@ def get(path, defaultValue=None, session=None, level=None):
 	p = resolve(path, session=session, level=level)
 	try:
 		if DEBUG:
-			print("store.get(%s) ->" % p, logic.globalDict[p])
-		return logic.globalDict[p]
+			print("store.get(%s) ->" % p, bge.logic.globalDict[p])
+		return bge.logic.globalDict[p]
 	except KeyError:
 		if DEBUG:
 			print("store.get(%s) ->" % p, defaultValue)
@@ -83,7 +84,7 @@ def put(path, value, session=None, level=None):
 	global __dirty
 	if DEBUG:
 		print("store.put(%s) <-" % p, value)
-	logic.globalDict[p] = value
+	bge.logic.globalDict[p] = value
 	__dirty = True
 
 def unset(path, session=None, level=None):
@@ -91,17 +92,17 @@ def unset(path, session=None, level=None):
 	global __dirty
 
 	p = resolve(path, session=session, level=level)
-	if p in logic.globalDict:
+	if p in bge.logic.globalDict:
 		if DEBUG:
 			print("store.unset(%s)" % p)
-		del(logic.globalDict[p])
+		del(bge.logic.globalDict[p])
 		__dirty = True
 
 def search(path='/', session=None, level=None):
 	'''Returns a copy of the store keys for iteration.'''
 	p = resolve(path, session=session, level=level)
 	keys = []
-	for k in logic.globalDict.keys():
+	for k in bge.logic.globalDict.keys():
 		if k.startswith(p):
 			keys.append(k)
 	return keys
@@ -109,13 +110,13 @@ def search(path='/', session=None, level=None):
 def _save():
 	global __dirty
 
-	logic.saveGlobalDict()
+	bge.logic.saveGlobalDict()
 	__dirty = False
 
 def _load():
 	global __dirty
 
-	logic.loadGlobalDict()
+	bge.logic.loadGlobalDict()
 	__dirty = False
 
 # Load once on initialisation.

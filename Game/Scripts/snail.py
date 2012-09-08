@@ -18,15 +18,21 @@
 import mathutils
 import bge
 
-import bxt
+import bxt.types
+import bxt.bmath
+import bxt.utils
+import bxt.anim
+import bxt.sound
 
-from . import director
-from . import inventory
-from Scripts import shells, camera, impulse
+import Scripts.director
+import Scripts.inventory
+import Scripts.shells
+import Scripts.camera
+import Scripts.impulse
 
 DEBUG = False
 
-class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
+class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
 
 	# Snail states
@@ -72,7 +78,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 	shell = bxt.types.weakprop('shell')
 
 	def __init__(self, old_owner):
-		director.VulnerableActor.__init__(self, maxHealth=7)
+		Scripts.director.VulnerableActor.__init__(self, maxHealth=7)
 
 		# Initialise state.
 		self.rem_state(Snail.S_CRAWLING)
@@ -114,19 +120,19 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		bxt.types.WeakEvent('MainCharacterSet', self).send()
 		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
-		alignment = camera.OrbitCameraAlignment()
+		alignment = Scripts.camera.OrbitCameraAlignment()
 		bxt.types.Event('SetCameraAlignment', alignment).send()
-		camera.AutoCamera().add_focus_point(self)
+		Scripts.camera.AutoCamera().add_focus_point(self)
 
 		self.DEBUGpositions = [self.worldPosition.copy()]
-		impulse.Input().add_handler(self)
-		impulse.Input().add_sequence("udlr12", bxt.types.Event("GiveAllShells"))
+		Scripts.impulse.Input().add_handler(self)
+		Scripts.impulse.Input().add_sequence("udlr12", bxt.types.Event("GiveAllShells"))
 		bxt.types.EventBus().replay_last(self, 'TeleportSnail')
 
 	def load_items(self):
-		shellName = inventory.Shells().get_equipped()
+		shellName = Scripts.inventory.Shells().get_equipped()
 		if shellName != None:
-			shell = shells.factory(shellName)
+			shell = Scripts.shells.factory(shellName)
 			self.equip_shell(shell, False)
 
 	@bxt.types.expose
@@ -270,8 +276,8 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 			self.teleport(evt.body)
 		elif evt.message == 'GiveAllShells':
 			# Cheat ;)
-			for name in inventory.Shells().get_all_shells():
-				inventory.Shells().add(name)
+			for name in Scripts.inventory.Shells().get_all_shells():
+				Scripts.inventory.Shells().add(name)
 				bxt.types.Event('ShellChanged', 'new').send()
 		elif evt.message == 'HitMushroom':
 			self.hit_mushroom()
@@ -399,7 +405,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		if not self.has_state(Snail.S_HASSHELL):
 			return
 
-		offset = camera.AutoCamera().camera.worldPosition - self.worldPosition
+		offset = Scripts.camera.AutoCamera().camera.worldPosition - self.worldPosition
 		dist = offset.magnitude
 		targetScale = dist / Snail.CAMERA_SAFE_DIST
 		if targetScale < 0:
@@ -433,14 +439,14 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		collectables.difference_update(self.recentlyDroppedItems)
 
 		for ob in collectables:
-			if isinstance(ob, shells.ShellBase):
+			if isinstance(ob, Scripts.shells.ShellBase):
 				if not ob.is_carried and not ob.is_grasped:
 					self.equip_shell(ob, True)
 					bxt.types.Event('ShellChanged', 'new').send()
 
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
-		shellName = inventory.Shells().get_next(1)
+		shellName = Scripts.inventory.Shells().get_next(1)
 		if shellName == None:
 			return
 		if self.shell and shellName == self.shell.name:
@@ -451,7 +457,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 	def switch_previous(self):
 		'''Equip the next-lower shell that the snail has.'''
-		shellName = inventory.Shells().get_next(-1)
+		shellName = Scripts.inventory.Shells().get_next(-1)
 		if shellName == None:
 			return
 		if self.shell and shellName == self.shell.name:
@@ -503,7 +509,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		self['HasShell'] = 1
 		self['DynamicMass'] = self['DynamicMass'] + shell['DynamicMass']
 		self.shell.on_picked_up(self, animate)
-		inventory.Shells().equip(shell.name)
+		Scripts.inventory.Shells().equip(shell.name)
 
 		if animate:
 			self.show_shockwave()
@@ -513,7 +519,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		if not self.has_state(Snail.S_NOSHELL):
 			return
 
-		shellName = inventory.Shells.get_equipped(self)
+		shellName = Scripts.inventory.Shells.get_equipped(self)
 		if shellName is not None:
 			self._switch(shellName)
 
@@ -678,7 +684,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 
 		# Switch to orbit camera.
 		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
-		alignment = camera.OrbitCameraAlignment()
+		alignment = Scripts.camera.OrbitCameraAlignment()
 		bxt.types.Event('SetCameraAlignment', alignment).send()
 
 		bxt.types.WeakEvent('ShellExited', self).send()
@@ -915,7 +921,7 @@ class Snail(impulse.Handler, director.VulnerableActor, bge.types.KX_GameObject):
 		return True
 
 	def handle_bt_2(self, state):
-		shells = inventory.Shells().get_shells()
+		shells = Scripts.inventory.Shells().get_shells()
 		if len(shells) == 1 and shells[0] == "Shell":
 			# Can't drop shell until a special point in the game.
 			return True

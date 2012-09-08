@@ -17,8 +17,8 @@
 
 import bge
 
-import bxt
-from . import ui
+import bxt.types
+import bxt.utils
 
 class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A countdown timer actor. Uses a regular pulse to count down to zero over

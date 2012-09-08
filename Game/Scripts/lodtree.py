@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from bge import logic
+import bge.logic
 
 import bxt.types
 
-from . import director
+import Scripts.director
 
 ACTIVATION_TIMEOUT = 30
 DEBUG = False
@@ -57,7 +57,7 @@ class LODManager(metaclass=bxt.types.Singleton):
 			self.nodes_updated = 0
 			self.leavesVisible = 0
 			self.branchesVisible = 0
-			self.originalObjects = set(logic.getCurrentScene().objects)
+			self.originalObjects = set(bge.logic.getCurrentScene().objects)
 			self.currentObjects = self.originalObjects.copy()
 
 	def add_tree(self, tree):
@@ -73,7 +73,7 @@ class LODManager(metaclass=bxt.types.Singleton):
 		deadTrees = []
 
 		# Collect colliders
-		for actor in director.Director().actors:
+		for actor in Scripts.director.Director().actors:
 			radius = 1.0
 			try:
 				radius = actor['LODRadius']
@@ -98,11 +98,11 @@ class LODManager(metaclass=bxt.types.Singleton):
 		if DEBUG:
 			#print('LOD tree: updated %d nodes.' % self.nodes_updated)
 			currentObjects = set()
-			currentObjects.update(logic.getCurrentScene().objects)
+			currentObjects.update(bge.logic.getCurrentScene().objects)
 			newObjects = currentObjects.difference(self.currentObjects)
 			deadObjects = self.currentObjects.difference(currentObjects)
 			if len(newObjects) != 0 or len(deadObjects) != 0:
-				print('Objects', len(logic.getCurrentScene().objects),
+				print('Objects', len(bge.logic.getCurrentScene().objects),
 					'Leaves:', self.leavesVisible,
 					'Branches:', self.branchesVisible)
 				self.currentObjects = currentObjects
@@ -231,7 +231,7 @@ class LODBranch(LODNode):
 
 		LODNode.__init__(self)
 
-		self.owner = logic.getCurrentScene().objectsInactive[obName]
+		self.owner = bge.logic.getCurrentScene().objectsInactive[obName]
 		#
 		# Parents just cause problems with visibility.
 		#
@@ -347,7 +347,7 @@ class LODBranch(LODNode):
 		# leaves can be explicitly visible).
 		if self.visible == NS_IMPLICIT:
 			if self.objectInstance == None:
-				self.objectInstance = logic.getCurrentScene().addObject(self.owner, self.owner)
+				self.objectInstance = bge.logic.getCurrentScene().addObject(self.owner, self.owner)
 				if DEBUG:
 					LODManager().branchesVisible += 1
 		else:
@@ -403,7 +403,7 @@ class LODLeaf(LODNode):
 		#
 		self.objectPairs = []
 		self.name = str(obNames)
-		sceneObs = logic.getCurrentScene().objectsInactive
+		sceneObs = bge.logic.getCurrentScene().objectsInactive
 		for name in obNames:
 			oPos = sceneObs[name]
 			oMesh = oPos
@@ -457,7 +457,7 @@ class LODLeaf(LODNode):
 		if self.visible:
 			if not self.lastFrameVisible:
 				try:
-					scene = logic.getCurrentScene()
+					scene = bge.logic.getCurrentScene()
 					for (oPos, oMesh) in self.objectPairs:
 						o = bxt.types.add_and_mutate_object(scene, oMesh, oPos)
 						self.objectInstances.add(o)

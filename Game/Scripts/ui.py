@@ -20,10 +20,12 @@ import time
 import bge
 import mathutils
 
-import bxt
-from . import inventory
-from . import impulse
-from . import director
+import bxt.types
+import bxt.render
+
+import Scripts.inventory
+import Scripts.impulse
+import Scripts.director
 
 
 class HUDState(metaclass=bxt.types.Singleton):
@@ -53,7 +55,7 @@ def test_input(c):
 	bxt.types.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me.",
 			("Of course!", "I'm too sleepy..."))).send(5)
 
-class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class DialogueBox(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'DB_'
 
 	# Animation layers
@@ -121,7 +123,7 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 
 		# Frame is visible immediately; button is shown later.
 		self.armature.setVisible(True, True)
-		impulse.Input().add_handler(self, 'DIALOGUE')
+		Scripts.impulse.Input().add_handler(self, 'DIALOGUE')
 
 	def hide(self):
 		self.canvas.set_text("")
@@ -139,7 +141,7 @@ class DialogueBox(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObj
 		# Frame is hidden at end of animation in hide_update.
 
 		self.set_state(DialogueBox.S_HIDE_UPDATE)
-		impulse.Input().remove_handler(self)
+		Scripts.impulse.Input().remove_handler(self)
 
 	def show_options_later(self, delay):
 		# Put this object into a state in which a sensor will fire every frame
@@ -527,7 +529,7 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	@bxt.types.expose
 	def update(self):
-		player = director.Director().mainCharacter
+		player = Scripts.director.Director().mainCharacter
 		if player is None:
 			return
 
@@ -647,16 +649,16 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			icon.localOrientation.identity()
 
 	def update_icons(self):
-		equipped = inventory.Shells().get_equipped()
+		equipped = Scripts.inventory.Shells().get_equipped()
 		self.set_item(0, equipped)
-		if equipped == None or len(inventory.Shells().get_shells()) > 1:
+		if equipped == None or len(Scripts.inventory.Shells().get_shells()) > 1:
 			# Special case: if nothing is equipped, we still want to draw icons
 			# for the next and previous shell - even if there is only one shell
 			# remaining in the inventory.
-			self.set_item(-2, inventory.Shells().get_next(-2))
-			self.set_item(-1, inventory.Shells().get_next(-1))
-			self.set_item(1, inventory.Shells().get_next(1))
-			self.set_item(2, inventory.Shells().get_next(2))
+			self.set_item(-2, Scripts.inventory.Shells().get_next(-2))
+			self.set_item(-1, Scripts.inventory.Shells().get_next(-1))
+			self.set_item(1, Scripts.inventory.Shells().get_next(1))
+			self.set_item(2, Scripts.inventory.Shells().get_next(2))
 		else:
 			self.set_item(-2, None)
 			self.set_item(-1, None)
@@ -677,7 +679,7 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def initialise_icon_pool(self):
 		'''Pre-create flyweight icons.'''
 		pool = self.children['I_IconPool']
-		for shellName in inventory.Shells.SHELL_NAMES:
+		for shellName in Scripts.inventory.Shells.SHELL_NAMES:
 			for _ in range(5):
 				icon = bge.logic.getCurrentScene().addObject(
 						'Icon_%s_static' % shellName, pool)

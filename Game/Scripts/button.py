@@ -16,12 +16,9 @@
 #
 
 import bge
-from bge import logic
 import mathutils
 
-import bxt
-
-from . import director
+import bxt.types
 
 class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''A generic 3D button that can be activated by objects in the scene. No
@@ -47,7 +44,7 @@ class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		 - obsReset: The objects that are close enough to keep the button
 		             pressed, but not close enough to push it down.'''
 
-		c = logic.getCurrentController()
+		c = bge.logic.getCurrentController()
 		obsTouch = c.sensors['sTouch'].hitObjectList
 		obsReset = c.sensors['sTouchReset'].hitObjectList
 
@@ -74,13 +71,13 @@ class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def on_down(self):
 		'''Called when at least one object has triggered this button. Sends a
 		message to the scene with the subject 'ButtonDown'.'''
-		logic.sendMessage('ButtonDown', '', '', self.name)
+		bge.logic.sendMessage('ButtonDown', '', '', self.name)
 
 	def on_up(self):
 		'''Called when no objects are triggering the button. Sends a message to
 		the scene with the subject 'ButtonUp'. This only happens after on_down is
 		called.'''
-		logic.sendMessage('ButtonUp', '', '', self.name)
+		bge.logic.sendMessage('ButtonUp', '', '', self.name)
 
 class ToughButton(Button):
 	'''A button that filters objects by their speed: only fast objects will

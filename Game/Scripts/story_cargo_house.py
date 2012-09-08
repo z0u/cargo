@@ -15,12 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
-
 import bge
 
-from . import store
-from .story import *
+import bxt.types
+import bxt.sound
+import bxt.bmath
+
+import Scripts.store
+from Scripts.story import *
 
 class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'CH_'
@@ -33,14 +35,14 @@ class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def touched(self, c):
 		s = c.sensors['Near']
 		if s.hitObject is not None:
-			store.put('/game/level/spawnPoint', 'SpawnCargoHouse')
+			Scripts.store.put('/game/level/spawnPoint', 'SpawnCargoHouse')
 			self.init_worm()
 			bxt.sound.Jukebox().play_files(self, 1, '//Sound/Music/House.ogg')
 		else:
 			bxt.sound.Jukebox().stop(self)
 
 	def init_worm(self):
-		if not store.get('/game/level/wormMissionStarted', False):
+		if not Scripts.store.get('/game/level/wormMissionStarted', False):
 			worm = factory(self.scene)
 			bxt.bmath.copy_transform(self.scene.objects['WormSpawn'], worm)
 

@@ -18,10 +18,10 @@
 import bge
 import mathutils
 
-import bxt
+import bxt.sound
 
-from .story import *
-from . import shaders
+import Scripts.shaders
+from Scripts.story import *
 
 class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
@@ -37,7 +37,7 @@ class LevelOut(GameLevel):
 		self.load_foaliage()
 		self.load_npcs()
 
-		shaders.ShaderCtrl().set_mist_colour(
+		Scripts.shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.565, 0.572, 0.578)))
 
 	def load_foaliage(self):
@@ -48,7 +48,7 @@ class LevelOut(GameLevel):
 		except ValueError:
 			print('Warning: could not load foliage.')
 
-		if store.get('/opt/foliage', True):
+		if Scripts.store.get('/opt/foliage', True):
 			try:
 				bge.logic.LibLoad('//OutdoorsBase_grass.blend', 'Scene',
 						load_actions=True)

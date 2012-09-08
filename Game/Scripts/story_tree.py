@@ -17,12 +17,14 @@
 
 import bge
 
-import bxt
-from . import store
+import bxt.types
+import bxt.utils
+
+import Scripts.store
 
 class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):
-		if not store.get('/game/level/treeDoorBroken', False):
+		if not Scripts.store.get('/game/level/treeDoorBroken', False):
 			self.create_door()
 
 	def create_door(self):
@@ -48,7 +50,7 @@ class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			except ValueError:
 				print('Failed to add object %s' % pieceName)
 		self.endObject()
-		store.put('/game/level/treeDoorBroken', True)
+		Scripts.store.put('/game/level/treeDoorBroken', True)
 
 	@bxt.types.expose
 	@bxt.utils.controller_cls

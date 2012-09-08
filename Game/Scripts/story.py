@@ -20,12 +20,15 @@ import time
 import bge
 import mathutils
 
-import bxt
+import bxt.types
+import bxt.utils
+import bxt.bmath
+import bxt.sound
 
-from . import camera
-from . import director
-from . import store
-from . import inventory
+import Scripts.camera
+import Scripts.director
+import Scripts.store
+import Scripts.inventory
 
 DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
@@ -243,7 +246,7 @@ class CondStore(Condition):
 		self.default = default
 
 	def evaluate(self, c):
-		return self.value == store.get(self.path, self.default)
+		return self.value == Scripts.store.get(self.path, self.default)
 
 	def get_short_name(self):
 		return "StE"
@@ -253,7 +256,7 @@ class CondHasShell(Condition):
 		self.name = name
 
 	def evaluate(self, c):
-		return self.name in inventory.Shells().get_shells()
+		return self.name in Scripts.inventory.Shells().get_shells()
 
 	def get_short_name(self):
 		return " HS"
@@ -306,7 +309,7 @@ class ActStoreSet(BaseAct):
 		self.value = value
 
 	def execute(self, c):
-		store.put(self.path, self.value)
+		Scripts.store.put(self.path, self.value)
 
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
@@ -526,7 +529,7 @@ class ActSetCamera(BaseAct):
 			print(("Warning: couldn't find camera %s. Not adding." %
 				self.CamName))
 			return
-		camera.AutoCamera().add_goal(cam)
+		Scripts.camera.AutoCamera().add_goal(cam)
 
 	def __str__(self):
 		return "ActSetCamera: %s" % self.CamName
@@ -542,7 +545,7 @@ class ActRemoveCamera(BaseAct):
 			print(("Warning: couldn't find camera %s. Not removing." %
 				self.CamName))
 			return
-		camera.AutoCamera().remove_goal(cam)
+		Scripts.camera.AutoCamera().remove_goal(cam)
 
 	def __str__(self):
 		return "ActRemoveCamera: %s" % self.CamName
@@ -559,7 +562,7 @@ class ActSetFocalPoint(BaseAct):
 			print(("Warning: couldn't find focus point %s. Not adding." %
 				self.targetName))
 			return
-		camera.AutoCamera().add_focus_point(target)
+		Scripts.camera.AutoCamera().add_focus_point(target)
 
 	def __str__(self):
 		return "ActSetFocalPoint: %s" % self.targetName
@@ -575,7 +578,7 @@ class ActRemoveFocalPoint(BaseAct):
 			print(("Warning: couldn't find focus point %s. Not removing." %
 				self.targetName))
 			return
-		camera.AutoCamera().remove_focus_point(target)
+		Scripts.camera.AutoCamera().remove_focus_point(target)
 
 	def __str__(self):
 		return "ActRemoveFocalPoint: %s" % self.targetName
@@ -805,7 +808,7 @@ class GameLevel(Level):
 
 	def spawn(self):
 		scene = bge.logic.getCurrentScene()
-		spawn_point = store.get('/game/level/spawnPoint',
+		spawn_point = Scripts.store.get('/game/level/spawnPoint',
 				self['defaultSpawnPoint'])
 		if not spawn_point in scene.objects:
 			print("Error: spawn point %s not found." % spawn_point)
@@ -850,15 +853,15 @@ class GameLevel(Level):
 	def on_event(self, event):
 		if event.message == "LoadLevel":
 			# Listen for load events from portals.
-			level = store.get('/game/levelFile')
+			level = Scripts.store.get('/game/levelFile')
 			bge.logic.startGame(level)
 
 def load_level(caller, level, spawnPoint):
 	print('Loading next level: %s, %s' % (level, spawnPoint))
 
-	store.put('/game/levelFile', level)
-	store.put('/game/level/spawnPoint', spawnPoint, level=level)
-	store.save()
+	Scripts.store.put('/game/levelFile', level)
+	Scripts.store.put('/game/level/spawnPoint', spawnPoint, level=level)
+	Scripts.store.save()
 
 	callback = bxt.types.Event('LoadLevel')
 
@@ -873,6 +876,6 @@ def activate_portal(c):
 		level: The name of the .blend file to load.
 		spawnPoint: The name of the spawn point that the player should start at.
 	'''
-	if director.Director().mainCharacter in c.sensors[0].hitObjectList:
+	if Scripts.director.Director().mainCharacter in c.sensors[0].hitObjectList:
 		portal = c.owner
 		load_level(portal, portal['level'], portal['spawnPoint'])

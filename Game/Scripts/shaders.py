@@ -22,7 +22,8 @@ from collections import namedtuple
 import bge
 import mathutils
 
-import bxt
+import bxt.types
+import bxt.utils
 
 DEBUG = False
 DEBUG_LINE_NUMBERS = True

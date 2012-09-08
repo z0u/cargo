@@ -15,9 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
+import bxt.types
+import bxt.utils
+import bxt.bmath
 
-from .story import *
+from Scripts.story import *
 
 def factory(sce):
 	if not "Spider" in sce.objectsInactive:
@@ -74,7 +76,7 @@ class SpiderIsle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if shell is None or shell.name != "Nut":
 			return
 
-		snail = director.Director().mainCharacter
+		snail = Scripts.director.Director().mainCharacter
 		snail_up = snail.getAxisVect(bxt.bmath.ZAXIS)
 		if snail_up.dot(bxt.bmath.ZAXIS) < 0.0:
 			# Snail is upside down, therefore on wrong side of catapult
@@ -208,13 +210,13 @@ class FlyingCutscene(Chapter, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		s.addAction(ActDestroy())
 
 	def hold_snail(self):
-		snail = director.Director().mainCharacter
+		snail = Scripts.director.Director().mainCharacter
 		anchor = self.children['FC_SnailShoot']
 		bxt.bmath.copy_transform(anchor, snail)
 		snail.localLinearVelocity = bxt.bmath.MINVECTOR
 
 	def shoot_snail(self):
-		snail = director.Director().mainCharacter
+		snail = Scripts.director.Director().mainCharacter
 		anchor = self.children['FC_SnailShoot']
 		bxt.bmath.copy_transform(anchor, snail)
 		snail.localLinearVelocity = bxt.bmath.YAXIS * 75.0

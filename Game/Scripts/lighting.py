@@ -15,9 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
-
 import bge
+
+import bxt.bmath
+import bxt.utils
+import bxt.types
 
 class StoryLight(bxt.types.BX_GameObject, bge.types.KX_LightObject):
 	'''

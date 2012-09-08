@@ -16,7 +16,8 @@
 #
 
 import unittest
-import bxt
+
+import bxt.types
 
 class PriorityStackTest(unittest.TestCase):
 	'''bxt.types.SafePriorityStack'''

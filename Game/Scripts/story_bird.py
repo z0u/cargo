@@ -17,11 +17,12 @@
 
 import bge
 
-import bxt
+import bxt.types
+import bxt.bmath
 
-from . import shells
-from . import inventory
-from .story import *
+import Scripts.shells
+import Scripts.inventory
+from Scripts.story import *
 
 def factory():
 	scene = bge.logic.getCurrentScene()
@@ -47,7 +48,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	def create_bottle_state_graph(self):
 		def steal_shell():
-			inventory.Shells().discard("Shell")
+			Scripts.inventory.Shells().discard("Shell")
 			bxt.types.Event('ShellChanged', 'new').send()
 
 		s = self.rootState.createTransition("Init")
@@ -207,7 +208,7 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		try:
 			shell = self.scene.objects["Shell"]
 		except KeyError:
-			shell = shells.factory("Shell")
+			shell = Scripts.shells.factory("Shell")
 		shell.localScale = (0.75, 0.75, 0.75)
 		self.pick_up(shell)
 		try:

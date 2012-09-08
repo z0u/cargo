@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt
+import bxt.types
 
-from . import store
+import Scripts.store
 
 class Shells(metaclass=bxt.types.Singleton):
 	'''Helper class for handling shell inventory order.'''
@@ -29,18 +29,18 @@ class Shells(metaclass=bxt.types.Singleton):
 
 	def get_equipped(self):
 		'''Get the name of the shell that is being carried.'''
-		return store.get('/game/equippedShell', Shells.DEFAULT_EQUIPPED)
+		return Scripts.store.get('/game/equippedShell', Shells.DEFAULT_EQUIPPED)
 
 	def equip(self, name):
 		'''Set the name of the shell that is being carried. If it is not already
 		in the inventory, it will be added.'''
 		self.add(name)
-		store.put('/game/equippedShell', name)
+		Scripts.store.put('/game/equippedShell', name)
 
 	def unequip(self):
 		'''Remove the current shell. This does not remove it from the
 		inventory.'''
-		store.put('/game/equippedShell', None)
+		Scripts.store.put('/game/equippedShell', None)
 
 	@staticmethod
 	def shellkey(item):
@@ -53,22 +53,22 @@ class Shells(metaclass=bxt.types.Singleton):
 		if not name in shells:
 			shells.append(name)
 			shells.sort(key=Shells.shellkey)
-			store.put('/game/shellInventory', shells)
+			Scripts.store.put('/game/shellInventory', shells)
 
 	def discard(self, name):
 		'''Remove a shell from the inventory. If it is equipped, it will be
 		unequipped.'''
-		if store.get('/game/equippedShell', None) == name:
+		if Scripts.store.get('/game/equippedShell', None) == name:
 			self.unequip()
 
 		shells = self.get_shells()
 		if name in shells:
 			shells.remove(name)
-			store.put('/game/shellInventory', shells)
+			Scripts.store.put('/game/shellInventory', shells)
 
 	def get_shells(self):
 		'''Get a list of all shells in the inventory.'''
-		return store.get('/game/shellInventory', Shells.DEFAULT_SHELLS)
+		return Scripts.store.get('/game/shellInventory', Shells.DEFAULT_SHELLS)
 
 	def get_all_shells(self):
 		return Shells.SHELL_NAMES

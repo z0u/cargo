@@ -14,20 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+#import logging
+#import logging.config as logconf
 
-import bxt
+#import bge
 
-from . import camera
-from . import director
-from . import lodtree
-from . import menu
-from . import ui
-from . import impulse
+#logconf.fileConfig(bge.logic.expandPath('//logging.conf'))
+
+
+#import logging
+#import logging.config
+
+#import bge
+
+#logging.config.fileConfig(bge.logic.expandPath('//logging.conf'))
+
+# For debugging things like
+#    File "/usr/lib/python3.2/logging/__init__.py", line 317, in getMessage
+#        msg = msg % self.args
+#    TypeError: not all arguments converted during string formatting
+#def handleError(self, record):
+#	raise
+#logging.Handler.handleError = handleError
+
+import Scripts.camera
+import Scripts.director
+import Scripts.lodtree
+import Scripts.menu
+import Scripts.ui
+import Scripts.impulse
 
 # Create singletons. Order should not be important.
-camera.AutoCamera()
-camera.MainGoalManager()
-director.Director()
-lodtree.LODManager()
-menu.SessionManager()
-ui.HUDState()
+Scripts.camera.AutoCamera()
+Scripts.camera.MainGoalManager()
+Scripts.director.Director()
+Scripts.lodtree.LODManager()
+Scripts.menu.SessionManager()
+Scripts.ui.HUDState()

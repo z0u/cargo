@@ -20,11 +20,14 @@ import math
 import bge
 import mathutils
 
-import bxt
+import bxt.types
+import bxt.sound
+import bxt.utils
+import bxt.bmath
 
-from . import impulse
+import Scripts.impulse
 
-class UiController(impulse.Handler, bxt.types.BX_GameObject,
+class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 		bge.types.KX_GameObject):
 
 	'''Manages UI elements: focus and click events.'''
@@ -40,7 +43,7 @@ class UiController(impulse.Handler, bxt.types.BX_GameObject,
 
 	def __init__(self, old_owner):
 		self.screen_stack = []
-		impulse.Input().add_handler(self, 'MENU')
+		Scripts.impulse.Input().add_handler(self, 'MENU')
 
 		# Don't play the first focus sound.
 		self.sound_delay = UiController.SOUND_DELAY_TICS

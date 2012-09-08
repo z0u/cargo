@@ -18,11 +18,15 @@
 import bge
 import mathutils
 
-import bxt
-from . import director
-from . import camera
-from . import impulse
-from . import inventory
+import bxt.utils
+import bxt.types
+import bxt.bmath
+import bxt.sound
+
+import Scripts.director
+import Scripts.camera
+import Scripts.impulse
+import Scripts.inventory
 
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
@@ -40,7 +44,7 @@ def factory(name):
 
 	return bxt.types.add_and_mutate_object(scene, name, name)
 
-class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
+class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameObject):
 	_prefix = 'SB_'
 
 	S_INIT     = 1
@@ -54,7 +58,7 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 	snail = bxt.types.weakprop('snail')
 
 	def __init__(self, old_owner):
-		director.Actor.__init__(self)
+		Scripts.director.Actor.__init__(self)
 
 		self.snail = None
 		self.cargoHook = self.find_descendant([('Type', 'CargoHook')])
@@ -116,13 +120,13 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 		self.set_state(ShellBase.S_OCCUPIED)
 		self.add_state(ShellBase.S_ALWAYS)
 
-		impulse.Input().add_handler(self)
+		Scripts.impulse.Input().add_handler(self)
 		bxt.types.WeakEvent('MainCharacterSet', self).send()
 
 	def on_exited(self):
 		'''Called when a snail exits this shell (as control is transferred).'''
 
-		impulse.Input().remove_handler(self)
+		Scripts.impulse.Input().remove_handler(self)
 
 		self.set_state(ShellBase.S_CARRIED)
 		self.add_state(ShellBase.S_ALWAYS)
@@ -155,7 +159,7 @@ class ShellBase(impulse.Handler, director.Actor, bge.types.KX_GameObject):
 	def _save_location(self, pos, orn):
 		if not self.is_occupied:
 			return
-		director.Actor._save_location(self, pos, orn)
+		Scripts.director.Actor._save_location(self, pos, orn)
 		self.snail._save_location(pos, orn)
 
 	def respawn(self, reason = None):
@@ -472,7 +476,7 @@ class BottleCap(ShellBase):
 		#
 		# Get the vectors to apply force along.
 		#
-		p1 = camera.AutoCamera().camera.worldPosition
+		p1 = Scripts.camera.AutoCamera().camera.worldPosition
 		p2 = self.worldPosition
 		fwdVec = p2 - p1
 		fwdVec.z = 0.0
@@ -523,7 +527,7 @@ def spawn_shell(c):
 	'''Place an item that has not been picked up yet.'''
 	o = c.owner
 
-	if o['shell'] in inventory.Shells().get_shells():
+	if o['shell'] in Scripts.inventory.Shells().get_shells():
 		# Player has already picked up this shell.
 		return
 

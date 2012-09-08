@@ -16,9 +16,10 @@
 #
 
 import bge
-import mathutils
 
-import bxt
+import bxt.types
+import bxt.utils
+import bxt.bmath
 
 class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = ""

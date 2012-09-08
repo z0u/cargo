@@ -18,9 +18,13 @@
 import bge
 import aud
 
-import bxt
-from . import director, store
-from bxt.bmath import clamp
+import bxt.utils
+import bxt.bmath
+import bxt.types
+import bxt.render
+
+import Scripts.director
+import Scripts.store
 
 DEBUG = False
 log = bxt.utils.get_logger(DEBUG)
@@ -93,7 +97,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	@bxt.utils.controller_cls
 	def init_filters(self, c):
 		'''Initialise filters.'''
-		if store.get('/opt/depthOfField', True):
+		if Scripts.store.get('/opt/depthOfField', True):
 			c.activate(c.actuators['aDof'])
 
 	@bxt.types.expose
@@ -169,7 +173,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		try:
 			focalPoint = self.focusQueue.top()
 		except IndexError:
-			focalPoint = director.Director().mainCharacter
+			focalPoint = Scripts.director.Director().mainCharacter
 			if focalPoint is None:
 				return
 
@@ -336,7 +340,7 @@ class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	@bxt.types.expose
 	@bxt.utils.controller_cls
 	def on_touched(self, c):
-		mainChar = director.Director().mainCharacter
+		mainChar = Scripts.director.Director().mainCharacter
 		shouldAttach = False
 		for s in c.sensors:
 			if mainChar in s.hitObjectList:
@@ -456,7 +460,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return
 
 		# Project up.
-		mainChar = director.Director().mainCharacter
+		mainChar = Scripts.director.Director().mainCharacter
 		if mainChar == None:
 			return
 		target = mainChar.get_camera_tracking_point()

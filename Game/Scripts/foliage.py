@@ -18,7 +18,11 @@
 import bge
 import mathutils
 
-import bxt
+import bxt.types
+import bxt.utils
+import bxt.bmath
+import bxt.render
+import bxt.sound
 
 DEBUG = False
 

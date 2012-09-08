@@ -17,18 +17,18 @@
 
 import bge
 
-import bxt
+import bxt.types
+import bxt.sound
+import bxt.anim
+import bxt.utils
 
-from . import director
-from . import ui
-from . import camera
-from .story import *
-from . import shaders
+from Scripts.story import *
+import Scripts.shaders
 
 class LevelBeehive(GameLevel):
 	def __init__(self, oldOwner):
 		GameLevel.__init__(self, oldOwner)
-		shaders.ShaderCtrl().set_mist_colour(
+		Scripts.shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.0, 0.0, 0.0)))
 		bxt.sound.Jukebox().play_files(self, 1,
 				'//Sound/Music/bumbly.wav',
@@ -104,7 +104,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		sCollision = c.sensors['sPlayer']
 		self.frame_changed()
 
-		if director.Director().mainCharacter in sCollision.hitObjectList:
+		if Scripts.director.Director().mainCharacter in sCollision.hitObjectList:
 			self.set_touching_player(True)
 		else:
 			self.set_touching_player(False)
@@ -168,9 +168,9 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return
 
 		if self.currentCamera != None:
-			camera.AutoCamera().remove_goal(self.currentCamera)
+			Scripts.camera.AutoCamera().remove_goal(self.currentCamera)
 		if cam != None:
-			camera.AutoCamera().add_goal(cam)
+			Scripts.camera.AutoCamera().add_goal(cam)
 
 		self.currentCamera = cam
 

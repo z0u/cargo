@@ -17,16 +17,21 @@
 
 import bge
 
-import bxt
-from . import store
-from . import director
-from . import camera
-from . import snail
-from . import impulse
-from . import story_bird
-from .story import *
+import bxt.types
+import bxt.utils
+import bxt.bmath
+import bxt.sound
+import bxt.render
 
-class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+import Scripts.store
+import Scripts.director
+import Scripts.camera
+import Scripts.snail
+import Scripts.impulse
+import Scripts.story_bird
+from Scripts.story import *
+
+class Bottle(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''
 
 	_prefix = 'B_'
@@ -58,7 +63,7 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		door = c.sensors['sDoor']
 		safety = c.sensors['sSafetyZone']
 
-		mainChar = director.Director().mainCharacter
+		mainChar = Scripts.director.Director().mainCharacter
 
 		# Eject all objects other than the snail.
 		for ob in door.hitObjectList:
@@ -104,11 +109,11 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.transition_delay = -1
 
 	def enter_bottle(self):
-		store.put('/game/spawnPoint', 'SpawnBottle')
+		Scripts.store.put('/game/spawnPoint', 'SpawnBottle')
 		self.open_window(True)
 		bxt.types.Event('TeleportSnail', 'SpawnBottleInner').send()
 		bxt.types.Event("AddCameraGoal", 'BottleCamera').send()
-		impulse.Input().add_handler(self, 'STORY')
+		Scripts.impulse.Input().add_handler(self, 'STORY')
 
 		self.snailInside = True
 		self.transition_delay = 1
@@ -128,15 +133,15 @@ class Bottle(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			bxt.types.Event('ForceDropShell', False).send()
 			# Then spawn the bird.
 			spawn_point = self.scene.objects["Bird_SauceBar_Spawn"]
-			bird = story_bird.factory()
+			bird = Scripts.story_bird.factory()
 			bxt.bmath.copy_transform(spawn_point, bird)
 			self.bird_arrived = False
 
-		elif not store.get("/game/canDropShell", False):
+		elif not Scripts.store.get("/game/canDropShell", False):
 			# Don't let a snail wander around with no shell until after the bird
 			# has taken one.
 			bxt.types.Event('ForceReclaimShell').send()
-		impulse.Input().remove_handler(self)
+		Scripts.impulse.Input().remove_handler(self)
 
 		self.snailInside = False
 		self.transition_delay = 1
@@ -196,7 +201,7 @@ class BottleRock(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.children['B_SoilCrossSection'].visible = False
 
 
-class BottleDropZone(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class BottleDropZone(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	'''
 	Allows snail to drop shell, but only when standing at the door of the
 	bottle.
@@ -222,11 +227,11 @@ class BottleDropZone(impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_Game
 	def touched(self, c):
 		'''Register self as an input handler to allow snail to drop shell.'''
 		s = c.sensors[0]
-		mainChar = director.Director().mainCharacter
+		mainChar = Scripts.director.Director().mainCharacter
 		if mainChar in s.hitObjectList:
-			impulse.Input().add_handler(self, 'STORY')
+			Scripts.impulse.Input().add_handler(self, 'STORY')
 		else:
-			impulse.Input().remove_handler(self)
+			Scripts.impulse.Input().remove_handler(self)
 
 	def handle_bt_2(self, state):
 		'''
@@ -494,13 +499,13 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 
 
 def lighthouse_stub():
-	store.put('/game/level/lkMissionStarted', True)
+	Scripts.store.put('/game/level/lkMissionStarted', True)
 
 @bxt.utils.all_sensors_positive
 def test_bird():
 	sce = bge.logic.getCurrentScene()
 	spawn_point = sce.objects["Bird_SauceBar_Spawn"]
-	bird = story_bird.factory()
+	bird = Scripts.story_bird.factory()
 	bxt.bmath.copy_transform(spawn_point, bird)
 
 
@@ -541,7 +546,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		# Hide half of the lights until the end of the game.
 		if self['side'] == 'right':
-			if not store.get('/game/level/bottleLights', False):
+			if not Scripts.store.get('/game/level/bottleLights', False):
 				self.setVisible(False, True)
 
 	@bxt.types.expose

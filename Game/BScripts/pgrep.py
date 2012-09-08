@@ -78,7 +78,7 @@ def run_from_commandline():
 	find_or_replace(name, new_name, value, new_value)
 	if _dirty:
 		print("Saving changes to", bpy.data.filepath)
-		#bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
+		bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
 
 if __name__ == "__main__":
 	if bpy.app.background:

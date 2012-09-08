@@ -18,9 +18,9 @@
 import bge
 import mathutils
 
-import bxt.types
+import bat.bats
 
-class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Button(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A generic 3D button that can be activated by objects in the scene. No
 	special object hierarchy is required. The button sends messages when it is
 	touched.'''
@@ -35,7 +35,7 @@ class Button(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		Override this to filter out other objects.'''
 		return True
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def on_touched(self):
 		'''Called when this button is touched.
 

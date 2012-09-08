@@ -18,15 +18,15 @@
 import bge
 import mathutils
 
-import bxt.types
-import bxt.utils
+import bat.bats
+import bat.utils
 
 DEBUG = False
 
 INITIAL_REPEAT_DELAY = 30
 REPEAT_DELAY = 5
 
-class Input(metaclass=bxt.types.Singleton):
+class Input(metaclass=bat.bats.Singleton):
 	'''
 	Provides a unified interface to input devices such as keyboard and
 	joysticks.
@@ -36,7 +36,7 @@ class Input(metaclass=bxt.types.Singleton):
 	PRI = {'PLAYER': 0, 'STORY': 1, 'DIALOGUE': 2, 'MENU': 3}
 
 	def __init__(self):
-		self.handlers = bxt.types.SafePriorityStack()
+		self.handlers = bat.bats.SafePriorityStack()
 
 		# Acquire movement from a 2D directional pad.
 		self.dp_move = DPad2D("Movement", 'u', 'd', 'l', 'r')
@@ -59,8 +59,8 @@ class Input(metaclass=bxt.types.Singleton):
 		self.max_seq_len = 0
 		self.sequence = ""
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def process(self, c):
 		'''Distribute all events to the listeners.'''
 		#joy_axis = c.sensors['Joystick_axis']

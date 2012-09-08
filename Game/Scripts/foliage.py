@@ -18,17 +18,17 @@
 import bge
 import mathutils
 
-import bxt.types
-import bxt.utils
-import bxt.bmath
-import bxt.render
-import bxt.sound
+import bat.bats
+import bat.utils
+import bat.bmath
+import bat.render
+import bat.sound
 
 DEBUG = False
 
 ZERO2 = mathutils.Vector((0.0, 0.0))
 
-class Clover(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Clover(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A health powerup.'''
 
 	_prefix = 'CL_'
@@ -36,8 +36,8 @@ class Clover(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		pass
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def touched(self, c):
 		s = c.sensors[0]
 		if s.hitObject is not None and hasattr(s.hitObject, "heal"):
@@ -63,11 +63,11 @@ class SBParticle:
 	def update_dynamics(self):
 		'''Accelerate the particle towards (0, 0)'''
 		accel = self.Frame * -self.Spring
-		self.Frame, self.Velocity = bxt.bmath.integrate(
+		self.Frame, self.Velocity = bat.bmath.integrate(
 				self.Frame, self.Velocity,
 				accel, self.Damping)
 
-class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class FlexibleObject(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = 'GB_'
 
 	S_INIT = 1
@@ -85,10 +85,10 @@ class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 		if DEBUG:
 			for child in self.children:
-				child.color = bxt.render.BLACK
+				child.color = bat.render.BLACK
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def collide(self, c):
 		#
 		# Find the offset of the base.
@@ -103,8 +103,8 @@ class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		if vec.magnitude > 0.0:
 			self.add_state(FlexibleObject.S_UPDATE)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def update(self, c):
 		linkDisplacement = self.intrusion - self.LastBaseFrame
 		self.LastBaseFrame = self.intrusion.copy()
@@ -116,7 +116,7 @@ class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			self['Jolted'] = True
 			self.jolt_frames = 100
 			if 'JoltMessage' in self:
-				evt = bxt.types.Event(self['JoltMessage'])
+				evt = bat.bats.Event(self['JoltMessage'])
 				if 'JoltBody' in self:
 					evt.body = self['JoltBody']
 				evt.send()
@@ -145,10 +145,10 @@ class FlexibleObject(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 class GrassBlade(FlexibleObject):
 
-	@bxt.types.profile('Scripts.foliage.GrassBlade.__init__')
+	@bat.bats.profile('Scripts.foliage.GrassBlade.__init__')
 	def __init__(self, old_owner):
 		FlexibleObject.__init__(self, old_owner)
-		self.bbox = bxt.bmath.Box2D(
+		self.bbox = bat.bmath.Box2D(
 				0.0 - self['GrassRadY'], 0.0 - self['GrassRadZ'],
 				self['GrassRadY'], self['GrassRadZ'])
 
@@ -156,7 +156,7 @@ class GrassBlade(FlexibleObject):
 		#
 		# Transform collider into blade's coordinate system.
 		#
-		cPos = bxt.bmath.to_local(self, collider.worldPosition)
+		cPos = bat.bmath.to_local(self, collider.worldPosition)
 
 		#
 		# The blades are rotated 90 degrees to work better as Blender particles.
@@ -168,7 +168,7 @@ class GrassBlade(FlexibleObject):
 		# Collider bounding box.
 		#
 		colRad = collider['LODRadius']
-		colBox = bxt.bmath.Box2D(cPos.x - colRad, cPos.y - colRad,
+		colBox = bat.bmath.Box2D(cPos.x - colRad, cPos.y - colRad,
 		                        cPos.x + colRad, cPos.y + colRad)
 
 		#
@@ -191,23 +191,23 @@ class GrassBlade(FlexibleObject):
 		return cPos
 
 def flower_sound(c):
-	sample = bxt.sound.Sample(
+	sample = bat.sound.Sample(
 		'//Sound/cc-by/Bell2.ogg',
 		'//Sound/cc-by/Bell3.ogg',
 		'//Sound/cc-by/Bell4.ogg',
 		'//Sound/cc-by/Bell1.ogg')
-	sample.add_effect(bxt.sound.Localise(c.owner))
+	sample.add_effect(bat.sound.Localise(c.owner))
 	sample.play()
 
 def mushroom_sound(c):
-	sample = bxt.sound.Sample(
+	sample = bat.sound.Sample(
 		'//Sound/cc-by/jaw-harp21.ogg',
 		'//Sound/cc-by/jaw-harp4.ogg',
 		'//Sound/cc-by/jaw-harp3.ogg',
 		'//Sound/cc-by/jaw-harp19.ogg',
 		'//Sound/cc-by/jaw-harp2.ogg',
 		'//Sound/cc-by/jaw-harp20.ogg')
-	sample.add_effect(bxt.sound.Localise(c.owner))
+	sample.add_effect(bat.sound.Localise(c.owner))
 	sample.play()
 
 class Web(FlexibleObject):
@@ -215,11 +215,11 @@ class Web(FlexibleObject):
 		FlexibleObject.__init__(self, old_owner)
 
 	def get_collision_force(self, collider):
-		cPos = bxt.bmath.to_local(self, collider.worldPosition)
+		cPos = bat.bmath.to_local(self, collider.worldPosition)
 		colRad = collider['LODRadius']
 		if cPos.z < 0:
 			intrusion = cPos.z + colRad
 		else:
 			intrusion = cPos.z - colRad
-		intrusion = bxt.bmath.clamp(-colRad, colRad, intrusion) * 100.0
+		intrusion = bat.bmath.clamp(-colRad, colRad, intrusion) * 100.0
 		return mathutils.Vector((intrusion, intrusion))

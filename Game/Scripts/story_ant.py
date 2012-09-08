@@ -17,9 +17,9 @@
 
 import bge
 
-import bxt.types
-import bxt.bmath
-import bxt.utils
+import bat.bats
+import bat.bmath
+import bat.utils
 
 from Scripts.story import *
 
@@ -31,27 +31,27 @@ def factory():
 		except ValueError as e:
 			print('Warning: could not load ant:', e)
 
-	return bxt.types.add_and_mutate_object(scene, "Ant", "Ant")
+	return bat.bats.add_and_mutate_object(scene, "Ant", "Ant")
 
-class Honeypot(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Honeypot(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	_prefix = "HP_"
 
 	def __init__(self, old_owner):
-		#bxt.types.WeakEvent("StartLoading", self).send()
+		#bat.bats.WeakEvent("StartLoading", self).send()
 		ant1 = factory()
-		bxt.bmath.copy_transform(self.children["Ant1SpawnPoint"], ant1)
+		bat.bmath.copy_transform(self.children["Ant1SpawnPoint"], ant1)
 		ant1.setParent(self)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def approach(self, c):
 		if c.sensors[0].positive:
 			player = c.sensors[0].hitObject
 			if not player.is_in_shell:
-				bxt.types.Event("ApproachAnts").send()
+				bat.bats.Event("ApproachAnts").send()
 
-class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class Ant(Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
 	L_ANIM = 1
 
@@ -196,7 +196,7 @@ class Ant(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	def pick_up(self):
 		''';)'''
-		bxt.bmath.copy_transform(self.children['Ant_RH_Hook'], self.pick)
+		bat.bmath.copy_transform(self.children['Ant_RH_Hook'], self.pick)
 		self.pick.setParent(self.children['Ant_RH_Hook'])
 
 	def drop_pick(self):
@@ -220,5 +220,5 @@ def oversee(c):
 def test_anim():
 	sce = bge.logic.getCurrentScene()
 	ant = sce.objects['Ant']
-	ant = bxt.types.mutate(ant)
+	ant = bat.bats.mutate(ant)
 	ant.playAction('AntActionTEST', 1, 120, 0)

@@ -22,8 +22,8 @@ from collections import namedtuple
 import bge
 import mathutils
 
-import bxt.types
-import bxt.utils
+import bat.bats
+import bat.utils
 
 DEBUG = False
 DEBUG_LINE_NUMBERS = True
@@ -33,7 +33,7 @@ LAMPDIR = (0.0, 0.0, 1.0)
 Shaderdef = namedtuple('Shaderdef', ['shader', 'callback', 'uses_lights',
 			'needs_worldviewmat', 'needs_viewworldmat'])
 
-class ShaderCtrl(metaclass=bxt.types.Singleton):
+class ShaderCtrl(metaclass=bat.bats.Singleton):
 	'''Looks after special GLSL materials in this scene.'''
 
 	_prefix=""
@@ -84,7 +84,7 @@ class ShaderCtrl(metaclass=bxt.types.Singleton):
 		bge.render.setMistStart(0.0)
 		bge.render.setMistEnd(depth)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		'''
 		Update light positions and other uniforms for the custom shaders. Any
@@ -277,8 +277,8 @@ def _print_code(text):
 			print(line)
 
 
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
+@bat.utils.all_sensors_positive
+@bat.utils.owner
 def set_basic_shader(ob):
 	'''
 	Uses a standard shader.
@@ -310,8 +310,8 @@ def set_basic_shader(ob):
 			create_frag_shader(model=model, alpha=alpha, twosided=twosided))
 
 
-@bxt.utils.all_sensors_positive
-@bxt.utils.owner
+@bat.utils.all_sensors_positive
+@bat.utils.owner
 def set_windy(ob):
 	'''
 	Makes the vertices on a mesh wave as if blown by the wind.

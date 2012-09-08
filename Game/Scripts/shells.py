@@ -18,10 +18,10 @@
 import bge
 import mathutils
 
-import bxt.utils
-import bxt.types
-import bxt.bmath
-import bxt.sound
+import bat.utils
+import bat.bats
+import bat.bmath
+import bat.sound
 
 import Scripts.director
 import Scripts.camera
@@ -42,7 +42,7 @@ def factory(name):
 			print("Warning: failed to open ItemLoader. May be open already. "
 					"Proceeding...")
 
-	return bxt.types.add_and_mutate_object(scene, name, name)
+	return bat.bats.add_and_mutate_object(scene, name, name)
 
 class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameObject):
 	_prefix = 'SB_'
@@ -55,7 +55,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 	S_GRASPED  = 5 # Liked CARRIED, but not carried by a snail.
 	S_ALWAYS   = 16
 
-	snail = bxt.types.weakprop('snail')
+	snail = bat.bats.weakprop('snail')
 
 	def __init__(self, old_owner):
 		Scripts.director.Actor.__init__(self)
@@ -64,14 +64,14 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 		self.cargoHook = self.find_descendant([('Type', 'CargoHook')])
 		self.occupier = self.find_descendant([('Type', 'Occupier')])
 
-		bxt.utils.set_state(self.occupier, 1)
+		bat.utils.set_state(self.occupier, 1)
 
 		self.set_default_prop('LookAt', 10)
 		self['_DefaultLookAt'] = self['LookAt']
 		self.set_state(ShellBase.S_IDLE)
 		self.add_state(ShellBase.S_ALWAYS)
 
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == 'AnchorShell':
@@ -112,7 +112,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 		'''Called when the snail starts to enter this shell. This may happen
 		several frames before control is passed, but may be on the same frame.'''
 		if self.occupier:
-			bxt.utils.set_state(self.occupier, 2)
+			bat.utils.set_state(self.occupier, 2)
 
 	def on_entered(self):
 		'''Called when a snail enters this shell (just after
@@ -121,7 +121,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 		self.add_state(ShellBase.S_ALWAYS)
 
 		Scripts.impulse.Input().add_handler(self)
-		bxt.types.WeakEvent('MainCharacterSet', self).send()
+		bat.bats.WeakEvent('MainCharacterSet', self).send()
 
 	def on_exited(self):
 		'''Called when a snail exits this shell (as control is transferred).'''
@@ -133,7 +133,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 		self.localScale = (1.0, 1.0, 1.0)
 		self['CurrentBuoyancy'] = self['Buoyancy']
 		if self.occupier:
-			bxt.utils.set_state(self.occupier, 1)
+			bat.utils.set_state(self.occupier, 1)
 		# Clear anchor flag, if it was set.
 		self.rem_state(ShellBase.S_ANCHOR)
 
@@ -180,7 +180,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 
 	def on_oxygen_set(self):
 		if self.is_occupied:
-			bxt.types.Event('OxygenSet', self['Oxygen']).send()
+			bat.bats.Event('OxygenSet', self['Oxygen']).send()
 
 	@property
 	def is_occupied(self):
@@ -192,12 +192,12 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 	def is_grasped(self):
 		return self.has_state(ShellBase.S_GRASPED)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update_anchor(self):
 		if not self.has_state(ShellBase.S_ANCHOR):
 			return
-		bxt.bmath.copy_transform(self.anchor_ob, self)
-		self.worldLinearVelocity = bxt.bmath.MINVECTOR
+		bat.bmath.copy_transform(self.anchor_ob, self)
+		self.worldLinearVelocity = bat.bmath.MINVECTOR
 
 	def anchor(self, anchor_ob):
 		self.add_state(ShellBase.S_ANCHOR)
@@ -208,12 +208,12 @@ class Shell(ShellBase):
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
-		self.rolling_sound = bxt.sound.Sample('//Sound/cc-by/Rolling.ogg')
+		self.rolling_sound = bat.sound.Sample('//Sound/cc-by/Rolling.ogg')
 		self.rolling_sound.loop = True
-		self.rolling_sound.add_effect(bxt.sound.Localise(self))
-		self.rolling_sound.add_effect(bxt.sound.FadeByLinV(self))
+		self.rolling_sound.add_effect(bat.sound.Localise(self))
+		self.rolling_sound.add_effect(bat.sound.FadeByLinV(self))
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def rolling(self):
 		if not self['OnGround']:
 			self.rolling_sound.stop()
@@ -223,11 +223,11 @@ class Shell(ShellBase):
 
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
-		bxt.types.Event('SetCameraType', 'PathCamera').send()
+		bat.bats.Event('SetCameraType', 'PathCamera').send()
 
 	def on_exited(self):
 		ShellBase.on_exited(self)
-		self.rolling_sound.add_effect(bxt.sound.Fader())
+		self.rolling_sound.add_effect(bat.sound.Fader())
 
 #	def on_post_exit(self):
 #		ShellBase.on_post_exit(self)
@@ -271,8 +271,8 @@ class WheelCameraAlignment:
 	'''
 
 	def get_home_axes(self, camera, target):
-		upDir = bxt.bmath.ZAXIS.copy()
-		leftDir = target.getAxisVect(bxt.bmath.ZAXIS)
+		upDir = bat.bmath.ZAXIS.copy()
+		leftDir = target.getAxisVect(bat.bmath.ZAXIS)
 		fwdDir = upDir.cross(leftDir)
 		return fwdDir, upDir
 
@@ -302,12 +302,12 @@ class Wheel(ShellBase):
 		self._reset_speed()
 		self.fly_power = 0.0
 
-		self.driving_sound = bxt.sound.Sample('//Sound/cc-by/Driving.ogg')
+		self.driving_sound = bat.sound.Sample('//Sound/cc-by/Driving.ogg')
 		self.driving_sound.loop = True
-		self.driving_sound.add_effect(bxt.sound.Localise(self))
-		self.driving_sound.add_effect(bxt.sound.PitchByAngV(self))
+		self.driving_sound.add_effect(bat.sound.Localise(self))
+		self.driving_sound.add_effect(bat.sound.PitchByAngV(self))
 
-		bxt.types.EventBus().replay_last(self, 'GravityChanged')
+		bat.bats.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_event(self, evt):
 		ShellBase.on_event(self, evt)
@@ -328,21 +328,21 @@ class Wheel(ShellBase):
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		self._reset_speed()
-		bxt.types.Event('SetCameraType', 'PathCamera').send()
-		bxt.sound.Sample('//Sound/CarStart.ogg').play()
+		bat.bats.Event('SetCameraType', 'PathCamera').send()
+		bat.sound.Sample('//Sound/CarStart.ogg').play()
 
 	def on_entered(self):
 		ShellBase.on_entered(self)
 
-		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
+		bat.bats.Event('SetCameraType', 'OrbitCamera').send()
 		alignment = WheelCameraAlignment()
-		bxt.types.Event('SetCameraAlignment', alignment).send()
+		bat.bats.Event('SetCameraAlignment', alignment).send()
 		self.driving_sound.play()
 
 	def on_exited(self):
 		ShellBase.on_exited(self)
 		self.driving_sound.stop()
-		bxt.sound.Sample('//Sound/DoorOpenClose.ogg').play()
+		bat.sound.Sample('//Sound/DoorOpenClose.ogg').play()
 
 	def handle_movement(self, state):
 		self.orient()
@@ -363,7 +363,7 @@ class Wheel(ShellBase):
 		# Turn (steer). Note that this is applied to the Z axis, but in world
 		# space.
 		#
-		self.currentTurnSpeed = bxt.bmath.lerp(self.currentTurnSpeed,
+		self.currentTurnSpeed = bat.bmath.lerp(self.currentTurnSpeed,
 				Wheel.TURN_SPEED * -direction.x, Wheel.SPEED_FAC)
 		angv = ZAXIS * self.currentTurnSpeed
 
@@ -372,11 +372,11 @@ class Wheel(ShellBase):
 		# the wheel is being steered at (above).
 		#
 		turnStrength = abs(self.currentTurnSpeed) / Wheel.TURN_SPEED
-		targetRotSpeed = Wheel.ROT_SPEED * bxt.bmath.safe_invert(
+		targetRotSpeed = Wheel.ROT_SPEED * bat.bmath.safe_invert(
 				turnStrength, Wheel.TURN_INFLUENCE)
 		targetRotSpeed *= direction.y
 
-		self.currentRotSpeed = bxt.bmath.lerp(self.currentRotSpeed,
+		self.currentRotSpeed = bat.bmath.lerp(self.currentRotSpeed,
 				targetRotSpeed, Wheel.SPEED_FAC)
 
 		angv2 = self.getAxisVect(ZAXIS) * self.currentRotSpeed
@@ -395,7 +395,7 @@ class Nut(ShellBase):
 
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
-		bxt.types.Event('SetCameraType', 'PathCamera').send()
+		bat.bats.Event('SetCameraType', 'PathCamera').send()
 
 class BottleCap(ShellBase):
 	# States - be careful not to let conflict with ShellBase states.
@@ -411,15 +411,15 @@ class BottleCap(ShellBase):
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
-		self.jump_sound = bxt.sound.Sample('//Sound/MouthPopOpen.ogg')
+		self.jump_sound = bat.sound.Sample('//Sound/MouthPopOpen.ogg')
 		self.jump_sound.pitchmin = 0.9
 		self.jump_sound.pitchmax = 1.0
-		self.jump_sound.add_effect(bxt.sound.Localise(self))
+		self.jump_sound.add_effect(bat.sound.Localise(self))
 
-		self.land_sound = bxt.sound.Sample('//Sound/MouthPopClose.ogg')
+		self.land_sound = bat.sound.Sample('//Sound/MouthPopClose.ogg')
 		self.land_sound.pitchmin = 0.9
 		self.land_sound.pitchmax = 1.0
-		self.land_sound.add_effect(bxt.sound.Localise(self))
+		self.land_sound.add_effect(bat.sound.Localise(self))
 
 	def orient(self):
 		'''Try to make the cap sit upright, and face the direction of travel.'''
@@ -437,14 +437,14 @@ class BottleCap(ShellBase):
 		self.occupier.visible = True
 		self.occupier.playAction('CapSnailEmerge', 1, 25, layer=BottleCap.L_EMERGE)
 		self.add_state(BottleCap.S_EMERGE)
-		bxt.types.Event('SetCameraType', 'PathCamera').send()
+		bat.bats.Event('SetCameraType', 'PathCamera').send()
 
 	def on_exited(self):
 		ShellBase.on_exited(self)
 		self.occupier.playAction('CapSnailEmerge', 25, 1, layer=BottleCap.L_EMERGE)
 		self.add_state(BottleCap.S_EMERGE)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def poll_emerge_action(self):
 		'''Hides occupier when fully inside shell; shows when emerging.'''
 		if self.occupier.getActionFrame(BottleCap.L_EMERGE) > 2:
@@ -455,8 +455,8 @@ class BottleCap(ShellBase):
 		if not self.occupier.isPlayingAction(BottleCap.L_EMERGE):
 			self.rem_state(BottleCap.S_EMERGE)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def poll_jump_action(self, c):
 		'''Triggers a jump impulse at a certain point in the jump animation.'''
 		if self.occupier.getActionFrame(BottleCap.L_JUMP) >= 5:
@@ -515,11 +515,11 @@ class BottleCap(ShellBase):
 			# Decide which direction to jump on the two axes.
 			#
 			self.start_jump(state.direction.y, -state.direction.x)
-			bxt.utils.add_state(self.occupier, 3)
+			bat.utils.add_state(self.occupier, 3)
 
 		return True
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def land(self):
 		self.land_sound.play()
 
@@ -532,5 +532,5 @@ def spawn_shell(c):
 		return
 
 	shell = factory(o["shell"])
-	bxt.bmath.copy_transform(o, shell)
+	bat.bmath.copy_transform(o, shell)
 	shell.anchor(c.owner)

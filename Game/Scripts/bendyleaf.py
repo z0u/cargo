@@ -17,11 +17,11 @@
 
 import bge
 
-import bxt.types
-import bxt.utils
-import bxt.bmath
+import bat.bats
+import bat.utils
+import bat.bmath
 
-class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class BendyLeaf(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = ""
 
 	S_SENSING = 1
@@ -35,8 +35,8 @@ class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		self.velocity = 0.0
 		self.add_state(BendyLeaf.S_UPDATING)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def on_hit(self, c):
 		sensors = c.sensors
 
@@ -56,7 +56,7 @@ class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		total_influence = 0.0
 		for ob in hit_obs:
 			distance = (ob.worldPosition - self.worldPosition).magnitude
-			influence = bxt.bmath.unlerp(self['MinDist'], self['MaxDist'], distance)
+			influence = bat.bmath.unlerp(self['MinDist'], self['MaxDist'], distance)
 			influence = influence * ob['DynamicMass']
 			total_influence = total_influence + influence
 		total_influence = total_influence * self['InfluenceMultiplier']
@@ -64,13 +64,13 @@ class BendyLeaf(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 
 		self.add_state(BendyLeaf.S_UPDATING)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
-		self.influence = bxt.bmath.lerp(self.influence, self.target_influence, 0.5)
-		target_bend_angle = bxt.bmath.lerp(self['MinAngle'], self['MaxAngle'], self.influence)
+		self.influence = bat.bmath.lerp(self.influence, self.target_influence, 0.5)
+		target_bend_angle = bat.bmath.lerp(self['MinAngle'], self['MaxAngle'], self.influence)
 
 		difference = target_bend_angle - self.bend_angle
-		self.bend_angle, self.velocity = bxt.bmath.integrate(
+		self.bend_angle, self.velocity = bat.bmath.integrate(
 				self.bend_angle, self.velocity,
 				difference * self['acceleration'], self['damping'])
 

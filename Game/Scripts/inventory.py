@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt.types
+import bat.bats
 
 import Scripts.store
 
-class Shells(metaclass=bxt.types.Singleton):
+class Shells(metaclass=bat.bats.Singleton):
 	'''Helper class for handling shell inventory order.'''
 
 	# Shell names are stored in '/game/shellInventory' as a set.

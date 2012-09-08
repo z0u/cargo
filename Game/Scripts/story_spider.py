@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bxt.types
-import bxt.utils
-import bxt.bmath
+import bat.bats
+import bat.utils
+import bat.bmath
 
 from Scripts.story import *
 
@@ -28,45 +28,45 @@ def factory(sce):
 		except ValueError as e:
 			print('Warning: could not load spider:', e)
 
-	return bxt.types.add_and_mutate_object(sce, "Spider", "Spider")
+	return bat.bats.add_and_mutate_object(sce, "Spider", "Spider")
 
-class SpiderIsle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	_prefix = "SI_"
 
 	def __init__(self, old_owner):
 		self.catapult_primed = False
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == 'ShellDropped':
 			self.play_flying_cutscene(evt.body)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def approach_centre(self, c):
 		if c.sensors[0].positive:
 			if 'Spider' in self.scene.objects:
 				return
 			spider = factory(self.scene)
 			spawn_point = self.scene.objects['Spider_SpawnPoint']
-			bxt.bmath.copy_transform(spawn_point, spider)
+			bat.bmath.copy_transform(spawn_point, spider)
 		else:
 			if 'Spider' not in self.scene.objects:
 				return
 			spider = self.scene.objects['Spider']
 			spider.endObject()
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def approach_web(self, c):
 		if c.sensors[0].positive:
-			bxt.types.Event('ApproachWeb').send()
+			bat.bats.Event('ApproachWeb').send()
 		else:
-			bxt.types.Event('LeaveWeb').send()
+			bat.bats.Event('LeaveWeb').send()
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def catapult_end_touched(self, c):
 		self.catapult_primed = c.sensors[0].positive
 
@@ -77,15 +77,15 @@ class SpiderIsle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return
 
 		snail = Scripts.director.Director().mainCharacter
-		snail_up = snail.getAxisVect(bxt.bmath.ZAXIS)
-		if snail_up.dot(bxt.bmath.ZAXIS) < 0.0:
+		snail_up = snail.getAxisVect(bat.bmath.ZAXIS)
+		if snail_up.dot(bat.bmath.ZAXIS) < 0.0:
 			# Snail is upside down, therefore on wrong side of catapult
 			return
 
-		bxt.types.add_and_mutate_object(self.scene, "FlyingCutscene", self)
+		bat.bats.add_and_mutate_object(self.scene, "FlyingCutscene", self)
 
 
-class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class Spider(Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
 	L_ANIM = 1
 
@@ -161,7 +161,7 @@ class Spider(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		return [self.children['Spider_Face'], self]
 
 
-class FlyingCutscene(Chapter, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class FlyingCutscene(Chapter, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
@@ -212,11 +212,11 @@ class FlyingCutscene(Chapter, bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def hold_snail(self):
 		snail = Scripts.director.Director().mainCharacter
 		anchor = self.children['FC_SnailShoot']
-		bxt.bmath.copy_transform(anchor, snail)
-		snail.localLinearVelocity = bxt.bmath.MINVECTOR
+		bat.bmath.copy_transform(anchor, snail)
+		snail.localLinearVelocity = bat.bmath.MINVECTOR
 
 	def shoot_snail(self):
 		snail = Scripts.director.Director().mainCharacter
 		anchor = self.children['FC_SnailShoot']
-		bxt.bmath.copy_transform(anchor, snail)
-		snail.localLinearVelocity = bxt.bmath.YAXIS * 75.0
+		bat.bmath.copy_transform(anchor, snail)
+		snail.localLinearVelocity = bat.bmath.YAXIS * 75.0

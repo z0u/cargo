@@ -18,7 +18,7 @@
 
 import bge.logic
 
-import bxt.types
+import bat.bats
 
 import Scripts.director
 
@@ -43,7 +43,7 @@ NS_VISIBLE            = 2
 NS_IMPLICIT           = 3
 
 
-class LODManager(metaclass=bxt.types.Singleton):
+class LODManager(metaclass=bat.bats.Singleton):
 	'''A registrar of LODTrees. Each tree adds itself to this manager
 	Other scripts then have a central place
 	to access LODTrees, such as the module function activate_range, below.'''
@@ -66,7 +66,7 @@ class LODManager(metaclass=bxt.types.Singleton):
 	def remove_tree(self, tree):
 		self.trees.discard(tree)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		'''Update which blades of grass are active. Call this once per frame.'''
 		boundsList = []
@@ -212,7 +212,7 @@ class LODBranch(LODNode):
 	elements.'''
 
 	# Don't really need a weakprop here, as these objects are carefully managed.
-	#objectInstance = bxt.types.weakprop('objectInstance')
+	#objectInstance = bat.bats.weakprop('objectInstance')
 
 	def __init__(self, obName, left, right, axis, medianValue):
 		'''
@@ -418,7 +418,7 @@ class LODLeaf(LODNode):
 
 		self.lastFrameVisible = False
 		# No fancy sets here; just be really careful!
-		#self.objectInstances = bxt.types.SafeSet()
+		#self.objectInstances = bat.bats.SafeSet()
 		self.objectInstances = set()
 
 		self.numFramesActive = -1
@@ -459,7 +459,7 @@ class LODLeaf(LODNode):
 				try:
 					scene = bge.logic.getCurrentScene()
 					for (oPos, oMesh) in self.objectPairs:
-						o = bxt.types.add_and_mutate_object(scene, oMesh, oPos)
+						o = bat.bats.add_and_mutate_object(scene, oMesh, oPos)
 						self.objectInstances.add(o)
 				finally:
 					self.lastFrameVisible = True

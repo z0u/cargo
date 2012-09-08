@@ -17,7 +17,7 @@
 
 import bge
 
-import bxt.types
+import bat.bats
 
 import Scripts.gui
 import Scripts.store
@@ -34,26 +34,26 @@ CREDITS = [
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
 	("Made With", "Blender, Bullet, The GIMP and Inkscape")]
 
-class SessionManager(metaclass=bxt.types.Singleton):
+class SessionManager(metaclass=bat.bats.Singleton):
 	'''Responds to some high-level messages.'''
 
 	def __init__(self):
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 
 	def on_event(self, event):
 		if event.message == 'showSavedGameDetails':
 			# The session ID indicates which saved game is being used.
 			Scripts.store.set_session_id(event.body)
 			if len(Scripts.store.get('/game/name', '')) == 0:
-				bxt.types.Event('pushScreen', 'NameScreen').send()
+				bat.bats.Event('pushScreen', 'NameScreen').send()
 			else:
-				bxt.types.Event('pushScreen', 'LoadDetailsScreen').send()
+				bat.bats.Event('pushScreen', 'LoadDetailsScreen').send()
 
 		elif event.message == 'startGame':
 			# Show the loading screen and send another message to start the game
 			# after the loading screen has shown.
-			cbEvent = bxt.types.Event('LoadLevel')
-			bxt.types.Event('ShowLoadingScreen', (True, cbEvent)).send()
+			cbEvent = bat.bats.Event('LoadLevel')
+			bat.bats.Event('ShowLoadingScreen', (True, cbEvent)).send()
 
 		elif event.message == 'LoadLevel':
 			# Load the level indicated in the save game. This is called after
@@ -66,11 +66,11 @@ class SessionManager(metaclass=bxt.types.Singleton):
 			# Remove all stored items that match the current path.
 			for key in Scripts.store.search('/game/'):
 				Scripts.store.unset(key)
-			bxt.types.Event('setScreen', 'LoadingScreen').send()
+			bat.bats.Event('setScreen', 'LoadingScreen').send()
 
 		elif event.message == 'quit':
-			cbEvent = bxt.types.Event('reallyQuit')
-			bxt.types.Event('ShowLoadingScreen', (True, cbEvent)).send()
+			cbEvent = bat.bats.Event('reallyQuit')
+			bat.bats.Event('ShowLoadingScreen', (True, cbEvent)).send()
 
 		elif event.message == 'reallyQuit':
 			bge.logic.endGame()
@@ -80,8 +80,8 @@ class MenuController(Scripts.gui.UiController):
 
 	def __init__(self, old_owner):
 		Scripts.gui.UiController.__init__(self, old_owner)
-		bxt.types.Event('setScreen', 'LoadingScreen').send(2)
-		bxt.types.Event('GameModeChanged', 'Menu').send()
+		bat.bats.Event('setScreen', 'LoadingScreen').send(2)
+		bat.bats.Event('GameModeChanged', 'Menu').send()
 
 	def get_default_widget(self, screen_name):
 		if screen_name == 'LoadingScreen':
@@ -108,7 +108,7 @@ class MenuController(Scripts.gui.UiController):
 # Widget classes
 ################
 
-class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
+class Camera(bat.bats.BX_GameObject, bge.types.KX_Camera):
 	'''A camera that adjusts its position depending on which screen is
 	visible.'''
 
@@ -124,14 +124,14 @@ class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'showScreen')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'showScreen')
 
 	def on_event(self, event):
 		if event.message == 'showScreen' and event.body in Camera.FRAME_MAP:
 			self['targetFrame'] = Camera.FRAME_MAP[event.body]
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		'''Update the camera animation frame. Should be called once per frame
 		when targetFrame != frame.'''
@@ -146,7 +146,7 @@ class Camera(bxt.types.BX_GameObject, bge.types.KX_Camera):
 
 class SaveButton(Scripts.gui.Button):
 	def __init__(self, old_owner):
-		bxt.types.mutate(self.children['IDCanvas'])
+		bat.bats.mutate(self.children['IDCanvas'])
 		Scripts.gui.Button.__init__(self, old_owner)
 
 	def updateVisibility(self, visible):
@@ -168,7 +168,7 @@ class Checkbox(Scripts.gui.Button):
 
 		# Create a clickable box around the text.
 		canvas = self.children['CheckBoxCanvas']
-		canvas = bxt.types.mutate(canvas)
+		canvas = bat.bats.mutate(canvas)
 		canvas['Content'] = self['label']
 		canvas['colour'] = self['colour']
 		canvas.render()
@@ -221,20 +221,20 @@ class ConfirmationPage(Scripts.gui.Widget):
 		elif event.message == 'confirmation':
 			text, self.onConfirm, self.onConfirmBody = event.body.split('::')
 			self.children['ConfirmText']['Content'] = text
-			bxt.types.Event('pushScreen', 'ConfirmationDialogue').send()
+			bat.bats.Event('pushScreen', 'ConfirmationDialogue').send()
 
 		elif event.message == 'confirm':
 			if self.visible:
-				bxt.types.Event('popScreen').send()
-				bxt.types.Event(self.onConfirm, self.onConfirmBody).send()
+				bat.bats.Event('popScreen').send()
+				bat.bats.Event(self.onConfirm, self.onConfirmBody).send()
 				self.children['ConfirmText']['Content'] = ""
 
 class GameDetailsPage(Scripts.gui.Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to
 	mouse events.'''
 	def __init__(self, old_owner):
-		bxt.types.mutate(self.childrenRecursive['GameName'])
-		bxt.types.mutate(self.children['StoryDetails'])
+		bat.bats.mutate(self.childrenRecursive['GameName'])
+		bat.bats.mutate(self.children['StoryDetails'])
 		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
@@ -268,7 +268,7 @@ class NamePage(Scripts.gui.Widget):
 	MAX_NAME_LEN = 6
 
 	def __init__(self, old_owner):
-		bxt.types.mutate(self.children['NamePageName'])
+		bat.bats.mutate(self.children['NamePageName'])
 		self.mode = 'UPPERCASE'
 		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
@@ -284,8 +284,8 @@ class NamePage(Scripts.gui.Widget):
 			name = self.children['NamePageName'].get_text()
 			if len(name) > 0:
 				Scripts.store.put('/game/name', name)
-				bxt.types.Event('popScreen').send()
-				bxt.types.Event('pushScreen', 'LoadDetailsScreen').send()
+				bat.bats.Event('popScreen').send()
+				bat.bats.Event('pushScreen', 'LoadDetailsScreen').send()
 
 		elif evt.message == 'capsLockToggle':
 			if self.mode == 'UPPERCASE':
@@ -327,7 +327,7 @@ class NamePage(Scripts.gui.Widget):
 			self.mode = 'LOWERCASE'
 			# Lay out keys later - once the buttons have had a change to draw
 			# once; otherwise the order can get stuffed up.
-			bxt.types.Event('capsLockToggle').send(1.0)
+			bat.bats.Event('capsLockToggle').send(1.0)
 
 	def lay_out_keymap(self):
 		def grid_key(ob):
@@ -387,7 +387,7 @@ class CreditsPage(Scripts.gui.Widget):
 		self.index += 1
 		self.index %= len(CREDITS)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def draw(self):
 		if self.children['People']['Rendering'] or self.children['Role']['Rendering']:
 			self.delayTimer = CreditsPage.DELAY
@@ -396,7 +396,7 @@ class CreditsPage(Scripts.gui.Widget):
 			if self.delayTimer <= 0:
 				self.drawNext()
 
-class Subtitle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Subtitle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	SCREENMAP = {
 			'LoadingScreen': 'Load',
 			'LoadDetailsScreen': '',
@@ -406,8 +406,8 @@ class Subtitle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		}
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'showScreen')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'showScreen')
 
 	def on_event(self, event):
 		if event.message == 'showScreen':
@@ -418,17 +418,17 @@ class Subtitle(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				text = ""
 			self.children['SubtitleCanvas']['Content'] = text
 
-class MenuSnail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class MenuSnail(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
-		arm = bxt.types.add_and_mutate_object(self.scene, "SlugArm_Min",
+		arm = bat.bats.add_and_mutate_object(self.scene, "SlugArm_Min",
 				self.children["SlugSpawnPos"])
 		arm.setParent(self)
 		arm.look_at("Camera")
 		arm.playAction("MenuSnail_Rest", 1, 1)
 		self.arm = arm
 
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == "FocusChanged":

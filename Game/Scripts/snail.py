@@ -18,11 +18,11 @@
 import mathutils
 import bge
 
-import bxt.types
-import bxt.bmath
-import bxt.utils
-import bxt.anim
-import bxt.sound
+import bat.bats
+import bat.bmath
+import bat.utils
+import bat.anim
+import bat.sound
 
 import Scripts.director
 import Scripts.inventory
@@ -75,7 +75,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 	MAX_INTOXICATION = 140
 	INTOXICATION_HIT = 60
 
-	shell = bxt.types.weakprop('shell')
+	shell = bat.bats.weakprop('shell')
 
 	def __init__(self, old_owner):
 		Scripts.director.VulnerableActor.__init__(self, maxHealth=7)
@@ -90,7 +90,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.rem_state(Snail.S_INIT)
 
 		self.shell = None
-		self.recentlyDroppedItems = bxt.types.SafeSet()
+		self.recentlyDroppedItems = bat.bats.SafeSet()
 		# Not weak props, but it should be OK because they will die in the same
 		# frame as the snail (this object).
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
@@ -115,19 +115,19 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.health_warn_tics = 0
 		self.shock_tics = 0
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'GravityChanged')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'GravityChanged')
 
-		bxt.types.WeakEvent('MainCharacterSet', self).send()
-		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
+		bat.bats.WeakEvent('MainCharacterSet', self).send()
+		bat.bats.Event('SetCameraType', 'OrbitCamera').send()
 		alignment = Scripts.camera.OrbitCameraAlignment()
-		bxt.types.Event('SetCameraAlignment', alignment).send()
+		bat.bats.Event('SetCameraAlignment', alignment).send()
 		Scripts.camera.AutoCamera().add_focus_point(self)
 
 		self.DEBUGpositions = [self.worldPosition.copy()]
 		Scripts.impulse.Input().add_handler(self)
-		Scripts.impulse.Input().add_sequence("udlr12", bxt.types.Event("GiveAllShells"))
-		bxt.types.EventBus().replay_last(self, 'TeleportSnail')
+		Scripts.impulse.Input().add_sequence("udlr12", bat.bats.Event("GiveAllShells"))
+		bat.bats.EventBus().replay_last(self, 'TeleportSnail')
 
 	def load_items(self):
 		shellName = Scripts.inventory.Shells().get_equipped()
@@ -135,12 +135,12 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			shell = Scripts.shells.factory(shellName)
 			self.equip_shell(shell, False)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def alive(self):
 		'''Miscellaneous things to update while alive.'''
 		self.health_warning()
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def crawl(self):
 		self.orient()
 		self.update_eye_length()
@@ -150,8 +150,8 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
-		counter = bxt.types.Counter()
-		avNormal = bxt.bmath.ZEROVEC.copy()
+		counter = bat.bats.Counter()
+		avNormal = bat.bmath.ZEROVEC.copy()
 		ob0, p0, n0 = self.children['ArcRay_Root.0'].getHitPosition()
 		if ob0:
 			avNormal += n0
@@ -178,8 +178,8 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.touchedObject = counter.mode
 		if self.touchedObject != None:
 			angV = self.touchedObject.getAngularVelocity()
-			if angV.magnitude < bxt.bmath.EPSILON:
-				angV = bxt.bmath.MINVECTOR
+			if angV.magnitude < bat.bmath.EPSILON:
+				angV = bat.bmath.MINVECTOR
 			self.setAngularVelocity(angV)
 
 		#
@@ -201,7 +201,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			# smoother transition than just averaging the normals returned by the
 			# rays. Rays that didn't hit will use their last known value.
 			#
-			normal = bxt.bmath.quadNormal(p0, p1, p2, p3)
+			normal = bat.bmath.quadNormal(p0, p1, p2, p3)
 			if normal.dot(avNormal) < 0.0:
 				normal.negate()
 			self.alignAxisToVect(normal, 2)
@@ -224,14 +224,14 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		fulcrum = pivot.children['Fulcrum_%s.%d' % (name, i)]
 		segment = pivot.children['%s.%d' % (name, i)]
 
-		segment.alignAxisToVect(pivot.getAxisVect(bxt.bmath.XAXIS), 0)
+		segment.alignAxisToVect(pivot.getAxisVect(bat.bmath.XAXIS), 0)
 
 		_, p1, _ = rayR.getHitPosition()
 		_, p2, _ = rayL.getHitPosition()
 		p3 = fulcrum.worldPosition
-		normal = bxt.bmath.triangleNormal(p1, p2, p3)
+		normal = bat.bmath.triangleNormal(p1, p2, p3)
 
-		if normal.dot(pivot.getAxisVect(bxt.bmath.ZAXIS)) > 0.0:
+		if normal.dot(pivot.getAxisVect(bat.bmath.ZAXIS)) > 0.0:
 			#
 			# Normal is within 90 degrees of parent's normal -> segment not
 			# doubling back on itself.
@@ -278,7 +278,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			# Cheat ;)
 			for name in Scripts.inventory.Shells().get_all_shells():
 				Scripts.inventory.Shells().add(name)
-				bxt.types.Event('ShellChanged', 'new').send()
+				bat.bats.Event('ShellChanged', 'new').send()
 		elif evt.message == 'HitMushroom':
 			self.hit_mushroom()
 
@@ -290,7 +290,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			except KeyError:
 				print("Warning: can't find spawn point %s" % spawn_point)
 				return
-		bxt.bmath.copy_transform(spawn_point, self)
+		bat.bmath.copy_transform(spawn_point, self)
 		self['BendAngleFore'] = 0.0
 		self['BendAngleAft'] = 0.0
 
@@ -299,9 +299,9 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			restLength = self['EyeRestLen']
 			channel = self.armature.channels[eyeRayOb['channel']]
 
-			vect = eyeRayOb.getAxisVect(bxt.bmath.ZAXIS) * restLength
+			vect = eyeRayOb.getAxisVect(bat.bmath.ZAXIS) * restLength
 			through = eyeRayOb.worldPosition + vect
-			hitOb, hitPos, _ = bxt.bmath.ray_cast_p2p(through, eyeRayOb,
+			hitOb, hitPos, _ = bat.bmath.ray_cast_p2p(through, eyeRayOb,
 					prop = 'Ground')
 
 			targetLength = vect.magnitude
@@ -314,7 +314,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			if (currentProportion >= targetProportion):
 				targetProportion *= 0.5
 			else:
-				targetProportion = bxt.bmath.lerp(currentProportion,
+				targetProportion = bat.bmath.lerp(currentProportion,
 						targetProportion, self['EyeLenFac'])
 
 			channel.scale = (1.0, targetProportion, 1.0)
@@ -332,8 +332,8 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		update_single(self.eyeRayL)
 		update_single(self.eyeRayR)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def look(self, c):
 		'''
 		Turn the eyes to face the nearest object in targetList. Objects with a
@@ -351,7 +351,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 
 		def look_single(eye, direction):
 			channel = self.armature.channels[eye['channel']]
-			eye.alignAxisToVect(eye.parent.getAxisVect(bxt.bmath.ZAXIS), 2)
+			eye.alignAxisToVect(eye.parent.getAxisVect(bat.bmath.ZAXIS), 2)
 			eye.alignAxisToVect(direction, 1)
 			orn = eye.localOrientation.to_quaternion()
 			oldOrn = mathutils.Quaternion(channel.rotation_quaternion)
@@ -363,7 +363,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 
 		def can_look(eye, direction):
 			'''Don't allow looking behind; the eyes twist!'''
-			dot = direction.dot(eye.parent.getAxisVect(bxt.bmath.YAXIS))
+			dot = direction.dot(eye.parent.getAxisVect(bat.bmath.YAXIS))
 			return dot > -0.4
 
 		targetList = c.sensors['sLookAt'].hitObjectList
@@ -413,7 +413,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		if targetScale > 1:
 			targetScale = 1
 		scale = self.cargoHold.localScale.x
-		scale = bxt.bmath.lerp(scale, targetScale, Snail.SHELL_SCALE_FAC)
+		scale = bat.bmath.lerp(scale, targetScale, Snail.SHELL_SCALE_FAC)
 		self.cargoHold.localScale = (scale, scale, scale)
 
 	def _stow_shell(self, shell):
@@ -421,17 +421,17 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		shell.localScale = (1.0, 1.0, 1.0)
 		self.cargoHold.localScale = (1.0, 1.0, 1.0)
 		referential = shell.cargoHook
-		bxt.bmath.set_rel_orn(shell, self.cargoHold, referential)
-		bxt.bmath.set_rel_pos(shell, self.cargoHold, referential)
+		bat.bmath.set_rel_orn(shell, self.cargoHold, referential)
+		bat.bmath.set_rel_pos(shell, self.cargoHold, referential)
 		shell.setParent(self.cargoHold)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def pick_up_item(self, controller):
 		'''Picks up and equips nearby shells that don't already have an
 		owner. Note: this must run with priority over functions that drop
 		items!'''
-		collectables = bxt.types.SafeSet(
+		collectables = bat.bats.SafeSet(
 				controller.sensors['sPickup'].hitObjectList)
 		# Forget objects that are no longer in range.
 		self.recentlyDroppedItems.intersection_update(collectables)
@@ -442,7 +442,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			if isinstance(ob, Scripts.shells.ShellBase):
 				if not ob.is_carried and not ob.is_grasped:
 					self.equip_shell(ob, True)
-					bxt.types.Event('ShellChanged', 'new').send()
+					bat.bats.Event('ShellChanged', 'new').send()
 
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
@@ -453,7 +453,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			return
 
 		self._switch(shellName)
-		bxt.types.Event('ShellChanged', 'next').send()
+		bat.bats.Event('ShellChanged', 'next').send()
 
 	def switch_previous(self):
 		'''Equip the next-lower shell that the snail has.'''
@@ -464,7 +464,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			return
 
 		self._switch(shellName)
-		bxt.types.Event('ShellChanged', 'previous').send()
+		bat.bats.Event('ShellChanged', 'previous').send()
 
 	def _switch(self, name):
 		if name == None:
@@ -478,7 +478,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		if name in scene.objects:
 			shell = scene.objects[name]
 		else:
-			shell = bxt.types.add_and_mutate_object(scene, name, self)
+			shell = bat.bats.add_and_mutate_object(scene, name, self)
 		self.equip_shell(shell, True)
 
 	def equip_shell(self, shell, animate):
@@ -530,7 +530,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.shockwave.playAction('ShockwaveGrow', 1, 20, layer=Snail.L_SW_GROW)
 		self.add_state(Snail.S_SHOCKWAVE)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def poll_shockwave(self):
 		if not self.shockwave.isPlayingAction(Snail.L_SW_GROW):
 			self.rem_state(Snail.S_SHOCKWAVE)
@@ -556,9 +556,9 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			self.armature.setActionFrame(endFrame, Snail.L_ARM_SHELL)
 
 		if triggerFrame != None:
-			bxt.anim.add_trigger_gte(self.armature, Snail.L_ARM_SHELL, triggerFrame, callback)
+			bat.anim.add_trigger_gte(self.armature, Snail.L_ARM_SHELL, triggerFrame, callback)
 		else:
-			bxt.anim.add_trigger_end(self.armature, Snail.L_ARM_SHELL, callback)
+			bat.anim.add_trigger_end(self.armature, Snail.L_ARM_SHELL, callback)
 
 	def drop_shell(self, animate):
 		'''Causes the snail to drop its shell, if it is carrying one.'''
@@ -568,11 +568,11 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.rem_state(Snail.S_HASSHELL)
 		self.play_shell_action("PopShell", 18, self.on_drop_shell, animate, 15)
 
-		bxt.sound.Sample('//Sound/cc-by/BottleOpen.ogg').play()
+		bat.sound.Sample('//Sound/cc-by/BottleOpen.ogg').play()
 
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
-		velocity = bxt.bmath.ZAXIS.copy()
+		velocity = bat.bmath.ZAXIS.copy()
 		velocity.x += 0.5 - bge.logic.getRandomFloat()
 		velocity = self.getAxisVect(velocity)
 		velocity *= Snail.SHELL_POP_SPEED
@@ -582,7 +582,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		shell.on_dropped()
 		self.recentlyDroppedItems.add(shell)
 
-		bxt.types.WeakEvent('ShellDropped', shell).send()
+		bat.bats.WeakEvent('ShellDropped', shell).send()
 
 	def enter_shell(self, animate):
 		'''
@@ -594,8 +594,8 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			return
 
 		self.rem_state(Snail.S_HASSHELL)
-		bxt.utils.rem_state(self.armature, Snail.S_ARM_CRAWL)
-		bxt.utils.rem_state(self.armature, Snail.S_ARM_LOCOMOTION)
+		bat.utils.rem_state(self.armature, Snail.S_ARM_CRAWL)
+		bat.utils.rem_state(self.armature, Snail.S_ARM_LOCOMOTION)
 		self.play_shell_action("Inshell", 18, self.on_enter_shell, animate)
 
 		self.shell.on_pre_enter()
@@ -630,7 +630,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self['InShell'] = 1
 		self.shell.on_entered()
 
-		bxt.types.WeakEvent('ShellEntered', self).send()
+		bat.bats.WeakEvent('ShellEntered', self).send()
 
 	def exit_shell(self, animate):
 		'''
@@ -642,8 +642,8 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 
 		self.rem_state(Snail.S_INSHELL)
 		self.add_state(Snail.S_FALLING)
-		bxt.utils.add_state(self.armature, Snail.S_ARM_CRAWL)
-		bxt.utils.add_state(self.armature, Snail.S_ARM_LOCOMOTION)
+		bat.utils.add_state(self.armature, Snail.S_ARM_CRAWL)
+		bat.utils.add_state(self.armature, Snail.S_ARM_LOCOMOTION)
 		self.play_shell_action("Outshell", 18, self.on_exit_shell, animate)
 
 		linV = self.shell.getLinearVelocity()
@@ -669,10 +669,10 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self['InShell'] = 0
 		self.shell.on_exited()
 
-		bxt.types.WeakEvent('MainCharacterSet', self).send()
+		bat.bats.WeakEvent('MainCharacterSet', self).send()
 		# Temporarily use a path camera while exiting the shell - it's smoother!
-		bxt.types.Event('SetCameraType', 'PathCamera').send()
-		bxt.types.Event('OxygenSet', self['Oxygen']).send()
+		bat.bats.Event('SetCameraType', 'PathCamera').send()
+		bat.bats.Event('OxygenSet', self['Oxygen']).send()
 
 	def on_exit_shell(self):
 		'''Called when the snail has finished its exit shell
@@ -683,11 +683,11 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.shell.on_post_exit()
 
 		# Switch to orbit camera.
-		bxt.types.Event('SetCameraType', 'OrbitCamera').send()
+		bat.bats.Event('SetCameraType', 'OrbitCamera').send()
 		alignment = Scripts.camera.OrbitCameraAlignment()
-		bxt.types.Event('SetCameraAlignment', alignment).send()
+		bat.bats.Event('SetCameraAlignment', alignment).send()
 
-		bxt.types.WeakEvent('ShellExited', self).send()
+		bat.bats.WeakEvent('ShellExited', self).send()
 
 	def record_velocity(self):
 		# TODO: Remove this debugging code.
@@ -715,7 +715,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			body.stopAction(0)
 			body.playAction('SnailDamage_Body', 1, 100, 0)
 			body.setActionFrame(1, 0)
-			bxt.sound.Sample(
+			bat.sound.Sample(
 					'//Sound/cc-by/HealthDown1.ogg', 
 					'//Sound/cc-by/HealthDown2.ogg',
 					'//Sound/cc-by/HealthDown3.ogg').play()
@@ -724,8 +724,8 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			body.stopAction(0)
 			body.playAction('SnailHeal_Body', 1, 100, 0)
 			body.setActionFrame(1, 0)
-			bxt.sound.Sample('//Sound/cc-by/HealthUp.ogg').play()
-		bxt.types.Event('HealthSet', value / self.maxHealth).send()
+			bat.sound.Sample('//Sound/cc-by/HealthUp.ogg').play()
+		bat.bats.Event('HealthSet', value / self.maxHealth).send()
 
 	def heal(self, amount=1):
 		self.damage(amount=-amount)
@@ -738,7 +738,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.shock_tics = Snail.SHOCK_DURATION
 		self.localLinearVelocity.z += 10.0
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def shock_update(self):
 		'''Count down to become un-shocked.'''
 		if self.shock_tics > 0:
@@ -755,7 +755,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			return
 
 		if self.health_warn_tics == 1:
-			sample = bxt.sound.Sample('//Sound/cc-by/HealthWarning.ogg')
+			sample = bat.sound.Sample('//Sound/cc-by/HealthWarning.ogg')
 			sample.volume = 0.5
 			sample.play()
 
@@ -766,10 +766,10 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 
 	def on_oxygen_set(self):
 		if not self.has_state(Snail.S_INSHELL):
-			bxt.types.Event('OxygenSet', self['Oxygen']).send()
+			bat.bats.Event('OxygenSet', self['Oxygen']).send()
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def power_up(self, c):
 		for powerUp in c.sensors[0].hitObjectList:
 			if powerUp['SpeedMultiplier']:
@@ -791,20 +791,20 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			self['SpeedMultiplier'] = speed
 
 	def hit_mushroom(self):
-		bxt.types.Event('BlurAdd', 0.5).send()
+		bat.bats.Event('BlurAdd', 0.5).send()
 		self.intoxication_level += Snail.INTOXICATION_HIT
 		if self.intoxication_level >= Snail.MAX_INTOXICATION:
 			self.damage()
 			self.intoxication_level = 0
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def start_crawling(self):
 		'''Called when the snail enters its crawling state.'''
 		#
 		# Don't set it quite to zero: zero vectors are ignored!
 		#
-		self.setAngularVelocity(bxt.bmath.MINVECTOR, False)
-		self.setLinearVelocity(bxt.bmath.MINVECTOR, False)
+		self.setAngularVelocity(bat.bmath.MINVECTOR, False)
+		self.setLinearVelocity(bat.bmath.MINVECTOR, False)
 
 	def on_movement_impulse(self, f, b, l, r):
 		return
@@ -864,8 +864,8 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		#
 		# Rotate the snail.
 		#
-		self['Rot'] = bxt.bmath.lerp(self['Rot'], targetRot, self['RotFactor'])
-		oRot = mathutils.Matrix.Rotation(self['Rot'], 3, bxt.bmath.ZAXIS)
+		self['Rot'] = bat.bmath.lerp(self['Rot'], targetRot, self['RotFactor'])
+		oRot = mathutils.Matrix.Rotation(self['Rot'], 3, bat.bmath.ZAXIS)
 		self.localOrientation = self.localOrientation * oRot
 
 		#
@@ -875,11 +875,11 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			targetBendAngleAft /= self['SpeedMultiplier']
 
 		# These actually get applied in crawl.
-		self['BendAngleFore'] = bxt.bmath.lerp(self['BendAngleFore'],
+		self['BendAngleFore'] = bat.bmath.lerp(self['BendAngleFore'],
 				targetBendAngleFore, self['BendFactor'])
 
 		if abs(direction.y) > 0.1:
-			self['BendAngleAft'] = bxt.bmath.lerp(self['BendAngleAft'],
+			self['BendAngleAft'] = bat.bmath.lerp(self['BendAngleAft'],
 					targetBendAngleAft, self['BendFactor'])
 
 			# Moving forward or backward, so update trail.
@@ -946,7 +946,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 	def handle_bt_camera(self, state):
 		'''Move camera to be directly behind the snail.'''
 		if state.activated:
-			bxt.types.Event('ResetCameraPos', None).send()
+			bat.bats.Event('ResetCameraPos', None).send()
 		return True
 
 	def get_camera_tracking_point(self):
@@ -963,7 +963,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 	def is_in_shell(self):
 		return self.has_state(Snail.S_INSHELL)
 
-class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Trail(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	S_NORMAL = 2
 	S_SLOW = 3
 	S_FAST = 4
@@ -977,13 +977,13 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.spotIndex = 0
 		self.warned = False
 
-		self.sound = bxt.sound.Sample(
+		self.sound = bat.sound.Sample(
 			'//Sound/cc-by/Slither1.ogg',
 			'//Sound/cc-by/Slither2.ogg',
 			'//Sound/cc-by/Slither3.ogg')
 		self.sound.pitchmin = 0.7
 		self.sound.pitchmax = 1.2
-		self.sound.add_effect(bxt.sound.Localise(self))
+		self.sound.add_effect(bat.sound.Localise(self))
 
 	def add_spot(self, speedStyle, touchedObject):
 		'''
@@ -1012,7 +1012,7 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if touchedObject != None:
 			spot.setParent(touchedObject)
 
-		bxt.utils.set_state(spot, speedStyle)
+		bat.utils.set_state(spot, speedStyle)
 
 	def moved(self, speedMultiplier, touchedObject):
 		pos = self.worldPosition
@@ -1031,28 +1031,28 @@ class Trail(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if distMinor > self['TrailSpacingMinor']:
 			self.lastMinorPos = pos.copy()
 			speedStyle = Trail.S_NORMAL
-			if speedMultiplier > (1.0 + bxt.bmath.EPSILON):
+			if speedMultiplier > (1.0 + bat.bmath.EPSILON):
 				speedStyle = Trail.S_FAST
-			elif speedMultiplier < (1.0 - bxt.bmath.EPSILON):
+			elif speedMultiplier < (1.0 - bat.bmath.EPSILON):
 				speedStyle = Trail.S_SLOW
 			self.add_spot(speedStyle, touchedObject)
 			if triggered and speedStyle == Trail.S_FAST:
 				self.sound.copy().play()
 
-class MinSnail(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	_prefix = 'MS_'
 
 	LOOK_FAC = 0.2
 
-	look_goal = bxt.types.weakprop('look_goal')
+	look_goal = bat.bats.weakprop('look_goal')
 
 	def __init__(self, old_owner):
 		con = self.constraints["LookTarget:Copy Location"]
 		con.enforce = 1.0
 		self.look_at(None)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update_look(self):
 		# Stop tracking goal if it is behind the head.
 		con = self.constraints["LookTarget:Copy Location"]
@@ -1063,7 +1063,7 @@ class MinSnail(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 			con.active = True
 			con.enforce = min(con.enforce + MinSnail.LOOK_FAC, 1.0)
 			if con.target is not None:
-				con.target.worldPosition = bxt.bmath.lerp(
+				con.target.worldPosition = bat.bmath.lerp(
 					con.target.worldPosition, self.look_goal.worldPosition,
 					MinSnail.LOOK_FAC)
 		else:

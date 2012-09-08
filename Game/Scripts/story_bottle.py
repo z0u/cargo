@@ -17,11 +17,11 @@
 
 import bge
 
-import bxt.types
-import bxt.utils
-import bxt.bmath
-import bxt.sound
-import bxt.render
+import bat.bats
+import bat.utils
+import bat.bmath
+import bat.sound
+import bat.render
 
 import Scripts.store
 import Scripts.director
@@ -31,7 +31,7 @@ import Scripts.impulse
 import Scripts.story_bird
 from Scripts.story import *
 
-class Bottle(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Bottle(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''
 
 	_prefix = 'B_'
@@ -40,7 +40,7 @@ class Bottle(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_Game
 		self.snailInside = False
 		self.transition_delay = 0
 		self.open_window(False)
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 		# Only handle overridden input events (see impulse.Handler).
 		self.default_handler_response = False
 		self.bird_arrived = False
@@ -53,8 +53,8 @@ class Bottle(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_Game
 		elif evt.message == 'BirdArrived':
 			self.bird_arrived = True
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def door_touched(self, c):
 		'''Control access to the Sauce Bar. If the snail is carrying a shell,
 		the door should be shut; otherwise, the SauceBar level should be loaded.
@@ -94,61 +94,61 @@ class Bottle(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_Game
 			self.eject(mainChar)
 		elif not self.snailInside and mainChar['HasShell']:
 			# Touched by a snail who is wearing a shell.
-			bxt.types.Event('ShowDialogue',
+			bat.bats.Event('ShowDialogue',
 					"You can't fit! Press X to drop your shell.").send()
 			self.eject(mainChar)
 		elif self.snailInside:
 			#print("Exiting because snail touched door.")
-			cbEvent = bxt.types.Event("ExitBottle")
-			bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+			cbEvent = bat.bats.Event("ExitBottle")
+			bat.bats.Event("ShowLoadingScreen", (True, cbEvent)).send()
 			self.transition_delay = -1
 		else:
 			#print("Entering because snail touched door.")
-			cbEvent = bxt.types.Event("EnterBottle")
-			bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+			cbEvent = bat.bats.Event("EnterBottle")
+			bat.bats.Event("ShowLoadingScreen", (True, cbEvent)).send()
 			self.transition_delay = -1
 
 	def enter_bottle(self):
 		Scripts.store.put('/game/spawnPoint', 'SpawnBottle')
 		self.open_window(True)
-		bxt.types.Event('TeleportSnail', 'SpawnBottleInner').send()
-		bxt.types.Event("AddCameraGoal", 'BottleCamera').send()
+		bat.bats.Event('TeleportSnail', 'SpawnBottleInner').send()
+		bat.bats.Event("AddCameraGoal", 'BottleCamera').send()
 		Scripts.impulse.Input().add_handler(self, 'STORY')
 
 		self.snailInside = True
 		self.transition_delay = 1
-		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
+		bat.bats.Event("ShowLoadingScreen", (False, None)).send()
 
 	def exit_bottle(self):
 		# Transitioning to outside; move camera to sensible location.
 		self.open_window(False)
-		bxt.types.Event('TeleportSnail', 'SpawnBottle').send()
-		bxt.types.Event("RemoveCameraGoal", 'BottleCamera').send()
+		bat.bats.Event('TeleportSnail', 'SpawnBottle').send()
+		bat.bats.Event("RemoveCameraGoal", 'BottleCamera').send()
 
 		if self.bird_arrived:
 			# The bird has interrupted the story (triggered by conversation with
 			# barkeeper).
 			# First, really make sure the snail hasn't got a shell. Just in
 			# case!
-			bxt.types.Event('ForceDropShell', False).send()
+			bat.bats.Event('ForceDropShell', False).send()
 			# Then spawn the bird.
 			spawn_point = self.scene.objects["Bird_SauceBar_Spawn"]
 			bird = Scripts.story_bird.factory()
-			bxt.bmath.copy_transform(spawn_point, bird)
+			bat.bmath.copy_transform(spawn_point, bird)
 			self.bird_arrived = False
 
 		elif not Scripts.store.get("/game/canDropShell", False):
 			# Don't let a snail wander around with no shell until after the bird
 			# has taken one.
-			bxt.types.Event('ForceReclaimShell').send()
+			bat.bats.Event('ForceReclaimShell').send()
 		Scripts.impulse.Input().remove_handler(self)
 
 		self.snailInside = False
 		self.transition_delay = 1
-		bxt.types.Event("ShowLoadingScreen", (False, None)).send()
+		bat.bats.Event("ShowLoadingScreen", (False, None)).send()
 
 	def eject(self, ob):
-		direction = self.children['B_Door'].getAxisVect(bxt.bmath.ZAXIS)
+		direction = self.children['B_Door'].getAxisVect(bat.bmath.ZAXIS)
 		ob.worldPosition += direction
 
 	def open_window(self, isOpening):
@@ -173,7 +173,7 @@ class Bottle(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_Game
 		Play the music for this locality. Don't need to stop it, because the
 		'inner' object gets destroyed when the player leaves.
 		'''
-		bxt.sound.Jukebox().play_files(inner, 1, '//Sound/Music/explore.ogg')
+		bat.sound.Jukebox().play_files(inner, 1, '//Sound/Music/explore.ogg')
 
 	def handle_bt_1(self, state):
 		'''Don't allow snail to reclaim shell when inside.'''
@@ -187,10 +187,10 @@ class Bottle(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_Game
 		return True
 
 
-class BottleRock(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class BottleRock(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A rock that hides itself when the snail enters the bar.'''
 	def __init__(self, old_owner):
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == 'EnterBottle':
@@ -201,7 +201,7 @@ class BottleRock(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.children['B_SoilCrossSection'].visible = False
 
 
-class BottleDropZone(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class BottleDropZone(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''
 	Allows snail to drop shell, but only when standing at the door of the
 	bottle.
@@ -210,7 +210,7 @@ class BottleDropZone(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types
 	_prefix = 'DZ_'
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 		# Only handle overridden input events (see impulse.Handler).
 		self.default_handler_response = False
 		self.shell_drop_initiated_at_door = False
@@ -218,12 +218,12 @@ class BottleDropZone(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types
 	def on_event(self, evt):
 		if evt.message == 'ShellDropped':
 			if self.shell_drop_initiated_at_door:
-				cbEvent = bxt.types.Event("EnterBottle")
-				bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+				cbEvent = bat.bats.Event("EnterBottle")
+				bat.bats.Event("ShowLoadingScreen", (True, cbEvent)).send()
 				self.shell_drop_initiated_at_door = False
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def touched(self, c):
 		'''Register self as an input handler to allow snail to drop shell.'''
 		s = c.sensors[0]
@@ -239,7 +239,7 @@ class BottleDropZone(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types
 		because the shell cannot be dropped at will until later in the game.
 		'''
 		if state.activated:
-			bxt.types.Event('ForceDropShell', True).send()
+			bat.bats.Event('ForceDropShell', True).send()
 			self.shell_drop_initiated_at_door = True
 		return True
 
@@ -253,7 +253,7 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
-		arm = bxt.types.add_and_mutate_object(self.scene, "SlugArm_Min",
+		arm = bat.bats.add_and_mutate_object(self.scene, "SlugArm_Min",
 				self.children["SlugSpawnPos"])
 		arm.setParent(self)
 		arm.look_at("Snail")
@@ -501,15 +501,15 @@ class BarKeeper(Chapter, bge.types.KX_GameObject):
 def lighthouse_stub():
 	Scripts.store.put('/game/level/lkMissionStarted', True)
 
-@bxt.utils.all_sensors_positive
+@bat.utils.all_sensors_positive
 def test_bird():
 	sce = bge.logic.getCurrentScene()
 	spawn_point = sce.objects["Bird_SauceBar_Spawn"]
 	bird = Scripts.story_bird.factory()
-	bxt.bmath.copy_transform(spawn_point, bird)
+	bat.bmath.copy_transform(spawn_point, bird)
 
 
-class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Blinkenlights(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A series of blinking lights, like you find outside take away joints.'''
 
 	def __init__(self, old_owner):
@@ -537,23 +537,23 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.lights = []
 		for ob in self.children:
 			self.lights.append(ob)
-		self.lights.sort(key=bxt.bmath.DistanceKey(self))
+		self.lights.sort(key=bat.bmath.DistanceKey(self))
 
 		self.cols = list(map(
-				lambda x: bxt.render.parse_colour(x["colour"]), self.lights))
+				lambda x: bat.render.parse_colour(x["colour"]), self.lights))
 		self.targetCols = list(self.cols)
-		self.targetLampCol = bxt.render.BLACK.copy()
+		self.targetLampCol = bat.render.BLACK.copy()
 
 		# Hide half of the lights until the end of the game.
 		if self['side'] == 'right':
 			if not Scripts.store.get('/game/level/bottleLights', False):
 				self.setVisible(False, True)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def blink(self):
 		stringLen = self['cycleLen']
 		self.step = (self.step + 1) % stringLen
-		self.targetLampCol = bxt.render.BLACK.copy()
+		self.targetLampCol = bat.render.BLACK.copy()
 		for i, col in enumerate(self.cols):
 			target = None
 			if (i % stringLen) == self.step:
@@ -564,7 +564,7 @@ class Blinkenlights(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				target.w = 1.0
 			self.targetCols[i] = target
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		for light, targetCol in zip(self.lights, self.targetCols):
-			light.color = bxt.bmath.lerp(light.color, targetCol, 0.1)
+			light.color = bat.bmath.lerp(light.color, targetCol, 0.1)

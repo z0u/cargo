@@ -17,10 +17,10 @@
 
 import bge
 
-import bxt.types
-import bxt.sound
-import bxt.anim
-import bxt.utils
+import bat.bats
+import bat.sound
+import bat.anim
+import bat.utils
 
 from Scripts.story import *
 import Scripts.shaders
@@ -30,14 +30,14 @@ class LevelBeehive(GameLevel):
 		GameLevel.__init__(self, oldOwner)
 		Scripts.shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.0, 0.0, 0.0)))
-		bxt.sound.Jukebox().play_files(self, 1,
+		bat.sound.Jukebox().play_files(self, 1,
 				'//Sound/Music/bumbly.wav',
 				volume=0.4)
 
 def init_conveyor(c):
 	o = c.owner
 	cpath = o.children['ConveyorBelt']
-	bxt.anim.play_children_with_offset(cpath.children, 'ConveyorBelt_SegAction',
+	bat.anim.play_children_with_offset(cpath.children, 'ConveyorBelt_SegAction',
 		1, 401)
 
 	peg1 = o.children['ConveyorPeg.1']
@@ -65,10 +65,10 @@ def init_conveyor(c):
 
 def init_lower_buckets(c):
 	o = c.owner
-	bxt.anim.play_children_with_offset(o.children, 'BucketsLower',
+	bat.anim.play_children_with_offset(o.children, 'BucketsLower',
 		Bucket.FRAME_MIN, Bucket.FRAME_MAX, layer=Bucket.L_ANIM)
 
-class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	L_ANIM = 0
 
 	FRAME_MIN = 1
@@ -82,10 +82,10 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	PROJECTION = [0.0, 0.0, 20.0]
 
-	camTop = bxt.types.weakprop('camTop')
-	camBottom = bxt.types.weakprop('camBottom')
-	currentCamera = bxt.types.weakprop('currentCamera')
-	player = bxt.types.weakprop('player')
+	camTop = bat.bats.weakprop('camTop')
+	camBottom = bat.bats.weakprop('camBottom')
+	currentCamera = bat.bats.weakprop('currentCamera')
+	player = bat.bats.weakprop('player')
 
 	def __init__(self, old_owner):
 		scene = bge.logic.getCurrentScene()
@@ -98,8 +98,8 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.loc = Bucket.LOC_BOTTOM
 		self.isTouchingPlayer = False
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def update(self, c):
 		sCollision = c.sensors['sPlayer']
 		self.frame_changed()
@@ -162,7 +162,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			# jolting.
 			pos = self.currentCamera.worldPosition
 			orn = self.currentCamera.worldOrientation
-			bxt.types.Event('RelocatePlayerCamera', (pos, orn)).send()
+			bat.bats.Event('RelocatePlayerCamera', (pos, orn)).send()
 
 		if cam == self.currentCamera:
 			return
@@ -180,7 +180,7 @@ class Bucket(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		self.isTouchingPlayer = isTouchingPlayer
 		if isTouchingPlayer:
-			bxt.types.Event('GameModeChanged', 'Cutscene').send()
+			bat.bats.Event('GameModeChanged', 'Cutscene').send()
 		else:
-			bxt.types.Event('GameModeChanged', 'Playing').send()
+			bat.bats.Event('GameModeChanged', 'Playing').send()
 		self.update_camera()

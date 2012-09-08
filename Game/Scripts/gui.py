@@ -20,22 +20,22 @@ import math
 import bge
 import mathutils
 
-import bxt.types
-import bxt.sound
-import bxt.utils
-import bxt.bmath
+import bat.bats
+import bat.sound
+import bat.utils
+import bat.bmath
 
 import Scripts.impulse
 
-class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
+class UiController(Scripts.impulse.Handler, bat.bats.BX_GameObject,
 		bge.types.KX_GameObject):
 
 	'''Manages UI elements: focus and click events.'''
 
 	_prefix = 'UC_'
 
-	current = bxt.types.weakprop("current")
-	downCurrent = bxt.types.weakprop("downCurrent")
+	current = bat.bats.weakprop("current")
+	downCurrent = bat.bats.weakprop("downCurrent")
 
 	DIRECTION_TOLERANCE = 0.1
 	#SOUND_DELAY_TICS = 5
@@ -47,12 +47,12 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 
 		# Don't play the first focus sound.
 		self.sound_delay = UiController.SOUND_DELAY_TICS
-		self.focus_sound = bxt.sound.Sample("//Sound/cc-by/BtnFocus.ogg")
+		self.focus_sound = bat.sound.Sample("//Sound/cc-by/BtnFocus.ogg")
 		self.focus_sound.volume = 0.2
-		self.click_sound = bxt.sound.Sample("//Sound/cc-by/BtnClick.ogg")
+		self.click_sound = bat.sound.Sample("//Sound/cc-by/BtnClick.ogg")
 		self.click_sound.volume = 0.2
 
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == 'setScreen':
@@ -68,7 +68,7 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 				self.screen_stack.pop()
 			self.update_screen()
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def pulse(self):
 		if self.sound_delay > 0:
 			self.sound_delay -= 1
@@ -78,7 +78,7 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 			screen_name = self.screen_stack[-1]
 		else:
 			screen_name = 'LoadingScreen'
-		bxt.types.Event('showScreen', screen_name).send()
+		bat.bats.Event('showScreen', screen_name).send()
 
 		# Previous widget is probably hidden now; switch to default for this
 		# screen.
@@ -90,8 +90,8 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 	def get_default_widget(self, screen_name):
 		return None
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def mouseMove(self, c):
 		if not c.sensors['sMouseMove'].positive:
 			return
@@ -100,7 +100,7 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 		mOver.usePulseFocus = True
 		self.mouseOver(mOver)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def mouseOver(self, mOver):
 		newFocus = mOver.hitObject
 
@@ -112,10 +112,10 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 
 		self.focus(newFocus)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def mouseButton(self, c):
-		if bxt.utils.someSensorPositive():
+		if bat.utils.someSensorPositive():
 			self.press()
 		else:
 			self.release()
@@ -125,7 +125,7 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 			return
 
 		self.current = widget
-		bxt.types.WeakEvent("FocusChanged", widget).send()
+		bat.bats.WeakEvent("FocusChanged", widget).send()
 		if widget is not None and self.sound_delay <= 0:
 			self.focus_sound.play()
 			self.sound_delay = UiController.SOUND_DELAY_TICS
@@ -164,7 +164,7 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 	def handle_bt_2(self, state):
 		'''Escape from current screen (keyboard/joypad).'''
 		if state.activated:
-			bxt.types.Event('popScreen').send()
+			bat.bats.Event('popScreen').send()
 		return True
 
 	def handle_movement(self, state):
@@ -185,7 +185,7 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 			loc = self.current.worldPosition
 		else:
 			loc = mathutils.Vector((0.0, 0.0, 0.0))
-		world_direction = bxt.bmath.to_world_vec(cam, direction.resized(3))
+		world_direction = bat.bmath.to_world_vec(cam, direction.resized(3))
 		world_direction.normalize()
 
 		# Iterate over widgets, assigning each one a score - based on the
@@ -215,7 +215,7 @@ class UiController(Scripts.impulse.Handler, bxt.types.BX_GameObject,
 		return best_widget
 
 
-class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''An interactive UIObject. Has various states (e.g. focused, up, down) to
 	facilitate interaction. Some of the states map to a frame to allow a
 	visual progression.'''
@@ -245,8 +245,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.is_visible = False
 		self.hide()
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'showScreen')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'showScreen')
 
 	def enter(self):
 		if not self.sensitive:
@@ -284,8 +284,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			body = ''
 			if 'onClickBody' in self:
 				body = self['onClickBody']
-			evt = bxt.types.Event(msg, body)
-			bxt.types.EventBus().notify(evt)
+			evt = bat.bats.Event(msg, body)
+			bat.bats.EventBus().notify(evt)
 
 	def on_event(self, evt):
 		if evt.message == 'showScreen':
@@ -339,7 +339,7 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		start, end = self.get_anim_range()
 		self.playAction("Widget", start, end)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		'''Checks whether a widget is fully hidden yet.'''
 		if self.getActionFrame() <= 1.0:
@@ -361,8 +361,8 @@ class Widget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		oldv = self.sensitive
 		self.sensitive = sensitive
 		if oldv != sensitive:
-			evt = bxt.types.Event('sensitivityChanged', self.sensitive)
-			bxt.types.EventBus().notify(evt)
+			evt = bat.bats.Event('sensitivityChanged', self.sensitive)
+			bat.bats.EventBus().notify(evt)
 
 
 class Button(Widget):

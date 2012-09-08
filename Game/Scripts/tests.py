@@ -17,10 +17,10 @@
 
 import unittest
 
-import bxt.types
+import bat.bats
 
 class PriorityStackTest(unittest.TestCase):
-	'''bxt.types.SafePriorityStack'''
+	'''bat.bats.SafePriorityStack'''
 
 	class Dummy:
 		def __init__(self):
@@ -30,7 +30,7 @@ class PriorityStackTest(unittest.TestCase):
 		self.foo = PriorityStackTest.Dummy()
 		self.bar = PriorityStackTest.Dummy()
 		self.baz = PriorityStackTest.Dummy()
-		self.queue = bxt.types.SafePriorityStack()
+		self.queue = bat.bats.SafePriorityStack()
 
 	def test_add(self):
 		self.queue.push(self.foo, 1)
@@ -84,14 +84,14 @@ class PriorityStackTest(unittest.TestCase):
 		self.assertEquals(len(self.queue), 0)
 
 class FuzzySwitchTest(unittest.TestCase):
-	'''bxt.types.FuzzySwitch'''
+	'''bat.bats.FuzzySwitch'''
 
 	def test_init(self):
-		self.sw = bxt.types.FuzzySwitch(5, 10, False)
+		self.sw = bat.bats.FuzzySwitch(5, 10, False)
 		self.assertFalse(self.sw.is_on())
 
 	def test_on(self):
-		self.sw = bxt.types.FuzzySwitch(3, 4, False)
+		self.sw = bat.bats.FuzzySwitch(3, 4, False)
 		self.sw.turn_on()
 		self.assertFalse(self.sw.is_on())
 		self.sw.turn_on()
@@ -100,7 +100,7 @@ class FuzzySwitchTest(unittest.TestCase):
 		self.assertTrue(self.sw.is_on())
 
 	def test_off(self):
-		self.sw = bxt.types.FuzzySwitch(3, 4, True)
+		self.sw = bat.bats.FuzzySwitch(3, 4, True)
 		self.sw.turn_off()
 		self.assertTrue(self.sw.is_on())
 		self.sw.turn_off()
@@ -111,7 +111,7 @@ class FuzzySwitchTest(unittest.TestCase):
 		self.assertFalse(self.sw.is_on())
 
 	def test_both(self):
-		self.sw = bxt.types.FuzzySwitch(2, 2, False)
+		self.sw = bat.bats.FuzzySwitch(2, 2, False)
 		self.sw.turn_on()
 		self.assertFalse(self.sw.is_on())
 		self.sw.turn_off()

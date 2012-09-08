@@ -15,30 +15,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import sys
+import logging
+
 import bge
 import aud
 
-import bxt.utils
-import bxt.bmath
-import bxt.types
-import bxt.render
+import bat.utils
+import bat.bmath
+import bat.bats
+import bat.render
 
 import Scripts.director
 import Scripts.store
 
-DEBUG = False
-log = bxt.utils.get_logger(DEBUG)
-
 def hasLineOfSight(ob, other):
-	hitOb, _, _ = bxt.bmath.ray_cast_p2p(other, ob, prop = 'Ray')
+	hitOb, _, _ = bat.bmath.ray_cast_p2p(other, ob, prop = 'Ray')
 	return hitOb == None
 
-class AutoCamera(metaclass=bxt.types.Singleton):
+class AutoCamera(metaclass=bat.bats.Singleton):
 	'''Manages the transform of the camera, and provides transitions between
 	camera locations. To transition to a new location, call PushGoal. The
 	reverse transition can be performed by calling PopGoal.
 	'''
 	_prefix = 'AC_'
+
+	log = logging.getLogger(__name__ + '.AutoCamera')
 
 	COLLISION_BIAS = 0.8
 	MIN_FOCAL_DIST = 4.0
@@ -47,8 +49,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	BLUR_MULT_MAX = 10.0
 	BLUR_MULT_DAMP = 0.1
 
-	camera = bxt.types.weakprop('camera')
-	lastGoal = bxt.types.weakprop('lastGoal')
+	camera = bat.bats.weakprop('camera')
+	lastGoal = bat.bats.weakprop('lastGoal')
 
 	def __init__(self):
 		'''Create an uninitialised AutoCamera. Call SetCamera to bind it to a
@@ -58,15 +60,15 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		self.defaultLens = 22.0
 		self.blurMultiplier = 1.0
 		self.blurMultVelocity = 0.0
-		self.queue = bxt.types.SafePriorityStack()
-		self.focusQueue = bxt.types.SafePriorityStack()
-		self.observers = bxt.types.SafeSet()
+		self.queue = bat.bats.SafePriorityStack()
+		self.focusQueue = bat.bats.SafePriorityStack()
+		self.observers = bat.bats.SafeSet()
 		self.lastGoal = None
 		self.instantCut = False
 		self.errorReported = False
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'TeleportSnail')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'TeleportSnail')
 
 	def on_event(self, evt):
 		if evt.message == 'TeleportSnail':
@@ -82,25 +84,26 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		elif evt.message == 'BlurAdd':
 			self.blurMultVelocity += evt.body
 
-	@bxt.types.expose
-	@bxt.utils.owner_cls
+	@bat.bats.expose
+	@bat.utils.owner_cls
 	def set_camera(self, camera):
 		'''Bind to a camera.'''
-		log('setting camera')
+
+		AutoCamera.log.info('Setting actual camera to %s', camera)
 		self.camera = camera
 		self.defaultLens = camera.lens
-		bxt.utils.get_scene(camera).active_camera = camera
+		bat.utils.get_scene(camera).active_camera = camera
 
 		aud.device().distance_model = aud.AUD_DISTANCE_MODEL_INVERSE_CLAMPED
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def init_filters(self, c):
 		'''Initialise filters.'''
 		if Scripts.store.get('/opt/depthOfField', True):
 			c.activate(c.actuators['aDof'])
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		'''Update the location of the camera. observers will be notified. The
 		camera should have a controller set up to call this once per frame.
@@ -109,10 +112,12 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if not self.camera:
 			return
 
+		if AutoCamera.log.isEnabledFor(10):
+			# Write entire queue when in DEBUG
+			sys.stdout.write("\rCamera queue: {}".format(self.queue))
+			sys.stdout.flush()
+
 		currentGoal = None
-		if DEBUG:
-			log.write("\rCamera queue: {}".format(self.queue))
-			log.flush()
 		try:
 			currentGoal = self.queue.top()
 		except IndexError:
@@ -142,8 +147,8 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 			self._update_focal_depth(instant=True)
 			self.instantCut = False
 
-		bxt.bmath.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
-		bxt.bmath.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
+		bat.bmath.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
+		bat.bmath.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
 
 		# Update focal length.
 		targetLens = self.defaultLens
@@ -152,7 +157,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		# Interpolate FOV, not focal length - the latter is non-linear.
 		fov = 1.0 / self.camera.lens
 		target_fov = 1.0 / targetLens
-		fov = bxt.bmath.lerp(fov, target_fov, currentGoal['RotFac'])
+		fov = bat.bmath.lerp(fov, target_fov, currentGoal['RotFac'])
 		self.camera.lens = 1.0 / fov
 
 		self.lastGoal = currentGoal
@@ -181,7 +186,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 			# Pick the point that is closest to the camera.
 			points = focalPoint.get_focal_points()
 			if len(points) > 0:
-				key = bxt.bmath.DistanceKey(self.camera)
+				key = bat.bmath.DistanceKey(self.camera)
 				points.sort(key=key)
 				focalPoint = points[0]
 
@@ -196,7 +201,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if instant:
 			cam['focalDepth'] = depth
 		else:
-			cam['focalDepth'] = bxt.bmath.lerp(cam['focalDepth'], depth,
+			cam['focalDepth'] = bat.bmath.lerp(cam['focalDepth'], depth,
 					AutoCamera.FOCAL_FAC)
 
 		# This bit doesn't need to be interpolated; the lens value is already
@@ -208,14 +213,14 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		diff = 1.0 - self.blurMultiplier
 		accel = diff * AutoCamera.BLUR_MULT_ACCEL
 		if abs(diff) > 0.01 or abs(self.blurMultVelocity) > 0.01:
-			self.blurMultiplier, self.blurMultVelocity = bxt.bmath.integrate(
+			self.blurMultiplier, self.blurMultVelocity = bat.bmath.integrate(
 					self.blurMultiplier, self.blurMultVelocity,
 					accel, AutoCamera.BLUR_MULT_DAMP)
-			self.blurMultiplier = bxt.bmath.clamp(0.0, AutoCamera.BLUR_MULT_MAX,
+			self.blurMultiplier = bat.bmath.clamp(0.0, AutoCamera.BLUR_MULT_MAX,
 					self.blurMultiplier)
 
-	@bxt.types.expose
-	@bxt.utils.owner_cls
+	@bat.bats.expose
+	@bat.utils.owner_cls
 	def add_goal(self, goal):
 		'''Give the camera a new goal, and remember the last one. Call
 		RemoveGoal to restore the previous relationship. The camera position
@@ -223,16 +228,16 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		'''
 		if isinstance(goal, str):
 			try:
-				sce = bxt.utils.get_scene(goal)
+				sce = bat.utils.get_scene(goal)
 				goal = sce.objects[goal]
 			except KeyError or ValueError:
-				print("Warning: can't find goal %s." % goal)
+				AutoCamera.log.warn("Warning: can't find goal %s." % goal)
 				return
 		# Set some defaults for properties.
-		bxt.utils.set_default_prop(goal, 'LocFac', 0.1)
-		bxt.utils.set_default_prop(goal, 'RotFac', 0.1)
-		bxt.utils.set_default_prop(goal, 'InstantCut', False)
-		bxt.utils.set_default_prop(goal, 'Priority', 1)
+		bat.utils.set_default_prop(goal, 'LocFac', 0.1)
+		bat.utils.set_default_prop(goal, 'RotFac', 0.1)
+		bat.utils.set_default_prop(goal, 'InstantCut', False)
+		bat.utils.set_default_prop(goal, 'Priority', 1)
 
 		# Add the goal to the queue.
 		self.queue.push(goal, goal['Priority'])
@@ -240,17 +245,17 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if self.queue.top() == goal and goal['InstantCut']:
 			# Goal is on top of the stack: it will be switched to next
 			if goal['InstantCut'] in (True, 'IN', 'BOTH'):
-				if DEBUG:
-					print("Cutting instantly to '%s' because InstantCut = %s" %
-							(goal.name, repr(goal['InstantCut'])))
+				AutoCamera.log.info(
+						"Cutting instantly to '%s' because InstantCut = %s",
+						goal.name, goal['InstantCut'])
 				self.instantCut = True
 
 		if self.instantCut:
 			self.update()
 		self.errorReported = False
 
-	@bxt.types.expose
-	@bxt.utils.owner_cls
+	@bat.bats.expose
+	@bat.utils.owner_cls
 	def remove_goal(self, goal):
 		'''Remove a goal from the stack. If it was currently in use, the camera
 		will switch to follow the next one on the stack. The transform isn't
@@ -258,10 +263,10 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		'''
 		if isinstance(goal, str):
 			try:
-				sce = bxt.utils.get_scene(goal)
+				sce = bat.utils.get_scene(goal)
 				goal = sce.objects[goal]
 			except KeyError or ValueError:
-				print("Warning: can't find goal %s." % goal)
+				AutoCamera.log.warn("Warning: can't find goal %s." % goal)
 				return
 		if not goal in self.queue:
 			return
@@ -269,34 +274,34 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		if self.queue.top() == goal:
 			# Goal is on top of the stack: it's in use!
 			if goal['InstantCut'] in (True, 'OUT', 'BOTH'):
-				if DEBUG:
-					print("Cutting instantly from '%s' because InstantCut = %s" %
-							(goal.name, repr(goal['InstantCut'])))
+				AutoCamera.log.info(
+						"Cutting instantly to '%s' because InstantCut = %s",
+						goal.name, goal['InstantCut'])
 				self.instantCut = True
 
 		self.queue.discard(goal)
 		if self.instantCut:
 			self.update()
 
-	@bxt.types.expose
-	@bxt.utils.owner_cls
+	@bat.bats.expose
+	@bat.utils.owner_cls
 	def add_focus_point(self, target):
 		if isinstance(target, str):
 			try:
-				sce = bxt.utils.get_scene(target)
+				sce = bat.utils.get_scene(target)
 				target = sce.objects[target]
 			except KeyError or ValueError:
 				print("Warning: can't find focus point %s." % target)
 				return
-		bxt.utils.set_default_prop(target, 'FocusPriority', 1)
+		bat.utils.set_default_prop(target, 'FocusPriority', 1)
 		self.focusQueue.push(target, target['FocusPriority'])
 
-	@bxt.types.expose
-	@bxt.utils.owner_cls
+	@bat.bats.expose
+	@bat.utils.owner_cls
 	def remove_focus_point(self, target):
 		if isinstance(target, str):
 			try:
-				sce = bxt.utils.get_scene(target)
+				sce = bat.utils.get_scene(target)
 				target = sce.objects[target]
 			except KeyError or ValueError:
 				print("Warning: can't find focus point %s." % target)
@@ -311,7 +316,7 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 	def on_teleport(self, spawn_point):
 		if isinstance(spawn_point, str):
 			try:
-				sce = bxt.utils.get_scene(spawn_point)
+				sce = bat.utils.get_scene(spawn_point)
 				spawn_point = sce.objects[spawn_point]
 			except KeyError:
 				print("Warning: can't find spawn point %s" % spawn_point)
@@ -322,14 +327,14 @@ class AutoCamera(metaclass=bxt.types.Singleton):
 		spawn_camera = spawn_point.children[0]
 		pos = spawn_camera.worldPosition
 		orn = spawn_camera.worldOrientation
-		bxt.types.Event('RelocatePlayerCamera', (pos, orn)).send(0)
+		bat.bats.Event('RelocatePlayerCamera', (pos, orn)).send(0)
 
-		bxt.utils.set_default_prop(spawn_camera, 'InstantCut', 'IN')
+		bat.utils.set_default_prop(spawn_camera, 'InstantCut', 'IN')
 		self.add_goal(spawn_camera)
-		bxt.types.WeakEvent('RemoveCameraGoal', spawn_camera).send(60)
+		bat.bats.WeakEvent('RemoveCameraGoal', spawn_camera).send(60)
 
 
-class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
+class MainCharSwitcher(bat.bats.BX_GameObject, bge.types.KX_Camera):
 	'''Adds self as a goal when an attached sensor is touched by the main
 	character.'''
 	_prefix = 'MCS_'
@@ -337,8 +342,8 @@ class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 	def __init__(self, old_owner):
 		self.attached = False
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def on_touched(self, c):
 		mainChar = Scripts.director.Director().mainCharacter
 		shouldAttach = False
@@ -353,17 +358,17 @@ class MainCharSwitcher(bxt.types.BX_GameObject, bge.types.KX_Camera):
 			AutoCamera().remove_goal(self)
 		self.attached = shouldAttach
 
-class MainGoalManager(metaclass=bxt.types.Singleton):
+class MainGoalManager(metaclass=bat.bats.Singleton):
 	'''Creates cameras that follow the player in response to SetCameraType
 	messages. The body of the message should be the name of the camera to
 	create (i.e. the name of the objects that embodies that camera).'''
 
-	currentCamera = bxt.types.weakprop('currentCamera')
+	currentCamera = bat.bats.weakprop('currentCamera')
 
 	def __init__(self):
 		self.cameraType = None
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'SetCameraType')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'SetCameraType')
 
 	def on_event(self, evt):
 		if evt.message == 'SetCameraType':
@@ -371,12 +376,12 @@ class MainGoalManager(metaclass=bxt.types.Singleton):
 					self.cameraType != evt.body):
 				scene = bge.logic.getCurrentScene()
 				oldCamera = self.currentCamera
-				self.currentCamera = bxt.types.add_and_mutate_object(scene,
+				self.currentCamera = bat.bats.add_and_mutate_object(scene,
 						evt.body)
 
 				ac = AutoCamera().camera
 				if ac != None:
-					bxt.types.Event('RelocatePlayerCamera',
+					bat.bats.Event('RelocatePlayerCamera',
 							(ac.worldPosition, ac.worldOrientation)).send()
 				self.cameraType = evt.body
 				if oldCamera != None:
@@ -399,9 +404,9 @@ class OrbitCameraAlignment:
 
 		@return: forwardVector, upVector
 		'''
-		upDir = target.getAxisVect(bxt.bmath.ZAXIS)
+		upDir = target.getAxisVect(bat.bmath.ZAXIS)
 		self.upDir = upDir.copy()
-		fwdDir = target.getAxisVect(bxt.bmath.YAXIS)
+		fwdDir = target.getAxisVect(bat.bmath.YAXIS)
 		fwdDir.negate()
 		return fwdDir, upDir
 
@@ -411,9 +416,9 @@ class OrbitCameraAlignment:
 
 		@return: forwardVector, upVector
 		'''
-		rawUpDir = target.getAxisVect(bxt.bmath.ZAXIS)
+		rawUpDir = target.getAxisVect(bat.bmath.ZAXIS)
 		try:
-			rawUpDir = bxt.bmath.lerp(self.upDir, rawUpDir,
+			rawUpDir = bat.bmath.lerp(self.upDir, rawUpDir,
 					OrbitCamera.ZALIGN_FAC)
 			rawUpDir.normalize()
 		except AttributeError:
@@ -427,7 +432,7 @@ class OrbitCameraAlignment:
 
 		return fwdDir, rawUpDir
 
-class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A 3rd-person camera that stays a constant distance from its target.'''
 
 	_prefix = 'Orb_'
@@ -450,11 +455,11 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.alignment = None
 
 		AutoCamera().add_goal(self)
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'RelocatePlayerCamera')
-		bxt.types.EventBus().replay_last(self, 'SetCameraAlignment')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'RelocatePlayerCamera')
+		bat.bats.EventBus().replay_last(self, 'SetCameraAlignment')
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		if self.alignment is None:
 			return
@@ -522,7 +527,7 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if targetDist < lastDist:
 			dist = targetDist
 		else:
-			dist = bxt.bmath.lerp(lastDist, targetDist,
+			dist = bat.bmath.lerp(lastDist, targetDist,
 					OrbitCamera.EXPAND_FAC)
 
 		pos = origin + (direction * dist)
@@ -539,12 +544,14 @@ class OrbitCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		elif evt.message == 'SetCameraAlignment':
 			self.alignment = evt.body
 
-class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A camera goal that follows the active player. It tries to follow the same
 	path as the player, so that it avoids static scenery.
 	'''
 
 	_prefix = 'PC_'
+
+	log = logging.getLogger(__name__ + '.PathCamera')
 
 	# The maximum number of nodes to track. Once this number is reached, the
 	# oldest nodes will be removed.
@@ -596,6 +603,8 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		'''A single point in a path used by the CameraPathGoal. These act as
 		way points for the camera to follow.'''
 
+		log = logging.getLogger(__name__ + '.PathCamera.CameraNode')
+
 		# Note: This class uses strong references, so it will hang around even
 		# when the associated game object dies. But that's OK, because the only
 		# class that uses this one is PathCamera, which should end with its
@@ -604,12 +613,12 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		def __init__(self):
 			# Defines the location of the way point. Using a way point allows the
 			# node to parented to an object.
-			self.owner = bxt.utils.add_object('PointMarker')
-			if not DEBUG:
+			self.owner = bat.utils.add_object('PointMarker')
+			if not PathCamera.CameraNode.log.isEnabledFor(10):
 				self.owner.visible = False
 			else:
-				self.marker = bxt.utils.add_object("PointMarker")
-				self.marker.color = bxt.render.BLUE
+				self.marker = bat.utils.add_object("PointMarker")
+				self.marker.color = bat.render.BLUE
 				self.marker.visible = True
 				self.owner.visible = True
 
@@ -618,10 +627,10 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.target = None
 
 		def update(self):
-			self.target = bxt.bmath.ZAXIS.copy()
+			self.target = bat.bmath.ZAXIS.copy()
 			self.target *= PathCamera.ZOFFSET
-			self.target = bxt.bmath.to_world(self.owner, self.target)
-			hitOb, hitPoint, _ = bxt.bmath.ray_cast_p2p(
+			self.target = bat.bmath.to_world(self.owner, self.target)
+			hitOb, hitPoint, _ = bat.bmath.ray_cast_p2p(
 					self.target, # objto
 					self.owner.worldPosition, # objfrom
 					prop = 'Ray')
@@ -635,37 +644,39 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		def get_target(self):
 			bias = self.ceilingHeight / PathCamera.ZOFFSET
 			bias *= PathCamera.CEILING_AVOIDANCE_BIAS
-			return bxt.bmath.lerp(self.owner.worldPosition, self.target, bias)
+			return bat.bmath.lerp(self.owner.worldPosition, self.target, bias)
 
 		def destroy(self):
 			self.owner.endObject()
-			if DEBUG: self.marker.endObject()
+			if PathCamera.CameraNode.log.isEnabledFor(10):
+				self.marker.endObject()
 
 		def setCeilingHeight(self, height):
 			self.ceilingHeight = height
-			if DEBUG: self.marker.worldPosition = self.get_target()
+			if PathCamera.CameraNode.log.isEnabledFor(10):
+				self.marker.worldPosition = self.get_target()
 
-	target = bxt.types.weakprop('target')
+	target = bat.bats.weakprop('target')
 
 	def __init__(self, old_owner):
 		# A list of CameraNodes.
 		self.path = []
 		self.pathHead = PathCamera.CameraNode()
-		self.linV = bxt.bmath.ZEROVEC.copy()
+		self.linV = bat.bmath.ZEROVEC.copy()
 
 		self.radMult = 1.0
-		self.expand = bxt.types.FuzzySwitch(PathCamera.EXPAND_ON_WAIT,
+		self.expand = bat.bats.FuzzySwitch(PathCamera.EXPAND_ON_WAIT,
 										PathCamera.EXPAND_OFF_WAIT, True)
 		self.target = None
 
 		AutoCamera().add_goal(self)
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')
-		bxt.types.EventBus().replay_last(self, 'RelocatePlayerCamera')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'MainCharacterSet')
+		bat.bats.EventBus().replay_last(self, 'RelocatePlayerCamera')
 
-		if DEBUG:
-			self.targetVis = bxt.utils.add_object('DebugReticule')
-			self.predictVis = bxt.utils.add_object('DebugReticule')
+		if PathCamera.log.isEnabledFor(10):
+			self.targetVis = bat.utils.add_object('DebugReticule')
+			self.predictVis = bat.utils.add_object('DebugReticule')
 
 	def on_event(self, event):
 		if event.message == 'MainCharacterSet':
@@ -676,7 +687,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			if orn != None:
 				self.worldOrientation = orn
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		self.updateWayPoints()
 		self.advanceGoal()
@@ -717,7 +728,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			radMult = PathCamera.EXPAND_FACTOR
 		else:
 			radMult = PathCamera.REST_FACTOR
-		self.radMult = bxt.bmath.lerp(self.radMult, radMult,
+		self.radMult = bat.bmath.lerp(self.radMult, radMult,
 									PathCamera.RADIUS_SPEED)
 		restNear = self.REST_DISTANCE
 		restFar = self.REST_DISTANCE * self.radMult
@@ -741,28 +752,29 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# the camera from spinning too rapidly when pointing up.
 		look = dirWay.copy()
 		look.negate()
-		yfac = 1 - abs(self.getAxisVect(bxt.bmath.ZAXIS).dot(bxt.bmath.ZAXIS))
+		yfac = 1 - abs(self.getAxisVect(bat.bmath.ZAXIS).dot(bat.bmath.ZAXIS))
 		yfac = (yfac * 0.5) + 0.5
 		yfac *= PathCamera.ALIGN_Y_SPEED
 
 		if actor.localCoordinates:
-			axis = node.owner.getAxisVect(bxt.bmath.ZAXIS)
+			axis = node.owner.getAxisVect(bat.bmath.ZAXIS)
 			self.alignAxisToVect(axis, 1, yfac)
 		else:
-			self.alignAxisToVect(bxt.bmath.ZAXIS, 1, yfac)
+			self.alignAxisToVect(bat.bmath.ZAXIS, 1, yfac)
 		self.alignAxisToVect(look, 2, PathCamera.ALIGN_Z_SPEED)
 
-		if DEBUG: self.targetVis.worldPosition = target
+		if PathCamera.log.isEnabledFor(10):
+			self.targetVis.worldPosition = target
 
 	def _canSeeFuture(self):
 		# TODO: Make a DEBUG function decorator that runs stuff before and after
 		ok, projectedPoint = self._canSeeFuture_()
-		if DEBUG:
+		if PathCamera.log.isEnabledFor(10):
 			self.predictVis.worldPosition = projectedPoint
 			if ok:
-				self.predictVis.color = bxt.render.BLACK
+				self.predictVis.color = bat.render.BLACK
 			else:
-				self.predictVis.color = bxt.render.RED
+				self.predictVis.color = bat.render.RED
 		return ok
 
 	def _canSeeFuture_(self):
@@ -778,7 +790,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		ba.normalize()
 		projectedPoint = a.owner.worldPosition + (ba * PathCamera.PREDICT_FWD)
 
-		hitOb, hitPoint, _ = bxt.bmath.ray_cast_p2p(
+		hitOb, hitPoint, _ = bat.bmath.ray_cast_p2p(
 				projectedPoint, a.owner, prop = 'Ray')
 		if hitOb != None:
 			vect = hitPoint - a.owner.worldPosition
@@ -803,7 +815,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			upAxis = rotAxis.cross(ba)
 			pp2 = projectedPoint - (upAxis * PathCamera.PREDICT_FWD)
 
-			hitOb, hitPoint, _ = bxt.bmath.ray_cast_p2p(
+			hitOb, hitPoint, _ = bat.bmath.ray_cast_p2p(
 					pp2, projectedPoint, prop = 'Ray')
 			if hitOb != None:
 				vect = hitPoint - projectedPoint
@@ -817,26 +829,25 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return False, projectedPoint
 
 	def _getNextWayPoint(self):
-		# TODO: Make a DEBUG function decorator that runs stuff before and after
 		node, pathLength = self._getNextWayPoint_()
-		if DEBUG:
+		if PathCamera.log.isEnabledFor(10):
 			# Colour nodes.
 			found = False
 
 			if node == self.pathHead:
 				found = True
-				node.owner.color = bxt.render.RED
+				node.owner.color = bat.render.RED
 			else:
-				node.owner.color = bxt.render.WHITE
+				node.owner.color = bat.render.WHITE
 
 			for n in self.path:
 				if node == n:
-					n.owner.color = bxt.render.RED
+					n.owner.color = bat.render.RED
 					found = True
 				elif found:
-					n.owner.color = bxt.render.BLACK
+					n.owner.color = bat.render.BLACK
 				else:
-					n.owner.color = bxt.render.WHITE
+					n.owner.color = bat.render.WHITE
 
 		return node, pathLength
 
@@ -879,10 +890,10 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			return
 
 		if actor.localCoordinates:
-			bxt.bmath.copy_transform(actor, self.pathHead.owner)
+			bat.bmath.copy_transform(actor, self.pathHead.owner)
 		else:
 			self.pathHead.owner.worldPosition = actor.worldPosition
-			bxt.bmath.reset_orientation(self.pathHead.owner)
+			bat.bmath.reset_orientation(self.pathHead.owner)
 
 		# Add a new node if the actor has moved far enough.
 		addNew = False
@@ -898,7 +909,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			node = PathCamera.CameraNode()
 
 			if actor.localCoordinates:
-				bxt.bmath.copy_transform(actor, node.owner)
+				bat.bmath.copy_transform(actor, node.owner)
 			else:
 				node.owner.worldPosition = actor.worldPosition
 			node.owner.worldPosition = actor.worldPosition
@@ -936,7 +947,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def endObject(self):
 		for node in self.path:
 			node.destroy()
-		if DEBUG:
+		if PathCamera.log.isEnabledFor(10):
 			self.targetVis.endObject()
 			self.predictVis.endObject()
 		self.pathHead.destroy()
@@ -946,7 +957,7 @@ class PathCamera(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 # Helper for sensing when camera is inside something.
 #
 
-class CameraCollider(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class CameraCollider(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''Senses when the camera is inside something. This senses when the
 	camera touches a volumetric object, and then tracks to see when the camera
 	enters and leaves that object, adjusting the screen filter appropriately.'''
@@ -961,7 +972,7 @@ class CameraCollider(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.worldPosition = ac.camera.worldPosition
 		pos = ac.camera.worldPosition.copy()
 
-		direction = bxt.bmath.ZAXIS.copy()
+		direction = bat.bmath.ZAXIS.copy()
 		ob = self.cast_for_water(pos, direction)
 		if ob != None:
 			# Double check - works around bug with rays that strike a glancing
@@ -982,11 +993,11 @@ class CameraCollider(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		except AttributeError:
 			pass
 		self.last_colour = colour
-		bxt.types.Event('ShowFilter', colour).send()
+		bat.bats.Event('ShowFilter', colour).send()
 
 	def cast_for_water(self, pos, direction):
 		through = pos + direction * CameraCollider.MAX_DIST
-		ob, _, normal = bxt.bmath.ray_cast_p2p(through, pos, prop='VolumeCol')
+		ob, _, normal = bat.bmath.ray_cast_p2p(through, pos, prop='VolumeCol')
 		if ob != None and normal.dot(direction) > 0.0:
 			return ob
 		else:
@@ -996,7 +1007,7 @@ class CameraCollider(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 # camera for viewing the background scene
 #
 
-class SkyBox(bxt.types.BX_GameObject, bge.types.KX_Camera):
+class SkyBox(bat.bats.BX_GameObject, bge.types.KX_Camera):
 	'''Sticks to the camera to prevent lens distortion.'''
 
 	def __init__(self, old_owner):

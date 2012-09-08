@@ -17,34 +17,34 @@
 
 import bge
 
-import bxt.types
-import bxt.sound
-import bxt.bmath
+import bat.bats
+import bat.sound
+import bat.bmath
 
 import Scripts.store
 from Scripts.story import *
 
-class CargoHouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class CargoHouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'CH_'
 
 	def __init__(self, old_owner):
 		pass
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def touched(self, c):
 		s = c.sensors['Near']
 		if s.hitObject is not None:
 			Scripts.store.put('/game/level/spawnPoint', 'SpawnCargoHouse')
 			self.init_worm()
-			bxt.sound.Jukebox().play_files(self, 1, '//Sound/Music/House.ogg')
+			bat.sound.Jukebox().play_files(self, 1, '//Sound/Music/House.ogg')
 		else:
-			bxt.sound.Jukebox().stop(self)
+			bat.sound.Jukebox().stop(self)
 
 	def init_worm(self):
 		if not Scripts.store.get('/game/level/wormMissionStarted', False):
 			worm = factory(self.scene)
-			bxt.bmath.copy_transform(self.scene.objects['WormSpawn'], worm)
+			bat.bmath.copy_transform(self.scene.objects['WormSpawn'], worm)
 
 def factory(sce):
 	if not "Worm" in sce.objectsInactive:
@@ -53,7 +53,7 @@ def factory(sce):
 		except ValueError as e:
 			print('Warning: could not load worm:', e)
 
-	return bxt.types.add_and_mutate_object(sce, "Worm", "Worm")
+	return bat.bats.add_and_mutate_object(sce, "Worm", "Worm")
 
 class Worm(Chapter, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
@@ -61,7 +61,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
-		bxt.types.WeakEvent('StartLoading', self).send()
+		bat.bats.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()
 
 	def create_state_graph(self):
@@ -70,13 +70,13 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 			ob = sce.objects['Worm_Letter']
 			hook = c.owner.childrenRecursive['CargoHoldAuto']
 			ob.setParent(hook)
-			bxt.bmath.copy_transform(hook, ob)
+			bat.bmath.copy_transform(hook, ob)
 		def letter_manual(c):
 			sce = bge.logic.getCurrentScene()
 			ob = sce.objects['Worm_Letter']
 			hook = c.owner.childrenRecursive['CargoHoldManual']
 			ob.setParent(hook)
-			bxt.bmath.copy_transform(hook, ob)
+			bat.bmath.copy_transform(hook, ob)
 		def letter_hide(c):
 			sce = bge.logic.getCurrentScene()
 			ob = sce.objects['Worm_Letter']

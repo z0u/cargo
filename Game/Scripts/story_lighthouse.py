@@ -17,10 +17,10 @@
 
 import bge
 
-import bxt.types
-import bxt.bmath
-import bxt.utils
-import bxt.sound
+import bat.bats
+import bat.bmath
+import bat.utils
+import bat.sound
 
 import Scripts.director
 from Scripts.story import *
@@ -32,9 +32,9 @@ def factory(sce):
 		except ValueError as e:
 			print('Warning: could not load firefly:', e)
 
-	return bxt.types.add_and_mutate_object(sce, "Firefly", "Firefly")
+	return bat.bats.add_and_mutate_object(sce, "Firefly", "Firefly")
 
-class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Lighthouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''Watches for Cargo's approach of the lighthouse, and creates the
 	lighthouse keeper in response.'''
 	_prefix = 'LH_'
@@ -50,7 +50,7 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	# conversation.
 
 	def __init__(self, old_owner):
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 		self.inLocality = False
 
 	def on_event(self, event):
@@ -62,8 +62,8 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# scene (due to the event bus).
 		lk = factory(self.scene)
 		spawnPoint = self.scene.objects["LK_FireflySpawn"]
-		bxt.bmath.copy_transform(spawnPoint, lk)
-		bxt.types.Event("TeleportSnail", "LK_SnailTalkPos").send()
+		bat.bmath.copy_transform(spawnPoint, lk)
+		bat.bats.Event("TeleportSnail", "LK_SnailTalkPos").send()
 
 	def kill_keeper(self):
 		try:
@@ -74,8 +74,8 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def arrive(self):
 		self.inLocality = True
-		cbEvent = bxt.types.Event("EnterLighthouse")
-		bxt.types.Event("ShowLoadingScreen", (True, cbEvent)).send()
+		cbEvent = bat.bats.Event("EnterLighthouse")
+		bat.bats.Event("ShowLoadingScreen", (True, cbEvent)).send()
 		Scripts.store.put('/game/level/spawnPoint', 'SpawnTorch')
 
 	def leave(self):
@@ -83,8 +83,8 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.kill_keeper()
 		self.inLocality = False
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def touched(self, c):
 		sNear = c.sensors['Near']
 		sCollision = c.sensors['Collision']
@@ -92,12 +92,12 @@ class Lighthouse(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# Music is controlled by near sensor only.
 		if sNear.triggered:
 			if sNear.positive:
-				bxt.sound.Jukebox().play_files(self, 1,
+				bat.sound.Jukebox().play_files(self, 1,
 						'//Sound/Music/Lighthouse_loop.ogg',
 						introfile='//Sound/Music/Lighthouse_intro.ogg',
 						volume=0.7)
 			else:
-				bxt.sound.Jukebox().stop(self)
+				bat.sound.Jukebox().stop(self)
 
 		# Firefly lifecycle is controller by near and touch sensor. This object
 		# maintains a state (inLocality) to prevent the firefly from being
@@ -117,7 +117,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
-		#bxt.types.WeakEvent('StartLoading', self).send()
+		#bat.bats.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()
 		self.playAction('LK_Breathing', 1, 36, LighthouseKeeper.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=4.0)

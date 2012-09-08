@@ -17,10 +17,10 @@
 
 import bge
 
-import bxt.types
-import bxt.utils
+import bat.bats
+import bat.utils
 
-class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Timer(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A countdown timer actor. Uses a regular pulse to count down to zero over
 	a given duration. The remaining time may be shown on a gauge on-screen.
 
@@ -50,8 +50,8 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.set_default_prop('PulseMessage', 'TimeSet')
 		self.set_default_prop('Duration', 1.0)
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
+	@bat.bats.expose
+	@bat.utils.all_sensors_positive
 	def start(self):
 		'''The the timer running for the duration specified by the owner.'''
 		self.tics = 0.0
@@ -61,19 +61,19 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.add_state(self.S_RUNNING)
 		self.pulse()
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
+	@bat.bats.expose
+	@bat.utils.all_sensors_positive
 	def stop(self):
 		'''Cancel the timer. The gauge will be hidden. No message will be sent.
 		'''
 		self.rem_state(self.S_RUNNING)
 
 		if 'PulseMessage' in self:
-			evt = bxt.types.Event(self['PulseMessage'], 0.0)
-			bxt.types.EventBus().notify(evt)
+			evt = bat.bats.Event(self['PulseMessage'], 0.0)
+			bat.bats.EventBus().notify(evt)
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
+	@bat.bats.expose
+	@bat.utils.all_sensors_positive
 	def pulse(self):
 		'''Increase the elapsed time by one tic. This must be called once per
 		logic frame (i.e. by using an Always sensor in pulse mode 0).'''
@@ -89,8 +89,8 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		fraction = self.tics / self.targetTics
 
 		if 'PulseMessage' in self:
-			evt = bxt.types.Event(self['PulseMessage'], 1.0 - fraction)
-			bxt.types.EventBus().notify(evt)
+			evt = bat.bats.Event(self['PulseMessage'], 1.0 - fraction)
+			bat.bats.EventBus().notify(evt)
 
 		if fraction >= 1.0:
 			self.stop()
@@ -102,7 +102,7 @@ class Timer(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		functionality.'''
 
 		if 'EndMessage' in self:
-			evt = bxt.types.Event(self['EndMessage'])
-			bxt.types.EventBus().notify(evt)
+			evt = bat.bats.Event(self['EndMessage'])
+			bat.bats.EventBus().notify(evt)
 			# Send over two channels!
 			bge.logic.sendMessage(self['EndMessage'])

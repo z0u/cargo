@@ -20,14 +20,14 @@ import weakref
 import bge
 import mathutils
 
-import bxt.types
-import bxt.utils
+import bat.bats
+import bat.utils
 
 import Scripts.impulse
 
 DEBUG = False
 
-class Actor(bxt.types.BX_GameObject):
+class Actor(bat.bats.BX_GameObject):
 	'''Actors are generally mobile objects. They can receive movement impulses,
 	and can float (and drown!) in water.'''
 
@@ -35,24 +35,24 @@ class Actor(bxt.types.BX_GameObject):
 	SAFE_QUEUE_LENGTH = 10
 	MIN_SAFE_DIST = 1.0
 
-	touchedObject = bxt.types.weakprop('touchedObject')
+	touchedObject = bat.bats.weakprop('touchedObject')
 
 	def __init__(self):
-		self._currentLinV = bxt.bmath.MINVECTOR.copy()
-		self.lastLinV = bxt.bmath.MINVECTOR.copy()
+		self._currentLinV = bat.bmath.MINVECTOR.copy()
+		self.lastLinV = bat.bmath.MINVECTOR.copy()
 		self.localCoordinates = False
 		self.touchedObject = None
 		# Set property to allow logic bricks to find actors.
 		self["Actor"] = True
-		# This property is controlled by bxt.water
+		# This property is controlled by bat.water
 		self["SubmergedFactor"] = 0.0
 		self.safe_positions = []
 		self.safe_orientations = []
 
 		Director().add_actor(self)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def save_location(self, c):
 		'''Save the location of the owner for later.'''
 		if self["SubmergedFactor"] > 0.0:
@@ -90,11 +90,11 @@ class Actor(bxt.types.BX_GameObject):
 	def respawn(self, reason = None):
 		self.worldPosition = self.safe_positions[-1]
 		self.worldOrientation = self.safe_orientations[-1]
-		self.setLinearVelocity(bxt.bmath.MINVECTOR)
-		self.setAngularVelocity(bxt.bmath.MINVECTOR)
+		self.setLinearVelocity(bat.bmath.MINVECTOR)
+		self.setAngularVelocity(bat.bmath.MINVECTOR)
 		if self == Director().mainCharacter and reason != None:
-			evt = bxt.types.Event('ShowDialogue', reason)
-			bxt.types.EventBus().notify(evt)
+			evt = bat.bats.Event('ShowDialogue', reason)
+			bat.bats.EventBus().notify(evt)
 
 	def drown(self):
 		'''Called when the Actor is fully submerged in water, and its Oxigen
@@ -224,8 +224,8 @@ class VulnerableActor(Actor):
 		stunned.'''
 		pass
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def damage_auto(self, c):
 		'''Should be attached to a Near or Collision sensor that looks for
 		objects with the Damage property. Note that this is used for healing,
@@ -257,10 +257,10 @@ class VulnerableActor(Actor):
 class ActorTest(Actor, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		Actor.__init__(self)
-		evt = bxt.types.WeakEvent('MainCharacterSet', self)
-		bxt.types.EventBus().notify(evt)
-		evt = bxt.types.Event('SetCameraType', 'OrbitCamera')
-		bxt.types.EventBus().notify(evt)
+		evt = bat.bats.WeakEvent('MainCharacterSet', self)
+		bat.bats.EventBus().notify(evt)
+		evt = bat.bats.Event('SetCameraType', 'OrbitCamera')
+		bat.bats.EventBus().notify(evt)
 	def on_movement_impulse(self, left, right, fwd, back):
 		pass
 	def on_button1(self, pos, trig):
@@ -272,18 +272,18 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 	def on_previous(self, pos, trig):
 		pass
 
-class Director(Scripts.impulse.Handler, metaclass=bxt.types.Singleton):
+class Director(Scripts.impulse.Handler, metaclass=bat.bats.Singleton):
 	_prefix = ''
 
 	SLOW_TICS_PER_FRAME = 10
 
-	mainCharacter = bxt.types.weakprop('mainCharacter')
+	mainCharacter = bat.bats.weakprop('mainCharacter')
 
 	def __init__(self):
 		self.mainCharacter = None
-		self.actors = bxt.types.SafeSet()
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'MainCharacterSet')
+		self.actors = bat.bats.SafeSet()
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'MainCharacterSet')
 		self.slowMotionCount = 0
 
 	def add_actor(self, actor):
@@ -301,7 +301,7 @@ class Director(Scripts.impulse.Handler, metaclass=bxt.types.Singleton):
 			else:
 				Scripts.impulse.Input().remove_handler(self)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		# Make sure all actors are within the world.
 		for actor in self.actors:
@@ -316,9 +316,9 @@ class Director(Scripts.impulse.Handler, metaclass=bxt.types.Singleton):
 					actor.respawn("Ouch! You got squashed.")
 			actor.record_velocity()
 
-	@bxt.types.expose
-	@bxt.utils.all_sensors_positive
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.all_sensors_positive
+	@bat.utils.controller_cls
 	def toggle_suspended(self, c):
 		if self.mainCharacter == None:
 			return
@@ -329,7 +329,7 @@ class Director(Scripts.impulse.Handler, metaclass=bxt.types.Singleton):
 		else:
 			scene.suspend()
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def slow_motion_pulse(self):
 		if self.mainCharacter == None:
 			return

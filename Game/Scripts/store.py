@@ -17,7 +17,7 @@
 
 import bge
 
-import bxt.utils
+import bat.utils
 
 DEBUG = False
 
@@ -122,7 +122,7 @@ def _load():
 # Load once on initialisation.
 _load()
 
-@bxt.utils.all_sensors_positive
+@bat.utils.all_sensors_positive
 def save():
 	'''Save the data to a file. This should be called periodically - it will
 	only actually write the file if the settings have changed.'''

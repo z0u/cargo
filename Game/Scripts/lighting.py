@@ -17,11 +17,11 @@
 
 import bge
 
-import bxt.bmath
-import bxt.utils
-import bxt.types
+import bat.bmath
+import bat.utils
+import bat.bats
 
-class StoryLight(bxt.types.BX_GameObject, bge.types.KX_LightObject):
+class StoryLight(bat.bats.BX_GameObject, bge.types.KX_LightObject):
 	'''
 	This light is used to add special lighting to the cut-scenes. To use it:
 	 - Ensure Utilities -> BasicKit is in the current scene.
@@ -36,12 +36,12 @@ class StoryLight(bxt.types.BX_GameObject, bge.types.KX_LightObject):
 	TOLERANCE = 0.01
 	S_UPDATING = 2
 
-	goal = bxt.types.weakprop('goal')
+	goal = bat.bats.weakprop('goal')
 
 	def __init__(self, old_owner):
 		self.set_goal(None)
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'SetStoryLight')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'SetStoryLight')
 
 	def on_event(self, evt):
 		if evt.message == 'SetStoryLight':
@@ -52,14 +52,14 @@ class StoryLight(bxt.types.BX_GameObject, bge.types.KX_LightObject):
 
 	def set_goal(self, goal):
 		if goal is not None:
-			bxt.utils.set_default_prop(goal, 'energy', 1.0)
-			bxt.utils.set_default_prop(goal, 'spotsize', 45.0)
-			bxt.utils.set_default_prop(goal, 'spotblend', 1.0)
-			bxt.utils.set_default_prop(goal, 'distance', 50.0)
+			bat.utils.set_default_prop(goal, 'energy', 1.0)
+			bat.utils.set_default_prop(goal, 'spotsize', 45.0)
+			bat.utils.set_default_prop(goal, 'spotblend', 1.0)
+			bat.utils.set_default_prop(goal, 'distance', 50.0)
 		self.goal = goal
 		self.add_state(StoryLight.S_UPDATING)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		if self.goal is None:
 			target_energy = 0.0
@@ -74,16 +74,16 @@ class StoryLight(bxt.types.BX_GameObject, bge.types.KX_LightObject):
 			target_distance = self.goal['distance']
 			goal = self.goal
 
-		self.energy = bxt.bmath.lerp(self.energy, target_energy,
+		self.energy = bat.bmath.lerp(self.energy, target_energy,
 				StoryLight.SPEEDFAC)
-		self.spotsize = bxt.bmath.lerp(self.spotsize, target_size,
+		self.spotsize = bat.bmath.lerp(self.spotsize, target_size,
 				StoryLight.SPEEDFAC)
-		self.spotblend = bxt.bmath.lerp(self.spotblend, target_blend,
+		self.spotblend = bat.bmath.lerp(self.spotblend, target_blend,
 				StoryLight.SPEEDFAC)
-		self.distance = bxt.bmath.lerp(self.distance, target_distance,
+		self.distance = bat.bmath.lerp(self.distance, target_distance,
 				StoryLight.SPEEDFAC)
-		bxt.bmath.slow_copy_rot(self, goal, StoryLight.SPEEDFAC)
-		bxt.bmath.slow_copy_loc(self, goal, StoryLight.SPEEDFAC)
+		bat.bmath.slow_copy_rot(self, goal, StoryLight.SPEEDFAC)
+		bat.bmath.slow_copy_loc(self, goal, StoryLight.SPEEDFAC)
 
 		# Check tolerance, and stop updating if close enough.
 		if abs(self.energy - target_energy) > StoryLight.TOLERANCE:
@@ -95,8 +95,8 @@ class StoryLight(bxt.types.BX_GameObject, bge.types.KX_LightObject):
 		if abs(self.distance - target_distance) > StoryLight.TOLERANCE:
 			return
 
-		vec1 = self.getAxisVect(bxt.bmath.ZAXIS)
-		vec2 = goal.getAxisVect(bxt.bmath.ZAXIS)
+		vec1 = self.getAxisVect(bat.bmath.ZAXIS)
+		vec2 = goal.getAxisVect(bat.bmath.ZAXIS)
 		orn_diff = 1.0 - vec1.dot(vec2)
 		if orn_diff > StoryLight.TOLERANCE:
 			return

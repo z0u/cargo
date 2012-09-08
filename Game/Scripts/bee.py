@@ -18,16 +18,16 @@
 import bge
 import mathutils
 
-import bxt.bmath
-import bxt.types
-import bxt.utils
+import bat.bmath
+import bat.bats
+import bat.utils
 
 def spawn(c):
 	sce = bge.logic.getCurrentScene()
 	bee = factory(sce)
-	bxt.bmath.copy_transform(c.owner, bee)
+	bat.bmath.copy_transform(c.owner, bee)
 	path = sce.objects[c.owner['path']]
-	bee.path = bxt.types.mutate(path)
+	bee.path = bat.bats.mutate(path)
 
 def factory(scene):
 	if not "WorkerBee" in scene.objectsInactive:
@@ -36,9 +36,9 @@ def factory(scene):
 		except ValueError as e:
 			print('Warning: could not load bee:', e)
 
-	return bxt.types.add_and_mutate_object(scene, "WorkerBee")
+	return bat.bats.add_and_mutate_object(scene, "WorkerBee")
 
-class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'WB_'
 
 	LIFT_FAC = 1.0
@@ -46,15 +46,15 @@ class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	DAMP = 0.05
 	RELAX_DIST = 10.0
 
-	path = bxt.types.weakprop('path')
+	path = bat.bats.weakprop('path')
 
 	def __init__(self, old_owner):
 		self.path = None
 		self.hint = 0
 		self.set_lift(mathutils.Vector((0.0, 0.0, -9.8)))
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'GravityChanged')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'GravityChanged':
@@ -66,7 +66,7 @@ class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		lift = (lift / bge.logic.getLogicTicRate()) * WorkerBee.LIFT_FAC
 		self.lift = lift
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def fly(self):
 		if self.path is None:
 			print("Warning: bee has no path.")
@@ -83,12 +83,12 @@ class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		cpos = self.worldPosition
 		accel = (next_point - cpos).normalized() * WorkerBee.ACCEL
 		accel += self.lift
-		pos, vel = bxt.bmath.integrate(cpos, self.worldLinearVelocity,
+		pos, vel = bat.bmath.integrate(cpos, self.worldLinearVelocity,
 			accel, WorkerBee.DAMP)
 		self.worldPosition = pos
 		self.worldLinearVelocity = vel
 
-	@bxt.utils.controller_cls
+	@bat.utils.controller_cls
 	def get_nearby_snail(self, c):
 		s = c.sensors[0]
 		if not s.positive:
@@ -106,7 +106,7 @@ class WorkerBee(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				self.hint)
 		return next_point
 
-class DirectedPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class DirectedPath(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	DEFAULT_STRIDE = 2
 
@@ -115,7 +115,7 @@ class DirectedPath(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def init_path(self):
 		mat = self.worldTransform
-		self.path = [mat * v.XYZ for v in bxt.utils.iterate_verts(self)]
+		self.path = [mat * v.XYZ for v in bat.utils.iterate_verts(self)]
 
 	def get_next(self, pos, relax_dist, hint=0):
 		try:

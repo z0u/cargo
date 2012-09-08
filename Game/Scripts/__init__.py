@@ -14,28 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#import logging
-#import logging.config as logconf
-
-#import bge
-
-#logconf.fileConfig(bge.logic.expandPath('//logging.conf'))
-
-
-#import logging
-#import logging.config
-
-#import bge
-
-#logging.config.fileConfig(bge.logic.expandPath('//logging.conf'))
-
-# For debugging things like
-#    File "/usr/lib/python3.2/logging/__init__.py", line 317, in getMessage
-#        msg = msg % self.args
-#    TypeError: not all arguments converted during string formatting
-#def handleError(self, record):
-#	raise
-#logging.Handler.handleError = handleError
 
 import Scripts.camera
 import Scripts.director

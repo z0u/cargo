@@ -17,8 +17,8 @@
 
 import bge
 
-import bxt.types
-import bxt.bmath
+import bat.bats
+import bat.bmath
 
 import Scripts.shells
 import Scripts.inventory
@@ -32,9 +32,9 @@ def factory():
 		except ValueError as e:
 			print('Warning: could not load bird:', e)
 
-	return bxt.types.add_and_mutate_object(scene, "Bird", "Bird")
+	return bat.bats.add_and_mutate_object(scene, "Bird", "Bird")
 
-class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class Bird(Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
 	L_ANIM = 1
 
@@ -42,14 +42,14 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		Chapter.__init__(self, old_owner)
 		# if at bottle...
 		if True:
-			bxt.types.WeakEvent("StartLoading", self).send()
+			bat.bats.WeakEvent("StartLoading", self).send()
 			self.pick_up_shell()
 			self.create_bottle_state_graph()
 
 	def create_bottle_state_graph(self):
 		def steal_shell():
 			Scripts.inventory.Shells().discard("Shell")
-			bxt.types.Event('ShellChanged', 'new').send()
+			bat.bats.Event('ShellChanged', 'new').send()
 
 		s = self.rootState.createTransition("Init")
 		s.addAction(ActSuspendInput())
@@ -200,8 +200,8 @@ class Bird(Chapter, bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 				break
 
 		# Similar to Snail._stow_shell
-		bxt.bmath.set_rel_orn(ob, attach_point, referential)
-		bxt.bmath.set_rel_pos(ob, attach_point, referential)
+		bat.bmath.set_rel_orn(ob, attach_point, referential)
+		bat.bmath.set_rel_pos(ob, attach_point, referential)
 		ob.setParent(attach_point)
 
 	def pick_up_shell(self):

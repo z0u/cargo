@@ -17,12 +17,12 @@
 
 import bge
 
-import bxt.types
-import bxt.utils
+import bat.bats
+import bat.utils
 
 import Scripts.store
 
-class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Tree(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):
 		if not Scripts.store.get('/game/level/treeDoorBroken', False):
 			self.create_door()
@@ -34,7 +34,7 @@ class Tree(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		door.worldPosition = hook.worldPosition
 		door.worldOrientation = hook.worldOrientation
 
-class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class TreeDoor(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'TD_'
 
 	def __init__(self, oldOnwer):
@@ -52,14 +52,14 @@ class TreeDoor(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.endObject()
 		Scripts.store.put('/game/level/treeDoorBroken', True)
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def collide(self, c):
 		for shell in c.sensors[0].hitObjectList:
 			if shell.name != 'Wheel':
 				continue
 			if not shell.can_destroy_stuff():
 				continue
-			evt = bxt.types.Event('ForceExitShell', True)
-			bxt.types.EventBus().notify(evt)
+			evt = bat.bats.Event('ForceExitShell', True)
+			bat.bats.EventBus().notify(evt)
 			self.destruct()

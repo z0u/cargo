@@ -18,7 +18,7 @@
 import bge
 import mathutils
 
-import bxt.sound
+import bat.sound
 
 import Scripts.shaders
 from Scripts.story import *
@@ -27,7 +27,7 @@ class LevelOut(GameLevel):
 	def __init__(self, oldOwner):
 		GameLevel.__init__(self, oldOwner)
 
-		bxt.sound.Jukebox().play_permutation(self, 0,
+		bat.sound.Jukebox().play_permutation(self, 0,
 				"//Sound/cc-by/PondAmbience1.ogg",
 				"//Sound/cc-by/PondAmbience2.ogg",
 				"//Sound/cc-by/PondAmbience3.ogg",

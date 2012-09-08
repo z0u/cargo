@@ -20,10 +20,10 @@ import time
 import bge
 import mathutils
 
-import bxt.types
-import bxt.utils
-import bxt.bmath
-import bxt.sound
+import bat.bats
+import bat.utils
+import bat.bmath
+import bat.sound
 
 import Scripts.camera
 import Scripts.director
@@ -31,7 +31,7 @@ import Scripts.store
 import Scripts.inventory
 
 DEBUG = False
-log = bxt.utils.get_logger(DEBUG)
+log = bat.utils.get_logger(DEBUG)
 
 GRAVITY = 75.0
 
@@ -168,9 +168,9 @@ class CondEvent(Condition):
 		# state machine dies, so will this condition, and it will be removed
 		# from the EventBus.
 		if enabled:
-			bxt.types.EventBus().add_listener(self)
+			bat.bats.EventBus().add_listener(self)
 		else:
-			bxt.types.EventBus().remove_listener(self)
+			bat.bats.EventBus().remove_listener(self)
 			self.triggered = False
 
 	def on_event(self, evt):
@@ -195,9 +195,9 @@ class CondEventEq(Condition):
 
 	def enable(self, enabled):
 		if enabled:
-			bxt.types.EventBus().add_listener(self)
+			bat.bats.EventBus().add_listener(self)
 		else:
-			bxt.types.EventBus().remove_listener(self)
+			bat.bats.EventBus().remove_listener(self)
 			self.triggered = False
 
 	def on_event(self, evt):
@@ -224,9 +224,9 @@ class CondEventNe(Condition):
 
 	def enable(self, enabled):
 		if enabled:
-			bxt.types.EventBus().add_listener(self)
+			bat.bats.EventBus().add_listener(self)
 		else:
-			bxt.types.EventBus().remove_listener(self)
+			bat.bats.EventBus().remove_listener(self)
 			self.triggered = False
 
 	def on_event(self, evt):
@@ -314,12 +314,12 @@ class ActStoreSet(BaseAct):
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
 	def execute(self, c):
-		bxt.types.Event('GameModeChanged', 'Cutscene').send()
+		bat.bats.Event('GameModeChanged', 'Cutscene').send()
 
 class ActResumeInput(BaseAct):
 	'''Let the player move around.'''
 	def execute(self, c):
-		bxt.types.Event('GameModeChanged', 'Playing').send()
+		bat.bats.Event('GameModeChanged', 'Playing').send()
 
 class ActActuate(BaseAct):
 	'''Activate an actuator.'''
@@ -409,9 +409,9 @@ class ActConstraintFade(BaseAct):
 		ob = self.find_target(c, self.ob, self.target_descendant)
 		con = ob.constraints[self.name]
 		cfra = ob.getActionFrame(self.layer)
-		k = bxt.bmath.unlerp(self.frame1, self.frame2, cfra)
-		power = bxt.bmath.clamp(0.0, 1.0,
-				bxt.bmath.lerp(self.fac1, self.fac2, k))
+		k = bat.bmath.unlerp(self.frame1, self.frame2, cfra)
+		power = bat.bmath.clamp(0.0, 1.0,
+				bat.bmath.lerp(self.fac1, self.fac2, k))
 		con.enforce = power
 
 	def __str__(self):
@@ -420,11 +420,11 @@ class ActConstraintFade(BaseAct):
 class ActSound(BaseAct):
 	'''Plays a short sound.'''
 
-	emitter = bxt.types.weakprop("emitter")
+	emitter = bat.bats.weakprop("emitter")
 
 	def __init__(self, filename, vol=1, pitchmin=1, pitchmax=1, emitter=None,
 			maxdist=50.0):
-		self.sample = bxt.sound.Sample(filename)
+		self.sample = bat.sound.Sample(filename)
 		self.sample.volume = vol
 		self.sample.pitchmin = pitchmin
 		self.sample.pitchmax = pitchmax
@@ -432,7 +432,7 @@ class ActSound(BaseAct):
 		if emitter is not None:
 			# Just a guess, can change this if needed
 			mindist = maxdist / 5.0
-			self.sample.add_effect(bxt.sound.Localise(
+			self.sample.add_effect(bat.sound.Localise(
 					emitter, distmin=mindist,distmax=maxdist))
 
 	def execute(self, c):
@@ -465,7 +465,7 @@ class ActMusicPlay(BaseAct):
 		# Play the track. Use priority 1 for this kind of music, because it's
 		# important for the story.
 		ob = self.find_target(c, self.ob, self.target_descendant)
-		bxt.sound.Jukebox().play_files(ob, self.priority, *self.filepaths,
+		bat.sound.Jukebox().play_files(ob, self.priority, *self.filepaths,
 				volume=self.volume)
 
 	def __str__(self):
@@ -484,7 +484,7 @@ class ActMusicStop(BaseAct):
 
 	def execute(self, c):
 		ob = self.find_target(c, self.ob, self.target_descendant)
-		bxt.sound.Jukebox().stop(ob)
+		bat.sound.Jukebox().stop(ob)
 
 	def __str__(self):
 		return "ActMusicStop"
@@ -492,7 +492,7 @@ class ActMusicStop(BaseAct):
 class ActShowMarker(BaseAct):
 	'''Show a marker on the screen that points to an object.'''
 
-	target = bxt.types.weakprop("target")
+	target = bat.bats.weakprop("target")
 
 	def __init__(self, target):
 		'''
@@ -508,7 +508,7 @@ class ActShowMarker(BaseAct):
 			self.target = target
 
 	def execute(self, c):
-		bxt.types.WeakEvent('ShowMarker', self.target).send()
+		bat.bats.WeakEvent('ShowMarker', self.target).send()
 
 	def __str__(self):
 		if self.target is not None:
@@ -613,7 +613,7 @@ class ActEvent(BaseAct):
 		self.event = event
 
 	def execute(self, c):
-		bxt.types.EventBus().notify(self.event)
+		bat.bats.EventBus().notify(self.event)
 
 	def __str__(self):
 		return "ActEvent: %s" % self.event.message
@@ -656,12 +656,12 @@ class State:
 
 	def addEvent(self, message, body=None):
 		'''Convenience method to add an ActEvent action.'''
-		evt = bxt.types.Event(message, body)
+		evt = bat.bats.Event(message, body)
 		self.actions.append(ActEvent(evt))
 
 	def addWeakEvent(self, message, body):
 		'''Convenience method to add an ActEvent action.'''
-		evt = bxt.types.WeakEvent(message, body)
+		evt = bat.bats.WeakEvent(message, body)
 		self.actions.append(ActEvent(evt))
 
 	def addTransition(self, state):
@@ -752,7 +752,7 @@ class State:
 	def __str__(self):
 		return "== State {} ==".format(self.name)
 
-class Chapter(bxt.types.BX_GameObject):
+class Chapter(bat.bats.BX_GameObject):
 	'''Embodies a story in the scene. Subclass this to define the story
 	(add transitions to self.rootState). Then call 'progress' on each frame to
 	allow the steps to be executed.'''
@@ -766,8 +766,8 @@ class Chapter(bxt.types.BX_GameObject):
 		self.rootState = self.zeroState.createTransition("Root")
 		self.currentState = self.zeroState
 
-	@bxt.types.expose
-	@bxt.utils.controller_cls
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def progress(self, c):
 		if self.currentState != None:
 			nextState = self.currentState.progress(c)
@@ -778,7 +778,7 @@ class Chapter(bxt.types.BX_GameObject):
 				log(self.currentState)
 				self.currentState.activate(c)
 
-class Level(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Level(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''Embodies a level. By default, this just sets some common settings when
 	initialised. This should not be included in cut scenes etc; just in scenes
 	where the player can move around.'''
@@ -787,11 +787,11 @@ class Level(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		# Adjust gravity to be appropriate for the size of the scene..
 		g = mathutils.Vector((0.0, 0.0, 0 - GRAVITY))
 		bge.logic.setGravity(g)
-		evt = bxt.types.Event('GravityChanged', g)
-		bxt.types.EventBus().notify(evt)
+		evt = bat.bats.Event('GravityChanged', g)
+		bat.bats.EventBus().notify(evt)
 
-		evt = bxt.types.Event('GameModeChanged', 'Playing')
-		bxt.types.EventBus().notify(evt)
+		evt = bat.bats.Event('GameModeChanged', 'Playing')
+		bat.bats.EventBus().notify(evt)
 
 class GameLevel(Level):
 	'''A level that is part of the main game. Handles things such as spawn
@@ -804,7 +804,7 @@ class GameLevel(Level):
 		self.spawn()
 		self.set_map()
 
-		bxt.types.EventBus().add_listener(self)
+		bat.bats.EventBus().add_listener(self)
 
 	def spawn(self):
 		scene = bge.logic.getCurrentScene()
@@ -814,8 +814,8 @@ class GameLevel(Level):
 			print("Error: spawn point %s not found." % spawn_point)
 			spawn_point = self['defaultSpawnPoint']
 
-		bxt.types.add_and_mutate_object(scene, 'Snail', self)
-		bxt.types.Event('TeleportSnail', spawn_point).send()
+		bat.bats.add_and_mutate_object(scene, 'Snail', self)
+		bat.bats.Event('TeleportSnail', spawn_point).send()
 
 	def set_map(self):
 		if 'Map' not in self:
@@ -848,7 +848,7 @@ class GameLevel(Level):
 
 		scale = mathutils.Vector((scale_x, scale_y))
 		offset = mathutils.Vector((off_x, off_y))
-		bxt.types.Event('SetMap', (map_file, scale, offset, zoom)).send()
+		bat.bats.Event('SetMap', (map_file, scale, offset, zoom)).send()
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":
@@ -863,11 +863,11 @@ def load_level(caller, level, spawnPoint):
 	Scripts.store.put('/game/level/spawnPoint', spawnPoint, level=level)
 	Scripts.store.save()
 
-	callback = bxt.types.Event('LoadLevel')
+	callback = bat.bats.Event('LoadLevel')
 
 	# Start showing the loading screen. When it has finished, the LoadLevel
 	# event defined above will be sent, and received by GameLevel.
-	bxt.types.Event('ShowLoadingScreen', (True, callback)).send()
+	bat.bats.Event('ShowLoadingScreen', (True, callback)).send()
 
 def activate_portal(c):
 	'''Loads the next level, based on the properties of the owner.

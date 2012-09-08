@@ -20,29 +20,29 @@ import time
 import bge
 import mathutils
 
-import bxt.types
-import bxt.render
+import bat.bats
+import bat.render
 
 import Scripts.inventory
 import Scripts.impulse
 import Scripts.director
 
 
-class HUDState(metaclass=bxt.types.Singleton):
+class HUDState(metaclass=bat.bats.Singleton):
 	def __init__(self):
-		self.loaders = bxt.types.SafeSet()
-		bxt.types.EventBus().add_listener(self)
+		self.loaders = bat.bats.SafeSet()
+		bat.bats.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == "StartLoading":
 			self.loaders.add(evt.body)
-			bxt.types.Event("ShowLoadingScreen", (True, None)).send()
+			bat.bats.Event("ShowLoadingScreen", (True, None)).send()
 		elif evt.message == "FinishLoading":
 			self.loaders.discard(evt.body)
 			if len(self.loaders) == 0:
 				# Send event on next frame, to ensure shaders have been
 				# compiled.
-				bxt.types.Event("ShowLoadingScreen", (False, None)).send(.001)
+				bat.bats.Event("ShowLoadingScreen", (False, None)).send(.001)
 
 
 def test_input(c):
@@ -52,10 +52,10 @@ def test_input(c):
 
 	# The owner has another controller that handles input. So we just send a
 	# message so that the user input can do something useful!
-	bxt.types.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me.",
+	bat.bats.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me.",
 			("Of course!", "I'm too sleepy..."))).send(5)
 
-class DialogueBox(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class DialogueBox(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'DB_'
 
 	# Animation layers
@@ -77,12 +77,12 @@ class DialogueBox(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX
 	WAIT_TIME = 0.6 / 24.0
 
 	def __init__(self, old_owner):
-		self.canvas = bxt.types.mutate(self.childrenRecursive['Dlg_TextCanvas'])
+		self.canvas = bat.bats.mutate(self.childrenRecursive['Dlg_TextCanvas'])
 		self.armature = self.childrenRecursive['Dlg_FrameArmature']
 		self.frame = self.childrenRecursive['Dlg_Frame']
 
 		self.response = self.children['ResponseBox']
-		self.response_canvas = bxt.types.mutate(self.childrenRecursive['Rsp_TextCanvas'])
+		self.response_canvas = bat.bats.mutate(self.childrenRecursive['Rsp_TextCanvas'])
 		self.response_armature = self.childrenRecursive['Rsp_FrameArmature']
 		self.response_frame = self.childrenRecursive['Rsp_Frame']
 		self.response_cursor = self.childrenRecursive['Rsp_OptionCursor']
@@ -95,8 +95,8 @@ class DialogueBox(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX
 		self.options_visible = False
 		self.set_state(DialogueBox.S_IDLE)
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'ShowDialogue')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'ShowDialogue')
 
 	def on_event(self, evt):
 		if evt.message == 'ShowDialogue':
@@ -197,7 +197,7 @@ class DialogueBox(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX
 			return True
 
 		if state.activated:
-			bxt.types.Event("DialogueDismissed", self.selected_option).send()
+			bat.bats.Event("DialogueDismissed", self.selected_option).send()
 			self.hide()
 		return True
 
@@ -224,13 +224,13 @@ class DialogueBox(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX
 		else:
 			self.set_selected_option(0)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def show_update(self):
 		if self.options_time < time.time():
 			self.show_options()
 			self.set_state(DialogueBox.S_IDLE)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def hide_update(self):
 		if self.armature.getActionFrame() < 2:
 			self.response.setVisible(False, True)
@@ -238,7 +238,7 @@ class DialogueBox(Scripts.impulse.Handler, bxt.types.BX_GameObject, bge.types.KX
 			self.set_state(DialogueBox.S_IDLE)
 
 
-class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Marker(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'Ma_'
 
 	S_INIT = 1
@@ -247,18 +247,18 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	L_DISPLAY = 0
 
-	target = bxt.types.weakprop("target")
+	target = bat.bats.weakprop("target")
 
 	def __init__(self, old_owner):
 		self.hide()
 
 #		sce = bge.logic.getCurrentScene()
 #		target = sce.objects['MarkerTest']
-#		bxt.types.WeakEvent('ShowMarker', target).send(5)
-#		bxt.types.WeakEvent('ShowMarker', None).send(200)
+#		bat.bats.WeakEvent('ShowMarker', target).send(5)
+#		bat.bats.WeakEvent('ShowMarker', None).send(200)
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'ShowMarker')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'ShowMarker')
 
 	def on_event(self, evt):
 		if evt.message == 'ShowMarker':
@@ -276,14 +276,14 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.children['MarkerMesh'].visible = False
 		self.set_state(Marker.S_INACTIVE)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		if self.target is None:
 			self.set_state(Marker.S_INACTIVE)
 			self.children['MarkerMesh'].visible = False
 			return
 
-		t_sce = bxt.utils.get_scene(self.target)
+		t_sce = bat.utils.get_scene(self.target)
 		t_cam = t_sce.active_camera
 		viewpos = mathutils.Vector(t_cam.getScreenPosition(self.target))
 		#print("Viewpos", viewpos)
@@ -295,7 +295,7 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			pos_from = cam.worldPosition
 			pos_through = pos_from - vec
 		else:
-			vec = cam.getAxisVect(-bxt.bmath.ZAXIS)
+			vec = cam.getAxisVect(-bat.bmath.ZAXIS)
 			pos_from = viewpos.copy()
 			pos_from.resize_3d()
 			pos_from.x -= 0.5
@@ -304,7 +304,7 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 					float(bge.render.getWindowHeight()))
 			pos_from.y /= aspect
 			pos_from *= cam.ortho_scale
-			pos_from = bxt.bmath.to_world(cam, pos_from)
+			pos_from = bat.bmath.to_world(cam, pos_from)
 			pos_through = pos_from + vec
 		#print("Ray", pos_from, pos_through)
 		hitob, hitloc, _ = cam.rayCast(pos_through, pos_from, 100.0,
@@ -318,7 +318,7 @@ class Marker(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.children['MarkerMesh'].visible = False
 
 
-class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
+class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = 'LS_'
 
 	L_DISPLAY = 0
@@ -331,8 +331,8 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 		# loading screen to hide itself, unless another object has already sent
 		# a StartLoading message - in which case, we wait for that object to
 		# finish loading too (see the HUDState class).
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.Event("FinishLoading").send()
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.Event("FinishLoading").send()
 
 	def on_event(self, evt):
 		if evt.message == 'ShowLoadingScreen':
@@ -355,7 +355,7 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 					cbEvent.send(delay=2)
 			blackout.visible = True
 			self.playAction('LS_Hide_Arm', 16, 1, layer=LoadingScreen.L_DISPLAY)
-			bxt.anim.add_trigger_lt(self, LoadingScreen.L_DISPLAY, 2, cb)
+			bat.anim.add_trigger_lt(self, LoadingScreen.L_DISPLAY, 2, cb)
 			self.currently_shown = True
 
 		elif not visible and self.currently_shown:
@@ -369,17 +369,17 @@ class LoadingScreen(bxt.types.BX_GameObject, bge.types.BL_ArmatureObject):
 					cbEvent.send(delay=2)
 			icon.visible = False
 			self.playAction('LS_Hide_Arm', 1, 16, layer=LoadingScreen.L_DISPLAY)
-			bxt.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)
+			bat.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)
 			self.currently_shown = False
 
 
-class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Filter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDE = 1
 	S_SHOW = 2
 
 	def __init__(self, owner):
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'ShowFilter')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'ShowFilter')
 
 	def on_event(self, evt):
 		if evt.message == 'ShowFilter':
@@ -389,18 +389,18 @@ class Filter(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		if colourString == "" or colourString == None:
 			self.visible = False
 		else:
-			colour = bxt.render.parse_colour(colourString)
+			colour = bat.render.parse_colour(colourString)
 			self.color = colour
 			self.visible = True
 
 
-class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Indicator(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		self.fraction = 0.0
 		self.targetFraction = 0.0
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, self['event'])
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, self['event'])
 
 	def on_event(self, evt):
 		if evt.message == self['event']:
@@ -411,31 +411,31 @@ class Indicator(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 				print('Warning: indicator %s is not attached to a gauge.' %
 						self.name)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
-		self.fraction = bxt.bmath.lerp(self.fraction, self.targetFraction,
+		self.fraction = bat.bmath.lerp(self.fraction, self.targetFraction,
 			self['Speed'])
 		frame = self.fraction * 100.0
 		frame = min(max(frame, 0), 100)
 		self['Frame'] = frame
 
-#bxt.types.Event("HealthSet", 1.0).send()
-#bxt.types.Event("OxygenSet", 1.0).send()
-#bxt.types.Event("TimeSet", 0.5).send()
-#bxt.types.Event("TimeSet", 0.0).send(50)
-#bxt.types.Event("TimeSet", 0.0).send(100)
+#bat.bats.Event("HealthSet", 1.0).send()
+#bat.bats.Event("OxygenSet", 1.0).send()
+#bat.bats.Event("TimeSet", 0.5).send()
+#bat.bats.Event("TimeSet", 0.0).send(50)
+#bat.bats.Event("TimeSet", 0.0).send(100)
 
 __mode = 'Playing'
-@bxt.utils.all_sensors_positive
+@bat.utils.all_sensors_positive
 def test_game_mode():
 	global __mode
 	if __mode == 'Playing':
 		__mode = 'Cutscene'
 	else:
 		__mode = 'Playing'
-	bxt.types.Event('GameModeChanged', __mode).send()
+	bat.bats.Event('GameModeChanged', __mode).send()
 
-class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Gauge(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	S_INIT = 1
 	S_VISIBLE = 2
 	S_HIDING  = 3
@@ -448,8 +448,8 @@ class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		for child in self.children:
 			Indicator(child)
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'GameModeChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'GameModeChanged':
@@ -480,7 +480,7 @@ class Gauge(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.set_state(self.S_HIDING)
 
 
-class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'Map_'
 
 	S_INIT = 1
@@ -496,9 +496,9 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.offset = mathutils.Vector((0.0, 0.0))
 		self.zoom = 2.0
 
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
-		bxt.types.EventBus().replay_last(self, 'SetMap')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'GameModeChanged')
+		bat.bats.EventBus().replay_last(self, 'SetMap')
 
 	def on_event(self, evt):
 		if evt.message == 'GameModeChanged':
@@ -527,7 +527,7 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		self.offset = offset
 		self.zoom = zoom
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update(self):
 		player = Scripts.director.Director().mainCharacter
 		if player is None:
@@ -541,19 +541,19 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 	def init_uv(self):
 		canvas = self.children['MapPage']
-		self.orig_uv = [v.UV.copy() for v in bxt.utils.iterate_verts(canvas)]
+		self.orig_uv = [v.UV.copy() for v in bat.utils.iterate_verts(canvas)]
 
 	def centre_page(self, loc):
 		canvas = self.children['MapPage']
 		uvc = self.world_to_uv(loc.xy) * self.zoom
 		HALF = mathutils.Vector((0.5, 0.5))
-		for v, orig in zip(bxt.utils.iterate_verts(canvas), self.orig_uv):
+		for v, orig in zip(bat.utils.iterate_verts(canvas), self.orig_uv):
 			v.UV = (((orig + uvc) - HALF) / self.zoom) + HALF
 
 	def rotate_marker(self, orn):
 		marker = self.children['MapDirection']
 		marker.localOrientation = orn
-		marker.alignAxisToVect(bxt.bmath.ZAXIS)
+		marker.alignAxisToVect(bat.bmath.ZAXIS)
 
 	def orient_horizon(self, orn):
 		hball = self.childrenRecursive['HorizonBall']
@@ -574,7 +574,7 @@ class MapWidget(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.set_state(self.S_HIDING)
 
 
-class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''Displays the current shells in a scrolling view on the side of the
 	screen.'''
 
@@ -598,8 +598,8 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 
 		self.update_icons()
 		self.hide()
-		bxt.types.EventBus().add_listener(self)
-		bxt.types.EventBus().replay_last(self, 'GameModeChanged')
+		bat.bats.EventBus().add_listener(self)
+		bat.bats.EventBus().replay_last(self, 'GameModeChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'ShellChanged':
@@ -665,7 +665,7 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self.set_item(1, None)
 			self.set_item(2, None)
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def update_frame(self):
 		if self['targetFrame'] > self['frame'] + Inventory.FRAME_EPSILON:
 			self['frame'] += Inventory.FRAME_STEP
@@ -701,7 +701,7 @@ class Inventory(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		icon.visible = False
 
 
-class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
+class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''
 	A TextRenderer is used to render glyphs from a Font. The object nominated as
 	the owner is the canvas. The canvas can be any KX_GameObject: the glyphs
@@ -922,15 +922,15 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 			self, 0)
 		glyphInstance.setParent(self)
 		glyphInstance['StartVisible'] = self.visible
-		glyphInstance.color = bxt.render.parse_colour(self['colour'])
+		glyphInstance.color = bat.render.parse_colour(self['colour'])
 		glyphInstance.localPosition = [pos[0], pos[1], 0.0]
 
 		if self['Instant']:
-			bxt.utils.set_state(glyphInstance, 4)
+			bat.utils.set_state(glyphInstance, 4)
 		else:
 			self.delay = (font['typingSpeed'] * width *
 				glyph['DelayMultiplier'])
-			bxt.utils.set_state(glyphInstance, 3)
+			bat.utils.set_state(glyphInstance, 3)
 
 	def set_text(self, text):
 		self['Content'] = text
@@ -938,7 +938,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 	def get_text(self):
 		return self['Content']
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def render_next_char(self):
 		'''
 		Lay out a glyph. Each glyph accumulates a delay based on its width. This
@@ -953,7 +953,7 @@ class Text(bxt.types.BX_GameObject, bge.types.KX_GameObject):
 		finally:
 			self.currentChar = self.currentChar + 1
 
-	@bxt.types.expose
+	@bat.bats.expose
 	def render(self):
 		'''
 		Render the content onto the canvas. This is idempotent if the content

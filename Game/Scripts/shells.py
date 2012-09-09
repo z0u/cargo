@@ -163,9 +163,9 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 		Scripts.director.Actor._save_location(self, pos, orn)
 		self.snail._save_location(pos, orn)
 
-	def respawn(self, reason = None):
+	def respawn(self):
 		if self.is_occupied:
-			self.snail.respawn(reason)
+			self.snail.respawn()
 		elif self.is_carried:
 			# Do nothing: shell is being carried, but snail is still in control
 			# (so presumably the snail will be told to respawn too).

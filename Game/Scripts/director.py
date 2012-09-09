@@ -88,14 +88,11 @@ class Actor(bat.bats.BX_GameObject):
 		self.worldPosition = pos
 		self.worldOrientation = rot
 
-	def respawn(self, reason = None):
+	def respawn(self):
 		self.worldPosition = self.safe_positions[-1]
 		self.worldOrientation = self.safe_orientations[-1]
 		self.setLinearVelocity(bat.bmath.MINVECTOR)
 		self.setAngularVelocity(bat.bmath.MINVECTOR)
-		if self == Director().mainCharacter and reason != None:
-			evt = bat.event.Event('ShowDialogue', reason)
-			bat.event.EventBus().notify(evt)
 
 	def drown(self):
 		'''Called when the Actor is fully submerged in water, and its Oxigen
@@ -104,7 +101,7 @@ class Actor(bat.bats.BX_GameObject):
 		if self.parent != None:
 			return False
 
-		self.respawn("You drowned! Try again.")
+		self.respawn()
 		self.on_drown()
 
 	def on_drown(self):
@@ -242,6 +239,8 @@ class VulnerableActor(Actor):
 				self.shock()
 			self.damage(ob['Damage'])
 			self.attackerIds[aid] = VulnerableActor.DAMAGE_FREQUENCY
+			if 'Death' in ob:
+				self.respawn()
 
 		# Count down to next attack.
 		for aid in list(self.attackerIds.keys()):
@@ -314,7 +313,7 @@ class Director(Scripts.impulse.Handler, metaclass=bat.bats.Singleton):
 					print("Vel:", actor.worldLinearVelocity)
 					print("PrevVel:", actor.lastLinV)
 				else:
-					actor.respawn("Ouch! You got squashed.")
+					actor.respawn()
 			actor.record_velocity()
 
 	@bat.bats.expose

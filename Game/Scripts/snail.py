@@ -697,10 +697,10 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		if len(self.DEBUGpositions) > 20:
 			self.DEBUGpositions.pop(0)
 
-	def respawn(self, reason):
+	def respawn(self):
 		if self.has_state(Snail.S_INSHELL):
 			self.exit_shell(False)
-		super(Snail, self).respawn(reason)
+		super(Snail, self).respawn()
 
 		print("Snail respawning. Previous positions were:")
 		for pos in self.DEBUGpositions:

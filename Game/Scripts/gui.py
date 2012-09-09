@@ -21,6 +21,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.containers
 import bat.event
 import bat.sound
 import bat.utils
@@ -35,8 +36,8 @@ class UiController(Scripts.impulse.Handler, bat.bats.BX_GameObject,
 
 	_prefix = 'UC_'
 
-	current = bat.bats.weakprop("current")
-	downCurrent = bat.bats.weakprop("downCurrent")
+	current = bat.containers.weakprop("current")
+	downCurrent = bat.containers.weakprop("downCurrent")
 
 	DIRECTION_TOLERANCE = 0.1
 	#SOUND_DELAY_TICS = 5

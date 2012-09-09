@@ -19,6 +19,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.containers
 import bat.utils
 
 DEBUG = False
@@ -36,7 +37,7 @@ class Input(metaclass=bat.bats.Singleton):
 	PRI = {'PLAYER': 0, 'STORY': 1, 'DIALOGUE': 2, 'MENU': 3}
 
 	def __init__(self):
-		self.handlers = bat.bats.SafePriorityStack()
+		self.handlers = bat.containers.SafePriorityStack()
 
 		# Acquire movement from a 2D directional pad.
 		self.dp_move = DPad2D("Movement", 'u', 'd', 'l', 'r')

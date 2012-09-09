@@ -20,6 +20,7 @@ import mathutils
 
 import bat.bmath
 import bat.bats
+import bat.containers
 import bat.event
 import bat.utils
 
@@ -47,7 +48,7 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	DAMP = 0.05
 	RELAX_DIST = 10.0
 
-	path = bat.bats.weakprop('path')
+	path = bat.containers.weakprop('path')
 
 	def __init__(self, old_owner):
 		self.path = None

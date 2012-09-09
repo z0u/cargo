@@ -17,6 +17,7 @@
 
 import bge
 
+import bat.containers
 import bat.event
 import bat.bmath
 import bat.utils
@@ -37,7 +38,7 @@ class StoryLight(bat.bats.BX_GameObject, bge.types.KX_LightObject):
 	TOLERANCE = 0.01
 	S_UPDATING = 2
 
-	goal = bat.bats.weakprop('goal')
+	goal = bat.containers.weakprop('goal')
 
 	def __init__(self, old_owner):
 		self.set_goal(None)

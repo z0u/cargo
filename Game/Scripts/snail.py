@@ -21,6 +21,7 @@ import mathutils
 import bge
 
 import bat.bats
+import bat.containers
 import bat.event
 import bat.bmath
 import bat.utils
@@ -78,7 +79,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 	MAX_INTOXICATION = 140
 	INTOXICATION_HIT = 60
 
-	shell = bat.bats.weakprop('shell')
+	shell = bat.containers.weakprop('shell')
 
 	def __init__(self, old_owner):
 		Scripts.director.VulnerableActor.__init__(self, maxHealth=7)
@@ -93,7 +94,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.rem_state(Snail.S_INIT)
 
 		self.shell = None
-		self.recentlyDroppedItems = bat.bats.SafeSet()
+		self.recentlyDroppedItems = bat.containers.SafeSet()
 		# Not weak props, but it should be OK because they will die in the same
 		# frame as the snail (this object).
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
@@ -434,7 +435,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		'''Picks up and equips nearby shells that don't already have an
 		owner. Note: this must run with priority over functions that drop
 		items!'''
-		collectables = bat.bats.SafeSet(
+		collectables = bat.containers.SafeSet(
 				controller.sensors['sPickup'].hitObjectList)
 		# Forget objects that are no longer in range.
 		self.recentlyDroppedItems.intersection_update(collectables)
@@ -1050,7 +1051,7 @@ class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	LOOK_FAC = 0.2
 
-	look_goal = bat.bats.weakprop('look_goal')
+	look_goal = bat.containers.weakprop('look_goal')
 
 	def __init__(self, old_owner):
 		con = self.constraints["LookTarget:Copy Location"]

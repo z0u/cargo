@@ -24,6 +24,7 @@ import aud
 import bat.utils
 import bat.bmath
 import bat.bats
+import bat.containers
 import bat.event
 import bat.render
 
@@ -50,8 +51,8 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 	BLUR_MULT_MAX = 10.0
 	BLUR_MULT_DAMP = 0.1
 
-	camera = bat.bats.weakprop('camera')
-	lastGoal = bat.bats.weakprop('lastGoal')
+	camera = bat.containers.weakprop('camera')
+	lastGoal = bat.containers.weakprop('lastGoal')
 
 	def __init__(self):
 		'''Create an uninitialised AutoCamera. Call SetCamera to bind it to a
@@ -61,9 +62,9 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		self.defaultLens = 22.0
 		self.blurMultiplier = 1.0
 		self.blurMultVelocity = 0.0
-		self.queue = bat.bats.SafePriorityStack()
-		self.focusQueue = bat.bats.SafePriorityStack()
-		self.observers = bat.bats.SafeSet()
+		self.queue = bat.containers.SafePriorityStack()
+		self.focusQueue = bat.containers.SafePriorityStack()
+		self.observers = bat.containers.SafeSet()
 		self.lastGoal = None
 		self.instantCut = False
 		self.errorReported = False
@@ -364,7 +365,7 @@ class MainGoalManager(metaclass=bat.bats.Singleton):
 	messages. The body of the message should be the name of the camera to
 	create (i.e. the name of the objects that embodies that camera).'''
 
-	currentCamera = bat.bats.weakprop('currentCamera')
+	currentCamera = bat.containers.weakprop('currentCamera')
 
 	def __init__(self):
 		self.cameraType = None
@@ -657,7 +658,7 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			if PathCamera.CameraNode.log.isEnabledFor(10):
 				self.marker.worldPosition = self.get_target()
 
-	target = bat.bats.weakprop('target')
+	target = bat.containers.weakprop('target')
 
 	def __init__(self, old_owner):
 		# A list of CameraNodes.

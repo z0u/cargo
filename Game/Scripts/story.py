@@ -21,6 +21,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.containers
 import bat.event
 import bat.utils
 import bat.bmath
@@ -421,7 +422,7 @@ class ActConstraintFade(BaseAct):
 class ActSound(BaseAct):
 	'''Plays a short sound.'''
 
-	emitter = bat.bats.weakprop("emitter")
+	emitter = bat.containers.weakprop("emitter")
 
 	def __init__(self, filename, vol=1, pitchmin=1, pitchmax=1, emitter=None,
 			maxdist=50.0):
@@ -493,7 +494,7 @@ class ActMusicStop(BaseAct):
 class ActShowMarker(BaseAct):
 	'''Show a marker on the screen that points to an object.'''
 
-	target = bat.bats.weakprop("target")
+	target = bat.containers.weakprop("target")
 
 	def __init__(self, target):
 		'''

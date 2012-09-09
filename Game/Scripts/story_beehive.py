@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.containers
 import bat.event
 import bat.sound
 import bat.anim
@@ -83,10 +84,10 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	PROJECTION = [0.0, 0.0, 20.0]
 
-	camTop = bat.bats.weakprop('camTop')
-	camBottom = bat.bats.weakprop('camBottom')
-	currentCamera = bat.bats.weakprop('currentCamera')
-	player = bat.bats.weakprop('player')
+	camTop = bat.containers.weakprop('camTop')
+	camBottom = bat.containers.weakprop('camBottom')
+	currentCamera = bat.containers.weakprop('currentCamera')
+	player = bat.containers.weakprop('player')
 
 	def __init__(self, old_owner):
 		scene = bge.logic.getCurrentScene()

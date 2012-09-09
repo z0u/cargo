@@ -19,6 +19,7 @@
 import bge.logic
 
 import bat.bats
+import bat.containers
 
 import Scripts.director
 
@@ -212,7 +213,7 @@ class LODBranch(LODNode):
 	elements.'''
 
 	# Don't really need a weakprop here, as these objects are carefully managed.
-	#objectInstance = bat.bats.weakprop('objectInstance')
+	#objectInstance = bat.containers.weakprop('objectInstance')
 
 	def __init__(self, obName, left, right, axis, medianValue):
 		'''
@@ -418,7 +419,7 @@ class LODLeaf(LODNode):
 
 		self.lastFrameVisible = False
 		# No fancy sets here; just be really careful!
-		#self.objectInstances = bat.bats.SafeSet()
+		#self.objectInstances = bat.containers.SafeSet()
 		self.objectInstances = set()
 
 		self.numFramesActive = -1

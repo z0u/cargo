@@ -15,12 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import weakref
-
 import bge
 import mathutils
 
 import bat.bats
+import bat.containers
 import bat.event
 import bat.utils
 
@@ -36,7 +35,7 @@ class Actor(bat.bats.BX_GameObject):
 	SAFE_QUEUE_LENGTH = 10
 	MIN_SAFE_DIST = 1.0
 
-	touchedObject = bat.bats.weakprop('touchedObject')
+	touchedObject = bat.containers.weakprop('touchedObject')
 
 	def __init__(self):
 		self._currentLinV = bat.bmath.MINVECTOR.copy()
@@ -277,11 +276,11 @@ class Director(Scripts.impulse.Handler, metaclass=bat.bats.Singleton):
 
 	SLOW_TICS_PER_FRAME = 10
 
-	mainCharacter = bat.bats.weakprop('mainCharacter')
+	mainCharacter = bat.containers.weakprop('mainCharacter')
 
 	def __init__(self):
 		self.mainCharacter = None
-		self.actors = bat.bats.SafeSet()
+		self.actors = bat.containers.SafeSet()
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'MainCharacterSet')
 		self.slowMotionCount = 0

@@ -18,9 +18,10 @@
 import unittest
 
 import bat.bats
+import bat.containers
 
 class PriorityStackTest(unittest.TestCase):
-	'''bat.bats.SafePriorityStack'''
+	'''bat.containers.SafePriorityStack'''
 
 	class Dummy:
 		def __init__(self):
@@ -30,7 +31,7 @@ class PriorityStackTest(unittest.TestCase):
 		self.foo = PriorityStackTest.Dummy()
 		self.bar = PriorityStackTest.Dummy()
 		self.baz = PriorityStackTest.Dummy()
-		self.queue = bat.bats.SafePriorityStack()
+		self.queue = bat.containers.SafePriorityStack()
 
 	def test_add(self):
 		self.queue.push(self.foo, 1)

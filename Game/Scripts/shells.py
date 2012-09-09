@@ -20,6 +20,7 @@ import mathutils
 
 import bat.utils
 import bat.bats
+import bat.containers
 import bat.event
 import bat.bmath
 import bat.sound
@@ -56,7 +57,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 	S_GRASPED  = 5 # Liked CARRIED, but not carried by a snail.
 	S_ALWAYS   = 16
 
-	snail = bat.bats.weakprop('snail')
+	snail = bat.containers.weakprop('snail')
 
 	def __init__(self, old_owner):
 		Scripts.director.Actor.__init__(self)

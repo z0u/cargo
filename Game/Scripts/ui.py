@@ -21,6 +21,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.containers
 import bat.event
 import bat.render
 
@@ -31,7 +32,7 @@ import Scripts.director
 
 class HUDState(metaclass=bat.bats.Singleton):
 	def __init__(self):
-		self.loaders = bat.bats.SafeSet()
+		self.loaders = bat.containers.SafeSet()
 		bat.event.EventBus().add_listener(self)
 
 	def on_event(self, evt):
@@ -248,7 +249,7 @@ class Marker(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	L_DISPLAY = 0
 
-	target = bat.bats.weakprop("target")
+	target = bat.containers.weakprop("target")
 
 	def __init__(self, old_owner):
 		self.hide()

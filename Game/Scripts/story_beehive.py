@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 import bge
 
 import bat.bats
@@ -26,6 +28,8 @@ import bat.utils
 
 from Scripts.story import *
 import Scripts.shaders
+
+log = logging.getLogger(__name__)
 
 class LevelBeehive(GameLevel):
 	def __init__(self, oldOwner):
@@ -41,6 +45,14 @@ def init_conveyor(c):
 	cpath = o.children['ConveyorBelt']
 	bat.anim.play_children_with_offset(cpath.children, 'ConveyorBelt_SegAction',
 		1, 401)
+
+	flower_box = o.childrenRecursive['FlowerBox']
+	flower_box.playAction('FlowerBoxAction', 1, 61,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+
+	roller_holder = o.childrenRecursive['RollerHolder.1']
+	roller_holder.playAction('RollerHolder.1Action', 1, 61,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 
 	peg1 = o.children['ConveyorPeg.1']
 	peg1.playAction('ConveryorPegAction', 1, 61,
@@ -64,6 +76,18 @@ def init_conveyor(c):
 	crusher2rot = crusher2loc.children[0]
 	crusher2rot.playAction('ConveyorCrusher_RotAction', 1, 61,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+
+def flower_head_init(c):
+	try:
+		evt = bat.event.EventBus().read_last('GravityChanged')
+	except KeyError:
+		log.warn("Gravity has not been set. Flower may fall at incorrect rate.")
+		return
+	act = c.actuators[0]
+	accel = evt.body.copy()
+	accel.negate()
+	accel *= 0.5
+	act.force = accel
 
 def init_lower_buckets(c):
 	o = c.owner

@@ -16,6 +16,7 @@
 #
 
 import bat.bats
+import bat.event
 import bat.utils
 import bat.bmath
 
@@ -36,7 +37,7 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		self.catapult_primed = False
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == 'ShellDropped':
@@ -61,9 +62,9 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	@bat.utils.controller_cls
 	def approach_web(self, c):
 		if c.sensors[0].positive:
-			bat.bats.Event('ApproachWeb').send()
+			bat.event.Event('ApproachWeb').send()
 		else:
-			bat.bats.Event('LeaveWeb').send()
+			bat.event.Event('LeaveWeb').send()
 
 	@bat.bats.expose
 	@bat.utils.controller_cls

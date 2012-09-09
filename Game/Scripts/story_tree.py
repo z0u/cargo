@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 import bat.utils
 
 import Scripts.store
@@ -60,6 +61,6 @@ class TreeDoor(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 				continue
 			if not shell.can_destroy_stuff():
 				continue
-			evt = bat.bats.Event('ForceExitShell', True)
-			bat.bats.EventBus().notify(evt)
+			evt = bat.event.Event('ForceExitShell', True)
+			bat.event.EventBus().notify(evt)
 			self.destruct()

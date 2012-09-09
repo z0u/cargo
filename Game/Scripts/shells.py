@@ -20,6 +20,7 @@ import mathutils
 
 import bat.utils
 import bat.bats
+import bat.event
 import bat.bmath
 import bat.sound
 
@@ -71,7 +72,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 		self.set_state(ShellBase.S_IDLE)
 		self.add_state(ShellBase.S_ALWAYS)
 
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == 'AnchorShell':
@@ -121,7 +122,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 		self.add_state(ShellBase.S_ALWAYS)
 
 		Scripts.impulse.Input().add_handler(self)
-		bat.bats.WeakEvent('MainCharacterSet', self).send()
+		bat.event.WeakEvent('MainCharacterSet', self).send()
 
 	def on_exited(self):
 		'''Called when a snail exits this shell (as control is transferred).'''
@@ -180,7 +181,7 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 
 	def on_oxygen_set(self):
 		if self.is_occupied:
-			bat.bats.Event('OxygenSet', self['Oxygen']).send()
+			bat.event.Event('OxygenSet', self['Oxygen']).send()
 
 	@property
 	def is_occupied(self):
@@ -223,7 +224,7 @@ class Shell(ShellBase):
 
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
-		bat.bats.Event('SetCameraType', 'PathCamera').send()
+		bat.event.Event('SetCameraType', 'PathCamera').send()
 
 	def on_exited(self):
 		ShellBase.on_exited(self)
@@ -307,7 +308,7 @@ class Wheel(ShellBase):
 		self.driving_sound.add_effect(bat.sound.Localise(self))
 		self.driving_sound.add_effect(bat.sound.PitchByAngV(self))
 
-		bat.bats.EventBus().replay_last(self, 'GravityChanged')
+		bat.event.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_event(self, evt):
 		ShellBase.on_event(self, evt)
@@ -328,15 +329,15 @@ class Wheel(ShellBase):
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		self._reset_speed()
-		bat.bats.Event('SetCameraType', 'PathCamera').send()
+		bat.event.Event('SetCameraType', 'PathCamera').send()
 		bat.sound.Sample('//Sound/CarStart.ogg').play()
 
 	def on_entered(self):
 		ShellBase.on_entered(self)
 
-		bat.bats.Event('SetCameraType', 'OrbitCamera').send()
+		bat.event.Event('SetCameraType', 'OrbitCamera').send()
 		alignment = WheelCameraAlignment()
-		bat.bats.Event('SetCameraAlignment', alignment).send()
+		bat.event.Event('SetCameraAlignment', alignment).send()
 		self.driving_sound.play()
 
 	def on_exited(self):
@@ -395,7 +396,7 @@ class Nut(ShellBase):
 
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
-		bat.bats.Event('SetCameraType', 'PathCamera').send()
+		bat.event.Event('SetCameraType', 'PathCamera').send()
 
 class BottleCap(ShellBase):
 	# States - be careful not to let conflict with ShellBase states.
@@ -437,7 +438,7 @@ class BottleCap(ShellBase):
 		self.occupier.visible = True
 		self.occupier.playAction('CapSnailEmerge', 1, 25, layer=BottleCap.L_EMERGE)
 		self.add_state(BottleCap.S_EMERGE)
-		bat.bats.Event('SetCameraType', 'PathCamera').send()
+		bat.event.Event('SetCameraType', 'PathCamera').send()
 
 	def on_exited(self):
 		ShellBase.on_exited(self)

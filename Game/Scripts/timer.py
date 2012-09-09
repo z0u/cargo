@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 import bat.utils
 
 class Timer(bat.bats.BX_GameObject, bge.types.KX_GameObject):
@@ -69,8 +70,8 @@ class Timer(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.rem_state(self.S_RUNNING)
 
 		if 'PulseMessage' in self:
-			evt = bat.bats.Event(self['PulseMessage'], 0.0)
-			bat.bats.EventBus().notify(evt)
+			evt = bat.event.Event(self['PulseMessage'], 0.0)
+			bat.event.EventBus().notify(evt)
 
 	@bat.bats.expose
 	@bat.utils.all_sensors_positive
@@ -89,8 +90,8 @@ class Timer(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		fraction = self.tics / self.targetTics
 
 		if 'PulseMessage' in self:
-			evt = bat.bats.Event(self['PulseMessage'], 1.0 - fraction)
-			bat.bats.EventBus().notify(evt)
+			evt = bat.event.Event(self['PulseMessage'], 1.0 - fraction)
+			bat.event.EventBus().notify(evt)
 
 		if fraction >= 1.0:
 			self.stop()
@@ -102,7 +103,7 @@ class Timer(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		functionality.'''
 
 		if 'EndMessage' in self:
-			evt = bat.bats.Event(self['EndMessage'])
-			bat.bats.EventBus().notify(evt)
+			evt = bat.event.Event(self['EndMessage'])
+			bat.event.EventBus().notify(evt)
 			# Send over two channels!
 			bge.logic.sendMessage(self['EndMessage'])

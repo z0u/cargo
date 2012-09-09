@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 import bat.sound
 import bat.bmath
 
@@ -61,7 +62,7 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
-		bat.bats.WeakEvent('StartLoading', self).send()
+		bat.event.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()
 
 	def create_state_graph(self):

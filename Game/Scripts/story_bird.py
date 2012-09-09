@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 import bat.bmath
 
 import Scripts.shells
@@ -42,14 +43,14 @@ class Bird(Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 		Chapter.__init__(self, old_owner)
 		# if at bottle...
 		if True:
-			bat.bats.WeakEvent("StartLoading", self).send()
+			bat.event.WeakEvent("StartLoading", self).send()
 			self.pick_up_shell()
 			self.create_bottle_state_graph()
 
 	def create_bottle_state_graph(self):
 		def steal_shell():
 			Scripts.inventory.Shells().discard("Shell")
-			bat.bats.Event('ShellChanged', 'new').send()
+			bat.event.Event('ShellChanged', 'new').send()
 
 		s = self.rootState.createTransition("Init")
 		s.addAction(ActSuspendInput())

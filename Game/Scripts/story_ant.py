@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 import bat.bmath
 import bat.utils
 
@@ -38,7 +39,7 @@ class Honeypot(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = "HP_"
 
 	def __init__(self, old_owner):
-		#bat.bats.WeakEvent("StartLoading", self).send()
+		#bat.event.WeakEvent("StartLoading", self).send()
 		ant1 = factory()
 		bat.bmath.copy_transform(self.children["Ant1SpawnPoint"], ant1)
 		ant1.setParent(self)
@@ -49,7 +50,7 @@ class Honeypot(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if c.sensors[0].positive:
 			player = c.sensors[0].hitObject
 			if not player.is_in_shell:
-				bat.bats.Event("ApproachAnts").send()
+				bat.event.Event("ApproachAnts").send()
 
 class Ant(Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0

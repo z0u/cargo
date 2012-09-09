@@ -20,6 +20,7 @@ import mathutils
 
 import bat.bmath
 import bat.bats
+import bat.event
 import bat.utils
 
 def spawn(c):
@@ -53,8 +54,8 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.hint = 0
 		self.set_lift(mathutils.Vector((0.0, 0.0, -9.8)))
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'GravityChanged')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'GravityChanged':

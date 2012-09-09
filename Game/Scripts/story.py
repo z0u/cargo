@@ -21,6 +21,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.event
 import bat.utils
 import bat.bmath
 import bat.sound
@@ -168,9 +169,9 @@ class CondEvent(Condition):
 		# state machine dies, so will this condition, and it will be removed
 		# from the EventBus.
 		if enabled:
-			bat.bats.EventBus().add_listener(self)
+			bat.event.EventBus().add_listener(self)
 		else:
-			bat.bats.EventBus().remove_listener(self)
+			bat.event.EventBus().remove_listener(self)
 			self.triggered = False
 
 	def on_event(self, evt):
@@ -195,9 +196,9 @@ class CondEventEq(Condition):
 
 	def enable(self, enabled):
 		if enabled:
-			bat.bats.EventBus().add_listener(self)
+			bat.event.EventBus().add_listener(self)
 		else:
-			bat.bats.EventBus().remove_listener(self)
+			bat.event.EventBus().remove_listener(self)
 			self.triggered = False
 
 	def on_event(self, evt):
@@ -224,9 +225,9 @@ class CondEventNe(Condition):
 
 	def enable(self, enabled):
 		if enabled:
-			bat.bats.EventBus().add_listener(self)
+			bat.event.EventBus().add_listener(self)
 		else:
-			bat.bats.EventBus().remove_listener(self)
+			bat.event.EventBus().remove_listener(self)
 			self.triggered = False
 
 	def on_event(self, evt):
@@ -314,12 +315,12 @@ class ActStoreSet(BaseAct):
 class ActSuspendInput(BaseAct):
 	'''Prevent the player from moving around.'''
 	def execute(self, c):
-		bat.bats.Event('GameModeChanged', 'Cutscene').send()
+		bat.event.Event('GameModeChanged', 'Cutscene').send()
 
 class ActResumeInput(BaseAct):
 	'''Let the player move around.'''
 	def execute(self, c):
-		bat.bats.Event('GameModeChanged', 'Playing').send()
+		bat.event.Event('GameModeChanged', 'Playing').send()
 
 class ActActuate(BaseAct):
 	'''Activate an actuator.'''
@@ -508,7 +509,7 @@ class ActShowMarker(BaseAct):
 			self.target = target
 
 	def execute(self, c):
-		bat.bats.WeakEvent('ShowMarker', self.target).send()
+		bat.event.WeakEvent('ShowMarker', self.target).send()
 
 	def __str__(self):
 		if self.target is not None:
@@ -613,7 +614,7 @@ class ActEvent(BaseAct):
 		self.event = event
 
 	def execute(self, c):
-		bat.bats.EventBus().notify(self.event)
+		bat.event.EventBus().notify(self.event)
 
 	def __str__(self):
 		return "ActEvent: %s" % self.event.message
@@ -656,12 +657,12 @@ class State:
 
 	def addEvent(self, message, body=None):
 		'''Convenience method to add an ActEvent action.'''
-		evt = bat.bats.Event(message, body)
+		evt = bat.event.Event(message, body)
 		self.actions.append(ActEvent(evt))
 
 	def addWeakEvent(self, message, body):
 		'''Convenience method to add an ActEvent action.'''
-		evt = bat.bats.WeakEvent(message, body)
+		evt = bat.event.WeakEvent(message, body)
 		self.actions.append(ActEvent(evt))
 
 	def addTransition(self, state):
@@ -787,11 +788,11 @@ class Level(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		# Adjust gravity to be appropriate for the size of the scene..
 		g = mathutils.Vector((0.0, 0.0, 0 - GRAVITY))
 		bge.logic.setGravity(g)
-		evt = bat.bats.Event('GravityChanged', g)
-		bat.bats.EventBus().notify(evt)
+		evt = bat.event.Event('GravityChanged', g)
+		bat.event.EventBus().notify(evt)
 
-		evt = bat.bats.Event('GameModeChanged', 'Playing')
-		bat.bats.EventBus().notify(evt)
+		evt = bat.event.Event('GameModeChanged', 'Playing')
+		bat.event.EventBus().notify(evt)
 
 class GameLevel(Level):
 	'''A level that is part of the main game. Handles things such as spawn
@@ -804,7 +805,7 @@ class GameLevel(Level):
 		self.spawn()
 		self.set_map()
 
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 
 	def spawn(self):
 		scene = bge.logic.getCurrentScene()
@@ -815,7 +816,7 @@ class GameLevel(Level):
 			spawn_point = self['defaultSpawnPoint']
 
 		bat.bats.add_and_mutate_object(scene, 'Snail', self)
-		bat.bats.Event('TeleportSnail', spawn_point).send()
+		bat.event.Event('TeleportSnail', spawn_point).send()
 
 	def set_map(self):
 		if 'Map' not in self:
@@ -848,7 +849,7 @@ class GameLevel(Level):
 
 		scale = mathutils.Vector((scale_x, scale_y))
 		offset = mathutils.Vector((off_x, off_y))
-		bat.bats.Event('SetMap', (map_file, scale, offset, zoom)).send()
+		bat.event.Event('SetMap', (map_file, scale, offset, zoom)).send()
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":
@@ -863,11 +864,11 @@ def load_level(caller, level, spawnPoint):
 	Scripts.store.put('/game/level/spawnPoint', spawnPoint, level=level)
 	Scripts.store.save()
 
-	callback = bat.bats.Event('LoadLevel')
+	callback = bat.event.Event('LoadLevel')
 
 	# Start showing the loading screen. When it has finished, the LoadLevel
 	# event defined above will be sent, and received by GameLevel.
-	bat.bats.Event('ShowLoadingScreen', (True, callback)).send()
+	bat.event.Event('ShowLoadingScreen', (True, callback)).send()
 
 def activate_portal(c):
 	'''Loads the next level, based on the properties of the owner.

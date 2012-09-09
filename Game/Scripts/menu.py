@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 
 import Scripts.gui
 import Scripts.store
@@ -38,22 +39,22 @@ class SessionManager(metaclass=bat.bats.Singleton):
 	'''Responds to some high-level messages.'''
 
 	def __init__(self):
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 
 	def on_event(self, event):
 		if event.message == 'showSavedGameDetails':
 			# The session ID indicates which saved game is being used.
 			Scripts.store.set_session_id(event.body)
 			if len(Scripts.store.get('/game/name', '')) == 0:
-				bat.bats.Event('pushScreen', 'NameScreen').send()
+				bat.event.Event('pushScreen', 'NameScreen').send()
 			else:
-				bat.bats.Event('pushScreen', 'LoadDetailsScreen').send()
+				bat.event.Event('pushScreen', 'LoadDetailsScreen').send()
 
 		elif event.message == 'startGame':
 			# Show the loading screen and send another message to start the game
 			# after the loading screen has shown.
-			cbEvent = bat.bats.Event('LoadLevel')
-			bat.bats.Event('ShowLoadingScreen', (True, cbEvent)).send()
+			cbEvent = bat.event.Event('LoadLevel')
+			bat.event.Event('ShowLoadingScreen', (True, cbEvent)).send()
 
 		elif event.message == 'LoadLevel':
 			# Load the level indicated in the save game. This is called after
@@ -66,11 +67,11 @@ class SessionManager(metaclass=bat.bats.Singleton):
 			# Remove all stored items that match the current path.
 			for key in Scripts.store.search('/game/'):
 				Scripts.store.unset(key)
-			bat.bats.Event('setScreen', 'LoadingScreen').send()
+			bat.event.Event('setScreen', 'LoadingScreen').send()
 
 		elif event.message == 'quit':
-			cbEvent = bat.bats.Event('reallyQuit')
-			bat.bats.Event('ShowLoadingScreen', (True, cbEvent)).send()
+			cbEvent = bat.event.Event('reallyQuit')
+			bat.event.Event('ShowLoadingScreen', (True, cbEvent)).send()
 
 		elif event.message == 'reallyQuit':
 			bge.logic.endGame()
@@ -80,8 +81,8 @@ class MenuController(Scripts.gui.UiController):
 
 	def __init__(self, old_owner):
 		Scripts.gui.UiController.__init__(self, old_owner)
-		bat.bats.Event('setScreen', 'LoadingScreen').send(2)
-		bat.bats.Event('GameModeChanged', 'Menu').send()
+		bat.event.Event('setScreen', 'LoadingScreen').send(2)
+		bat.event.Event('GameModeChanged', 'Menu').send()
 
 	def get_default_widget(self, screen_name):
 		if screen_name == 'LoadingScreen':
@@ -124,8 +125,8 @@ class Camera(bat.bats.BX_GameObject, bge.types.KX_Camera):
 	FRAME_RATE = 25.0 / bge.logic.getLogicTicRate()
 
 	def __init__(self, old_owner):
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'showScreen')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'showScreen')
 
 	def on_event(self, event):
 		if event.message == 'showScreen' and event.body in Camera.FRAME_MAP:
@@ -221,12 +222,12 @@ class ConfirmationPage(Scripts.gui.Widget):
 		elif event.message == 'confirmation':
 			text, self.onConfirm, self.onConfirmBody = event.body.split('::')
 			self.children['ConfirmText']['Content'] = text
-			bat.bats.Event('pushScreen', 'ConfirmationDialogue').send()
+			bat.event.Event('pushScreen', 'ConfirmationDialogue').send()
 
 		elif event.message == 'confirm':
 			if self.visible:
-				bat.bats.Event('popScreen').send()
-				bat.bats.Event(self.onConfirm, self.onConfirmBody).send()
+				bat.event.Event('popScreen').send()
+				bat.event.Event(self.onConfirm, self.onConfirmBody).send()
 				self.children['ConfirmText']['Content'] = ""
 
 class GameDetailsPage(Scripts.gui.Widget):
@@ -284,8 +285,8 @@ class NamePage(Scripts.gui.Widget):
 			name = self.children['NamePageName'].get_text()
 			if len(name) > 0:
 				Scripts.store.put('/game/name', name)
-				bat.bats.Event('popScreen').send()
-				bat.bats.Event('pushScreen', 'LoadDetailsScreen').send()
+				bat.event.Event('popScreen').send()
+				bat.event.Event('pushScreen', 'LoadDetailsScreen').send()
 
 		elif evt.message == 'capsLockToggle':
 			if self.mode == 'UPPERCASE':
@@ -327,7 +328,7 @@ class NamePage(Scripts.gui.Widget):
 			self.mode = 'LOWERCASE'
 			# Lay out keys later - once the buttons have had a change to draw
 			# once; otherwise the order can get stuffed up.
-			bat.bats.Event('capsLockToggle').send(1.0)
+			bat.event.Event('capsLockToggle').send(1.0)
 
 	def lay_out_keymap(self):
 		def grid_key(ob):
@@ -406,8 +407,8 @@ class Subtitle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		}
 
 	def __init__(self, old_owner):
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'showScreen')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'showScreen')
 
 	def on_event(self, event):
 		if event.message == 'showScreen':
@@ -428,7 +429,7 @@ class MenuSnail(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		arm.playAction("MenuSnail_Rest", 1, 1)
 		self.arm = arm
 
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == "FocusChanged":

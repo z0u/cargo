@@ -19,6 +19,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.event
 import bat.utils
 import bat.bmath
 import bat.render
@@ -116,7 +117,7 @@ class FlexibleObject(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 			self['Jolted'] = True
 			self.jolt_frames = 100
 			if 'JoltMessage' in self:
-				evt = bat.bats.Event(self['JoltMessage'])
+				evt = bat.event.Event(self['JoltMessage'])
 				if 'JoltBody' in self:
 					evt.body = self['JoltBody']
 				evt.send()

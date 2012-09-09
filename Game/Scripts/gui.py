@@ -21,6 +21,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.event
 import bat.sound
 import bat.utils
 import bat.bmath
@@ -52,7 +53,7 @@ class UiController(Scripts.impulse.Handler, bat.bats.BX_GameObject,
 		self.click_sound = bat.sound.Sample("//Sound/cc-by/BtnClick.ogg")
 		self.click_sound.volume = 0.2
 
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == 'setScreen':
@@ -78,7 +79,7 @@ class UiController(Scripts.impulse.Handler, bat.bats.BX_GameObject,
 			screen_name = self.screen_stack[-1]
 		else:
 			screen_name = 'LoadingScreen'
-		bat.bats.Event('showScreen', screen_name).send()
+		bat.event.Event('showScreen', screen_name).send()
 
 		# Previous widget is probably hidden now; switch to default for this
 		# screen.
@@ -125,7 +126,7 @@ class UiController(Scripts.impulse.Handler, bat.bats.BX_GameObject,
 			return
 
 		self.current = widget
-		bat.bats.WeakEvent("FocusChanged", widget).send()
+		bat.event.WeakEvent("FocusChanged", widget).send()
 		if widget is not None and self.sound_delay <= 0:
 			self.focus_sound.play()
 			self.sound_delay = UiController.SOUND_DELAY_TICS
@@ -164,7 +165,7 @@ class UiController(Scripts.impulse.Handler, bat.bats.BX_GameObject,
 	def handle_bt_2(self, state):
 		'''Escape from current screen (keyboard/joypad).'''
 		if state.activated:
-			bat.bats.Event('popScreen').send()
+			bat.event.Event('popScreen').send()
 		return True
 
 	def handle_movement(self, state):
@@ -245,8 +246,8 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.is_visible = False
 		self.hide()
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'showScreen')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'showScreen')
 
 	def enter(self):
 		if not self.sensitive:
@@ -284,8 +285,8 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			body = ''
 			if 'onClickBody' in self:
 				body = self['onClickBody']
-			evt = bat.bats.Event(msg, body)
-			bat.bats.EventBus().notify(evt)
+			evt = bat.event.Event(msg, body)
+			bat.event.EventBus().notify(evt)
 
 	def on_event(self, evt):
 		if evt.message == 'showScreen':
@@ -361,8 +362,8 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		oldv = self.sensitive
 		self.sensitive = sensitive
 		if oldv != sensitive:
-			evt = bat.bats.Event('sensitivityChanged', self.sensitive)
-			bat.bats.EventBus().notify(evt)
+			evt = bat.event.Event('sensitivityChanged', self.sensitive)
+			bat.event.EventBus().notify(evt)
 
 
 class Button(Widget):

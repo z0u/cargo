@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 import bat.bmath
 import bat.utils
 import bat.sound
@@ -50,7 +51,7 @@ class Lighthouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	# conversation.
 
 	def __init__(self, old_owner):
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 		self.inLocality = False
 
 	def on_event(self, event):
@@ -63,7 +64,7 @@ class Lighthouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		lk = factory(self.scene)
 		spawnPoint = self.scene.objects["LK_FireflySpawn"]
 		bat.bmath.copy_transform(spawnPoint, lk)
-		bat.bats.Event("TeleportSnail", "LK_SnailTalkPos").send()
+		bat.event.Event("TeleportSnail", "LK_SnailTalkPos").send()
 
 	def kill_keeper(self):
 		try:
@@ -74,8 +75,8 @@ class Lighthouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def arrive(self):
 		self.inLocality = True
-		cbEvent = bat.bats.Event("EnterLighthouse")
-		bat.bats.Event("ShowLoadingScreen", (True, cbEvent)).send()
+		cbEvent = bat.event.Event("EnterLighthouse")
+		bat.event.Event("ShowLoadingScreen", (True, cbEvent)).send()
 		Scripts.store.put('/game/level/spawnPoint', 'SpawnTorch')
 
 	def leave(self):
@@ -117,7 +118,7 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 
 	def __init__(self, old_owner):
 		Chapter.__init__(self, old_owner)
-		#bat.bats.WeakEvent('StartLoading', self).send()
+		#bat.event.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()
 		self.playAction('LK_Breathing', 1, 36, LighthouseKeeper.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=4.0)

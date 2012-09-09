@@ -19,6 +19,7 @@ import mathutils
 import bge
 
 import bat.bats
+import bat.event
 import bat.bmath
 import bat.utils
 import bat.anim
@@ -115,19 +116,19 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.health_warn_tics = 0
 		self.shock_tics = 0
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'GravityChanged')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'GravityChanged')
 
-		bat.bats.WeakEvent('MainCharacterSet', self).send()
-		bat.bats.Event('SetCameraType', 'OrbitCamera').send()
+		bat.event.WeakEvent('MainCharacterSet', self).send()
+		bat.event.Event('SetCameraType', 'OrbitCamera').send()
 		alignment = Scripts.camera.OrbitCameraAlignment()
-		bat.bats.Event('SetCameraAlignment', alignment).send()
+		bat.event.Event('SetCameraAlignment', alignment).send()
 		Scripts.camera.AutoCamera().add_focus_point(self)
 
 		self.DEBUGpositions = [self.worldPosition.copy()]
 		Scripts.impulse.Input().add_handler(self)
-		Scripts.impulse.Input().add_sequence("udlr12", bat.bats.Event("GiveAllShells"))
-		bat.bats.EventBus().replay_last(self, 'TeleportSnail')
+		Scripts.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
+		bat.event.EventBus().replay_last(self, 'TeleportSnail')
 
 	def load_items(self):
 		shellName = Scripts.inventory.Shells().get_equipped()
@@ -278,7 +279,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			# Cheat ;)
 			for name in Scripts.inventory.Shells().get_all_shells():
 				Scripts.inventory.Shells().add(name)
-				bat.bats.Event('ShellChanged', 'new').send()
+				bat.event.Event('ShellChanged', 'new').send()
 		elif evt.message == 'HitMushroom':
 			self.hit_mushroom()
 
@@ -442,7 +443,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			if isinstance(ob, Scripts.shells.ShellBase):
 				if not ob.is_carried and not ob.is_grasped:
 					self.equip_shell(ob, True)
-					bat.bats.Event('ShellChanged', 'new').send()
+					bat.event.Event('ShellChanged', 'new').send()
 
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
@@ -453,7 +454,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			return
 
 		self._switch(shellName)
-		bat.bats.Event('ShellChanged', 'next').send()
+		bat.event.Event('ShellChanged', 'next').send()
 
 	def switch_previous(self):
 		'''Equip the next-lower shell that the snail has.'''
@@ -464,7 +465,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			return
 
 		self._switch(shellName)
-		bat.bats.Event('ShellChanged', 'previous').send()
+		bat.event.Event('ShellChanged', 'previous').send()
 
 	def _switch(self, name):
 		if name == None:
@@ -582,7 +583,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		shell.on_dropped()
 		self.recentlyDroppedItems.add(shell)
 
-		bat.bats.WeakEvent('ShellDropped', shell).send()
+		bat.event.WeakEvent('ShellDropped', shell).send()
 
 	def enter_shell(self, animate):
 		'''
@@ -630,7 +631,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self['InShell'] = 1
 		self.shell.on_entered()
 
-		bat.bats.WeakEvent('ShellEntered', self).send()
+		bat.event.WeakEvent('ShellEntered', self).send()
 
 	def exit_shell(self, animate):
 		'''
@@ -669,10 +670,10 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self['InShell'] = 0
 		self.shell.on_exited()
 
-		bat.bats.WeakEvent('MainCharacterSet', self).send()
+		bat.event.WeakEvent('MainCharacterSet', self).send()
 		# Temporarily use a path camera while exiting the shell - it's smoother!
-		bat.bats.Event('SetCameraType', 'PathCamera').send()
-		bat.bats.Event('OxygenSet', self['Oxygen']).send()
+		bat.event.Event('SetCameraType', 'PathCamera').send()
+		bat.event.Event('OxygenSet', self['Oxygen']).send()
 
 	def on_exit_shell(self):
 		'''Called when the snail has finished its exit shell
@@ -683,11 +684,11 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		self.shell.on_post_exit()
 
 		# Switch to orbit camera.
-		bat.bats.Event('SetCameraType', 'OrbitCamera').send()
+		bat.event.Event('SetCameraType', 'OrbitCamera').send()
 		alignment = Scripts.camera.OrbitCameraAlignment()
-		bat.bats.Event('SetCameraAlignment', alignment).send()
+		bat.event.Event('SetCameraAlignment', alignment).send()
 
-		bat.bats.WeakEvent('ShellExited', self).send()
+		bat.event.WeakEvent('ShellExited', self).send()
 
 	def record_velocity(self):
 		# TODO: Remove this debugging code.
@@ -725,7 +726,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			body.playAction('SnailHeal_Body', 1, 100, 0)
 			body.setActionFrame(1, 0)
 			bat.sound.Sample('//Sound/cc-by/HealthUp.ogg').play()
-		bat.bats.Event('HealthSet', value / self.maxHealth).send()
+		bat.event.Event('HealthSet', value / self.maxHealth).send()
 
 	def heal(self, amount=1):
 		self.damage(amount=-amount)
@@ -766,7 +767,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 
 	def on_oxygen_set(self):
 		if not self.has_state(Snail.S_INSHELL):
-			bat.bats.Event('OxygenSet', self['Oxygen']).send()
+			bat.event.Event('OxygenSet', self['Oxygen']).send()
 
 	@bat.bats.expose
 	@bat.utils.controller_cls
@@ -791,7 +792,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			self['SpeedMultiplier'] = speed
 
 	def hit_mushroom(self):
-		bat.bats.Event('BlurAdd', 0.5).send()
+		bat.event.Event('BlurAdd', 0.5).send()
 		self.intoxication_level += Snail.INTOXICATION_HIT
 		if self.intoxication_level >= Snail.MAX_INTOXICATION:
 			self.damage()
@@ -946,7 +947,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 	def handle_bt_camera(self, state):
 		'''Move camera to be directly behind the snail.'''
 		if state.activated:
-			bat.bats.Event('ResetCameraPos', None).send()
+			bat.event.Event('ResetCameraPos', None).send()
 		return True
 
 	def get_camera_tracking_point(self):

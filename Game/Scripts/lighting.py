@@ -17,6 +17,7 @@
 
 import bge
 
+import bat.event
 import bat.bmath
 import bat.utils
 import bat.bats
@@ -40,8 +41,8 @@ class StoryLight(bat.bats.BX_GameObject, bge.types.KX_LightObject):
 
 	def __init__(self, old_owner):
 		self.set_goal(None)
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'SetStoryLight')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'SetStoryLight')
 
 	def on_event(self, evt):
 		if evt.message == 'SetStoryLight':

@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 import bat.sound
 import bat.anim
 import bat.utils
@@ -162,7 +163,7 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			# jolting.
 			pos = self.currentCamera.worldPosition
 			orn = self.currentCamera.worldOrientation
-			bat.bats.Event('RelocatePlayerCamera', (pos, orn)).send()
+			bat.event.Event('RelocatePlayerCamera', (pos, orn)).send()
 
 		if cam == self.currentCamera:
 			return
@@ -180,7 +181,7 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		self.isTouchingPlayer = isTouchingPlayer
 		if isTouchingPlayer:
-			bat.bats.Event('GameModeChanged', 'Cutscene').send()
+			bat.event.Event('GameModeChanged', 'Cutscene').send()
 		else:
-			bat.bats.Event('GameModeChanged', 'Playing').send()
+			bat.event.Event('GameModeChanged', 'Playing').send()
 		self.update_camera()

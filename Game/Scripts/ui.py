@@ -21,6 +21,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.event
 import bat.render
 
 import Scripts.inventory
@@ -31,18 +32,18 @@ import Scripts.director
 class HUDState(metaclass=bat.bats.Singleton):
 	def __init__(self):
 		self.loaders = bat.bats.SafeSet()
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == "StartLoading":
 			self.loaders.add(evt.body)
-			bat.bats.Event("ShowLoadingScreen", (True, None)).send()
+			bat.event.Event("ShowLoadingScreen", (True, None)).send()
 		elif evt.message == "FinishLoading":
 			self.loaders.discard(evt.body)
 			if len(self.loaders) == 0:
 				# Send event on next frame, to ensure shaders have been
 				# compiled.
-				bat.bats.Event("ShowLoadingScreen", (False, None)).send(.001)
+				bat.event.Event("ShowLoadingScreen", (False, None)).send(.001)
 
 
 def test_input(c):
@@ -52,7 +53,7 @@ def test_input(c):
 
 	# The owner has another controller that handles input. So we just send a
 	# message so that the user input can do something useful!
-	bat.bats.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me.",
+	bat.event.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me.",
 			("Of course!", "I'm too sleepy..."))).send(5)
 
 class DialogueBox(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
@@ -95,8 +96,8 @@ class DialogueBox(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_
 		self.options_visible = False
 		self.set_state(DialogueBox.S_IDLE)
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'ShowDialogue')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'ShowDialogue')
 
 	def on_event(self, evt):
 		if evt.message == 'ShowDialogue':
@@ -197,7 +198,7 @@ class DialogueBox(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_
 			return True
 
 		if state.activated:
-			bat.bats.Event("DialogueDismissed", self.selected_option).send()
+			bat.event.Event("DialogueDismissed", self.selected_option).send()
 			self.hide()
 		return True
 
@@ -254,11 +255,11 @@ class Marker(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 #		sce = bge.logic.getCurrentScene()
 #		target = sce.objects['MarkerTest']
-#		bat.bats.WeakEvent('ShowMarker', target).send(5)
-#		bat.bats.WeakEvent('ShowMarker', None).send(200)
+#		bat.event.WeakEvent('ShowMarker', target).send(5)
+#		bat.event.WeakEvent('ShowMarker', None).send(200)
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'ShowMarker')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'ShowMarker')
 
 	def on_event(self, evt):
 		if evt.message == 'ShowMarker':
@@ -331,8 +332,8 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 		# loading screen to hide itself, unless another object has already sent
 		# a StartLoading message - in which case, we wait for that object to
 		# finish loading too (see the HUDState class).
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.Event("FinishLoading").send()
+		bat.event.EventBus().add_listener(self)
+		bat.event.Event("FinishLoading").send()
 
 	def on_event(self, evt):
 		if evt.message == 'ShowLoadingScreen':
@@ -378,8 +379,8 @@ class Filter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	S_SHOW = 2
 
 	def __init__(self, owner):
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'ShowFilter')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'ShowFilter')
 
 	def on_event(self, evt):
 		if evt.message == 'ShowFilter':
@@ -399,8 +400,8 @@ class Indicator(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.fraction = 0.0
 		self.targetFraction = 0.0
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, self['event'])
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, self['event'])
 
 	def on_event(self, evt):
 		if evt.message == self['event']:
@@ -419,11 +420,11 @@ class Indicator(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		frame = min(max(frame, 0), 100)
 		self['Frame'] = frame
 
-#bat.bats.Event("HealthSet", 1.0).send()
-#bat.bats.Event("OxygenSet", 1.0).send()
-#bat.bats.Event("TimeSet", 0.5).send()
-#bat.bats.Event("TimeSet", 0.0).send(50)
-#bat.bats.Event("TimeSet", 0.0).send(100)
+#bat.event.Event("HealthSet", 1.0).send()
+#bat.event.Event("OxygenSet", 1.0).send()
+#bat.event.Event("TimeSet", 0.5).send()
+#bat.event.Event("TimeSet", 0.0).send(50)
+#bat.event.Event("TimeSet", 0.0).send(100)
 
 __mode = 'Playing'
 @bat.utils.all_sensors_positive
@@ -433,7 +434,7 @@ def test_game_mode():
 		__mode = 'Cutscene'
 	else:
 		__mode = 'Playing'
-	bat.bats.Event('GameModeChanged', __mode).send()
+	bat.event.Event('GameModeChanged', __mode).send()
 
 class Gauge(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	S_INIT = 1
@@ -448,8 +449,8 @@ class Gauge(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		for child in self.children:
 			Indicator(child)
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'GameModeChanged')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'GameModeChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'GameModeChanged':
@@ -496,9 +497,9 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.offset = mathutils.Vector((0.0, 0.0))
 		self.zoom = 2.0
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'GameModeChanged')
-		bat.bats.EventBus().replay_last(self, 'SetMap')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'GameModeChanged')
+		bat.event.EventBus().replay_last(self, 'SetMap')
 
 	def on_event(self, evt):
 		if evt.message == 'GameModeChanged':
@@ -598,8 +599,8 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		self.update_icons()
 		self.hide()
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'GameModeChanged')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'GameModeChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'ShellChanged':

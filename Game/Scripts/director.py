@@ -21,6 +21,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.event
 import bat.utils
 
 import Scripts.impulse
@@ -93,8 +94,8 @@ class Actor(bat.bats.BX_GameObject):
 		self.setLinearVelocity(bat.bmath.MINVECTOR)
 		self.setAngularVelocity(bat.bmath.MINVECTOR)
 		if self == Director().mainCharacter and reason != None:
-			evt = bat.bats.Event('ShowDialogue', reason)
-			bat.bats.EventBus().notify(evt)
+			evt = bat.event.Event('ShowDialogue', reason)
+			bat.event.EventBus().notify(evt)
 
 	def drown(self):
 		'''Called when the Actor is fully submerged in water, and its Oxigen
@@ -257,10 +258,10 @@ class VulnerableActor(Actor):
 class ActorTest(Actor, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		Actor.__init__(self)
-		evt = bat.bats.WeakEvent('MainCharacterSet', self)
-		bat.bats.EventBus().notify(evt)
-		evt = bat.bats.Event('SetCameraType', 'OrbitCamera')
-		bat.bats.EventBus().notify(evt)
+		evt = bat.event.WeakEvent('MainCharacterSet', self)
+		bat.event.EventBus().notify(evt)
+		evt = bat.event.Event('SetCameraType', 'OrbitCamera')
+		bat.event.EventBus().notify(evt)
 	def on_movement_impulse(self, left, right, fwd, back):
 		pass
 	def on_button1(self, pos, trig):
@@ -282,8 +283,8 @@ class Director(Scripts.impulse.Handler, metaclass=bat.bats.Singleton):
 	def __init__(self):
 		self.mainCharacter = None
 		self.actors = bat.bats.SafeSet()
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'MainCharacterSet')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'MainCharacterSet')
 		self.slowMotionCount = 0
 
 	def add_actor(self, actor):

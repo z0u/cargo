@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.event
 import bat.utils
 import bat.bmath
 import bat.sound
@@ -40,7 +41,7 @@ class Bottle(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameO
 		self.snailInside = False
 		self.transition_delay = 0
 		self.open_window(False)
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 		# Only handle overridden input events (see impulse.Handler).
 		self.default_handler_response = False
 		self.bird_arrived = False
@@ -94,43 +95,43 @@ class Bottle(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameO
 			self.eject(mainChar)
 		elif not self.snailInside and mainChar['HasShell']:
 			# Touched by a snail who is wearing a shell.
-			bat.bats.Event('ShowDialogue',
+			bat.event.Event('ShowDialogue',
 					"You can't fit! Press X to drop your shell.").send()
 			self.eject(mainChar)
 		elif self.snailInside:
 			#print("Exiting because snail touched door.")
-			cbEvent = bat.bats.Event("ExitBottle")
-			bat.bats.Event("ShowLoadingScreen", (True, cbEvent)).send()
+			cbEvent = bat.event.Event("ExitBottle")
+			bat.event.Event("ShowLoadingScreen", (True, cbEvent)).send()
 			self.transition_delay = -1
 		else:
 			#print("Entering because snail touched door.")
-			cbEvent = bat.bats.Event("EnterBottle")
-			bat.bats.Event("ShowLoadingScreen", (True, cbEvent)).send()
+			cbEvent = bat.event.Event("EnterBottle")
+			bat.event.Event("ShowLoadingScreen", (True, cbEvent)).send()
 			self.transition_delay = -1
 
 	def enter_bottle(self):
 		Scripts.store.put('/game/spawnPoint', 'SpawnBottle')
 		self.open_window(True)
-		bat.bats.Event('TeleportSnail', 'SpawnBottleInner').send()
-		bat.bats.Event("AddCameraGoal", 'BottleCamera').send()
+		bat.event.Event('TeleportSnail', 'SpawnBottleInner').send()
+		bat.event.Event("AddCameraGoal", 'BottleCamera').send()
 		Scripts.impulse.Input().add_handler(self, 'STORY')
 
 		self.snailInside = True
 		self.transition_delay = 1
-		bat.bats.Event("ShowLoadingScreen", (False, None)).send()
+		bat.event.Event("ShowLoadingScreen", (False, None)).send()
 
 	def exit_bottle(self):
 		# Transitioning to outside; move camera to sensible location.
 		self.open_window(False)
-		bat.bats.Event('TeleportSnail', 'SpawnBottle').send()
-		bat.bats.Event("RemoveCameraGoal", 'BottleCamera').send()
+		bat.event.Event('TeleportSnail', 'SpawnBottle').send()
+		bat.event.Event("RemoveCameraGoal", 'BottleCamera').send()
 
 		if self.bird_arrived:
 			# The bird has interrupted the story (triggered by conversation with
 			# barkeeper).
 			# First, really make sure the snail hasn't got a shell. Just in
 			# case!
-			bat.bats.Event('ForceDropShell', False).send()
+			bat.event.Event('ForceDropShell', False).send()
 			# Then spawn the bird.
 			spawn_point = self.scene.objects["Bird_SauceBar_Spawn"]
 			bird = Scripts.story_bird.factory()
@@ -140,12 +141,12 @@ class Bottle(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameO
 		elif not Scripts.store.get("/game/canDropShell", False):
 			# Don't let a snail wander around with no shell until after the bird
 			# has taken one.
-			bat.bats.Event('ForceReclaimShell').send()
+			bat.event.Event('ForceReclaimShell').send()
 		Scripts.impulse.Input().remove_handler(self)
 
 		self.snailInside = False
 		self.transition_delay = 1
-		bat.bats.Event("ShowLoadingScreen", (False, None)).send()
+		bat.event.Event("ShowLoadingScreen", (False, None)).send()
 
 	def eject(self, ob):
 		direction = self.children['B_Door'].getAxisVect(bat.bmath.ZAXIS)
@@ -190,7 +191,7 @@ class Bottle(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameO
 class BottleRock(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A rock that hides itself when the snail enters the bar.'''
 	def __init__(self, old_owner):
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 
 	def on_event(self, evt):
 		if evt.message == 'EnterBottle':
@@ -210,7 +211,7 @@ class BottleDropZone(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.
 	_prefix = 'DZ_'
 
 	def __init__(self, old_owner):
-		bat.bats.EventBus().add_listener(self)
+		bat.event.EventBus().add_listener(self)
 		# Only handle overridden input events (see impulse.Handler).
 		self.default_handler_response = False
 		self.shell_drop_initiated_at_door = False
@@ -218,8 +219,8 @@ class BottleDropZone(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.
 	def on_event(self, evt):
 		if evt.message == 'ShellDropped':
 			if self.shell_drop_initiated_at_door:
-				cbEvent = bat.bats.Event("EnterBottle")
-				bat.bats.Event("ShowLoadingScreen", (True, cbEvent)).send()
+				cbEvent = bat.event.Event("EnterBottle")
+				bat.event.Event("ShowLoadingScreen", (True, cbEvent)).send()
 				self.shell_drop_initiated_at_door = False
 
 	@bat.bats.expose
@@ -239,7 +240,7 @@ class BottleDropZone(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.
 		because the shell cannot be dropped at will until later in the game.
 		'''
 		if state.activated:
-			bat.bats.Event('ForceDropShell', True).send()
+			bat.event.Event('ForceDropShell', True).send()
 			self.shell_drop_initiated_at_door = True
 		return True
 

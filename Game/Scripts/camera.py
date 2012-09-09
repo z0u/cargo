@@ -24,6 +24,7 @@ import aud
 import bat.utils
 import bat.bmath
 import bat.bats
+import bat.event
 import bat.render
 
 import Scripts.director
@@ -67,8 +68,8 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		self.instantCut = False
 		self.errorReported = False
 
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'TeleportSnail')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'TeleportSnail')
 
 	def on_event(self, evt):
 		if evt.message == 'TeleportSnail':
@@ -327,11 +328,11 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		spawn_camera = spawn_point.children[0]
 		pos = spawn_camera.worldPosition
 		orn = spawn_camera.worldOrientation
-		bat.bats.Event('RelocatePlayerCamera', (pos, orn)).send(0)
+		bat.event.Event('RelocatePlayerCamera', (pos, orn)).send(0)
 
 		bat.utils.set_default_prop(spawn_camera, 'InstantCut', 'IN')
 		self.add_goal(spawn_camera)
-		bat.bats.WeakEvent('RemoveCameraGoal', spawn_camera).send(60)
+		bat.event.WeakEvent('RemoveCameraGoal', spawn_camera).send(60)
 
 
 class MainCharSwitcher(bat.bats.BX_GameObject, bge.types.KX_Camera):
@@ -367,8 +368,8 @@ class MainGoalManager(metaclass=bat.bats.Singleton):
 
 	def __init__(self):
 		self.cameraType = None
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'SetCameraType')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'SetCameraType')
 
 	def on_event(self, evt):
 		if evt.message == 'SetCameraType':
@@ -381,7 +382,7 @@ class MainGoalManager(metaclass=bat.bats.Singleton):
 
 				ac = AutoCamera().camera
 				if ac != None:
-					bat.bats.Event('RelocatePlayerCamera',
+					bat.event.Event('RelocatePlayerCamera',
 							(ac.worldPosition, ac.worldOrientation)).send()
 				self.cameraType = evt.body
 				if oldCamera != None:
@@ -455,9 +456,9 @@ class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.alignment = None
 
 		AutoCamera().add_goal(self)
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'RelocatePlayerCamera')
-		bat.bats.EventBus().replay_last(self, 'SetCameraAlignment')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'RelocatePlayerCamera')
+		bat.event.EventBus().replay_last(self, 'SetCameraAlignment')
 
 	@bat.bats.expose
 	def update(self):
@@ -670,9 +671,9 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.target = None
 
 		AutoCamera().add_goal(self)
-		bat.bats.EventBus().add_listener(self)
-		bat.bats.EventBus().replay_last(self, 'MainCharacterSet')
-		bat.bats.EventBus().replay_last(self, 'RelocatePlayerCamera')
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'MainCharacterSet')
+		bat.event.EventBus().replay_last(self, 'RelocatePlayerCamera')
 
 		if PathCamera.log.isEnabledFor(10):
 			self.targetVis = bat.utils.add_object('DebugReticule')
@@ -993,7 +994,7 @@ class CameraCollider(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		except AttributeError:
 			pass
 		self.last_colour = colour
-		bat.bats.Event('ShowFilter', colour).send()
+		bat.event.Event('ShowFilter', colour).send()
 
 	def cast_for_water(self, pos, direction):
 		through = pos + direction * CameraCollider.MAX_DIST

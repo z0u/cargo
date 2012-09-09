@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 import mathutils
 import bge
 
@@ -31,10 +33,10 @@ import Scripts.shells
 import Scripts.camera
 import Scripts.impulse
 
-DEBUG = False
-
 class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
+
+	log = logging.getLogger(__name__ + ".Snail")
 
 	# Snail states
 	S_INIT     = 1
@@ -289,7 +291,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			try:
 				spawn_point = self.scene.objects[spawn_point]
 			except KeyError:
-				print("Warning: can't find spawn point %s" % spawn_point)
+				Snail.log.error("Can't find spawn point %s", spawn_point)
 				return
 		bat.bmath.copy_transform(spawn_point, self)
 		self['BendAngleFore'] = 0.0
@@ -702,9 +704,11 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 			self.exit_shell(False)
 		super(Snail, self).respawn()
 
-		print("Snail respawning. Previous positions were:")
-		for pos in self.DEBUGpositions:
-			print(pos)
+		Snail.log.info("Respawning.")
+		if Snail.log.isEnabledFor(10):
+			Snail.log.debug("Previous positions:")
+			for pos in self.DEBUGpositions:
+				Snail.log.debug("%s", pos)
 
 	def set_health(self, value):
 		current = self.get_health()
@@ -1002,8 +1006,8 @@ class Trail(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			spot = self.scene.addObject(spot_name, self)
 		except:
 			if not self.warned:
-				print("Couldn't find trail '%s' in scene '%s'" %
-						(spot_name, self.scene))
+				Snail.log.warn("Couldn't find trail '%s' in scene '%s'",
+						spot_name, self.scene)
 			self.warned = True
 			return
 

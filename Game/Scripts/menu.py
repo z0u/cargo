@@ -81,8 +81,23 @@ class MenuController(Scripts.gui.UiController):
 
 	def __init__(self, old_owner):
 		Scripts.gui.UiController.__init__(self, old_owner)
+
+		bat.event.EventBus().add_listener(self)
+
 		bat.event.Event('setScreen', 'LoadingScreen').send(2)
 		bat.event.Event('GameModeChanged', 'Menu').send()
+
+		bat.sound.Jukebox().play_files(self, 1,
+				'//Sound/Music/Theme_loop.ogg',
+				introfile='//Sound/Music/Theme_intro.ogg',
+				fade_rate=0.05)
+
+	def on_event(self, evt):
+		Scripts.gui.UiController.on_event(self, evt)
+		if evt.message == 'startGame':
+			bat.sound.Jukebox().stop(self)
+		elif evt.message == 'quit':
+			bat.sound.Jukebox().stop(self)
 
 	def get_default_widget(self, screen_name):
 		if screen_name == 'LoadingScreen':

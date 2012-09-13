@@ -35,7 +35,6 @@ class LevelOut(GameLevel):
 
 		# Load additional files
 		self.load_foaliage()
-		self.load_npcs()
 
 		Scripts.shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.565, 0.572, 0.578)))
@@ -54,11 +53,4 @@ class LevelOut(GameLevel):
 						load_actions=True)
 			except ValueError:
 				print('Warning: could not load foliage.')
-
-	def load_npcs(self):
-		try:
-			bge.logic.LibLoad('//OutdoorsNPCLoader.blend', 'Scene',
-					load_actions=True)
-		except ValueError as e:
-			print('Warning: could not load characters:', e)
 

@@ -197,6 +197,7 @@ def flower_sound(c):
 		'//Sound/cc-by/Bell3.ogg',
 		'//Sound/cc-by/Bell4.ogg',
 		'//Sound/cc-by/Bell1.ogg')
+	sample.volume = 0.7
 	sample.add_effect(bat.sound.Localise(c.owner))
 	sample.play()
 
@@ -208,6 +209,7 @@ def mushroom_sound(c):
 		'//Sound/cc-by/jaw-harp19.ogg',
 		'//Sound/cc-by/jaw-harp2.ogg',
 		'//Sound/cc-by/jaw-harp20.ogg')
+	sample.volume = 0.7
 	sample.add_effect(bat.sound.Localise(c.owner))
 	sample.play()
 

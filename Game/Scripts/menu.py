@@ -87,10 +87,12 @@ class MenuController(Scripts.gui.UiController):
 		bat.event.Event('setScreen', 'LoadingScreen').send(2)
 		bat.event.Event('GameModeChanged', 'Menu').send()
 
+		# Menu music. Note that the fade rate is set higher than the default, so
+		# that the music completely fades out before the game starts.
 		bat.sound.Jukebox().play_files(self, 1,
 				'//Sound/Music/Theme_loop.ogg',
 				introfile='//Sound/Music/Theme_intro.ogg',
-				fade_rate=0.05)
+				fade_rate=0.05, volume=0.6)
 
 	def on_event(self, evt):
 		Scripts.gui.UiController.on_event(self, evt)

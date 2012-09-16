@@ -92,7 +92,7 @@ class Ant(Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 		s.addAction(ActAction('HP_AntConverse', 30, 70, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.addAction(ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
-		s.addAction(ActMusicPlay('//Sound/Music/Ants1.ogg'))
+		s.addAction(ActMusicPlay('//Sound/Music/Ants1.ogg', volume=0.7))
 
 		# Gestures fiercely at Cargo
 

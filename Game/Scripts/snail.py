@@ -27,6 +27,7 @@ import bat.bmath
 import bat.utils
 import bat.anim
 import bat.sound
+import bat.effectors
 
 import Scripts.director
 import Scripts.inventory
@@ -132,6 +133,12 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		Scripts.impulse.Input().add_handler(self)
 		Scripts.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
 		bat.event.EventBus().replay_last(self, 'TeleportSnail')
+
+		self.shell_change_sound = bat.sound.Sample(
+			'//Sound/cc-by/Swosh1.ogg',
+			'//Sound/cc-by/Swosh2.ogg')
+		self.shell_change_sound.volume = 0.5
+		self.shell_change_sound.add_effect(bat.sound.Localise(self))
 
 	def load_items(self):
 		shellName = Scripts.inventory.Shells().get_equipped()
@@ -484,6 +491,7 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		else:
 			shell = bat.bats.add_and_mutate_object(scene, name, self)
 		self.equip_shell(shell, True)
+		self.shell_change_sound.play()
 
 	def equip_shell(self, shell, animate):
 		'''
@@ -1044,6 +1052,21 @@ class Trail(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			self.add_spot(speedStyle, touchedObject)
 			if triggered and speedStyle == Trail.S_FAST:
 				self.sound.copy().play()
+
+class PickupAttractor(bat.effectors.Repeller3D):
+	S_INIT = 1
+	S_ACTIVE = 2
+	S_INACTIVE = 3
+
+	def __init__(self, old_owner):
+		bat.effectors.Repeller3D.__init__(self, old_owner)
+		bat.event.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'ShellEntered':
+			self.set_state(PickupAttractor.S_INACTIVE)
+		elif evt.message == 'ShellExited':
+			self.set_state(PickupAttractor.S_ACTIVE)
 
 class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 

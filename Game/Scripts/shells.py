@@ -304,7 +304,13 @@ class Wheel(ShellBase):
 		self._reset_speed()
 		self.fly_power = 0.0
 
+		self.enter_sound = bat.sound.Sample('//Sound/CarStart.ogg')
+		self.enter_sound.volume = 0.6
+		self.exit_sound = bat.sound.Sample('//Sound/DoorOpenClose.ogg')
+		self.exit_sound.volume = 0.5
+
 		self.driving_sound = bat.sound.Sample('//Sound/cc-by/Driving.ogg')
+		self.driving_sound.volume = 0.7
 		self.driving_sound.loop = True
 		self.driving_sound.add_effect(bat.sound.Localise(self))
 		self.driving_sound.add_effect(bat.sound.PitchByAngV(self))
@@ -316,12 +322,13 @@ class Wheel(ShellBase):
 		if evt.message == 'GravityChanged':
 			self.fly_power = evt.body * -(1.0 - Wheel.FLY_POWER)
 
-	def orient(self):
+	def orient(self, turn_direction):
 		'''Try to make the wheel sit upright.'''
-		vec = self.getAxisVect(ZAXIS)
-		vec.z = 0.0
-		vec.normalize
-		self.alignAxisToVect(vec, 2)
+		zlocal = self.getAxisVect(ZAXIS)
+		horizontal = zlocal.copy()
+		horizontal.z = -turn_direction * 0.25
+		horizontal.normalize
+		self.alignAxisToVect(horizontal, 2)
 
 	def _reset_speed(self):
 		self.currentRotSpeed = 0.0
@@ -331,7 +338,7 @@ class Wheel(ShellBase):
 		ShellBase.on_pre_enter(self)
 		self._reset_speed()
 		bat.event.Event('SetCameraType', 'PathCamera').send()
-		bat.sound.Sample('//Sound/CarStart.ogg').play()
+		self.enter_sound.play()
 
 	def on_entered(self):
 		ShellBase.on_entered(self)
@@ -344,16 +351,18 @@ class Wheel(ShellBase):
 	def on_exited(self):
 		ShellBase.on_exited(self)
 		self.driving_sound.stop()
-		bat.sound.Sample('//Sound/DoorOpenClose.ogg').play()
+		self.exit_sound.play()
 
 	def handle_movement(self, state):
-		self.orient()
-
 		#
 		# Decide which direction to roll or turn.
 		#
 		direction = state.direction.copy()
 		direction.y = max(direction.y * 0.5 + 0.5, 0.01)
+		self.currentTurnSpeed = bat.bmath.lerp(self.currentTurnSpeed,
+				Wheel.TURN_SPEED * -direction.x, Wheel.SPEED_FAC)
+
+		self.orient(self.currentTurnSpeed)
 
 		#
 		# For jumping: when driving fast, reduce gravity!
@@ -365,8 +374,6 @@ class Wheel(ShellBase):
 		# Turn (steer). Note that this is applied to the Z axis, but in world
 		# space.
 		#
-		self.currentTurnSpeed = bat.bmath.lerp(self.currentTurnSpeed,
-				Wheel.TURN_SPEED * -direction.x, Wheel.SPEED_FAC)
 		angv = ZAXIS * self.currentTurnSpeed
 
 		#

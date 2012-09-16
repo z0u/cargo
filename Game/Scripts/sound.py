@@ -35,6 +35,7 @@ def dandelion(c):
 	sample = bat.sound.Sample(
 			'//Sound/cc-by/Swosh1.ogg',
 			'//Sound/cc-by/Swosh2.ogg')
+	sample.volume = 0.5
 	sample.add_effect(bat.sound.Localise(c.owner))
 	sample.play()
 

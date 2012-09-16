@@ -37,8 +37,10 @@ class CargoHouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		s = c.sensors['Near']
 		if s.hitObject is not None:
 			Scripts.store.put('/game/level/spawnPoint', 'SpawnCargoHouse')
+			# Create the worm *before* starting the music, because the worm may
+			# want to override the tune.
 			self.init_worm()
-			bat.sound.Jukebox().play_files(self, 1, '//Sound/Music/House.ogg')
+			bat.sound.Jukebox().play_files(self, 1, '//Sound/Music/House.ogg', volume=0.7)
 		else:
 			bat.sound.Jukebox().stop(self)
 
@@ -64,6 +66,8 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		Chapter.__init__(self, old_owner)
 		bat.event.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()
+		bat.sound.Jukebox().play_files(self, 2, '//Sound/Music/Worm1.ogg',
+				volume=0.7)
 
 	def create_state_graph(self):
 		def letter_auto(c):
@@ -96,8 +100,6 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		s.addEvent("ForceEnterShell", False)
 		s.addAction(ActSetCamera('WormCamera_Enter'))
 		s.addAction(ActSetFocalPoint('CargoHoldAuto'))
-		s.addAction(ActMusicPlay('//Sound/Music/Worm1.ogg'))
-		s.addEvent("ShowDialogue", "Press Return to start.")
 		s.addAction(ActAction('ParticleEmitMove', 1, 1, Worm.L_ANIM, "ParticleEmitterLoc"))
 		s.addAction(ActGenericContext(letter_manual))
 
@@ -106,7 +108,6 @@ class Worm(Chapter, bge.types.BL_ArmatureObject):
 		#
 		s = s.createTransition("Begin")
 		s.addCondition(CondEvent('ShellEntered'))
-		s.addCondition(CondEvent('DialogueDismissed'))
 		s.addEvent('AnchorShell', 'CH_ShellAnchor')
 		s.addWeakEvent("FinishLoading", self)
 		s.addAction(ActGenericContext(spray_dirt, 10, 15.0))

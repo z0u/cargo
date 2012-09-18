@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 import bge
 import mathutils
 
@@ -30,6 +32,8 @@ DEBUG = False
 class Actor(bat.bats.BX_GameObject):
 	'''Actors are generally mobile objects. They can receive movement impulses,
 	and can float (and drown!) in water.'''
+
+	log = logging.getLogger(__name__ + ".Actor")
 
 	SANITY_RAY_LENGTH = 10000.0
 	SAFE_QUEUE_LENGTH = 10
@@ -154,6 +158,9 @@ class Actor(bat.bats.BX_GameObject):
 				elif normal.dot(vec) <= 0.0:
 					# Hit was from outside.
 					return True
+				else:
+					Actor.log.info('Safety ray of %s hit %s from the inside!',
+							self, ob)
 			return False
 
 		# Cast a ray down. If it fails, try again with a small offset - due to
@@ -162,12 +169,15 @@ class Actor(bat.bats.BX_GameObject):
 
 		# First, look up.
 		vecTo = mathutils.Vector((0.0, 0.0, -1.0))
-		if cast_for_ground(vecTo):
-			return True
-		else:
+		outside = cast_for_ground(vecTo)
+		if not outside:
 			vecTo.x = 0.1
 			vecTo.y = 0.1
-			return cast_for_ground(vecTo)
+			outside = cast_for_ground(vecTo)
+
+		if not outside:
+			Actor.log.info('Object %s is inside the ground!', self)
+		return outside
 
 	def get_camera_tracking_point(self):
 		return self

@@ -26,7 +26,7 @@ import bat.event
 import bat.render
 
 import Scripts.inventory
-import Scripts.impulse
+import bat.impulse
 import Scripts.director
 
 
@@ -57,7 +57,7 @@ def test_input(c):
 	bat.event.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me.",
 			("Of course!", "I'm too sleepy..."))).send(5)
 
-class DialogueBox(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
+class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'DB_'
 
 	# Animation layers
@@ -125,7 +125,7 @@ class DialogueBox(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_
 
 		# Frame is visible immediately; button is shown later.
 		self.armature.setVisible(True, True)
-		Scripts.impulse.Input().add_handler(self, 'DIALOGUE')
+		bat.impulse.Input().add_handler(self, 'DIALOGUE')
 
 	def hide(self):
 		self.canvas.set_text("")
@@ -143,7 +143,7 @@ class DialogueBox(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_
 		# Frame is hidden at end of animation in hide_update.
 
 		self.set_state(DialogueBox.S_HIDE_UPDATE)
-		Scripts.impulse.Input().remove_handler(self)
+		bat.impulse.Input().remove_handler(self)
 
 	def show_options_later(self, delay):
 		# Put this object into a state in which a sensor will fire every frame

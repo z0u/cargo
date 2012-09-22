@@ -28,11 +28,11 @@ import Scripts.store
 import Scripts.director
 import Scripts.camera
 import Scripts.snail
-import Scripts.impulse
+import bat.impulse
 import Scripts.story_bird
 from Scripts.story import *
 
-class Bottle(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
+class Bottle(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''The Sauce Bar'''
 
 	_prefix = 'B_'
@@ -114,7 +114,7 @@ class Bottle(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameO
 		self.open_window(True)
 		bat.event.Event('TeleportSnail', 'SpawnBottleInner').send()
 		bat.event.Event("AddCameraGoal", 'BottleCamera').send()
-		Scripts.impulse.Input().add_handler(self, 'STORY')
+		bat.impulse.Input().add_handler(self, 'STORY')
 
 		self.snailInside = True
 		self.transition_delay = 1
@@ -142,7 +142,7 @@ class Bottle(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameO
 			# Don't let a snail wander around with no shell until after the bird
 			# has taken one.
 			bat.event.Event('ForceReclaimShell').send()
-		Scripts.impulse.Input().remove_handler(self)
+		bat.impulse.Input().remove_handler(self)
 
 		self.snailInside = False
 		self.transition_delay = 1
@@ -203,7 +203,7 @@ class BottleRock(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			self.children['B_SoilCrossSection'].visible = False
 
 
-class BottleDropZone(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
+class BottleDropZone(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''
 	Allows snail to drop shell, but only when standing at the door of the
 	bottle.
@@ -231,9 +231,9 @@ class BottleDropZone(Scripts.impulse.Handler, bat.bats.BX_GameObject, bge.types.
 		s = c.sensors[0]
 		mainChar = Scripts.director.Director().mainCharacter
 		if mainChar in s.hitObjectList:
-			Scripts.impulse.Input().add_handler(self, 'STORY')
+			bat.impulse.Input().add_handler(self, 'STORY')
 		else:
-			Scripts.impulse.Input().remove_handler(self)
+			bat.impulse.Input().remove_handler(self)
 
 	def handle_bt_2(self, state):
 		'''

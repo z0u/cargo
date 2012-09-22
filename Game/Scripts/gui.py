@@ -26,10 +26,9 @@ import bat.event
 import bat.sound
 import bat.utils
 import bat.bmath
+import bat.impulse
 
-import Scripts.impulse
-
-class UiController(Scripts.impulse.Handler, bat.bats.BX_GameObject,
+class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 		bge.types.KX_GameObject):
 
 	'''Manages UI elements: focus and click events.'''
@@ -45,7 +44,7 @@ class UiController(Scripts.impulse.Handler, bat.bats.BX_GameObject,
 
 	def __init__(self, old_owner):
 		self.screen_stack = []
-		Scripts.impulse.Input().add_handler(self, 'MENU')
+		bat.impulse.Input().add_handler(self, 'MENU')
 
 		# Don't play the first focus sound.
 		self.sound_delay = UiController.SOUND_DELAY_TICS

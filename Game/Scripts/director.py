@@ -24,8 +24,7 @@ import bat.bats
 import bat.containers
 import bat.event
 import bat.utils
-
-import Scripts.impulse
+import bat.impulse
 
 DEBUG = False
 
@@ -281,7 +280,7 @@ class ActorTest(Actor, bge.types.KX_GameObject):
 	def on_previous(self, pos, trig):
 		pass
 
-class Director(Scripts.impulse.Handler, metaclass=bat.bats.Singleton):
+class Director(bat.impulse.Handler, metaclass=bat.bats.Singleton):
 	_prefix = ''
 
 	SLOW_TICS_PER_FRAME = 10
@@ -306,9 +305,9 @@ class Director(Scripts.impulse.Handler, metaclass=bat.bats.Singleton):
 			self.mainCharacter = event.body
 		elif event.message == 'GameModeChanged':
 			if event.body != 'Playing':
-				Scripts.impulse.Input().add_handler(self, 'STORY')
+				bat.impulse.Input().add_handler(self, 'STORY')
 			else:
-				Scripts.impulse.Input().remove_handler(self)
+				bat.impulse.Input().remove_handler(self)
 
 	@bat.bats.expose
 	def update(self):

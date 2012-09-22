@@ -20,7 +20,6 @@ import Scripts.director
 import Scripts.lodtree
 import Scripts.menu
 import Scripts.ui
-import Scripts.impulse
 
 # Create singletons. Order should not be important.
 Scripts.camera.AutoCamera()

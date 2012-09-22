@@ -27,7 +27,7 @@ import bat.sound
 
 import Scripts.director
 import Scripts.camera
-import Scripts.impulse
+import bat.impulse
 import Scripts.inventory
 
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
@@ -46,7 +46,7 @@ def factory(name):
 
 	return bat.bats.add_and_mutate_object(scene, name, name)
 
-class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameObject):
+class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameObject):
 	_prefix = 'SB_'
 
 	S_INIT     = 1
@@ -122,13 +122,13 @@ class ShellBase(Scripts.impulse.Handler, Scripts.director.Actor, bge.types.KX_Ga
 		self.set_state(ShellBase.S_OCCUPIED)
 		self.add_state(ShellBase.S_ALWAYS)
 
-		Scripts.impulse.Input().add_handler(self)
+		bat.impulse.Input().add_handler(self)
 		bat.event.WeakEvent('MainCharacterSet', self).send()
 
 	def on_exited(self):
 		'''Called when a snail exits this shell (as control is transferred).'''
 
-		Scripts.impulse.Input().remove_handler(self)
+		bat.impulse.Input().remove_handler(self)
 
 		self.set_state(ShellBase.S_CARRIED)
 		self.add_state(ShellBase.S_ALWAYS)

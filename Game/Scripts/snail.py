@@ -33,9 +33,9 @@ import Scripts.director
 import Scripts.inventory
 import Scripts.shells
 import Scripts.camera
-import Scripts.impulse
+import bat.impulse
 
-class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
+class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
 
 	log = logging.getLogger(__name__ + ".Snail")
@@ -130,8 +130,8 @@ class Snail(Scripts.impulse.Handler, Scripts.director.VulnerableActor, bge.types
 		Scripts.camera.AutoCamera().add_focus_point(self)
 
 		self.DEBUGpositions = [self.worldPosition.copy()]
-		Scripts.impulse.Input().add_handler(self)
-		Scripts.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
+		bat.impulse.Input().add_handler(self)
+		bat.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
 		bat.event.EventBus().replay_last(self, 'TeleportSnail')
 
 		self.shell_change_sound = bat.sound.Sample(

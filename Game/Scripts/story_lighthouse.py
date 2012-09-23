@@ -57,8 +57,7 @@ class Lighthouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def on_event(self, event):
 		if event.message == "EnterLighthouse":
-			bat.event.SceneDispatch.call_in_scene(self.scene, self.spawn_keeper)
-			#self.spawn_keeper()
+			self.spawn_keeper()
 
 	def spawn_keeper(self):
 		# Need to use self.scene here because we might be called from another

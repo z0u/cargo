@@ -376,8 +376,7 @@ class MainGoalManager(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def on_event(self, evt):
 		if evt.message == 'SetCameraType':
-			bat.event.SceneDispatch.call_in_scene(self.scene,
-					self.set_camera_type, evt.body)
+			self.set_camera_type(evt.body)
 
 	def set_camera_type(self, name):
 		if self.currentCamera == None or self.cameraType != name:

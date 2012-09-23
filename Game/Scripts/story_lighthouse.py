@@ -25,6 +25,7 @@ import bat.sound
 
 import Scripts.director
 from Scripts.story import *
+import logging
 
 def factory(sce):
 	if not "Firefly" in sce.objectsInactive:
@@ -32,6 +33,10 @@ def factory(sce):
 			bge.logic.LibLoad('//Firefly_loader.blend', 'Scene', load_actions=True)
 		except ValueError as e:
 			print('Warning: could not load firefly:', e)
+
+	!!! need to make sure messages are received on the right thread (scene).
+	!!! Probably the best thing to do is allow a one-tick delay when receiving
+	!!! messages in a different scene.
 
 	return bat.bats.add_and_mutate_object(sce, "Firefly", "Firefly")
 
@@ -115,7 +120,10 @@ class LighthouseKeeper(Chapter, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
 	L_ANIM = 1
 
+	log = logging.getLogger(__name__ + '.LighthouseKeeper')
+
 	def __init__(self, old_owner):
+		LighthouseKeeper.log.info("Creating new LighthouseKeeper")
 		Chapter.__init__(self, old_owner)
 		#bat.event.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()

@@ -367,6 +367,8 @@ class MainGoalManager(metaclass=bat.bats.Singleton):
 
 	currentCamera = bat.containers.weakprop('currentCamera')
 
+	log = logging.getLogger(__name__ + '.MainGoalManager')
+
 	def __init__(self):
 		self.cameraType = None
 		bat.event.EventBus().add_listener(self)
@@ -376,7 +378,14 @@ class MainGoalManager(metaclass=bat.bats.Singleton):
 		if evt.message == 'SetCameraType':
 			if (self.currentCamera == None or
 					self.cameraType != evt.body):
-				scene = bge.logic.getCurrentScene()
+				scene = evt.scene
+				if scene is None:
+					MainGoalManager.log.error("Message 'SetCameraType' has no "
+							"scene. Can't create camera.")
+					return
+
+				MainGoalManager.log.info("Switching to camera %s in scene %s",
+						evt.body, evt.scene)
 				oldCamera = self.currentCamera
 				self.currentCamera = bat.bats.add_and_mutate_object(scene,
 						evt.body)

@@ -23,7 +23,6 @@ import Scripts.ui
 
 # Create singletons. Order should not be important.
 Scripts.camera.AutoCamera()
-Scripts.camera.MainGoalManager()
 Scripts.director.Director()
 Scripts.lodtree.LODManager()
 Scripts.menu.SessionManager()

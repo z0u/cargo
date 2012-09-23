@@ -15,13 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 import bge
 
 import bat.utils
 
-DEBUG = False
-
 __dirty = False
+
+log = logging.getLogger(__name__)
 
 def get_session_id():
 	'''Get the ID of the current session.'''
@@ -68,22 +70,20 @@ def get(path, defaultValue=None, session=None, level=None):
 
 	p = resolve(path, session=session, level=level)
 	try:
-		if DEBUG:
-			print("store.get(%s) ->" % p, bge.logic.globalDict[p])
-		return bge.logic.globalDict[p]
+		res = bge.logic.globalDict[p]
 	except KeyError:
-		if DEBUG:
-			print("store.get(%s) ->" % p, defaultValue)
 		put(p, defaultValue)
 		return defaultValue
+	log.debug("store.get(%s) -> %s", p, res)
+	return res
 
 def put(path, value, session=None, level=None):
 	'''Set a value in persistent storage. The data will be saved to file the
 	next time save() is called.'''
-	p = resolve(path, session=session, level=level)
 	global __dirty
-	if DEBUG:
-		print("store.put(%s) <-" % p, value)
+
+	p = resolve(path, session=session, level=level)
+	log.debug("store.put(%s) <- %s", p, value)
 	bge.logic.globalDict[p] = value
 	__dirty = True
 
@@ -93,8 +93,7 @@ def unset(path, session=None, level=None):
 
 	p = resolve(path, session=session, level=level)
 	if p in bge.logic.globalDict:
-		if DEBUG:
-			print("store.unset(%s)" % p)
+		log.debug("store.unset(%s)", p)
 		del(bge.logic.globalDict[p])
 		__dirty = True
 
@@ -110,6 +109,7 @@ def search(path='/', session=None, level=None):
 def _save():
 	global __dirty
 
+	log.info('Saving game.')
 	bge.logic.saveGlobalDict()
 	__dirty = False
 
@@ -128,4 +128,3 @@ def save():
 	only actually write the file if the settings have changed.'''
 	if __dirty:
 		_save()
-		print('Game saved.')

@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 import bge
 import mathutils
 
@@ -33,21 +35,25 @@ import Scripts.inventory
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
 
+log = logging.getLogger(__name__)
+
 def factory(name):
 	scene = bge.logic.getCurrentScene()
 
 	if not name in scene.objectsInactive:
-		print("Loading shells")
+		log.info("Loading shells")
 		try:
 			bge.logic.LibLoad('//ItemLoader.blend', 'Scene', load_actions=True)
 		except ValueError:
-			print("Warning: failed to open ItemLoader. May be open already. "
+			log.warn("Failed to open ItemLoader. May be open already. "
 					"Proceeding...")
 
 	return bat.bats.add_and_mutate_object(scene, name, name)
 
 class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameObject):
 	_prefix = 'SB_'
+
+	log = logging.getLogger(__name__ + '.ShellBase')
 
 	S_INIT     = 1
 	S_IDLE     = 2
@@ -150,7 +156,7 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 
 	def handle_bt_1(self, state):
 		if not self.is_occupied:
-			print("Warning: Shell %s received impulse when not occupied." %
+			ShellBase.log.warn("Shell %s received impulse when not occupied.",
 				self.name)
 			return False
 
@@ -337,7 +343,7 @@ class Wheel(ShellBase):
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		self._reset_speed()
-		bat.event.Event('SetCameraType', 'PathCamera').send()
+		#bat.event.Event('SetCameraType', 'PathCamera').send()
 		self.enter_sound.play()
 
 	def on_entered(self):

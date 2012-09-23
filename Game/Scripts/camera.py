@@ -124,7 +124,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 			currentGoal = self.queue.top()
 		except IndexError:
 			if not self.errorReported:
-				print('Warning: AutoCamera queue is empty')
+				AutoCamera.log.warn('Queue is empty')
 				self.errorReported = True
 			return
 
@@ -233,7 +233,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 				sce = bat.utils.get_scene(goal)
 				goal = sce.objects[goal]
 			except KeyError or ValueError:
-				AutoCamera.log.warn("Warning: can't find goal %s." % goal)
+				AutoCamera.log.warn("Can't find goal %s.", goal)
 				return
 		# Set some defaults for properties.
 		bat.utils.set_default_prop(goal, 'LocFac', 0.1)
@@ -268,7 +268,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 				sce = bat.utils.get_scene(goal)
 				goal = sce.objects[goal]
 			except KeyError or ValueError:
-				AutoCamera.log.warn("Warning: can't find goal %s." % goal)
+				AutoCamera.log.warn("Warning: can't find goal %s.", goal)
 				return
 		if not goal in self.queue:
 			return
@@ -293,7 +293,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 				sce = bat.utils.get_scene(target)
 				target = sce.objects[target]
 			except KeyError or ValueError:
-				print("Warning: can't find focus point %s." % target)
+				AutoCamera.log.warn("Can't find focus point %s.", target)
 				return
 		bat.utils.set_default_prop(target, 'FocusPriority', 1)
 		self.focusQueue.push(target, target['FocusPriority'])
@@ -306,7 +306,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 				sce = bat.utils.get_scene(target)
 				target = sce.objects[target]
 			except KeyError or ValueError:
-				print("Warning: can't find focus point %s." % target)
+				AutoCamera.log.warn("Can't find focus point %s.", target)
 				return
 		self.focusQueue.discard(target)
 
@@ -321,7 +321,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 				sce = bat.utils.get_scene(spawn_point)
 				spawn_point = sce.objects[spawn_point]
 			except KeyError:
-				print("Warning: can't find spawn point %s" % spawn_point)
+				AutoCamera.log.warn("Can't find spawn point %s", spawn_point)
 				return
 		if len(spawn_point.children) <= 0:
 			return
@@ -376,15 +376,16 @@ class MainGoalManager(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def on_event(self, evt):
 		if evt.message == 'SetCameraType':
-			self.set_camera_type(evt.body)
+			bat.event.SceneDispatch.call_in_scene(self.scene,
+					self.set_camera_type, evt.body)
 
 	def set_camera_type(self, name):
-		if (self.currentCamera == None or self.cameraType != name):
+		if self.currentCamera == None or self.cameraType != name:
 			sce = self.scene
 			MainGoalManager.log.info("Switching to camera %s in %s",
 					name, sce)
 			oldCamera = self.currentCamera
-			self.currentCamera = bat.bats.add_and_mutate_object(sce, name)
+			self.currentCamera = bat.bats.add_and_mutate_object(sce, name, self)
 
 			ac = AutoCamera().camera
 			if ac != None:

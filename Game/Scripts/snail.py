@@ -84,6 +84,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 	def __init__(self, old_owner):
 		Scripts.director.VulnerableActor.__init__(self, maxHealth=7)
+		Snail.log.info("Creating Snail in %s", self.scene)
 
 		# Initialise state.
 		self.rem_state(Snail.S_CRAWLING)
@@ -849,7 +850,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		targetBendAngleFore = self['MaxBendAngle'] * direction.x
 		targetRot = self['MaxRot'] * -direction.x
 
-		locomotionStep = self['SpeedMultiplier'] * 0.4
+		locomotionStep = self['SpeedMultiplier'] * 0.4 * direction.y
 		if direction.y > 0.1:
 			#
 			# Moving forward.
@@ -864,7 +865,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			targetBendAngleAft = targetBendAngleFore
 			targetRot = 0.0 - targetRot
 			self.armature['LocomotionFrame'] = (
-				self.armature['LocomotionFrame'] - locomotionStep)
+				self.armature['LocomotionFrame'] + locomotionStep)
 		else:
 			#
 			# Stationary. Only bend the head.
@@ -927,11 +928,11 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		'''
 		if state.activated:
 			if self.has_state(Snail.S_INSHELL):
-				self.exit_shell(animate = True)
+				bat.event.SceneDispatch.call_in_scene(self.scene, self.exit_shell, animate=True)
 			elif self.has_state(Snail.S_HASSHELL):
-				self.enter_shell(animate = True)
+				bat.event.SceneDispatch.call_in_scene(self.scene, self.enter_shell, animate=True)
 			elif self.has_state(Snail.S_NOSHELL):
-				self.reclaim_shell()
+				bat.event.SceneDispatch.call_in_scene(self.scene, self.reclaim_shell)
 		return True
 
 	def handle_bt_2(self, state):
@@ -942,9 +943,9 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 		if state.activated:
 			if self.has_state(Snail.S_HASSHELL):
-				self.drop_shell(animate = True)
+				bat.event.SceneDispatch.call_in_scene(self.scene, self.drop_shell, animate=True)
 			elif self.has_state(Snail.S_NOSHELL):
-				self.reclaim_shell()
+				bat.event.SceneDispatch.call_in_scene(self.scene, self.reclaim_shell)
 		return True
 
 	def handle_switch(self, state):
@@ -952,9 +953,9 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		if state.triggered and (self.has_state(Snail.S_HASSHELL) or
 				self.has_state(Snail.S_NOSHELL)):
 			if state.direction > 0.1:
-				self.switch_next()
+				bat.event.SceneDispatch.call_in_scene(self.scene, self.switch_next)
 			elif state.direction < -0.1:
-				self.switch_previous()
+				bat.event.SceneDispatch.call_in_scene(self.scene, self.switch_previous)
 		return True
 
 	def handle_bt_camera(self, state):

@@ -150,19 +150,27 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 		animation.'''
 		pass
 
-	def handle_bt_camera(self, state):
-		# Allow the snail to handle this button event.
-		return False
+	def can_handle_input(self, state):
+		# Allow the snail to handle the camera event
+		return state.name != 'Camera'
+
+	def handle_input(self, state):
+		if state.name == '1':
+			self.handle_bt_1(state)
+		elif state.name == 'Movement':
+			self.handle_movement(state)
 
 	def handle_bt_1(self, state):
 		if not self.is_occupied:
 			ShellBase.log.warn("Shell %s received impulse when not occupied.",
 				self.name)
-			return False
+			return
 
 		if state.activated:
 			self.snail.exit_shell(animate = True)
-		return True
+
+	def handle_movement(self, state):
+		pass
 
 	def _save_location(self, pos, orn):
 		if not self.is_occupied:
@@ -245,7 +253,7 @@ class Shell(ShellBase):
 		'''Make the shell roll around based on user input.'''
 
 		if not self['OnGround']:
-			return True
+			return
 
 		#
 		# Get the vectors to apply force along.
@@ -267,8 +275,6 @@ class Shell(ShellBase):
 		# Apply the force.
 		#
 		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
-
-		return True
 
 class WheelCameraAlignment:
 	'''
@@ -397,8 +403,6 @@ class Wheel(ShellBase):
 		angv2 = self.getAxisVect(ZAXIS) * self.currentRotSpeed
 		self.setAngularVelocity(angv + angv2, False)
 
-		return True
-
 	def can_destroy_stuff(self):
 		if not self.is_occupied:
 			return False
@@ -519,11 +523,11 @@ class BottleCap(ShellBase):
 		self.orient()
 
 		if not self['OnGround']:
-			return True
+			return
 
 		if self.occupier.isPlayingAction(BottleCap.L_JUMP):
 			# Jump has been initiated already; wait for it to finish.
-			return True
+			return
 
 		if state.direction.magnitude > 0.1:
 			#
@@ -531,8 +535,6 @@ class BottleCap(ShellBase):
 			#
 			self.start_jump(state.direction.y, -state.direction.x)
 			bat.utils.add_state(self.occupier, 3)
-
-		return True
 
 	@bat.bats.expose
 	def land(self):

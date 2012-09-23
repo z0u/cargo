@@ -194,28 +194,37 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		self.response_cursor.playAction('Rsp_OptionCursorMove', start, end,
 				layer=DialogueBox.L_DISPLAY)
 
+	def can_handle_input(self, state):
+		# Stop player from doing anything else while dialogue is up.
+		return True
+
+	def handle_input(self, state):
+		if state.name == 'Movement':
+			self.handle_movement(state)
+		elif state.name == '1':
+			self.handle_bt_1(state)
+		elif state.name == 'Switch':
+			self.handle_switch(state)
+
 	def handle_bt_1(self, state):
 		if not self.options_visible:
-			return True
+			return
 
 		if state.activated:
 			bat.event.Event("DialogueDismissed", self.selected_option).send()
 			self.hide()
-		return True
 
 	def handle_switch(self, state):
 		if state.direction > 0.1:
 			self.switch_option(True)
 		elif state.direction < -0.1:
 			self.switch_option(False)
-		return True
 
 	def handle_movement(self, state):
 		if state.direction.y > 0.1:
 			self.switch_option(False)
 		elif state.direction.y < -0.1:
 			self.switch_option(True)
-		return True
 
 	def switch_option(self, nxt):
 		if not self.options_visible or self.options is None:

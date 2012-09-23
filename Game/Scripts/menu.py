@@ -84,7 +84,9 @@ class MenuController(Scripts.gui.UiController):
 
 		bat.event.EventBus().add_listener(self)
 
-		bat.event.Event('setScreen', 'LoadingScreen').send(2)
+		# TODO: for some reason setScreen seems to interfere with the menu. If
+		# send delay is set to 2, it might not work... but 200 does! Weird.
+		bat.event.Event('setScreen', 'LoadingScreen').send(0)
 		bat.event.Event('GameModeChanged', 'Menu').send()
 
 		# Menu music. Note that the fade rate is set higher than the default, so

@@ -54,6 +54,9 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 		self.click_sound.volume = 0.2
 
 		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last('setScreen', self)
+		bat.event.EventBus().replay_last('pushScreen', self)
+		bat.event.EventBus().replay_last('popScreen', self)
 
 	def on_event(self, evt):
 		if evt.message == 'setScreen':
@@ -153,6 +156,17 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 				self.downCurrent.click()
 		self.downCurrent = None
 
+	def can_handle_input(self, state):
+		return state.name in ('1', '2', 'Movement')
+
+	def handle_input(self, state):
+		if state.name == '1':
+			self.handle_bt_1(state)
+		elif state.name == '2':
+			self.handle_bt_2(state)
+		elif state.name == 'Movement':
+			self.handle_movement(state)
+
 	def handle_bt_1(self, state):
 		'''Activate current widget (keyboard/joypad).'''
 		if state.triggered:
@@ -160,25 +174,22 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 				self.press()
 			else:
 				self.release()
-		return True
 
 	def handle_bt_2(self, state):
 		'''Escape from current screen (keyboard/joypad).'''
 		if state.activated:
 			bat.event.Event('popScreen').send()
-		return True
 
 	def handle_movement(self, state):
 		'''Switch to neighbouring widgets (keyboard/joypad).'''
 		if not state.triggered_repeat or state.bias.magnitude < 0.1:
-			return True
+			return
 
 		bge.render.showMouse(False)
 
 		widget = self.find_next_widget(state.bias)
 		if widget is not None:
 			self.focus(widget)
-		return True
 
 	def find_next_widget(self, direction):
 		cam = self.scene.active_camera

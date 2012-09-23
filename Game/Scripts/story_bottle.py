@@ -177,17 +177,9 @@ class Bottle(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObjec
 		bat.sound.Jukebox().play_files(inner, 1,
 				'//Sound/Music/Idea-Random2.ogg')
 
-	def handle_bt_1(self, state):
+	def can_handle_input(self, state):
 		'''Don't allow snail to reclaim shell when inside.'''
-		return True
-
-	def handle_switch(self, state):
-		'''Don't allow snail to reclaim shell when inside.'''
-		return True
-
-	def handle_bt_2(self, state):
-		return True
-
+		return state.name in ('1', '2', 'Switch')
 
 class BottleRock(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A rock that hides itself when the snail enters the bar.'''
@@ -235,6 +227,14 @@ class BottleDropZone(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_G
 		else:
 			bat.impulse.Input().remove_handler(self)
 
+	def can_handle_input(self, state):
+		'''Allow snail to drop shell.'''
+		return state.name == '2'
+
+	def handle_input(self, state):
+		if state.name == '2':
+			self.handle_bt_2(state)
+
 	def handle_bt_2(self, state):
 		'''
 		Handle a drop-shell request when the snail is nearby. This is required
@@ -243,7 +243,6 @@ class BottleDropZone(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_G
 		if state.activated:
 			bat.event.Event('ForceDropShell', True).send()
 			self.shell_drop_initiated_at_door = True
-		return True
 
 
 class BarKeeper(Chapter, bge.types.KX_GameObject):

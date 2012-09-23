@@ -824,13 +824,28 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	def on_movement_impulse(self, f, b, l, r):
 		return
 
+	def can_handle_input(self, state):
+		return state.name in ('Movement', '1', '2', 'Camera', 'Switch')
+
+	def handle_input(self, state):
+		if state.name == 'Movement':
+			self.handle_movement(state)
+		elif state.name == '1':
+			self.handle_bt_1(state)
+		elif state.name == '2':
+			self.handle_bt_2(state)
+		elif state.name == 'Switch':
+			self.handle_switch(state)
+		elif state.name == 'Camera':
+			self.handle_bt_camera(state)
+
 	def handle_movement(self, state):
 		'''
 		Make the snail move. If moving forward or backward, this implicitly
 		calls decaySpeed.
 		'''
 		if not self.has_state(Snail.S_CRAWLING):
-			return True
+			return
 
 		direction = state.direction
 		#
@@ -902,8 +917,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 				self.children['Trail'].moved(self['SpeedMultiplier'],
 					self.touchedObject)
 
-		return True
-
 	def decay_speed(self):
 		'''Bring the speed of the snail one step closer to normal speed.'''
 		dr = self['SpeedDecayRate']
@@ -928,41 +941,37 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		'''
 		if state.activated:
 			if self.has_state(Snail.S_INSHELL):
-				bat.event.SceneDispatch.call_in_scene(self.scene, self.exit_shell, animate=True)
+				self.exit_shell(animate=True)
 			elif self.has_state(Snail.S_HASSHELL):
-				bat.event.SceneDispatch.call_in_scene(self.scene, self.enter_shell, animate=True)
+				self.enter_shell(animate=True)
 			elif self.has_state(Snail.S_NOSHELL):
-				bat.event.SceneDispatch.call_in_scene(self.scene, self.reclaim_shell)
-		return True
+				self.reclaim_shell()
 
 	def handle_bt_2(self, state):
 		shells = Scripts.inventory.Shells().get_shells()
 		if len(shells) == 1 and shells[0] == "Shell":
 			# Can't drop shell until a special point in the game.
-			return True
+			return
 
 		if state.activated:
 			if self.has_state(Snail.S_HASSHELL):
-				bat.event.SceneDispatch.call_in_scene(self.scene, self.drop_shell, animate=True)
+				self.drop_shell(animate=True)
 			elif self.has_state(Snail.S_NOSHELL):
-				bat.event.SceneDispatch.call_in_scene(self.scene, self.reclaim_shell)
-		return True
+				self.reclaim_shell()
 
 	def handle_switch(self, state):
 		'''Switch to next or previous shell.'''
 		if state.triggered and (self.has_state(Snail.S_HASSHELL) or
 				self.has_state(Snail.S_NOSHELL)):
 			if state.direction > 0.1:
-				bat.event.SceneDispatch.call_in_scene(self.scene, self.switch_next)
+				self.switch_next()
 			elif state.direction < -0.1:
-				bat.event.SceneDispatch.call_in_scene(self.scene, self.switch_previous)
-		return True
+				self.switch_previous()
 
 	def handle_bt_camera(self, state):
 		'''Move camera to be directly behind the snail.'''
 		if state.activated:
 			bat.event.Event('ResetCameraPos', None).send()
-		return True
 
 	def get_camera_tracking_point(self):
 		return self.cameraTrack

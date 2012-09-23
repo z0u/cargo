@@ -360,7 +360,7 @@ class MainCharSwitcher(bat.bats.BX_GameObject, bge.types.KX_Camera):
 			AutoCamera().remove_goal(self)
 		self.attached = shouldAttach
 
-class MainGoalManager(metaclass=bat.bats.Singleton):
+class MainGoalManager(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''Creates cameras that follow the player in response to SetCameraType
 	messages. The body of the message should be the name of the camera to
 	create (i.e. the name of the objects that embodies that camera).'''
@@ -369,34 +369,30 @@ class MainGoalManager(metaclass=bat.bats.Singleton):
 
 	log = logging.getLogger(__name__ + '.MainGoalManager')
 
-	def __init__(self):
+	def __init__(self, old_owner):
 		self.cameraType = None
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'SetCameraType')
 
 	def on_event(self, evt):
 		if evt.message == 'SetCameraType':
-			if (self.currentCamera == None or
-					self.cameraType != evt.body):
-				scene = evt.scene
-				if scene is None:
-					MainGoalManager.log.error("Message 'SetCameraType' has no "
-							"scene. Can't create camera.")
-					return
+			self.set_camera_type(evt.body)
 
-				MainGoalManager.log.info("Switching to camera %s in scene %s",
-						evt.body, evt.scene)
-				oldCamera = self.currentCamera
-				self.currentCamera = bat.bats.add_and_mutate_object(scene,
-						evt.body)
+	def set_camera_type(self, name):
+		if (self.currentCamera == None or self.cameraType != name):
+			sce = self.scene
+			MainGoalManager.log.info("Switching to camera %s in %s",
+					name, sce)
+			oldCamera = self.currentCamera
+			self.currentCamera = bat.bats.add_and_mutate_object(sce, name)
 
-				ac = AutoCamera().camera
-				if ac != None:
-					bat.event.Event('RelocatePlayerCamera',
-							(ac.worldPosition, ac.worldOrientation)).send()
-				self.cameraType = evt.body
-				if oldCamera != None:
-					oldCamera.endObject()
+			ac = AutoCamera().camera
+			if ac != None:
+				bat.event.Event('RelocatePlayerCamera',
+						(ac.worldPosition, ac.worldOrientation)).send()
+			self.cameraType = name
+			if oldCamera != None:
+				oldCamera.endObject()
 
 class OrbitCameraAlignment:
 	'''

@@ -34,10 +34,6 @@ def factory(sce):
 		except ValueError as e:
 			print('Warning: could not load firefly:', e)
 
-	!!! need to make sure messages are received on the right thread (scene).
-	!!! Probably the best thing to do is allow a one-tick delay when receiving
-	!!! messages in a different scene.
-
 	return bat.bats.add_and_mutate_object(sce, "Firefly", "Firefly")
 
 class Lighthouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
@@ -61,7 +57,8 @@ class Lighthouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def on_event(self, event):
 		if event.message == "EnterLighthouse":
-			self.spawn_keeper()
+			bat.event.SceneDispatch.call_in_scene(self.scene, self.spawn_keeper)
+			#self.spawn_keeper()
 
 	def spawn_keeper(self):
 		# Need to use self.scene here because we might be called from another

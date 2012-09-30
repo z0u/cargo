@@ -16,6 +16,7 @@
 #
 
 import time
+import logging
 
 import bge
 import mathutils
@@ -32,8 +33,7 @@ import Scripts.director
 import Scripts.store
 import Scripts.inventory
 
-DEBUG = False
-log = bat.utils.get_logger(DEBUG)
+log2 = logging.getLogger(__name__)
 
 GRAVITY = 75.0
 
@@ -332,7 +332,7 @@ class ActActuate(BaseAct):
 		c.activate(c.actuators[self.ActuatorName])
 
 	def __str__(self):
-		return "ActActuate: %s" % self.ActuatorName
+		return "ActActuate(%s)" % self.ActuatorName
 
 class ActAction(BaseAct):
 	'''Plays an animation.'''
@@ -353,7 +353,7 @@ class ActAction(BaseAct):
 			blendin=self.blendin, play_mode=self.playMode)
 
 	def __str__(self):
-		return "ActAction: %s, %d -> %d" % (self.action, self.start, self.end)
+		return "ActAction(%s, %d -> %d)" % (self.action, self.start, self.end)
 
 class ActActionStop(BaseAct):
 	'''Stops an animation.'''
@@ -367,7 +367,7 @@ class ActActionStop(BaseAct):
 		ob.stopAction(self.layer)
 
 	def __str__(self):
-		return "ActActionStop: %d" % self.layer
+		return "ActActionStop(%d)" % self.layer
 
 class ActConstraintSet(BaseAct):
 	'''
@@ -388,7 +388,7 @@ class ActConstraintSet(BaseAct):
 		con.enforce = self.fac
 
 	def __str__(self):
-		return "ActConstraintSet: %s" % (self.name)
+		return "ActConstraintSet(%s)" % (self.name)
 
 class ActConstraintFade(BaseAct):
 	'''
@@ -417,7 +417,7 @@ class ActConstraintFade(BaseAct):
 		con.enforce = power
 
 	def __str__(self):
-		return "ActConstraintFade: %s" % (self.name)
+		return "ActConstraintFade(%s)" % (self.name)
 
 class ActSound(BaseAct):
 	'''Plays a short sound.'''
@@ -441,7 +441,7 @@ class ActSound(BaseAct):
 		self.sample.copy().play()
 
 	def __str__(self):
-		return "ActSound: %s" % self.sample
+		return "ActSound(%s)" % self.sample
 
 class ActMusicPlay(BaseAct):
 	'''
@@ -471,7 +471,7 @@ class ActMusicPlay(BaseAct):
 				volume=self.volume)
 
 	def __str__(self):
-		return "ActMusicPlay: %s" % str(self.filepaths)
+		return "ActMusicPlay(%s)" % str(self.filepaths)
 
 class ActMusicStop(BaseAct):
 	'''
@@ -489,7 +489,7 @@ class ActMusicStop(BaseAct):
 		bat.sound.Jukebox().stop(ob)
 
 	def __str__(self):
-		return "ActMusicStop"
+		return "ActMusicStop()"
 
 class ActShowMarker(BaseAct):
 	'''Show a marker on the screen that points to an object.'''
@@ -517,7 +517,7 @@ class ActShowMarker(BaseAct):
 			name = self.target.name
 		else:
 			name = "None"
-		return 'ActShowMarker: "%s"' % name
+		return 'ActShowMarker(%s)' % name
 
 class ActSetCamera(BaseAct):
 	'''Switch to a named camera.'''
@@ -534,7 +534,7 @@ class ActSetCamera(BaseAct):
 		Scripts.camera.AutoCamera().add_goal(cam)
 
 	def __str__(self):
-		return "ActSetCamera: %s" % self.CamName
+		return "ActSetCamera(%s)" % self.CamName
 
 class ActRemoveCamera(BaseAct):
 	def __init__(self, camName):
@@ -550,7 +550,7 @@ class ActRemoveCamera(BaseAct):
 		Scripts.camera.AutoCamera().remove_goal(cam)
 
 	def __str__(self):
-		return "ActRemoveCamera: %s" % self.CamName
+		return "ActRemoveCamera(%s)" % self.CamName
 
 class ActSetFocalPoint(BaseAct):
 	'''Focus on a named object.'''
@@ -567,7 +567,7 @@ class ActSetFocalPoint(BaseAct):
 		Scripts.camera.AutoCamera().add_focus_point(target)
 
 	def __str__(self):
-		return "ActSetFocalPoint: %s" % self.targetName
+		return "ActSetFocalPoint(%s)" % self.targetName
 
 class ActRemoveFocalPoint(BaseAct):
 	def __init__(self, targetName):
@@ -583,7 +583,7 @@ class ActRemoveFocalPoint(BaseAct):
 		Scripts.camera.AutoCamera().remove_focus_point(target)
 
 	def __str__(self):
-		return "ActRemoveFocalPoint: %s" % self.targetName
+		return "ActRemoveFocalPoint(%s)" % self.targetName
 
 class ActGeneric(BaseAct):
 	'''Run any function.'''
@@ -598,7 +598,7 @@ class ActGeneric(BaseAct):
 			raise StoryError("Error executing " + str(self.Function), e)
 
 	def __str__(self):
-		return "ActGeneric: %s" % self.Function.__name__
+		return "ActGeneric(%s)" % self.Function.__name__
 
 class ActGenericContext(ActGeneric):
 	'''Run any function, passing in the current controller as the first
@@ -618,7 +618,7 @@ class ActEvent(BaseAct):
 		bat.event.EventBus().notify(self.event)
 
 	def __str__(self):
-		return "ActEvent: %s" % self.event.message
+		return "ActEvent(%s)" % self.event.message
 
 class ActDestroy(BaseAct):
 	'''Remove the object from the scene.'''
@@ -640,6 +640,8 @@ class State:
 	will be executed.
 
 	@see: Chapter'''
+
+	log = logging.getLogger(__name__ + '.State')
 
 	def __init__(self, name=""):
 		self.name = name
@@ -694,6 +696,7 @@ class State:
 		return s
 
 	def activate(self, c):
+		State.log.debug('Activating %s', self)
 		for state in self.transitions:
 			state.parent_activated(True)
 		for state in self.subSteps:
@@ -701,6 +704,7 @@ class State:
 		self.execute(c)
 
 	def deactivate(self):
+		State.log.debug('Deactivating %s', self)
 		for state in self.transitions:
 			state.parent_activated(False)
 		for state in self.subSteps:
@@ -714,11 +718,10 @@ class State:
 		'''Run all actions associated with this state.'''
 		for act in self.actions:
 			try:
-				log(act)
+				State.log.info('%s', act)
 				act.execute(c)
-			except Exception as e:
-				print("Warning: Action %s failed." % act)
-				print("\t%s" % e)
+			except Exception:
+				State.log.warn('Action %s failed', act, exc_info=1)
 
 	def progress(self, c):
 		'''Find the next state that has all conditions met, or None if no such
@@ -728,31 +731,24 @@ class State:
 				state.execute(c)
 
 		# Clear line
-		log.write("\r")
-		log.write("Transition: ")
 		target = None
 		for state in self.transitions:
-			log.write("{}(".format(state.name))
 			if state.test(c):
-				log.write(") ")
 				target = state
 				break
-			log.write(") ")
-		log.flush()
 		return target
 
 	def test(self, c):
 		'''Check whether this state is ready to be transitioned to.'''
 		for condition in self.conditions:
 			if not condition.evaluate(c):
-				log.write("%s:x " % condition.get_short_name())
+				State.log.debug('Not transitioning to %s: condition %s failed.',
+						self, condition)
 				return False
-			else:
-				log.write("%s:o " % condition.get_short_name())
 		return True
 
 	def __str__(self):
-		return "== State {} ==".format(self.name)
+		return "State({})".format(self.name)
 
 class Chapter(bat.bats.BX_GameObject):
 	'''Embodies a story in the scene. Subclass this to define the story
@@ -760,6 +756,8 @@ class Chapter(bat.bats.BX_GameObject):
 	allow the steps to be executed.'''
 
 	_prefix = ''
+
+	log = logging.getLogger(__name__ + '.Chapter')
 
 	def __init__(self, old_owner):
 		# Need one dummy transition before root state to ensure the children of
@@ -774,10 +772,9 @@ class Chapter(bat.bats.BX_GameObject):
 		if self.currentState != None:
 			nextState = self.currentState.progress(c)
 			if nextState != None:
-				log()
 				self.currentState.deactivate()
 				self.currentState = nextState
-				log(self.currentState)
+				Chapter.log.info("Transitioned to %s", self.currentState)
 				self.currentState.activate(c)
 
 class Level(bat.bats.BX_GameObject, bge.types.KX_GameObject):

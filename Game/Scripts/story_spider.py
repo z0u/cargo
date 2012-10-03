@@ -15,12 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import bge
+
 import bat.bats
 import bat.event
 import bat.utils
 import bat.bmath
+import bat.story
 
-from Scripts.story import *
+import Scripts.story
 
 def factory(sce):
 	if not "Spider" in sce.objectsInactive:
@@ -86,129 +89,129 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		bat.bats.add_and_mutate_object(self.scene, "FlyingCutscene", self)
 
 
-class Spider(Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
+class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
 	L_ANIM = 1
 
 	def __init__(self, old_owner):
-		Chapter.__init__(self, old_owner)
+		bat.story.Chapter.__init__(self, old_owner)
 		self.create_state_graph()
 		self.playAction('Spider_conv', 1, 1)
 
 	def create_state_graph(self):
 		s = self.rootState.createTransition("Init")
-		s.addCondition(CondEvent("ApproachWeb"))
-		s.addAction(ActSuspendInput())
-		s.addAction(ActSetFocalPoint('Spider'))
-		s.addAction(ActSetCamera("SpiderCam"))
+		s.addCondition(bat.story.CondEvent("ApproachWeb", self))
+		s.addAction(Scripts.story.ActSuspendInput())
+		s.addAction(Scripts.story.ActSetFocalPoint('Spider'))
+		s.addAction(Scripts.story.ActSetCamera("SpiderCam"))
 
 		s = s.createTransition()
-		s.addAction(ActSetCamera("SpiderCam_CU"))
+		s.addAction(Scripts.story.ActSetCamera("SpiderCam_CU"))
 		s.addEvent("ShowDialogue", "Who goes there?")
-		s.addAction(ActAction('Spider_conv', 1, 80, Spider.L_ANIM))
+		s.addAction(bat.story.ActAction('Spider_conv', 1, 80, Spider.L_ANIM))
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addAction(ActRemoveCamera("SpiderCam_CU"))
-		s.addAction(ActSetCamera("SpiderCam_Side"))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s.addAction(Scripts.story.ActRemoveCamera("SpiderCam_CU"))
+		s.addAction(Scripts.story.ActSetCamera("SpiderCam_Side"))
 		s.addEvent("ShowDialogue", "Ah, where are my manners? Welcome, my dear! Forgive me; I don't get many visitors.")
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
 		s.addEvent("ShowDialogue", "It's strange, don't you think? Who could resist the beauty of Spider Isle?")
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
 		s.addEvent("ShowDialogue", "Ah, I see you're admiring my collection. Isn't it marvellous?")
 
 		# START SPLIT 1
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
 		s.addEvent("ShowDialogue", ("I bet you've never seen the like on Tree Island.",
 			("What about the Lighthouse?", "The Sauce Bar, madam!")))
 
 		storch = s.createTransition("torch")
-		storch.addCondition(CondEventEq("DialogueDismissed", 0))
+		storch.addCondition(bat.story.CondEventEq("DialogueDismissed", 0, self))
 		storch.addEvent("ShowDialogue", "... Yes. The torch is quite a piece.")
 
 		sbar = s.createTransition("bar")
-		sbar.addCondition(CondEventEq("DialogueDismissed", 1))
+		sbar.addCondition(bat.story.CondEventEq("DialogueDismissed", 1, self))
 		sbar.addEvent("ShowDialogue", "Oh ho, but it is full of slugs!\n...Mind you, they do serve a smashing gravy.")
 
-		s = State()
+		s = bat.story.State()
 		storch.addTransition(s)
 		sbar.addTransition(s)
-		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
 		s.addEvent("ShowDialogue", "I suppose you may find the occasional trinket there...")
 		# END SPLIT 1
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
 		s.addEvent("ShowDialogue", "But the unique bay of Spider Isle gathers a volume of treasure that other islands simply cannot compete with.")
 
 		s = s.createTransition("Clean up")
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addAction(ActResumeInput())
-		s.addAction(ActRemoveFocalPoint('Spider'))
-		s.addAction(ActRemoveCamera("SpiderCam_Side"))
-		s.addAction(ActRemoveCamera("SpiderCam_CU"))
-		s.addAction(ActRemoveCamera("SpiderCam"))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s.addAction(Scripts.story.ActResumeInput())
+		s.addAction(Scripts.story.ActRemoveFocalPoint('Spider'))
+		s.addAction(Scripts.story.ActRemoveCamera("SpiderCam_Side"))
+		s.addAction(Scripts.story.ActRemoveCamera("SpiderCam_CU"))
+		s.addAction(Scripts.story.ActRemoveCamera("SpiderCam"))
 
 		s = s.createTransition("Reset")
-		s.addCondition(CondEvent("LeaveWeb"))
+		s.addCondition(bat.story.CondEvent("LeaveWeb", self))
 		s.addTransition(self.rootState)
 
 	def get_focal_points(self):
 		return [self.children['Spider_Face'], self]
 
 
-class FlyingCutscene(Chapter, bat.bats.BX_GameObject, bge.types.KX_GameObject):
+class FlyingCutscene(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
-		Chapter.__init__(self, old_owner)
+		bat.story.Chapter.__init__(self, old_owner)
 		self.create_state_graph()
 
 	def create_state_graph(self):
 		# This state is executed as a sub-step of other states. That is, it
 		# runs every frame while those states are active to make sure the snail
 		# trapped.
-		snail_holder = State("Snail hold")
-		snail_holder.addAction(ActGeneric(self.hold_snail))
+		snail_holder = bat.story.State("Snail hold")
+		snail_holder.addAction(bat.story.ActGeneric(self.hold_snail))
 
 		# Far shot.
 		s = self.rootState.createTransition("Init")
-		s.addAction(ActSetCamera("FC_SideCamera"))
-		s.addAction(ActSuspendInput())
+		s.addAction(Scripts.story.ActSetCamera("FC_SideCamera"))
+		s.addAction(Scripts.story.ActSuspendInput())
 
 		# Close-up
 		s = s.createTransition("Transition")
-		s.addCondition(CondWait(0.5))
-		s.addAction(ActSetCamera("FC_Camera"))
-		s.addAction(ActSetFocalPoint("FC_SnailFlyFocus"))
+		s.addCondition(bat.story.CondWait(0.5))
+		s.addAction(Scripts.story.ActSetCamera("FC_Camera"))
+		s.addAction(Scripts.story.ActSetFocalPoint("FC_SnailFlyFocus"))
 		s.addSubStep(snail_holder)
 
 		# Flying through the air. This is a separate state with a CondWait
 		# condition to ensure that the GLSL materials have all been compiled
 		# before starting the animation.
 		s = s.createTransition("Warp speed")
-		s.addCondition(CondWait(0.01))
-		s.addAction(ActAction("FC_AirstreamAction", 1, 51, 0, ob="FC_Airstream"))
-		s.addAction(ActAction("FC_CameraAction", 1, 51, 0, ob="FC_Camera"))
-		s.addAction(ActAction("FC_SnailFlyAction", 1, 100, 0, ob="FC_SnailFly"))
+		s.addCondition(bat.story.CondWait(0.01))
+		s.addAction(bat.story.ActAction("FC_AirstreamAction", 1, 51, 0, ob="FC_Airstream"))
+		s.addAction(bat.story.ActAction("FC_CameraAction", 1, 51, 0, ob="FC_Camera"))
+		s.addAction(bat.story.ActAction("FC_SnailFlyAction", 1, 100, 0, ob="FC_SnailFly"))
 		s.addSubStep(snail_holder)
 
 		# Shoot the snail through the web. Note that the snail_holder sub-state
 		# is no longer used.
 		s = s.createTransition("Pick up wheel")
-		s.addCondition(CondActionGE(0, 49, ob="FC_Airstream"))
-		s.addAction(ActRemoveCamera("FC_Camera"))
-		s.addAction(ActGeneric(self.shoot_snail))
+		s.addCondition(bat.story.CondActionGE(0, 49, ob="FC_Airstream"))
+		s.addAction(Scripts.story.ActRemoveCamera("FC_Camera"))
+		s.addAction(bat.story.ActGeneric(self.shoot_snail))
 
 		s = s.createTransition("Clean up")
-		s.addCondition(CondWait(1))
-		s.addAction(ActRemoveCamera("FC_SideCamera"))
-		s.addAction(ActResumeInput())
-		s.addAction(ActDestroy())
+		s.addCondition(bat.story.CondWait(1))
+		s.addAction(Scripts.story.ActRemoveCamera("FC_SideCamera"))
+		s.addAction(Scripts.story.ActResumeInput())
+		s.addAction(bat.story.ActDestroy())
 
 	def hold_snail(self):
 		snail = Scripts.director.Director().mainCharacter

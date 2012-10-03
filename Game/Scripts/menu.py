@@ -21,7 +21,7 @@ import bat.bats
 import bat.event
 
 import Scripts.gui
-import Scripts.store
+import bat.store
 
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
@@ -44,8 +44,8 @@ class SessionManager(metaclass=bat.bats.Singleton):
 	def on_event(self, event):
 		if event.message == 'showSavedGameDetails':
 			# The session ID indicates which saved game is being used.
-			Scripts.store.set_session_id(event.body)
-			if len(Scripts.store.get('/game/name', '')) == 0:
+			bat.store.set_session_id(event.body)
+			if len(bat.store.get('/game/name', '')) == 0:
 				bat.event.Event('pushScreen', 'NameScreen').send()
 			else:
 				bat.event.Event('pushScreen', 'LoadDetailsScreen').send()
@@ -59,14 +59,14 @@ class SessionManager(metaclass=bat.bats.Singleton):
 		elif event.message == 'LoadLevel':
 			# Load the level indicated in the save game. This is called after
 			# the loading screen has been shown.
-			level = Scripts.store.get('/game/levelFile', '//Outdoors.blend')
-			Scripts.store.save()
+			level = bat.store.get('/game/levelFile', '//Outdoors.blend')
+			bat.store.save()
 			bge.logic.startGame(level)
 
 		elif event.message == 'deleteGame':
 			# Remove all stored items that match the current path.
-			for key in Scripts.store.search('/game/'):
-				Scripts.store.unset(key)
+			for key in bat.store.search('/game/'):
+				bat.store.unset(key)
 			bat.event.Event('setScreen', 'LoadingScreen').send()
 
 		elif event.message == 'quit':
@@ -105,7 +105,7 @@ class MenuController(Scripts.gui.UiController):
 
 	def get_default_widget(self, screen_name):
 		if screen_name == 'LoadingScreen':
-			gamenum = Scripts.store.get_session_id()
+			gamenum = bat.store.get_session_id()
 			for ob in self.scene.objects:
 				if ob.name == 'SaveButton_T' and ob['onClickBody'] == gamenum:
 					return ob
@@ -175,7 +175,7 @@ class SaveButton(Scripts.gui.Button):
 		if not visible:
 			return
 
-		name = Scripts.store.get('/game/name', '', session=self['onClickBody'])
+		name = bat.store.get('/game/name', '', session=self['onClickBody'])
 		self.children['IDCanvas'].set_text(name)
 
 class Checkbox(Scripts.gui.Button):
@@ -183,7 +183,7 @@ class Checkbox(Scripts.gui.Button):
 		self.checked = False
 		Scripts.gui.Button.__init__(self, old_owner)
 		if 'dataBinding' in self:
-			self.checked = Scripts.store.get(self['dataBinding'], self['dataDefault'])
+			self.checked = bat.store.get(self['dataBinding'], self['dataDefault'])
 		self.updateCheckFace()
 
 		# Create a clickable box around the text.
@@ -200,7 +200,7 @@ class Checkbox(Scripts.gui.Button):
 		self.checked = not self.checked
 		self.updateCheckFace()
 		if 'dataBinding' in self:
-			Scripts.store.put(self['dataBinding'], self.checked)
+			bat.store.put(self['dataBinding'], self.checked)
 		super(Checkbox, self).click()
 
 	def updateVisibility(self, visible):
@@ -264,8 +264,8 @@ class GameDetailsPage(Scripts.gui.Widget):
 			child.setVisible(visible, True)
 
 		if visible:
-			name = Scripts.store.get('/game/name', '')
-			summary = Scripts.store.get('/game/storySummary', 'Start a new game.')
+			name = bat.store.get('/game/name', '')
+			summary = bat.store.get('/game/storySummary', 'Start a new game.')
 			self.childrenRecursive['GameName'].set_text(name)
 			self.children['StoryDetails'].set_text(summary)
 
@@ -303,7 +303,7 @@ class NamePage(Scripts.gui.Widget):
 		elif evt.message == 'acceptName':
 			name = self.children['NamePageName'].get_text()
 			if len(name) > 0:
-				Scripts.store.put('/game/name', name)
+				bat.store.put('/game/name', name)
 				bat.event.Event('popScreen').send()
 				bat.event.Event('pushScreen', 'LoadDetailsScreen').send()
 
@@ -342,7 +342,7 @@ class NamePage(Scripts.gui.Widget):
 		self.children['NamePageTitle'].setVisible(visible, True)
 		self.children['NamePageName'].setVisible(visible, True)
 		if visible:
-			name = Scripts.store.get('/game/name', '')
+			name = bat.store.get('/game/name', '')
 			self.children['NamePageName'].set_text(name)
 			self.mode = 'LOWERCASE'
 			# Lay out keys later - once the buttons have had a change to draw

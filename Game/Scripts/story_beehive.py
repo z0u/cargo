@@ -18,6 +18,7 @@
 import logging
 
 import bge
+import mathutils
 
 import bat.bats
 import bat.containers
@@ -26,14 +27,14 @@ import bat.sound
 import bat.anim
 import bat.utils
 
-from Scripts.story import *
+import Scripts.story
 import Scripts.shaders
 
 log = logging.getLogger(__name__)
 
-class LevelBeehive(GameLevel):
+class LevelBeehive(Scripts.story.GameLevel):
 	def __init__(self, oldOwner):
-		GameLevel.__init__(self, oldOwner)
+		Scripts.story.GameLevel.__init__(self, oldOwner)
 		Scripts.shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.0, 0.0, 0.0)))
 		bat.sound.Jukebox().play_files(self, 1,

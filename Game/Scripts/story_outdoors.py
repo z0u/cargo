@@ -21,11 +21,11 @@ import mathutils
 import bat.sound
 
 import Scripts.shaders
-from Scripts.story import *
+import Scripts.story
 
-class LevelOut(GameLevel):
+class LevelOut(Scripts.story.GameLevel):
 	def __init__(self, oldOwner):
-		GameLevel.__init__(self, oldOwner)
+		Scripts.story.GameLevel.__init__(self, oldOwner)
 
 		bat.sound.Jukebox().play_permutation(self, 0,
 				"//Sound/cc-by/PondAmbience1.ogg",
@@ -47,7 +47,7 @@ class LevelOut(GameLevel):
 		except ValueError:
 			print('Warning: could not load foliage.')
 
-		if Scripts.store.get('/opt/foliage', True):
+		if bat.store.get('/opt/foliage', True):
 			try:
 				bge.logic.LibLoad('//OutdoorsBase_grass.blend', 'Scene',
 						load_actions=True)

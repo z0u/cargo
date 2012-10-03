@@ -21,11 +21,11 @@ import bat.bats
 import bat.event
 import bat.utils
 
-import Scripts.store
+import bat.store
 
 class Tree(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):
-		if not Scripts.store.get('/game/level/treeDoorBroken', False):
+		if not bat.store.get('/game/level/treeDoorBroken', False):
 			self.create_door()
 
 	def create_door(self):
@@ -51,7 +51,7 @@ class TreeDoor(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			except ValueError:
 				print('Failed to add object %s' % pieceName)
 		self.endObject()
-		Scripts.store.put('/game/level/treeDoorBroken', True)
+		bat.store.put('/game/level/treeDoorBroken', True)
 
 	@bat.bats.expose
 	@bat.utils.controller_cls

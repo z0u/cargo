@@ -29,7 +29,7 @@ import bat.event
 import bat.render
 
 import Scripts.director
-import Scripts.store
+import bat.store
 
 def hasLineOfSight(ob, other):
 	hitOb, _, _ = bat.bmath.ray_cast_p2p(other, ob, prop = 'Ray')
@@ -102,7 +102,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 	@bat.utils.controller_cls
 	def init_filters(self, c):
 		'''Initialise filters.'''
-		if Scripts.store.get('/opt/depthOfField', True):
+		if bat.store.get('/opt/depthOfField', True):
 			c.activate(c.actuators['aDof'])
 
 	@bat.bats.expose

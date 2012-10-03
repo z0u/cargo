@@ -22,7 +22,8 @@ import bat.event
 import bat.bmath
 import bat.utils
 
-from Scripts.story import *
+import bat.story
+import Scripts.story
 
 def factory():
 	scene = bge.logic.getCurrentScene()
@@ -52,147 +53,147 @@ class Honeypot(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			if not player.is_in_shell:
 				bat.event.Event("ApproachAnts").send()
 
-class Ant(Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
+class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
 	L_ANIM = 1
 
 	def __init__(self, old_owner):
-		Chapter.__init__(self, old_owner)
+		bat.story.Chapter.__init__(self, old_owner)
 		self.create_state_graph()
 		self.pick = self.childrenRecursive['Ant_Pick']
 
 	def create_state_graph(self):
 		s = self.rootState.createTransition("Init")
-		s.addAction(ActConstraintSet("Hand.L", "Copy Transforms", 1.0))
-		s.addAction(ActAction('Ant_Digging1', 1, 38, Ant.L_ANIM,
+		s.addAction(bat.story.ActConstraintSet("Hand.L", "Copy Transforms", 1.0))
+		s.addAction(bat.story.ActAction('Ant_Digging1', 1, 38, Ant.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		sKnock = s.createSubStep("Knock sound")
-		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 34.5, tap=True))
-		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
+		sKnock.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 34.5, tap=True))
+		sKnock.addAction(bat.story.ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
 				pitchmax=0.76, emitter=self, maxdist=40.0))
 
 		s = s.createTransition("Talk")
-		s.addCondition(CondEvent("ApproachAnts"))
-		s.addAction(ActSuspendInput())
+		s.addCondition(bat.story.CondEvent("ApproachAnts", self))
+		s.addAction(Scripts.story.ActSuspendInput())
 		s.addWeakEvent("StartLoading", self)
 
 		# Start conversation
 
 		s = s.createTransition()
-		s.addCondition(CondWait(1))
+		s.addCondition(bat.story.CondWait(1))
 		s.addWeakEvent("FinishLoading", self)
-		s.addAction(ActSetFocalPoint('Ant'))
-		s.addAction(ActSetCamera('AntCloseCam'))
+		s.addAction(Scripts.story.ActSetFocalPoint('Ant'))
+		s.addAction(Scripts.story.ActSetCamera('AntCloseCam'))
 		s.addEvent("TeleportSnail", "HP_SnailTalkPos")
 		# Reset camera pos
-		s.addAction(ActAction('HP_AntConverse_Cam', 1, 1, 0, ob='AntCloseCam'))
-		s.addAction(ActAction('HP_AntCrackCam', 1, 1, 0, ob='AntCrackCam'))
+		s.addAction(bat.story.ActAction('HP_AntConverse_Cam', 1, 1, 0, ob='AntCloseCam'))
+		s.addAction(bat.story.ActAction('HP_AntCrackCam', 1, 1, 0, ob='AntCrackCam'))
 		# Raises head, takes deep breath
 		s.addEvent("ShowDialogue", "Mmmm, smell that?")
-		s.addAction(ActAction('HP_AntConverse', 30, 70, Ant.L_IDLE,
+		s.addAction(bat.story.ActAction('HP_AntConverse', 30, 70, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-		s.addAction(ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
-		s.addAction(ActMusicPlay('//Sound/Music/Ants1.ogg', volume=0.7))
+		s.addAction(bat.story.ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
+		s.addAction(bat.story.ActMusicPlay('//Sound/Music/Ants1.ogg', volume=0.7))
 
 		# Gestures fiercely at Cargo
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addAction(ActGeneric(self.drop_pick))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s.addAction(bat.story.ActGeneric(self.drop_pick))
 		s.addEvent("ShowDialogue", "Doesn't it smell amazing? So sweet! So sugary!")
-		s.addAction(ActAction('HP_AntConverse', 90, 93, Ant.L_IDLE,
+		s.addAction(bat.story.ActAction('HP_AntConverse', 90, 93, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
-		s.addAction(ActAction('HP_AntConverse', 70, 90, Ant.L_ANIM, blendin=5.0))
-		s.addAction(ActAction('HP_AntConverse_Cam', 70, 90, 0, ob='AntCloseCam'))
+		s.addAction(bat.story.ActAction('HP_AntConverse', 70, 90, Ant.L_ANIM, blendin=5.0))
+		s.addAction(bat.story.ActAction('HP_AntConverse_Cam', 70, 90, 0, ob='AntCloseCam'))
 		sdrop_pick = s.createSubStep("Adjust influence")
-		sdrop_pick.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
+		sdrop_pick.addAction(bat.story.ActConstraintFade("Hand.L", "Copy Transforms",
 				1.0, 0.0, 70.0, 76.0, Ant.L_ANIM))
 
 		# Holds fists tight; then, gestures towards the tree
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addAction(ActActionStop(Ant.L_IDLE))
-		s.addAction(ActAction('HP_AntConverse', 95, 160, Ant.L_ANIM, blendin=2.0))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s.addAction(bat.story.ActActionStop(Ant.L_IDLE))
+		s.addAction(bat.story.ActAction('HP_AntConverse', 95, 160, Ant.L_ANIM, blendin=2.0))
 		s.addEvent("ShowDialogue", "I've got to have it! But this wood is just too strong,")
 		sswitch_cam = s.createSubStep("Switch camera")
-		sswitch_cam.addCondition(CondActionGE(Ant.L_ANIM, 126, tap=True))
-		sswitch_cam.addAction(ActSetCamera('AntCrackCam'))
-		sswitch_cam.addAction(ActAction('HP_AntCrackCam', 140, 360, 0,
+		sswitch_cam.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 126, tap=True))
+		sswitch_cam.addAction(Scripts.story.ActSetCamera('AntCrackCam'))
+		sswitch_cam.addAction(bat.story.ActAction('HP_AntCrackCam', 140, 360, 0,
 				ob='AntCrackCam'))
 		sloop = s.createSubStep("Loop")
-		sloop.addCondition(CondActionGE(Ant.L_ANIM, 160, tap=True))
-		sloop.addAction(ActAction('HP_AntConverse', 160, 230, Ant.L_IDLE,
+		sloop.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 160, tap=True))
+		sloop.addAction(bat.story.ActAction('HP_AntConverse', 160, 230, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		# Sizes up door with hands in front of his eyes
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addCondition(CondActionGE(Ant.L_ANIM, 140))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 140))
 		s.addEvent("ShowDialogue", "... and this crack is too small, even for me.")
-		s.addAction(ActAction('HP_AntConverse', 240, 255, Ant.L_ANIM, blendin=2.0))
-		s.addAction(ActRemoveCamera('AntCrackCam'))
-		s.addAction(ActSetCamera('AntCrackCamIn'))
+		s.addAction(bat.story.ActAction('HP_AntConverse', 240, 255, Ant.L_ANIM, blendin=2.0))
+		s.addAction(Scripts.story.ActRemoveCamera('AntCrackCam'))
+		s.addAction(Scripts.story.ActSetCamera('AntCrackCamIn'))
 		sloop = s.createSubStep("Loop")
-		sloop.addCondition(CondActionGE(Ant.L_ANIM, 255, tap=True))
-		sloop.addAction(ActAction('HP_AntConverse', 255, 283, Ant.L_IDLE,
+		sloop.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 255, tap=True))
+		sloop.addAction(bat.story.ActAction('HP_AntConverse', 255, 283, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		# Pauses to consider
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
 		s.addEvent("ShowDialogue", "If only I had something stronger...")
-		s.addAction(ActAction('HP_AntConverse', 290, 300, Ant.L_ANIM, blendin=1.0))
-		s.addAction(ActRemoveCamera('AntCrackCamIn'))
-		s.addAction(ActSetCamera('AntCloseCam'))
+		s.addAction(bat.story.ActAction('HP_AntConverse', 290, 300, Ant.L_ANIM, blendin=1.0))
+		s.addAction(Scripts.story.ActRemoveCamera('AntCrackCamIn'))
+		s.addAction(Scripts.story.ActSetCamera('AntCloseCam'))
 		sloop = s.createSubStep("Loop")
-		sloop.addCondition(CondActionGE(Ant.L_ANIM, 300, tap=True))
-		sloop.addAction(ActAction('HP_AntConverse', 300, 347, Ant.L_IDLE,
+		sloop.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 300, tap=True))
+		sloop.addAction(bat.story.ActAction('HP_AntConverse', 300, 347, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		# Picks up mattock, and glares at the door
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addAction(ActActionStop(Ant.L_IDLE))
-		s.addAction(ActAction('HP_AntConverse', 360, 407, Ant.L_ANIM, blendin=1.0))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s.addAction(bat.story.ActActionStop(Ant.L_IDLE))
+		s.addAction(bat.story.ActAction('HP_AntConverse', 360, 407, Ant.L_ANIM, blendin=1.0))
 		s.addEvent("ShowDialogue", "But I won't give up!")
 		sgrab_pickR = s.createSubStep("Grab pick - right hand")
-		sgrab_pickR.addCondition(CondActionGE(Ant.L_ANIM, 370.5, tap=True))
-		sgrab_pickR.addAction(ActGeneric(self.pick_up))
+		sgrab_pickR.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 370.5, tap=True))
+		sgrab_pickR.addAction(bat.story.ActGeneric(self.pick_up))
 		sgrab_pickL = s.createSubStep("Grab pick - left hand")
-		sgrab_pickL.addAction(ActConstraintFade("Hand.L", "Copy Transforms",
+		sgrab_pickL.addAction(bat.story.ActConstraintFade("Hand.L", "Copy Transforms",
 				0.0, 1.0, 401.0, 403.0, Ant.L_ANIM))
 		sloop = s.createSubStep("Loop")
-		sloop.addCondition(CondActionGE(Ant.L_ANIM, 407, tap=True))
-		sloop.addAction(ActAction('HP_AntConverse', 407, 440, Ant.L_IDLE,
+		sloop.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 407, tap=True))
+		sloop.addAction(bat.story.ActAction('HP_AntConverse', 407, 440, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		# Play the first bit of the digging animation
 
 		s = s.createTransition()
-		s.addCondition(CondEvent("DialogueDismissed"))
-		s.addAction(ActAction('HP_AntConverse', 440, 470, Ant.L_ANIM, blendin=1.0))
+		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s.addAction(bat.story.ActAction('HP_AntConverse', 440, 470, Ant.L_ANIM, blendin=1.0))
 		sKnock = s.createSubStep("Knock sound")
-		sKnock.addCondition(CondActionGE(Ant.L_ANIM, 466.5, tap=True))
-		sKnock.addAction(ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
+		sKnock.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 466.5, tap=True))
+		sKnock.addAction(bat.story.ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
 				pitchmax=0.76, emitter=self, maxdist=75.0))
 
 		#
 		# Loop back to start.
 		#
 		s = s.createTransition("Reset")
-		s.addCondition(CondActionGE(Ant.L_ANIM, 470))
-		s.addAction(ActResumeInput())
-		s.addAction(ActRemoveCamera('AntCloseCam'))
-		s.addAction(ActRemoveCamera('AntCrackCam'))
-		s.addAction(ActRemoveCamera('AntCrackCamIn'))
-		s.addAction(ActRemoveCamera('AntMidCam'))
-		s.addAction(ActRemoveFocalPoint('Ant'))
-		s.addAction(ActMusicStop())
-		s.addAction(ActActionStop(Ant.L_IDLE))
+		s.addCondition(bat.story.CondActionGE(Ant.L_ANIM, 470))
+		s.addAction(Scripts.story.ActResumeInput())
+		s.addAction(Scripts.story.ActRemoveCamera('AntCloseCam'))
+		s.addAction(Scripts.story.ActRemoveCamera('AntCrackCam'))
+		s.addAction(Scripts.story.ActRemoveCamera('AntCrackCamIn'))
+		s.addAction(Scripts.story.ActRemoveCamera('AntMidCam'))
+		s.addAction(Scripts.story.ActRemoveFocalPoint('Ant'))
+		s.addAction(bat.story.ActMusicStop())
+		s.addAction(bat.story.ActActionStop(Ant.L_IDLE))
 		s.addTransition(self.rootState)
 
 	def pick_up(self):

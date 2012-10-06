@@ -948,16 +948,18 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 				self.reclaim_shell()
 
 	def handle_bt_2(self, state):
+		if not state.activated:
+			return
+
 		shells = Scripts.inventory.Shells().get_shells()
 		if len(shells) == 1 and shells[0] == "Shell":
 			# Can't drop shell until a special point in the game.
 			return
 
-		if state.activated:
-			if self.has_state(Snail.S_HASSHELL):
-				self.drop_shell(animate=True)
-			elif self.has_state(Snail.S_NOSHELL):
-				self.reclaim_shell()
+		if self.has_state(Snail.S_HASSHELL):
+			self.drop_shell(animate=True)
+		elif self.has_state(Snail.S_NOSHELL):
+			self.reclaim_shell()
 
 	def handle_switch(self, state):
 		'''Switch to next or previous shell.'''

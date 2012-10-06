@@ -75,6 +75,9 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sconv_start, sconv_end = self.create_conversation()
 		sconv_start.add_predecessor(s)
 
+		#senter_start, senter_end = self.create_enter_states()
+		#senter_start.add_predecessor(s)
+
 		#
 		# Loop back to start.
 		#
@@ -205,6 +208,13 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		return sconv_start, sconv_end
 
+	def create_enter_states(self):
+		senter_start = bat.story.State("Enter start")
+
+		senter_end = senter_start.create_successor()
+
+		return senter_start, senter_end
+
 	def pick_up(self):
 		''';)'''
 		bat.bmath.copy_transform(self.children['Ant_RH_Hook'], self.pick)
@@ -218,6 +228,11 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		return [self.children['Ant_Face'], self]
 
 def oversee(c):
+	if bat.store.get('/game/level/treeDoorBroken', False):
+		# Ant has already entered tree.
+		c.owner.endObject()
+		return
+
 	sce = bge.logic.getCurrentScene()
 	if c.sensors[0].positive:
 		if "Honeypot" not in sce.objects:

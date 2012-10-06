@@ -53,144 +53,144 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			Scripts.inventory.Shells().discard("Shell")
 			bat.event.Event('ShellChanged', 'new').send()
 
-		s = self.rootState.createTransition("Init")
-		s.addAction(Scripts.story.ActSuspendInput())
-		s.addAction(Scripts.story.ActSetCamera('B_BirdIntroCam'))
-		s.addAction(Scripts.story.ActSetFocalPoint('Bi_FootHook.L'))
-		s.addAction(bat.story.ActAction('Bi_Excited', 1, 25, Bird.L_ANIM,
+		s = self.rootState.create_successor("Init")
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_action(Scripts.story.ActSetCamera('B_BirdIntroCam'))
+		s.add_action(Scripts.story.ActSetFocalPoint('Bi_FootHook.L'))
+		s.add_action(bat.story.ActAction('Bi_Excited', 1, 25, Bird.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-		s.addAction(bat.story.ActMusicPlay('//Sound/Music/Bird1.ogg'))
-		s.addEvent("SetStoryLight", "SB_BirdLight")
+		s.add_action(bat.story.ActMusicPlay('//Sound/Music/Bird1.ogg'))
+		s.add_event("SetStoryLight", "SB_BirdLight")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(0.5))
-		s.addWeakEvent("FinishLoading", self)
-		s.addAction(bat.story.ActAction("B_BirdCloseCamAction", 1, 96, 0,
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(0.5))
+		s.add_event("FinishLoading", self)
+		s.add_action(bat.story.ActAction("B_BirdCloseCamAction", 1, 96, 0,
 			ob="B_BirdIntroCam"))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(2.5))
-		s.addAction(Scripts.story.ActSetFocalPoint('Bi_Face'))
-		s.addAction(Scripts.story.ActRemoveFocalPoint('Bi_FootHook.L'))
-		s.addEvent("ShowDialogue", "Ooh, look at this lovely red thing!")
-		s.addAction(bat.story.ActSound('//Sound/cc-by/BirdSquarkLarge.ogg'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(2.5))
+		s.add_action(Scripts.story.ActSetFocalPoint('Bi_Face'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Bi_FootHook.L'))
+		s.add_event("ShowDialogue", "Ooh, look at this lovely red thing!")
+		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdSquarkLarge.ogg'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(1))
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addAction(Scripts.story.ActSetCamera('B_DoorCamera'))
-		s.addAction(Scripts.story.ActRemoveCamera('B_BirdIntroCam'))
-		s.addAction(bat.story.ActAction('Bi_SmashShell', 1, 12, Bird.L_ANIM,
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActSetCamera('B_DoorCamera'))
+		s.add_action(Scripts.story.ActRemoveCamera('B_BirdIntroCam'))
+		s.add_action(bat.story.ActAction('Bi_SmashShell', 1, 12, Bird.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
-		sKnock = s.createSubStep("Knock sound")
-		sKnock.addCondition(bat.story.CondActionGE(Bird.L_ANIM, 10.5, tap=True))
-		sKnock.addAction(bat.story.ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.7,
+		sKnock = s.create_sub_step("Knock sound")
+		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 10.5, tap=True))
+		sKnock.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.7,
 				pitchmax=0.76))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(2))
-		s.addSubStep(sKnock)
-		s.addEvent("ShowDialogue", ("It's so shiny. It will really brighten up my nest!",
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(2))
+		s.add_sub_step(sKnock)
+		s.add_event("ShowDialogue", ("It's so shiny. It will really brighten up my nest!",
 				("Excuse me...", "Oi, that's my \[shell]!")))
-		s.addAction(bat.story.ActSound('//Sound/cc-by/BirdTweet1.ogg'))
+		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdTweet1.ogg'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addAction(bat.story.ActAction('Bi_LookCargo', 1, 20, Bird.L_ANIM, blendin=2.0))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(bat.story.ActAction('Bi_LookCargo', 1, 20, Bird.L_ANIM, blendin=2.0))
 
-		sKnock = s.createSubStep("Knock sound")
-		sKnock.addCondition(bat.story.CondActionGE(Bird.L_ANIM, 9.5, tap=True))
-		sKnock.addAction(bat.story.ActSound('//Sound/Knock.ogg', vol=0.2, pitchmin=0.7,
+		sKnock = s.create_sub_step("Knock sound")
+		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 9.5, tap=True))
+		sKnock.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=0.2, pitchmin=0.7,
 				pitchmax=0.74))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(1))
-		s.addSubStep(sKnock)
-		s.addEvent("ShowDialogue", "Eh? You say it's yours?")
-		s.addAction(bat.story.ActSound('//Sound/cc-by/BirdQuestion1.ogg'))
-		s.addAction(Scripts.story.ActSetCamera('B_BirdConverseCam'))
-		s.addAction(bat.story.ActAction('Bi_Discuss_Idle', 1, 49, Bird.L_IDLE,
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_sub_step(sKnock)
+		s.add_event("ShowDialogue", "Eh? You say it's yours?")
+		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdQuestion1.ogg'))
+		s.add_action(Scripts.story.ActSetCamera('B_BirdConverseCam'))
+		s.add_action(bat.story.ActAction('Bi_Discuss_Idle', 1, 49, Bird.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
-		s = s.createTransition()
-		sKnock.addCondition(bat.story.CondActionGE(Bird.L_ANIM, 20, tap=True))
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "Couldn't be; it was just lying here! Finders keepers, I always say.")
-		s.addAction(bat.story.ActAction('Bi_Discuss', 1, 6, Bird.L_ANIM,
+		s = s.create_successor()
+		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 20, tap=True))
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Couldn't be; it was just lying here! Finders keepers, I always say.")
+		s.add_action(bat.story.ActAction('Bi_Discuss', 1, 6, Bird.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		sKnock.addCondition(bat.story.CondActionGE(Bird.L_ANIM, 5, tap=True)) # One less than max for tolerance
-		s.addEvent("ShowDialogue", "Tell you what, I'll make you a deal.")
-		s.addAction(bat.story.ActAction('Bi_Discuss', 6, 17, Bird.L_ANIM))
-		s.addAction(bat.story.ActAction('Bi_Discuss_Idle', 100, 149, Bird.L_IDLE,
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 5, tap=True)) # One less than max for tolerance
+		s.add_event("ShowDialogue", "Tell you what, I'll make you a deal.")
+		s.add_action(bat.story.ActAction('Bi_Discuss', 6, 17, Bird.L_ANIM))
+		s.add_action(bat.story.ActAction('Bi_Discuss_Idle', 100, 149, Bird.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		sKnock.addCondition(bat.story.CondActionGE(Bird.L_ANIM, 17, tap=True))
-		s.addEvent("ShowDialogue", ("If you can bring me 3 other shiny red things, I'll give this one to you.",
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 17, tap=True))
+		s.add_event("ShowDialogue", ("If you can bring me 3 other shiny red things, I'll give this one to you.",
 				("That's not fair!", "I need it to do my job!")))
-		s.addAction(bat.story.ActAction('Bi_Discuss', 17, 36, Bird.L_ANIM))
-		s.addAction(bat.story.ActAction('Bi_Discuss_Idle', 1, 49, Bird.L_IDLE,
+		s.add_action(bat.story.ActAction('Bi_Discuss', 17, 36, Bird.L_ANIM))
+		s.add_action(bat.story.ActAction('Bi_Discuss_Idle', 1, 49, Bird.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "Now now, you can't just go taking things from other people.")
-		s.addAction(bat.story.ActSound('//Sound/cc-by/BirdStatement1.ogg'))
-		s.addAction(bat.story.ActAction('Bi_Discuss', 36, 47, Bird.L_ANIM))
-		s.addAction(bat.story.ActAction('Bi_Discuss_Idle', 200, 249, Bird.L_IDLE,
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Now now, you can't just go taking things from other people.")
+		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdStatement1.ogg'))
+		s.add_action(bat.story.ActAction('Bi_Discuss', 36, 47, Bird.L_ANIM))
+		s.add_action(bat.story.ActAction('Bi_Discuss_Idle', 200, 249, Bird.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addAction(Scripts.story.ActSetCamera('BirdCamera_BottleToNest'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActSetCamera('BirdCamera_BottleToNest'))
 
-		s = s.createTransition()
-		s.addAction(Scripts.story.ActSetCamera('BirdCamera_BottleToNest_zoom'))
-		s.addAction(Scripts.story.ActSetFocalPoint('Nest'))
-		s.addAction(Scripts.story.ActShowMarker('Nest'))
-		s.addEvent("ShowDialogue", "If you want this \[shell], bring 3 red things to my nest at the top of the tree.")
-		s.addAction(bat.story.ActSound('//Sound/cc-by/BirdMutter.ogg'))
+		s = s.create_successor()
+		s.add_action(Scripts.story.ActSetCamera('BirdCamera_BottleToNest_zoom'))
+		s.add_action(Scripts.story.ActSetFocalPoint('Nest'))
+		s.add_action(Scripts.story.ActShowMarker('Nest'))
+		s.add_event("ShowDialogue", "If you want this \[shell], bring 3 red things to my nest at the top of the tree.")
+		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdMutter.ogg'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addAction(Scripts.story.ActRemoveFocalPoint('Nest'))
-		s.addAction(Scripts.story.ActShowMarker(None))
-		s.addAction(bat.story.ActRemoveCamera('B_BirdConverseCam'))
-		s.addAction(bat.story.ActRemoveCamera('BirdCamera_BottleToNest_zoom'))
-		s.addAction(bat.story.ActRemoveCamera('BirdCamera_BottleToNest'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Nest'))
+		s.add_action(Scripts.story.ActShowMarker(None))
+		s.add_action(Scripts.story.ActRemoveCamera('B_BirdConverseCam'))
+		s.add_action(Scripts.story.ActRemoveCamera('BirdCamera_BottleToNest_zoom'))
+		s.add_action(Scripts.story.ActRemoveCamera('BirdCamera_BottleToNest'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(1))
-		s.addEvent("ShowDialogue", "Toodles!")
-		s.addAction(bat.story.ActAction('Bi_FlyAway', 1, 35, Bird.L_ANIM, blendin=5.0))
-		s.addAction(bat.story.ActSound('//Sound/cc-by/BirdTweet2.ogg'))
-		s.addAction(Scripts.story.ActRemoveFocalPoint('Bi_Face'))
-		s.addAction(Scripts.story.ActRemoveFocalPoint('Bi_FootHook.L'))
-		s.addAction(Scripts.story.ActRemoveFocalPoint('Nest'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_event("ShowDialogue", "Toodles!")
+		s.add_action(bat.story.ActAction('Bi_FlyAway', 1, 35, Bird.L_ANIM, blendin=5.0))
+		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdTweet2.ogg'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Bi_Face'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Bi_FootHook.L'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Nest'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addAction(bat.story.ActGeneric(steal_shell))
-		s.addAction(bat.story.ActStoreSet('/game/level/birdTookShell', True))
-		s.addAction(bat.story.ActStoreSet('/game/canDropShell', True))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(bat.story.ActGeneric(steal_shell))
+		s.add_action(bat.story.ActStoreSet('/game/level/birdTookShell', True))
+		s.add_action(bat.story.ActStoreSet('/game/canDropShell', True))
 
 		#
 		# Return to game. Note that this actually destroys the bird.
 		#
-		s = s.createTransition("Return to game")
-		s.addAction(Scripts.story.ActResumeInput())
-		s.addAction(Scripts.story.ActRemoveCamera('B_BirdIntroCam'))
-		s.addAction(Scripts.story.ActRemoveCamera('B_BirdConverseCam'))
-		s.addAction(Scripts.story.ActRemoveCamera('B_DoorCamera'))
-		s.addAction(Scripts.story.ActRemoveCamera('BirdCamera_BottleToNest_zoom'))
-		s.addAction(Scripts.story.ActRemoveCamera('BirdCamera_BottleToNest'))
-		s.addEvent("SetStoryLight", None)
-		s.addAction(bat.story.ActDestroy())
+		s = s.create_successor("Return to game")
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(Scripts.story.ActRemoveCamera('B_BirdIntroCam'))
+		s.add_action(Scripts.story.ActRemoveCamera('B_BirdConverseCam'))
+		s.add_action(Scripts.story.ActRemoveCamera('B_DoorCamera'))
+		s.add_action(Scripts.story.ActRemoveCamera('BirdCamera_BottleToNest_zoom'))
+		s.add_action(Scripts.story.ActRemoveCamera('BirdCamera_BottleToNest'))
+		s.add_event("SetStoryLight", None)
+		s.add_action(bat.story.ActDestroy())
 
 	def pick_up(self, ob, left=True):
 		attach_point = self.children["Bi_FootHook.L"]

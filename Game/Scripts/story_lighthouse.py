@@ -136,164 +136,161 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		#
 		# Set scene with a long shot camera.
 		#
-		s = self.rootState.createTransition("Init")
-		s.addAction(Scripts.story.ActSuspendInput())
-		s.addWeakEvent("StartLoading", self)
+		s = self.rootState.create_successor("Init")
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_event("StartLoading", self)
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(1))
-		s.addWeakEvent("FinishLoading", self)
-		s.addAction(Scripts.story.ActSetCamera('LK_Cam_Long'))
-		s.addAction(Scripts.story.ActSetFocalPoint('FF_Face'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_event("FinishLoading", self)
+		s.add_action(Scripts.story.ActSetCamera('LK_Cam_Long'))
+		s.add_action(Scripts.story.ActSetFocalPoint('FF_Face'))
 		# Teleport here in addition to when the lighthouse keeper is first
 		# spawned, since this may be the second time the snail is approaching.
-		s.addEvent("TeleportSnail", "LK_SnailTalkPos")
-		s.addAction(bat.story.ActAction('LK_Greet', 1, 80, LighthouseKeeper.L_ANIM))
+		s.add_event("TeleportSnail", "LK_SnailTalkPos")
+		s.add_action(bat.story.ActAction('LK_Greet', 1, 80, LighthouseKeeper.L_ANIM))
 
-		s = s.createTransition("Close-up")
-		s.addCondition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 32))
-		s.addAction(Scripts.story.ActSetCamera('LK_Cam_CU_LK'))
-		s.addAction(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
+		s = s.create_successor("Close-up")
+		s.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 32))
+		s.add_action(Scripts.story.ActSetCamera('LK_Cam_CU_LK'))
+		s.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 70))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 70))
 
-		sfirstmeeting = s.createTransition()
-		sfirstmeeting.addCondition(bat.story.CNot(bat.story.CondStore(
+		sfirstmeeting = s.create_successor()
+		sfirstmeeting.add_condition(bat.story.CNot(bat.story.CondStore(
 				'/game/level/lkMissionStarted', True, False)))
-		sfirstmeeting.addEvent("ShowDialogue", ("Cargo! What's up?",
+		sfirstmeeting.add_event("ShowDialogue", ("Cargo! What's up?",
 				("\[envelope]!", "Just saying \"hi\".")))
 
-		sdeliver1 = sfirstmeeting.createTransition("delivery1")
-		sdeliver1.addCondition(bat.story.CondEventNe("DialogueDismissed", 1, self))
-		sdeliver1 = self.sg_accept_delivery([sdeliver1])
+		sdliver1_start, sdeliver1_end = self.sg_accept_delivery()
+		sdliver1_start.add_predecessor(sfirstmeeting)
+		sdliver1_start.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
 
-		ssecondmeeting = s.createTransition()
-		ssecondmeeting.addCondition(bat.story.CondStore(
+		ssecondmeeting = s.create_successor()
+		ssecondmeeting.add_condition(bat.story.CondStore(
 				'/game/level/lkMissionStarted', True, False))
-		ssecondmeeting.addEvent("ShowDialogue", ("Hi again! What's up?",
+		ssecondmeeting.add_event("ShowDialogue", ("Hi again! What's up?",
 				("What am I to do again?", "Just saying \"hi\".")))
 
-		sdeliver2 = ssecondmeeting.createTransition("delivery2")
-		sdeliver2.addCondition(bat.story.CondEventNe("DialogueDismissed", 1, self))
+		sdeliver2 = ssecondmeeting.create_successor("delivery2")
+		sdeliver2.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
 
-		sdeliver_merged = self.sg_give_mission([sdeliver1, sdeliver2])
+		smission_start, smission_end = self.sg_give_mission()
+		smission_start.add_predecessor(sdeliver1_end)
+		smission_start.add_predecessor(sdeliver2)
 
 		snothing = bat.story.State("nothing")
-		sfirstmeeting.addTransition(snothing)
-		ssecondmeeting.addTransition(snothing)
-		snothing.addCondition(bat.story.CondEventEq("DialogueDismissed", 1, self))
-		snothing.addEvent("ShowDialogue", "OK - hi! But it's hard work operating the lighthouse without a button! Let's talk later.")
-		snothing.addAction(bat.story.ActAction('LK_Goodbye', 1, 80, LighthouseKeeper.L_ANIM))
+		snothing.add_predecessor(sfirstmeeting)
+		snothing.add_predecessor(ssecondmeeting)
+		snothing.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
+		snothing.add_event("ShowDialogue", "OK - hi! But it's hard work operating the lighthouse without a button! Let's talk later.")
+		snothing.add_action(bat.story.ActAction('LK_Goodbye', 1, 80, LighthouseKeeper.L_ANIM))
 		# Intermediate step, then jump to end
-		snothing = snothing.createTransition()
-		snothing.addCondition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 80))
-		snothing.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		snothing.addAction(bat.story.ActAction('LK_Goodbye', 80, 90, LighthouseKeeper.L_ANIM))
+		snothing = snothing.create_successor()
+		snothing.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 80))
+		snothing.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		snothing.add_action(bat.story.ActAction('LK_Goodbye', 80, 90, LighthouseKeeper.L_ANIM))
 
-		snothing = snothing.createTransition()
-		snothing.addCondition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 90))
+		snothing = snothing.create_successor()
+		snothing.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 90))
 
 		#
 		# Return to game
 		#
 		s = bat.story.State("Return to game")
-		sdeliver_merged.addTransition(s)
-		snothing.addTransition(s)
-		s.addAction(Scripts.story.ActResumeInput())
-		s.addAction(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
-		s.addAction(Scripts.story.ActRemoveCamera('LK_Cam_CU_LK'))
-		s.addAction(Scripts.story.ActRemoveFocalPoint('FF_Face'))
+		s.add_predecessor(smission_end)
+		s.add_predecessor(snothing)
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
+		s.add_action(Scripts.story.ActRemoveCamera('LK_Cam_CU_LK'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('FF_Face'))
 
 		#
 		# Play idle animation
 		#
-		s = s.createTransition()
-		s.addAction(bat.story.ActAction('LK_WorkingHard', 1, 36, LighthouseKeeper.L_ANIM,
+		s = s.create_successor()
+		s.add_action(bat.story.ActAction('LK_WorkingHard', 1, 36, LighthouseKeeper.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=4.0))
 
 		#
 		# Loop back to start when snail moves away.
 		#
-		s = s.createTransition()
-		s.addCondition(bat.story.CondSensorNot('Near'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondSensorNot('Near'))
 
-		s = s.createTransition("Reset")
-		s.addCondition(bat.story.CondSensor('Near'))
-		s.addTransition(self.rootState)
+		s = s.create_successor("Reset")
+		s.add_condition(bat.story.CondSensor('Near'))
+		s.add_successor(self.rootState)
 
-	def sg_accept_delivery(self, preceding_states):
-		s = bat.story.State("delivery")
-		for ps in preceding_states:
-			ps.addTransition(s)
-		s.addEvent("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
+	def sg_accept_delivery(self):
+		sdeliver_start = bat.story.State("delivery")
+		sdeliver_start.add_event("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s = sdeliver_start.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(1))
-		s.addEvent("ShowDialogue", "Oh no! It's a quote for a new button, and it's too expensive.")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_event("ShowDialogue", "Oh no! It's a quote for a new button, and it's too expensive.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "Blast! I can't believe someone stole it in the first place.")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Blast! I can't believe someone stole it in the first place.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(1))
-		s.addEvent("ShowDialogue", "Phew, this is thirsty work.")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_event("ShowDialogue", "Phew, this is thirsty work.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "Can you deliver something for me too?")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Can you deliver something for me too?")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "I'm all out of sauce, you see. I'm "\
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "I'm all out of sauce, you see. I'm "\
 				"parched! But I'm stuck here, so I can't get to the sauce bar.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		sdeliver_end = s.create_successor()
+		sdeliver_end.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
-		return s
+		return sdeliver_start, sdeliver_end
 
-	def sg_give_mission(self, preceding_states):
-		s = bat.story.State("split")
-		for ps in preceding_states:
-			ps.addTransition(s)
+	def sg_give_mission(self):
+		smission_start = bat.story.State("split")
+		smission_start.add_action(Scripts.story.ActSetCamera('LK_Cam_SauceBar'))
+		smission_start.add_action(Scripts.story.ActSetFocalPoint('B_SauceBarSign'))
+		smission_start.add_action(Scripts.story.ActShowMarker('B_SauceBarSign'))
 
-		s.addAction(Scripts.story.ActSetCamera('LK_Cam_SauceBar'))
-		s.addAction(Scripts.story.ActSetFocalPoint('B_SauceBarSign'))
-		s.addAction(Scripts.story.ActShowMarker('B_SauceBarSign'))
-
-		s = s.createTransition()
-		s.addEvent("ShowDialogue", ("Please go to the bar and order me some "\
+		s = smission_start.create_successor()
+		s.add_event("ShowDialogue", ("Please go to the bar and order me some "\
 				"black bean sauce.", ("Gross!", "No problem.")))
-		s.addAction(Scripts.story.ActSetCamera('LK_Cam_SauceBar_zoom'))
+		s.add_action(Scripts.story.ActSetCamera('LK_Cam_SauceBar_zoom'))
 
-		sno = s.createTransition("no")
-		sno.addCondition(bat.story.CondEventNe("DialogueDismissed", 1, self))
-		sno.addEvent("ShowDialogue", "Hey, no one asked you to drink it! Off you go.")
-		sno.addAction(Scripts.story.ActRemoveCamera('LK_Cam_SauceBar_zoom'))
-		sno.addAction(Scripts.story.ActRemoveCamera('LK_Cam_SauceBar'))
-		sno.addAction(Scripts.story.ActRemoveFocalPoint('B_SauceBarSign'))
-		sno.addAction(Scripts.story.ActShowMarker(None))
+		sno = s.create_successor("no")
+		sno.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
+		sno.add_event("ShowDialogue", "Hey, no one asked you to drink it! Off you go.")
+		sno.add_action(Scripts.story.ActRemoveCamera('LK_Cam_SauceBar_zoom'))
+		sno.add_action(Scripts.story.ActRemoveCamera('LK_Cam_SauceBar'))
+		sno.add_action(Scripts.story.ActRemoveFocalPoint('B_SauceBarSign'))
+		sno.add_action(Scripts.story.ActShowMarker(None))
 
-		syes = s.createTransition("yes")
-		syes.addCondition(bat.story.CondEventEq("DialogueDismissed", 1, self))
-		syes.addEvent("ShowDialogue", "Thanks!")
-		syes.addAction(Scripts.story.ActRemoveCamera('LK_Cam_SauceBar_zoom'))
-		syes.addAction(Scripts.story.ActRemoveCamera('LK_Cam_SauceBar'))
-		syes.addAction(Scripts.story.ActRemoveFocalPoint('B_SauceBarSign'))
-		syes.addAction(Scripts.story.ActShowMarker(None))
+		syes = s.create_successor("yes")
+		syes.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
+		syes.add_event("ShowDialogue", "Thanks!")
+		syes.add_action(Scripts.story.ActRemoveCamera('LK_Cam_SauceBar_zoom'))
+		syes.add_action(Scripts.story.ActRemoveCamera('LK_Cam_SauceBar'))
+		syes.add_action(Scripts.story.ActRemoveFocalPoint('B_SauceBarSign'))
+		syes.add_action(Scripts.story.ActShowMarker(None))
 
-		s = bat.story.State("merge")
-		syes.addTransition(s)
-		sno.addTransition(s)
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addAction(bat.story.ActStoreSet('/game/level/lkMissionStarted', True))
+		smission_end = bat.story.State("merge")
+		smission_end.add_predecessor(syes)
+		smission_end.add_predecessor(sno)
+		smission_end.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		smission_end.add_action(bat.story.ActStoreSet('/game/level/lkMissionStarted', True))
 
-		return s
+		return smission_start, smission_end

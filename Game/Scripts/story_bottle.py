@@ -272,17 +272,17 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		#
 		# Set scene with a long shot camera.
 		#
-		s = self.rootState.createTransition("Init")
-		s.addCondition(bat.story.CondSensor('Near'))
-		s.addAction(Scripts.story.ActSuspendInput())
-		s.addWeakEvent("StartLoading", self)
+		s = self.rootState.create_successor("Init")
+		s.add_condition(bat.story.CondSensor('Near'))
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_event("StartLoading", self)
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(1))
-		s.addWeakEvent("FinishLoading", self)
-		s.addAction(Scripts.story.ActSetCamera('BottleCamera_Close'))
-		s.addAction(Scripts.story.ActSetFocalPoint("SlugLookTarget"))
-		s.addEvent("TeleportSnail", "BK_SnailTalkPos")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_event("FinishLoading", self)
+		s.add_action(Scripts.story.ActSetCamera('BottleCamera_Close'))
+		s.add_action(Scripts.story.ActSetFocalPoint("SlugLookTarget"))
+		s.add_event("TeleportSnail", "BK_SnailTalkPos")
 
 		# Split story.
 		# Note that these are added IN ORDER: if the first one fails, it will
@@ -297,205 +297,205 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		# Merge, and return to game
 		#
 		s = bat.story.State("Return to game")
-		safterbottlecap.addTransition(s)
-		safterbird.addTransition(s)
-		sbeforebird.addTransition(s)
-		sbeforelighthouse.addTransition(s)
-		s.addAction(Scripts.story.ActResumeInput())
-		s.addAction(Scripts.story.ActRemoveCamera('BottleCamera_Close'))
-		s.addAction(Scripts.story.ActRemoveFocalPoint("SlugLookTarget"))
+		safterbottlecap.add_successor(s)
+		safterbird.add_successor(s)
+		sbeforebird.add_successor(s)
+		sbeforelighthouse.add_successor(s)
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(Scripts.story.ActRemoveCamera('BottleCamera_Close'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint("SlugLookTarget"))
 
 		#
 		# Loop back to start when snail moves away.
 		#
-		s = s.createTransition("Reset")
-		s.addCondition(bat.story.CondSensorNot('Near'))
-		s.addTransition(self.rootState)
+		s = s.create_successor("Reset")
+		s.add_condition(bat.story.CondSensorNot('Near'))
+		s.add_successor(self.rootState)
 
 	def sg_beforelighthouse(self, preceding_states):
 		s = bat.story.State("beforelighthouse")
 		for ps in preceding_states:
-			ps.addTransition(s)
-		s.addEvent("ShowDialogue", "Hi Cargo. What will it be, the usual?")
+			ps.add_successor(s)
+		s.add_event("ShowDialogue", "Hi Cargo. What will it be, the usual?")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "There you go - one tomato sauce. Enjoy!")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "There you go - one tomato sauce. Enjoy!")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		return s
 
 	def sg_beforebird(self, preceding_states):
 		s = bat.story.State("beforebird")
 		for ps in preceding_states:
-			ps.addTransition(s)
-		s.addCondition(bat.story.CondStore('/game/level/lkMissionStarted', True, False))
-		s.addEvent("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
+			ps.add_successor(s)
+		s.add_condition(bat.story.CondStore('/game/level/lkMissionStarted', True, False))
+		s.add_event("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
 				("\[envelope].", "1 tomato sauce, please.")))
 
-		sauce = s.createTransition("sauce please")
-		sauce.addCondition(bat.story.CondEventEq("DialogueDismissed", 1, self))
-		sauce.addEvent("ShowDialogue", "There you go.")
+		sauce = s.create_successor("sauce please")
+		sauce.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
+		sauce.add_event("ShowDialogue", "There you go.")
 
-		sauce = sauce.createTransition()
-		sauce.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		sauce = sauce.create_successor()
+		sauce.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
-		sauce = sauce.createTransition()
-		sauce.addCondition(bat.story.CondWait(2))
-		sauce.addEvent("ShowDialogue", "Be careful, Cargo. It's a strange day.")
+		sauce = sauce.create_successor()
+		sauce.add_condition(bat.story.CondWait(2))
+		sauce.add_event("ShowDialogue", "Be careful, Cargo. It's a strange day.")
 
-		sauce = sauce.createTransition()
-		sauce.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		sauce = sauce.create_successor()
+		sauce.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
-		sdeliver = s.createTransition("deliver")
-		sdeliver.addCondition(bat.story.CondEventNe("DialogueDismissed", 1, self))
-		sdeliver.addEvent("ShowDialogue", "Ah, cheers for the letter. So, the "
+		sdeliver = s.create_successor("deliver")
+		sdeliver.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
+		sdeliver.add_event("ShowDialogue", "Ah, cheers for the letter. So, the "
 				"lighthouse keeper wants some more black bean sauce, eh?")
 
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		sdeliver.addEvent("ShowDialogue", "She must be busy to not come here to get it herself.")
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		sdeliver.add_event("ShowDialogue", "She must be busy to not come here to get it herself.")
 
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		sdeliver.addEvent("ShowDialogue", "Oh, the lighthouse is broken?")
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		sdeliver.add_event("ShowDialogue", "Oh, the lighthouse is broken?")
 
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		sdeliver.addEvent("ShowDialogue", "There has been a thief here too. You must have noticed the missing lights on your way in?")
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		sdeliver.add_event("ShowDialogue", "There has been a thief here too. You must have noticed the missing lights on your way in?")
 
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		sdeliver.addEvent("ShowDialogue", "They disappeared just last night.")
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		sdeliver.add_event("ShowDialogue", "They disappeared just last night.")
 
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		sdeliver.addEvent("ShowDialogue", "What is the island coming to? I can imagine this happening on Spider Isle, but not here.")
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		sdeliver.add_event("ShowDialogue", "What is the island coming to? I can imagine this happening on Spider Isle, but not here.")
 
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		# Bird arrives! Shake the camera about.
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondWait(2))
-		sdeliver.addAction(bat.story.ActAction("BottleCamera_CloseAction", 1, 90, 0,
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondWait(2))
+		sdeliver.add_action(bat.story.ActAction("BottleCamera_CloseAction", 1, 90, 0,
 				"BottleCamera_Close"))
-		sdeliver.addEvent('BirdArrived')
+		sdeliver.add_event('BirdArrived')
 
-		stweet1 = sdeliver.createSubStep("Bird Sound 1")
-		stweet1.addCondition(bat.story.CondActionGE(0, 20, ob="BottleCamera_Close", tap=True))
-		stweet1.addAction(bat.story.ActSound('//Sound/cc-by/BirdTweet1.ogg'))
+		stweet1 = sdeliver.create_sub_step("Bird Sound 1")
+		stweet1.add_condition(bat.story.CondActionGE(0, 20, ob="BottleCamera_Close", tap=True))
+		stweet1.add_action(bat.story.ActSound('//Sound/cc-by/BirdTweet1.ogg'))
 
-		stweet2 = sdeliver.createSubStep("Bird Sound 2")
-		stweet2.addCondition(bat.story.CondActionGE(0, 50, ob="BottleCamera_Close", tap=True))
-		stweet2.addAction(bat.story.ActSound('//Sound/cc-by/BirdTweet2.ogg'))
+		stweet2 = sdeliver.create_sub_step("Bird Sound 2")
+		stweet2.add_condition(bat.story.CondActionGE(0, 50, ob="BottleCamera_Close", tap=True))
+		stweet2.add_action(bat.story.ActSound('//Sound/cc-by/BirdTweet2.ogg'))
 
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondWait(1))
-		sdeliver.addSubStep(stweet1)
-		sdeliver.addSubStep(stweet2)
-		sdeliver.addEvent("ShowDialogue", "Look out! It's that cursed thing again. It must be back for the rest of the lights.")
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondWait(1))
+		sdeliver.add_sub_step(stweet1)
+		sdeliver.add_sub_step(stweet2)
+		sdeliver.add_event("ShowDialogue", "Look out! It's that cursed thing again. It must be back for the rest of the lights.")
 
-		sdeliver = sdeliver.createTransition()
-		sdeliver.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		sdeliver = sdeliver.create_successor()
+		sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		s = bat.story.State("merge")
-		sauce.addTransition(s)
-		sdeliver.addTransition(s)
+		sauce.add_successor(s)
+		sdeliver.add_successor(s)
 
 		return s
 
 	def sg_afterbird(self, preceding_states):
 		s = bat.story.State("afterbird")
 		for ps in preceding_states:
-			ps.addTransition(s)
-		s.addCondition(bat.story.CondStore('/game/level/birdTookShell', True, False))
-		s.addEvent("ShowDialogue", "Hi again, Cargo. Terribly sorry to hear about your shell!")
+			ps.add_successor(s)
+		s.add_condition(bat.story.CondStore('/game/level/birdTookShell', True, False))
+		s.add_event("ShowDialogue", "Hi again, Cargo. Terribly sorry to hear about your shell!")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "That pesky bird needs to be taught a lesson!")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "That pesky bird needs to be taught a lesson!")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "It's no good charging up the tree: the bees won't allow it. They're very protective of their honey.")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "It's no good charging up the tree: the bees won't allow it. They're very protective of their honey.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "But, first things first, eh? You need to get your shell back.")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "But, first things first, eh? You need to get your shell back.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "I don't know how you'll get to the nest, but, hmm... shiny red things...")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "I don't know how you'll get to the nest, but, hmm... shiny red things...")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondWait(2))
-		s.addEvent("ShowDialogue", "Ah, that's right! This bottle used to have a bright red lid \[bottlecap]!")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(2))
+		s.add_event("ShowDialogue", "Ah, that's right! This bottle used to have a bright red lid \[bottlecap]!")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "I used to use it as a door, but it washed away one day in heavy rain.")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "I used to use it as a door, but it washed away one day in heavy rain.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "I think I saw the \[bottlecap] on that little island near your house.")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "I think I saw the \[bottlecap] on that little island near your house.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "The water is deep, though, so you'll have to figure out how to get there dry.")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "The water is deep, though, so you'll have to figure out how to get there dry.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addEvent("ShowDialogue", "Quick, go and get it!")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Quick, go and get it!")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		return s
 
 	def sg_afterbottlecap(self, preceding_states):
 		s = bat.story.State("afterbottlecap")
 		for ps in preceding_states:
-			ps.addTransition(s)
-		s.addCondition(bat.story.CondStore('/game/level/birdTookShell', True, False))
-		s.addCondition(Scripts.story.CondHasShell('BottleCap'))
-		s.addEvent("ShowDialogue", ("Hi Cargo, what's happening?",
+			ps.add_successor(s)
+		s.add_condition(bat.story.CondStore('/game/level/birdTookShell', True, False))
+		s.add_condition(Scripts.story.CondHasShell('BottleCap'))
+		s.add_event("ShowDialogue", ("Hi Cargo, what's happening?",
 				("\[bottlecap]!", "I'm thirsty.")))
 
 		## Second option.
-		sauce = s.createTransition("sauce please")
-		sauce.addCondition(bat.story.CondEventEq("DialogueDismissed", 1, self))
-		sauce.addEvent("ShowDialogue", "More tomato sauce? There you go.")
+		sauce = s.create_successor("sauce please")
+		sauce.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
+		sauce.add_event("ShowDialogue", "More tomato sauce? There you go.")
 
-		sauce = sauce.createTransition()
-		sauce.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		sauce = sauce.create_successor()
+		sauce.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		## First option.
-		scap = s.createTransition("cap")
-		scap.addCondition(bat.story.CondEventNe("DialogueDismissed", 1, self))
-		scap.addEvent("ShowDialogue", "You found my bottle cap! That's great news.")
+		scap = s.create_successor("cap")
+		scap.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
+		scap.add_event("ShowDialogue", "You found my bottle cap! That's great news.")
 
-		scap = scap.createTransition()
-		scap.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		scap.addEvent("ShowDialogue", "It's OK, you can keep it. I like not having a door: I get more customers this way.")
+		scap = scap.create_successor()
+		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		scap.add_event("ShowDialogue", "It's OK, you can keep it. I like not having a door: I get more customers this way.")
 
-		scap = scap.createTransition()
-		scap.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		scap.addEvent("ShowDialogue", "Only two more shiny red things to go, eh? Sadly I haven't seen anything else that is shiny and red.")
+		scap = scap.create_successor()
+		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		scap.add_event("ShowDialogue", "Only two more shiny red things to go, eh? Sadly I haven't seen anything else that is shiny and red.")
 
-		scap = scap.createTransition()
-		scap.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		scap.addEvent("ShowDialogue", "You'll just have to keep looking.")
+		scap = scap.create_successor()
+		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		scap.add_event("ShowDialogue", "You'll just have to keep looking.")
 
-		scap = scap.createTransition()
-		scap.addCondition(bat.story.CondEvent("DialogueDismissed", self))
+		scap = scap.create_successor()
+		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		s = bat.story.State("merge")
-		sauce.addTransition(s)
-		scap.addTransition(s)
+		sauce.add_successor(s)
+		scap.add_successor(s)
 		return s
 
 

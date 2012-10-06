@@ -93,225 +93,225 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
 			o['nParticles'] = o['nParticles'] + number
 			o['maxSpeed'] = maxSpeed
 
-		s = self.rootState.createTransition("Init")
-		s.addAction(Scripts.story.ActSuspendInput())
+		s = self.rootState.create_successor("Init")
+		s.add_action(Scripts.story.ActSuspendInput())
 
-		s = s.createTransition("Init")
-		s.addCondition(bat.story.CondWait(1))
-		s.addEvent("ForceEnterShell", False)
-		s.addAction(Scripts.story.ActSetCamera('WormCamera_Enter'))
-		s.addAction(Scripts.story.ActSetFocalPoint('CargoHoldAuto'))
-		s.addAction(bat.story.ActAction('ParticleEmitMove', 1, 1, Worm.L_ANIM, "ParticleEmitterLoc"))
-		s.addAction(bat.story.ActGenericContext(letter_manual))
+		s = s.create_successor("Init")
+		s.add_condition(bat.story.CondWait(1))
+		s.add_event("ForceEnterShell", False)
+		s.add_action(Scripts.story.ActSetCamera('WormCamera_Enter'))
+		s.add_action(Scripts.story.ActSetFocalPoint('CargoHoldAuto'))
+		s.add_action(bat.story.ActAction('ParticleEmitMove', 1, 1, Worm.L_ANIM, "ParticleEmitterLoc"))
+		s.add_action(bat.story.ActGenericContext(letter_manual))
 
 		#
 		# Peer out of ground
 		#
-		s = s.createTransition("Begin")
-		s.addCondition(bat.story.CondEvent('ShellEntered', self))
-		s.addEvent('AnchorShell', 'CH_ShellAnchor')
-		s.addWeakEvent("FinishLoading", self)
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 10, 15.0))
-		s.addAction(bat.story.ActAction('BurstOut', 1, 75, Worm.L_ANIM))
-		s.addAction(bat.story.ActAction('BurstOut_S', 1, 75, Worm.L_ANIM, 'WormBody'))
+		s = s.create_successor("Begin")
+		s.add_condition(bat.story.CondEvent('ShellEntered', self))
+		s.add_event('AnchorShell', 'CH_ShellAnchor')
+		s.add_event("FinishLoading", self)
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 10, 15.0))
+		s.add_action(bat.story.ActAction('BurstOut', 1, 75, Worm.L_ANIM))
+		s.add_action(bat.story.ActAction('BurstOut_S', 1, 75, Worm.L_ANIM, 'WormBody'))
 
-		s = s.createTransition("Greet")
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 74.0))
-		s.addEvent("ShowDialogue", "Cargo?")
+		s = s.create_successor("Greet")
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 74.0))
+		s.add_event("ShowDialogue", "Cargo?")
 
 		#
 		# Get out of the ground
 		#
-		s = s.createTransition("Get out of the ground")
-		s.addCondition(bat.story.CondEvent('DialogueDismissed', self))
-		s.addAction(Scripts.story.ActRemoveCamera('WormCamera_Enter'))
-		s.addAction(Scripts.story.ActSetCamera('WormCamera_Converse'))
-		s.addAction(bat.story.ActAction('BurstOut', 75, 186, Worm.L_ANIM))
-		s.addAction(bat.story.ActAction('BurstOut_S', 75, 186, Worm.L_ANIM, 'WormBody'))
+		s = s.create_successor("Get out of the ground")
+		s.add_condition(bat.story.CondEvent('DialogueDismissed', self))
+		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Enter'))
+		s.add_action(Scripts.story.ActSetCamera('WormCamera_Converse'))
+		s.add_action(bat.story.ActAction('BurstOut', 75, 186, Worm.L_ANIM))
+		s.add_action(bat.story.ActAction('BurstOut_S', 75, 186, Worm.L_ANIM, 'WormBody'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 115.0))
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 3, 10.0))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 115.0))
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 3, 10.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 147.0))
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 5, 10.0))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 147.0))
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 5, 10.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 153.0))
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 5, 10.0))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 153.0))
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 5, 10.0))
 
 		#
 		# Knock on shell
 		#
-		s = s.createTransition("Knock on shell")
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 185.0))
-		s.addAction(Scripts.story.ActSetCamera('WormCamera_Knock'))
-		s.addEvent("ShowDialogue", "Wake up, Cargo!")
-		s.addAction(bat.story.ActAction('BurstOut', 187, 200, Worm.L_ANIM,
+		s = s.create_successor("Knock on shell")
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 185.0))
+		s.add_action(Scripts.story.ActSetCamera('WormCamera_Knock'))
+		s.add_event("ShowDialogue", "Wake up, Cargo!")
+		s.add_action(bat.story.ActAction('BurstOut', 187, 200, Worm.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-		s.addAction(bat.story.ActAction('BurstOut_S', 187, 200, Worm.L_ANIM, 'WormBody'))
+		s.add_action(bat.story.ActAction('BurstOut_S', 187, 200, Worm.L_ANIM, 'WormBody'))
 
-		sKnock = s.createSubStep("Knock sound")
-		sKnock.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 189, tap=True))
-		sKnock.addAction(bat.story.ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.8,
+		sKnock = s.create_sub_step("Knock sound")
+		sKnock.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 189, tap=True))
+		sKnock.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.8,
 				pitchmax= 1.1))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent('DialogueDismissed', self))
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 199))
-		s.addAction(bat.story.ActAction('BurstOut', 200, 220, Worm.L_ANIM))
-		s.addAction(bat.story.ActAction('BurstOut_S', 200, 220, Worm.L_ANIM, 'WormBody'))
-		s.addAction(bat.story.ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.8,
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent('DialogueDismissed', self))
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 199))
+		s.add_action(bat.story.ActAction('BurstOut', 200, 220, Worm.L_ANIM))
+		s.add_action(bat.story.ActAction('BurstOut_S', 200, 220, Worm.L_ANIM, 'WormBody'))
+		s.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=0.6, pitchmin=0.8,
 				pitchmax= 1.1))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 200.0))
-		s.addAction(Scripts.story.ActRemoveCamera('WormCamera_Knock'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 200.0))
+		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Knock'))
 
 		#
 		# Wake / chastise
 		#	
-		s = s.createTransition("Wake")
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 205.0))
-		s.addEvent("ForceExitShell", True)
+		s = s.create_successor("Wake")
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 205.0))
+		s.add_event("ForceExitShell", True)
 
-		s = s.createTransition("Chastise")
-		s.addCondition(bat.story.CondEvent('ShellExited', self))
-		s.addEvent("ShowDialogue", "Sleeping in, eh? Don't worry, I won't tell anyone.")
+		s = s.create_successor("Chastise")
+		s.add_condition(bat.story.CondEvent('ShellExited', self))
+		s.add_event("ShowDialogue", "Sleeping in, eh? Don't worry, I won't tell anyone.")
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondEvent('DialogueDismissed', self))
-		s.addEvent("ShowDialogue", "I have something for you!")
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent('DialogueDismissed', self))
+		s.add_event("ShowDialogue", "I have something for you!")
 
 		#
 		# Dig up letter
 		#
-		s = s.createTransition("Dig up letter")
-		s.addCondition(bat.story.CondEvent('DialogueDismissed', self))
-		s.addAction(bat.story.ActAction('ParticleEmitMove', 2, 2, Worm.L_ANIM, "ParticleEmitterLoc"))
-		s.addAction(bat.story.ActAction('BurstOut', 220, 280, Worm.L_ANIM))
-		s.addAction(bat.story.ActAction('BurstOut_S', 220, 280, Worm.L_ANIM, 'WormBody'))
+		s = s.create_successor("Dig up letter")
+		s.add_condition(bat.story.CondEvent('DialogueDismissed', self))
+		s.add_action(bat.story.ActAction('ParticleEmitMove', 2, 2, Worm.L_ANIM, "ParticleEmitterLoc"))
+		s.add_action(bat.story.ActAction('BurstOut', 220, 280, Worm.L_ANIM))
+		s.add_action(bat.story.ActAction('BurstOut_S', 220, 280, Worm.L_ANIM, 'WormBody'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 235))
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 3, 10.0))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 235))
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 3, 10.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 241))
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 3, 7.0))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 241))
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 3, 7.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 249))
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 3, 7.0))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 249))
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 3, 7.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 257))
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 3, 7.0))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 257))
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 3, 7.0))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 265))
-		s.addAction(bat.story.ActGenericContext(spray_dirt, 3, 7.0))
-		s.addAction(bat.story.ActGenericContext(letter_auto))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 265))
+		s.add_action(bat.story.ActGenericContext(spray_dirt, 3, 7.0))
+		s.add_action(bat.story.ActGenericContext(letter_auto))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 275))
-		s.addAction(Scripts.story.ActSetCamera('WormCamera_Envelope'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 275))
+		s.add_action(Scripts.story.ActSetCamera('WormCamera_Envelope'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 279))
-		s.addEvent("ShowDialogue",
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 279))
+		s.add_event("ShowDialogue",
 				("Ta-da! Please deliver this express \[envelope] for me.",
 						("Of course!", "I'm too sleepy...")))
 
 		#
 		# FORK - conversation splits.
 		#
-		syes = s.createTransition("Yes")
+		syes = s.create_successor("Yes")
 		# Use 'not equal' here, because it's safer than using two equals (in
 		# case the dialogue returns a value other than 1 or 0).
-		syes.addCondition(bat.story.CondEventNe("DialogueDismissed", 1, self))
-		syes.addEvent("ShowDialogue", "Great!")
+		syes.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
+		syes.add_event("ShowDialogue", "Great!")
 
-		sno = s.createTransition("No")
-		sno.addCondition(bat.story.CondEventEq("DialogueDismissed", 1, self))
-		sno.addEvent("ShowDialogue", "Oh, come on! It's your job, after all.")
+		sno = s.create_successor("No")
+		sno.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
+		sno.add_event("ShowDialogue", "Oh, come on! It's your job, after all.")
 		# Lots of text, so wait for a second.
-		sno = sno.createTransition()
-		sno.addCondition(bat.story.CondWait(1))
+		sno = sno.create_successor()
+		sno.add_condition(bat.story.CondWait(1))
 
 		#
 		# Give letter - conversation merges.
 		#
 		s = bat.story.State("Give letter")
-		syes.addTransition(s)
-		sno.addTransition(s)
-		s.addAction(Scripts.story.ActRemoveCamera('WormCamera_Envelope'))
-		s.addAction(bat.story.ActAction('BurstOut', 290, 330, Worm.L_ANIM))
-		s.addAction(bat.story.ActAction('BurstOut_S', 290, 330, Worm.L_ANIM, 'WormBody'))
+		syes.add_successor(s)
+		sno.add_successor(s)
+		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Envelope'))
+		s.add_action(bat.story.ActAction('BurstOut', 290, 330, Worm.L_ANIM))
+		s.add_action(bat.story.ActAction('BurstOut_S', 290, 330, Worm.L_ANIM, 'WormBody'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 308))
-		s.addAction(bat.story.ActGenericContext(letter_manual))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 308))
+		s.add_action(bat.story.ActGenericContext(letter_manual))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 315))
-		s.addAction(bat.story.ActGenericContext(letter_hide))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 315))
+		s.add_action(bat.story.ActGenericContext(letter_hide))
 
 		#
 		# Point to lighthouse
 		#
-		s = s.createTransition("Point to lighthouse")
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 330))
-		s.addEvent("ShowDialogue", "Please take it to the lighthouse keeper as soon as possible. I have paid for express mail!")
-		s.addAction(bat.story.ActAction('BurstOut', 360, 395, Worm.L_ANIM))
-		s.addAction(bat.story.ActAction('BurstOut_S', 360, 395, Worm.L_ANIM, 'WormBody'))
+		s = s.create_successor("Point to lighthouse")
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 330))
+		s.add_event("ShowDialogue", "Please take it to the lighthouse keeper as soon as possible. I have paid for express mail!")
+		s.add_action(bat.story.ActAction('BurstOut', 360, 395, Worm.L_ANIM))
+		s.add_action(bat.story.ActAction('BurstOut_S', 360, 395, Worm.L_ANIM, 'WormBody'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 360))
-		s.addAction(Scripts.story.ActSetCamera('WormCamera_Lighthouse'))
-		s.addAction(Scripts.story.ActSetFocalPoint('Torch'))
-		s.addAction(Scripts.story.ActShowMarker('Torch'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 360))
+		s.add_action(Scripts.story.ActSetCamera('WormCamera_Lighthouse'))
+		s.add_action(Scripts.story.ActSetFocalPoint('Torch'))
+		s.add_action(Scripts.story.ActShowMarker('Torch'))
 
-		s = s.createTransition()
-		s.addAction(Scripts.story.ActSetCamera('WormCamera_Lighthouse_zoom'))
+		s = s.create_successor()
+		s.add_action(Scripts.story.ActSetCamera('WormCamera_Lighthouse_zoom'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 394))
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addAction(Scripts.story.ActRemoveCamera('WormCamera_Lighthouse_zoom'))
-		s.addAction(Scripts.story.ActRemoveCamera('WormCamera_Lighthouse'))
-		s.addAction(Scripts.story.ActRemoveFocalPoint('Torch'))
-		s.addAction(Scripts.story.ActShowMarker(None))
-		s.addEvent("ShowDialogue", "See you later!")
-		s.addAction(bat.story.ActAction('BurstOut', 395, 420, Worm.L_ANIM))
-		s.addAction(bat.story.ActAction('BurstOut_S', 395, 420, Worm.L_ANIM, 'WormBody'))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 394))
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Lighthouse_zoom'))
+		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Lighthouse'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Torch'))
+		s.add_action(Scripts.story.ActShowMarker(None))
+		s.add_event("ShowDialogue", "See you later!")
+		s.add_action(bat.story.ActAction('BurstOut', 395, 420, Worm.L_ANIM))
+		s.add_action(bat.story.ActAction('BurstOut_S', 395, 420, Worm.L_ANIM, 'WormBody'))
 
-		s = s.createTransition()
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 420))
-		s.addCondition(bat.story.CondEvent("DialogueDismissed", self))
-		s.addAction(bat.story.ActAction('BurstOut', 420, 540, Worm.L_ANIM))
-		s.addAction(bat.story.ActAction('BurstOut_S', 420, 540, Worm.L_ANIM, 'WormBody'))
-		s.addAction(bat.story.ActMusicStop())
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 420))
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(bat.story.ActAction('BurstOut', 420, 540, Worm.L_ANIM))
+		s.add_action(bat.story.ActAction('BurstOut_S', 420, 540, Worm.L_ANIM, 'WormBody'))
+		s.add_action(bat.story.ActMusicStop())
 
 		#
 		# Return to game
 		#
-		s = s.createTransition("Return to game")
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 460))
-		s.addAction(bat.story.ActAction('SodFade', 120, 200, 0, 'Sods'))
-		s.addAction(Scripts.story.ActResumeInput())
-		s.addAction(Scripts.story.ActRemoveCamera('WormCamera_Lighthouse_zoom'))
-		s.addAction(Scripts.story.ActRemoveCamera('WormCamera_Converse'))
-		s.addAction(Scripts.story.ActRemoveFocalPoint('CargoHoldAuto'))
-		s.addAction(bat.story.ActStoreSet('/game/level/wormMissionStarted', True))
+		s = s.create_successor("Return to game")
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 460))
+		s.add_action(bat.story.ActAction('SodFade', 120, 200, 0, 'Sods'))
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Lighthouse_zoom'))
+		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Converse'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('CargoHoldAuto'))
+		s.add_action(bat.story.ActStoreSet('/game/level/wormMissionStarted', True))
 
 		#
 		# Clean up. At this point, the worm is completely hidden and the sods have faded.
 		#
-		s = s.createTransition("Clean up")
-		s.addCondition(bat.story.CondActionGE(Worm.L_ANIM, 540))
-		s.addAction(bat.story.ActDestroy())
+		s = s.create_successor("Clean up")
+		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 540))
+		s.add_action(bat.story.ActDestroy())
 
 	def isInsideWorld(self):
 		return True

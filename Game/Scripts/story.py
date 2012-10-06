@@ -17,6 +17,7 @@
 
 import bge
 import mathutils
+import logging
 
 import bat.bats
 import bat.event
@@ -80,6 +81,9 @@ class ActShowMarker(bat.story.BaseAct):
 
 class ActSetCamera(bat.story.BaseAct):
 	'''Switch to a named camera.'''
+
+	log = logging.getLogger(__name__ + '.ActSetCamera')
+
 	def __init__(self, camName):
 		self.CamName = camName
 
@@ -87,8 +91,9 @@ class ActSetCamera(bat.story.BaseAct):
 		try:
 			cam = bge.logic.getCurrentScene().objects[self.CamName]
 		except KeyError:
-			print(("Warning: couldn't find camera %s. Not adding." %
-				self.CamName))
+			ActSetCamera.log.warn(
+					"Couldn't find camera %s. Not adding." %
+					self.CamName)
 			return
 		Scripts.camera.AutoCamera().add_goal(cam)
 
@@ -96,6 +101,9 @@ class ActSetCamera(bat.story.BaseAct):
 		return "ActSetCamera(%s)" % self.CamName
 
 class ActRemoveCamera(bat.story.BaseAct):
+
+	log = logging.getLogger(__name__ + '.ActRemoveCamera')
+
 	def __init__(self, camName):
 		self.CamName = camName
 
@@ -103,8 +111,9 @@ class ActRemoveCamera(bat.story.BaseAct):
 		try:
 			cam = bge.logic.getCurrentScene().objects[self.CamName]
 		except KeyError:
-			print(("Warning: couldn't find camera %s. Not removing." %
-				self.CamName))
+			ActRemoveCamera.log.warn(
+					"Couldn't find camera %s. Not removing." %
+					self.CamName)
 			return
 		Scripts.camera.AutoCamera().remove_goal(cam)
 
@@ -113,6 +122,9 @@ class ActRemoveCamera(bat.story.BaseAct):
 
 class ActSetFocalPoint(bat.story.BaseAct):
 	'''Focus on a named object.'''
+
+	log = logging.getLogger(__name__ + '.ActSetFocalPoint')
+
 	def __init__(self, targetName):
 		self.targetName = targetName
 
@@ -120,8 +132,9 @@ class ActSetFocalPoint(bat.story.BaseAct):
 		try:
 			target = bge.logic.getCurrentScene().objects[self.targetName]
 		except KeyError:
-			print(("Warning: couldn't find focus point %s. Not adding." %
-				self.targetName))
+			ActSetFocalPoint.log.warn(
+					"Couldn't find focus point %s. Not adding." %
+					self.targetName)
 			return
 		Scripts.camera.AutoCamera().add_focus_point(target)
 
@@ -129,6 +142,9 @@ class ActSetFocalPoint(bat.story.BaseAct):
 		return "ActSetFocalPoint(%s)" % self.targetName
 
 class ActRemoveFocalPoint(bat.story.BaseAct):
+
+	log = logging.getLogger(__name__ + '.ActRemoveFocalPoint')
+
 	def __init__(self, targetName):
 		self.targetName = targetName
 
@@ -136,8 +152,9 @@ class ActRemoveFocalPoint(bat.story.BaseAct):
 		try:
 			target = bge.logic.getCurrentScene().objects[self.targetName]
 		except KeyError:
-			print(("Warning: couldn't find focus point %s. Not removing." %
-				self.targetName))
+			ActRemoveFocalPoint.log.warn(
+					"Couldn't find focus point %s. Not removing." %
+					self.targetName)
 			return
 		Scripts.camera.AutoCamera().remove_focus_point(target)
 

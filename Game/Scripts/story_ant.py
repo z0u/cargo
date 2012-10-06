@@ -75,8 +75,8 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sconv_start, sconv_end = self.create_conversation()
 		sconv_start.add_predecessor(s)
 
-		#senter_start, senter_end = self.create_enter_states()
-		#senter_start.add_predecessor(s)
+		senter_start, _ = self.create_enter_states()
+		senter_start.add_predecessor(s)
 
 		#
 		# Loop back to start.
@@ -94,6 +94,9 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_successor(self.rootState)
 
 	def create_conversation(self):
+		'''
+		State graph that plays when Cargo approaches the ant at the tree door.
+		'''
 		sconv_start = bat.story.State("Talk")
 		sconv_start.add_condition(bat.story.CondEvent("ApproachAnts", self))
 		sconv_start.add_action(Scripts.story.ActSuspendInput())
@@ -209,9 +212,41 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		return sconv_start, sconv_end
 
 	def create_enter_states(self):
+		'''State graph that plays when the tree door is broken.'''
 		senter_start = bat.story.State("Enter start")
+		senter_start.add_condition(bat.story.CondEvent("treeDoorBroken", self))
+		senter_start.add_action(Scripts.story.ActSetCamera('AntMidCam'))
+		senter_start.add_action(Scripts.story.ActSetFocalPoint('Ant'))
+		senter_start.add_action(Scripts.story.ActSuspendInput())
+		senter_start.add_action(bat.story.ActAction('HP_AntEnter', 1, 40,
+				Ant.L_ANIM, blendin=1.0))
+		senter_start.add_action(bat.story.ActDestroy(target_descendant='Ant_Pick'))
+		sdrop_pick = senter_start.create_sub_step("Adjust influence")
+		sdrop_pick.add_action(bat.story.ActConstraintFade("Hand.L",
+				"Copy Transforms", 1.0, 0.0, 1.0, 4.0, Ant.L_ANIM))
 
-		senter_end = senter_start.create_successor()
+		s = senter_start.create_successor()
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 25))
+		s.add_action(Scripts.story.ActSetCamera('AntVictoryCam'))
+		s.add_event("ShowDialogue", "Amazing! You've done it!")
+		s.add_event("TeleportSnail", "HP_SnailTalkPos")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 40))
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "And look, it's just as I suspected - sugary syrup!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Let's find the source. Last one up the tree is a rotten egg!")
+
+		senter_end = s.create_successor()
+		senter_end.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		senter_end.add_action(Scripts.story.ActRemoveCamera('AntVictoryCam'))
+		senter_end.add_action(Scripts.story.ActRemoveCamera('AntMidCam'))
+		senter_end.add_action(Scripts.story.ActResumeInput())
+		senter_end.add_action(bat.story.ActDestroy(ob='Honeypot'))
+		senter_end.add_action(bat.story.ActDestroy())
 
 		return senter_start, senter_end
 

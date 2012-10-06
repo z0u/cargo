@@ -51,6 +51,7 @@ class TreeDoor(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			except ValueError:
 				print('Failed to add object %s' % pieceName)
 		self.endObject()
+		bat.event.Event('treeDoorBroken').send()
 		bat.store.put('/game/level/treeDoorBroken', True)
 
 	@bat.bats.expose

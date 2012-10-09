@@ -234,14 +234,24 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 40))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActSetCamera('AntSniffCam'))
 		s.add_event("ShowDialogue", "And look, it's just as I suspected - sugary syrup!")
+		s.add_action(bat.story.ActAction('HP_AntEnter', 50, 70, Ant.L_ANIM))
+		ssniff = s.create_sub_step("Sniff")
+		ssniff.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 70, tap=True))
+		ssniff.add_action(bat.story.ActAction('HP_AntEnter', 70, 102, Ant.L_ANIM,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 
 		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 70))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "Let's find the source. Last one up the tree is a rotten egg!")
+		s.add_action(bat.story.ActAction('HP_AntEnter', 102, 110, Ant.L_ANIM,
+				blendin=3.0))
 
 		senter_end = s.create_successor()
 		senter_end.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		senter_end.add_action(Scripts.story.ActRemoveCamera('AntSniffCam'))
 		senter_end.add_action(Scripts.story.ActRemoveCamera('AntVictoryCam'))
 		senter_end.add_action(Scripts.story.ActRemoveCamera('AntMidCam'))
 		senter_end.add_action(Scripts.story.ActResumeInput())

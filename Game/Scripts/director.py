@@ -262,23 +262,6 @@ class VulnerableActor(Actor):
 		that to happen.'''
 		self.endObject()
 
-class ActorTest(Actor, bge.types.KX_GameObject):
-	def __init__(self, old_owner):
-		Actor.__init__(self)
-		evt = bat.event.WeakEvent('MainCharacterSet', self)
-		bat.event.EventBus().notify(evt)
-		evt = bat.event.Event('SetCameraType', 'OrbitCamera')
-		bat.event.EventBus().notify(evt)
-	def on_movement_impulse(self, left, right, fwd, back):
-		pass
-	def on_button1(self, pos, trig):
-		pass
-	def on_button2(self, pos, trig):
-		pass
-	def on_next(self, pos, trig):
-		pass
-	def on_previous(self, pos, trig):
-		pass
 
 class Director(bat.impulse.Handler, metaclass=bat.bats.Singleton):
 	_prefix = ''

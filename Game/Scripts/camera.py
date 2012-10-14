@@ -96,7 +96,10 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		self.defaultLens = camera.lens
 		bat.utils.get_scene(camera).active_camera = camera
 
-		aud.device().distance_model = aud.AUD_DISTANCE_MODEL_INVERSE_CLAMPED
+		try:
+			aud.device().distance_model = aud.AUD_DISTANCE_MODEL_INVERSE_CLAMPED
+		except aud.error as e:
+			AutoCamera.log.warn("Can't set audio 3D model: %s", e)
 
 	@bat.bats.expose
 	@bat.utils.controller_cls
@@ -167,10 +170,14 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		# Update depth of field (blur).
 		self._update_focal_depth(instant=False)
 
-		dev = aud.device()
-		dev.listener_location = self.camera.worldPosition
-		dev.listener_orientation = self.camera.worldOrientation.to_quaternion()
-		dev.listener_velocity = (0.0, 0.0, 0.0)
+		try:
+			dev = aud.device()
+			dev.listener_location = self.camera.worldPosition
+			dev.listener_orientation = self.camera.worldOrientation.to_quaternion()
+			dev.listener_velocity = (0.0, 0.0, 0.0)
+		except aud.error:
+			#AutoCamera.log.warn("Can't set audio listener location: %s", e)
+			pass
 
 		for ob in self.observers:
 			ob.on_camera_moved(self)

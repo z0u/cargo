@@ -821,9 +821,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.setAngularVelocity(bat.bmath.MINVECTOR, False)
 		self.setLinearVelocity(bat.bmath.MINVECTOR, False)
 
-	def on_movement_impulse(self, f, b, l, r):
-		return
-
 	def can_handle_input(self, state):
 		return state.name in ('Movement', '1', '2', 'Camera', 'Switch')
 
@@ -844,8 +841,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		Make the snail move. If moving forward or backward, this implicitly
 		calls decaySpeed.
 		'''
-		if not self.has_state(Snail.S_CRAWLING):
-			return
 
 		direction = state.direction
 		#

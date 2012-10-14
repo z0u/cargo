@@ -263,6 +263,7 @@ class Shell(ShellBase):
 		fwdVec = p2 - p1
 		fwdVec.normalize()
 		leftVec = ZAXIS.cross(fwdVec)
+		fwdVec = leftVec.cross(ZAXIS)
 
 		#
 		# Set the direction of the vectors.

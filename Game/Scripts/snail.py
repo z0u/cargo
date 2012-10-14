@@ -28,6 +28,7 @@ import bat.utils
 import bat.anim
 import bat.sound
 import bat.effectors
+import bat.render
 
 import Scripts.director
 import Scripts.inventory
@@ -108,6 +109,11 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.shockwave = self.childrenRecursive['Shockwave']
 		self.cameraTrack = self.childrenRecursive['Head.2']
 		self.focal_points = [self.eyeLocL, self.eyeLocR, self]
+
+		# Movement fields
+		self.bend_angle_fore = 0.0
+		self.bend_angle_aft = 0.0
+		self.rot_speed = 0.0
 
 		# For path camera
 		self.localCoordinates = True
@@ -218,11 +224,14 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 				normal.negate()
 			self.alignAxisToVect(normal, 2)
 
-		self.orient_segment(self.children['Head.0'])
-		self.orient_segment(self.children['Tail.0'])
+
+		mat_rot = mathutils.Matrix.Rotation(self.bend_angle_fore, 3, 'Z')
+		self.orient_segment(self.children['Head.0'], mat_rot)
+		mat_rot = mathutils.Matrix.Rotation(self.bend_angle_aft, 3, 'Z')
+		self.orient_segment(self.children['Tail.0'], mat_rot)
 		self.armature.update()
 
-	def orient_segment(self, parentSegment):
+	def orient_segment(self, parentSegment, mat_rot):
 		name = parentSegment.name[:-2]
 		i = int(parentSegment.name[-1:]) + 1
 
@@ -231,6 +240,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			return
 
 		pivot = parentSegment.children[pivotName]
+		pivot.localOrientation = mat_rot
 		rayL = pivot.children['ArcRay_%s.%d.L' % (name, i)]
 		rayR = pivot.children['ArcRay_%s.%d.R' % (name, i)]
 		fulcrum = pivot.children['Fulcrum_%s.%d' % (name, i)]
@@ -266,7 +276,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 		# Recurse
 		if len(segment.children) > 0:
-			self.orient_segment(segment)
+			self.orient_segment(segment, mat_rot)
 
 	def on_event(self, evt):
 		if evt.message == 'ForceExitShell':
@@ -303,8 +313,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 				Snail.log.error("Can't find spawn point %s", spawn_point)
 				return
 		bat.bmath.copy_transform(spawn_point, self)
-		self['BendAngleFore'] = 0.0
-		self['BendAngleAft'] = 0.0
+		self.bend_angle_fore = 0.0
+		self.bend_angle_aft = 0.0
 
 	def update_eye_length(self):
 		def update_single(eyeRayOb):
@@ -836,76 +846,93 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		elif state.name == 'Camera':
 			self.handle_bt_camera(state)
 
+	NORMAL_SPEED = 0.08
+	MAX_ROT = 0.02
+	ROT_FACTOR = 0.2
+	BEND_FACTOR = 0.03
+	MAX_BEND_ANGLE = 0.7 # radians
+
 	def handle_movement(self, state):
 		'''
 		Make the snail move. If moving forward or backward, this implicitly
 		calls decaySpeed.
 		'''
 
-		direction = state.direction
 		#
-		# Apply forward/backward motion.
+		# Get the directional vectors relative to the camera.
 		#
-		speed = self['NormalSpeed'] * self['SpeedMultiplier'] * direction.y
+		cam = bge.logic.getCurrentScene().active_camera
+		right_view = cam.getAxisVect(bat.bmath.XAXIS)
+		up_view = cam.getAxisVect(bat.bmath.YAXIS)
+		fwd_view = cam.getAxisVect(bat.bmath.ZAXIS)
+		fwd_view.negate()
+
+		up_vec = self.getAxisVect(bat.bmath.ZAXIS)
+		fwd_vec = self.getAxisVect(bat.bmath.YAXIS)
+		right_vec = self.getAxisVect(bat.bmath.XAXIS)
+
+#		right_impulse = fwd_view.cross(up_vec)
+#		right_impulse.normalize()
+#		fwd_impulse = up_vec.cross(right_impulse)
+
+		right_impulse = right_view - right_view.project(up_vec)
+		fwd_impulse = fwd_view - fwd_view.project(up_vec)
+
+#		if abs(fwd_view.dot(up_vec)) < 0.7:
+#		else:
+#			right_impulse = up_view.cross(fwd_vec)
+#			right_impulse.normalize()
+#			fwd_impulse = up_vec.cross(right_impulse)
+
+		if up_vec.dot(up_view) > 0:
+			direction = (fwd_impulse * state.direction.y) + (right_impulse * state.direction.x)
+		else:
+			direction = (fwd_impulse * -state.direction.y) + (right_impulse * state.direction.x)
+		direction.normalize()
+
+		if Snail.log.isEnabledFor(20):
+			origin = self.worldPosition
+			bge.render.drawLine(origin, (fwd_impulse * 4) + origin, bat.render.GREEN[0:3])
+			bge.render.drawLine(origin, (right_impulse * 4) + origin, bat.render.RED[0:3])
+			bge.render.drawLine(origin, (direction * 4) + origin, bat.render.WHITE[0:3])
+			#print(direction.magnitude, right_impulse.magnitude, fwd_impulse.magnitude)
+
+		user_speed = state.direction.magnitude
+		speed = Snail.NORMAL_SPEED * self['SpeedMultiplier'] * user_speed
 		if 'SubmergedFactor' in self:
 			# Don't go so fast when under water!
 			speed *= 1.0 - Snail.WATER_DAMPING * self['SubmergedFactor']
-		self.applyMovement((0.0, speed, 0.0), True)
-		self.decay_speed()
 
-		#
-		# Decide which way to turn.
-		#
-		targetBendAngleAft = None
-		targetBendAngleFore = self['MaxBendAngle'] * direction.x
-		targetRot = self['MaxRot'] * -direction.x
-
-		locomotionStep = self['SpeedMultiplier'] * 0.4 * direction.y
-		if direction.y > 0.1:
-			#
-			# Moving forward.
-			#
-			targetBendAngleAft = targetBendAngleFore
-			self.armature['LocomotionFrame'] = (
-				self.armature['LocomotionFrame'] + locomotionStep)
-		elif direction.y < -0.1:
-			#
-			# Reversing: invert rotation direction.
-			#
-			targetBendAngleAft = targetBendAngleFore
-			targetRot = 0.0 - targetRot
-			self.armature['LocomotionFrame'] = (
-				self.armature['LocomotionFrame'] + locomotionStep)
-		else:
-			#
-			# Stationary. Only bend the head.
-			#
-			targetBendAngleAft = 0.0
-			targetRot = 0.0
-
-		self.armature['LocomotionFrame'] = (
-			self.armature['LocomotionFrame'] % 19)
-
-		#
-		# Rotate the snail.
-		#
-		self['Rot'] = bat.bmath.lerp(self['Rot'], targetRot, self['RotFactor'])
-		oRot = mathutils.Matrix.Rotation(self['Rot'], 3, bat.bmath.ZAXIS)
+		# Turning
+		turn_speed = direction.dot(right_vec)
+		target_rot = -Snail.MAX_ROT * turn_speed
+		self.rot_speed = bat.bmath.lerp(self.rot_speed, target_rot, Snail.ROT_FACTOR)
+		oRot = mathutils.Matrix.Rotation(self.rot_speed, 3, bat.bmath.ZAXIS)
 		self.localOrientation = self.localOrientation * oRot
 
-		#
-		# Match the bend angle with the current speed.
-		#
+		# Forward motion
+		if direction.dot(fwd_vec) < -0.3:
+			speed = -speed
+		self.applyMovement((0.0, speed, 0.0), True)
+		self.decay_speed()
+		self.armature['LocomotionFrame'] += 5 * speed
+		self.armature['LocomotionFrame'] %= 19
+
+		# Bending
+		target_bend_angle = Snail.MAX_BEND_ANGLE * turn_speed
+		if speed < 0:
+			target_bend_angle = -target_bend_angle
+
 		if self['SpeedMultiplier'] > 1.0:
-			targetBendAngleAft /= self['SpeedMultiplier']
+			target_bend_angle /= self['SpeedMultiplier']
 
 		# These actually get applied in crawl.
-		self['BendAngleFore'] = bat.bmath.lerp(self['BendAngleFore'],
-				targetBendAngleFore, self['BendFactor'])
+		self.bend_angle_fore = bat.bmath.lerp(self.bend_angle_fore,
+				-target_bend_angle, Snail.BEND_FACTOR)
 
-		if abs(direction.y) > 0.1:
-			self['BendAngleAft'] = bat.bmath.lerp(self['BendAngleAft'],
-					targetBendAngleAft, self['BendFactor'])
+		if abs(user_speed) > 0.1:
+			self.bend_angle_aft = bat.bmath.lerp(self.bend_angle_aft,
+					target_bend_angle, Snail.BEND_FACTOR)
 
 			# Moving forward or backward, so update trail.
 			if self.touchedObject is not None:

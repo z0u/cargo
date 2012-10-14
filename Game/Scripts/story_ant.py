@@ -182,6 +182,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 300))
 		s.add_action(bat.story.ActActionStop(Ant.L_IDLE))
 		s.add_action(bat.story.ActAction('HP_AntConverse', 360, 407, Ant.L_ANIM, blendin=1.0))
 		s.add_event("ShowDialogue", "But I won't give up!")
@@ -200,7 +201,9 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 407))
 		s.add_action(bat.story.ActAction('HP_AntConverse', 440, 470, Ant.L_ANIM, blendin=1.0))
+		s.add_action(bat.story.ActConstraintSet("Hand.L", "Copy Transforms", 1.0))
 		sKnock = s.create_sub_step("Knock sound")
 		sKnock.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 466.5, tap=True))
 		sKnock.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,

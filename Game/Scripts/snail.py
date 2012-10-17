@@ -871,23 +871,11 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		fwd_vec = self.getAxisVect(bat.bmath.YAXIS)
 		right_vec = self.getAxisVect(bat.bmath.XAXIS)
 
-#		right_impulse = fwd_view.cross(up_vec)
-#		right_impulse.normalize()
-#		fwd_impulse = up_vec.cross(right_impulse)
+		right_impulse = fwd_view.cross(up_vec)
+		right_impulse.normalize()
+		fwd_impulse = up_vec.cross(right_impulse)
 
-		right_impulse = right_view - right_view.project(up_vec)
-		fwd_impulse = fwd_view - fwd_view.project(up_vec)
-
-#		if abs(fwd_view.dot(up_vec)) < 0.7:
-#		else:
-#			right_impulse = up_view.cross(fwd_vec)
-#			right_impulse.normalize()
-#			fwd_impulse = up_vec.cross(right_impulse)
-
-		if up_vec.dot(up_view) > 0:
-			direction = (fwd_impulse * state.direction.y) + (right_impulse * state.direction.x)
-		else:
-			direction = (fwd_impulse * -state.direction.y) + (right_impulse * state.direction.x)
+		direction = (fwd_impulse * state.direction.y) + (right_impulse * state.direction.x)
 		direction.normalize()
 
 		if Snail.log.isEnabledFor(20):

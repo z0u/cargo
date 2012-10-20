@@ -1071,13 +1071,14 @@ class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	_prefix = 'MS_'
 
+	S_INIT = 1
+	S_LOOKING = 2
+
 	LOOK_FAC = 0.2
 
 	look_goal = bat.containers.weakprop('look_goal')
 
 	def __init__(self, old_owner):
-		con = self.constraints["LookTarget:Copy Location"]
-		con.enforce = 1.0
 		self.look_at(None)
 
 	@bat.bats.expose
@@ -1085,10 +1086,11 @@ class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 		# Stop tracking goal if it is behind the head.
 		con = self.constraints["LookTarget:Copy Location"]
 		head = self.children["SlugLookTarget"]
-		_, _, local_vec = head.getVectTo(self.look_goal)
+		if self.look_goal is None:
+			return
 
+		_, _, local_vec = head.getVectTo(self.look_goal)
 		if local_vec.y > 0.0:
-			con.active = True
 			con.enforce = min(con.enforce + MinSnail.LOOK_FAC, 1.0)
 			if con.target is not None:
 				con.target.worldPosition = bat.bmath.lerp(
@@ -1096,8 +1098,6 @@ class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 					MinSnail.LOOK_FAC)
 		else:
 			con.enforce = max(con.enforce - MinSnail.LOOK_FAC, 0.0)
-			if con.enforce == 0.0:
-				con.active = False
 
 	def look_at(self, goal):
 		'''Turn the eyes to face the goal.'''
@@ -1108,6 +1108,10 @@ class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 			goal = goal.get_look_target()
 
 		if goal is None:
-			goal = self
+			con = self.constraints["LookTarget:Copy Location"]
+			con.enforce = 0.0
+			self.rem_state(MinSnail.S_LOOKING)
+		else:
+			self.add_state(MinSnail.S_LOOKING)
 
 		self.look_goal = goal

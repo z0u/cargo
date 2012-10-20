@@ -252,14 +252,21 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 	L_IDLE = 0
 	L_ANIM = 1
 
+	idle_action = bat.story.ActAction('Slug_AtBar', 1, 119, L_ANIM,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+				targetDescendant='SlugArm_Min', blendin=15)
+	serve_action = bat.story.ActAction('Slug_Serve', 1, 140, L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3)
+	serve_action_glass = bat.story.ActAction('B_ServingGlass_Serve', 1, 140,
+				L_ANIM, ob='B_ServingGlass', blendin=3)
+	serve_glass_reset = bat.story.ActAction('B_ServingGlass_Serve', 1, 1,
+				L_ANIM, ob='B_ServingGlass')
+
 	def __init__(self, old_owner):
 		bat.story.Chapter.__init__(self, old_owner)
-		arm = bat.bats.add_and_mutate_object(self.scene, "SlugArm_Min",
+		self.arm = bat.bats.add_and_mutate_object(self.scene, "SlugArm_Min",
 				self.children["SlugSpawnPos"])
-		arm.setParent(self)
-		arm.look_at("Snail")
-		arm.playAction("Slug_AtBar", 1, 50)
-		self.arm = arm
+		self.arm.setParent(self)
 		self.arm.localScale = (0.75, 0.75, 0.75)
 		self.create_state_graph()
 
@@ -273,15 +280,21 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		# Set scene with a long shot camera.
 		#
 		s = self.rootState.create_successor("Init")
-		s.add_condition(bat.story.CondSensor('Near'))
-		s.add_action(Scripts.story.ActSuspendInput())
-		s.add_event("StartLoading", self)
+		s.add_action(BarKeeper.idle_action)
+		s.add_action(BarKeeper.serve_glass_reset)
+		s.add_action(bat.story.ActGeneric(self.arm.look_at, 'Snail'))
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(1))
-		s.add_event("FinishLoading", self)
+		s.add_condition(bat.story.CondSensor('Near'))
+		s.add_action(Scripts.story.ActSuspendInput())
+		#s.add_event("StartLoading", self)
+
+		s = s.create_successor()
+		#s.add_condition(bat.story.CondWait(1))
+		#s.add_event("FinishLoading", self)
 		s.add_action(Scripts.story.ActSetCamera('BottleCamera_Close'))
 		s.add_action(Scripts.story.ActSetFocalPoint("SlugLookTarget"))
+		s.add_action(bat.story.ActGeneric(self.arm.look_at, None))
 		s.add_event("TeleportSnail", "BK_SnailTalkPos")
 
 		# Split story.
@@ -316,10 +329,23 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s = bat.story.State("beforelighthouse")
 		for ps in preceding_states:
 			ps.add_successor(s)
+		s.add_action(bat.story.ActAction('Slug_Greet', 1, 40, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 15,
+				targetDescendant='SlugArm_Min'))
 		s.add_event("ShowDialogue", "Hi Cargo. What will it be, the usual?")
+		s.add_action(BarKeeper.idle_action)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(BarKeeper.serve_action)
+		s.add_action(BarKeeper.serve_action_glass)
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 40,
+				targetDescendant='SlugArm_Min'))
 		s.add_event("ShowDialogue", "There you go - one tomato sauce. Enjoy!")
 
 		s = s.create_successor()

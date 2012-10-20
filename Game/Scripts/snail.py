@@ -35,6 +35,7 @@ import Scripts.inventory
 import Scripts.shells
 import Scripts.camera
 import bat.impulse
+from bat import impulse
 
 class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
@@ -114,6 +115,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.bend_angle_fore = 0.0
 		self.bend_angle_aft = 0.0
 		self.rot_speed = 0.0
+		self.direction_mapper = bat.impulse.DirectionMapperLocal()
 
 		# For path camera
 		self.localCoordinates = True
@@ -858,32 +860,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		calls decaySpeed.
 		'''
 
-		#
-		# Get the directional vectors relative to the camera.
-		#
-		cam = bge.logic.getCurrentScene().active_camera
-		right_view = cam.getAxisVect(bat.bmath.XAXIS)
-		up_view = cam.getAxisVect(bat.bmath.YAXIS)
-		fwd_view = cam.getAxisVect(bat.bmath.ZAXIS)
-		fwd_view.negate()
-
-		up_vec = self.getAxisVect(bat.bmath.ZAXIS)
-		fwd_vec = self.getAxisVect(bat.bmath.YAXIS)
-		right_vec = self.getAxisVect(bat.bmath.XAXIS)
-
-		right_impulse = fwd_view.cross(up_vec)
-		right_impulse.normalize()
-		fwd_impulse = up_vec.cross(right_impulse)
-
-		direction = (fwd_impulse * state.direction.y) + (right_impulse * state.direction.x)
-		direction.normalize()
-
-		if Snail.log.isEnabledFor(20):
-			origin = self.worldPosition
-			bge.render.drawLine(origin, (fwd_impulse * 4) + origin, bat.render.GREEN[0:3])
-			bge.render.drawLine(origin, (right_impulse * 4) + origin, bat.render.RED[0:3])
-			bge.render.drawLine(origin, (direction * 4) + origin, bat.render.WHITE[0:3])
-			#print(direction.magnitude, right_impulse.magnitude, fwd_impulse.magnitude)
+		self.direction_mapper.update(self, state.direction)
 
 		user_speed = state.direction.magnitude
 		speed = Snail.NORMAL_SPEED * self['SpeedMultiplier'] * user_speed
@@ -892,14 +869,14 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			speed *= 1.0 - Snail.WATER_DAMPING * self['SubmergedFactor']
 
 		# Turning
-		turn_speed = direction.dot(right_vec)
+		turn_speed = self.direction_mapper.turn_factor
 		target_rot = -Snail.MAX_ROT * turn_speed
 		self.rot_speed = bat.bmath.lerp(self.rot_speed, target_rot, Snail.ROT_FACTOR)
 		oRot = mathutils.Matrix.Rotation(self.rot_speed, 3, bat.bmath.ZAXIS)
 		self.localOrientation = self.localOrientation * oRot
 
 		# Forward motion
-		if direction.dot(fwd_vec) < -0.3:
+		if self.direction_mapper.agreement < -0.3:
 			speed = -speed
 		self.applyMovement((0.0, speed, 0.0), True)
 		self.decay_speed()

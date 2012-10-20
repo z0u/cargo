@@ -224,6 +224,8 @@ class Shell(ShellBase):
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
+		self.direction_mapper = bat.impulse.DirectionMapperGlobal()
+
 		self.rolling_sound = bat.sound.Sample('//Sound/cc-by/Rolling.ogg')
 		self.rolling_sound.loop = True
 		self.rolling_sound.add_effect(bat.sound.Localise(self))
@@ -255,27 +257,9 @@ class Shell(ShellBase):
 		if not self['OnGround']:
 			return
 
-		#
-		# Get the vectors to apply force along.
-		#
-		p1 = bge.logic.getCurrentScene().active_camera.worldPosition
-		p2 = self.worldPosition
-		fwdVec = p2 - p1
-		fwdVec.normalize()
-		leftVec = ZAXIS.cross(fwdVec)
-		fwdVec = leftVec.cross(ZAXIS)
-
-		#
-		# Set the direction of the vectors.
-		#
-		fwdVec = fwdVec * state.direction.y
-		leftVec = leftVec * -state.direction.x
-		finalVec = (fwdVec + leftVec) * self['Power']
-
-		#
-		# Apply the force.
-		#
-		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
+		self.direction_mapper.update(self, state.direction)
+		force = self.direction_mapper.direction * state.direction.magnitude * self['Power']
+		self.applyImpulse((0.0, 0.0, 0.0), force)
 
 class WheelCameraAlignment:
 	'''
@@ -431,6 +415,8 @@ class BottleCap(ShellBase):
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
+		self.direction_mapper = bat.impulse.DirectionMapperGlobal()
+
 		self.jump_sound = bat.sound.Sample('//Sound/MouthPopOpen.ogg')
 		self.jump_sound.pitchmin = 0.9
 		self.jump_sound.pitchmax = 1.0
@@ -483,40 +469,24 @@ class BottleCap(ShellBase):
 			self.jump()
 			self.rem_state(BottleCap.S_JUMP)
 
-	def start_jump(self, fwdMagnitude, leftMagnitude):
+	def start_jump(self, force_vec):
 		'''Plays the jump action. The actual impulse will be given at the right
 		time in the animation.'''
-		self.fwdMagnitude = fwdMagnitude
-		self.leftMagnitude = leftMagnitude
+		self.force_vec = force_vec
 		self.occupier.playAction('CapSnailJump', 1, 15, layer=BottleCap.L_JUMP)
 		self.add_state(BottleCap.S_JUMP)
 
 	def jump(self):
 		'''Applies an impulse to the shell to make it jump.'''
-		#
-		# Get the vectors to apply force along.
-		#
-		p1 = Scripts.camera.AutoCamera().camera.worldPosition
-		p2 = self.worldPosition
-		fwdVec = p2 - p1
-		fwdVec.z = 0.0
-		fwdVec.normalize()
-		leftVec = ZAXIS.cross(fwdVec)
-
-		#
-		# Set the direction of the vectors.
-		#
-		fwdVec = fwdVec * self.fwdMagnitude
-		leftVec = leftVec * self.leftMagnitude
-		finalVec = fwdVec + leftVec
-		finalVec.z = self['Lift']
-		finalVec.normalize()
-		finalVec = finalVec * self['Power']
+		force_vec = self.force_vec.copy()
+		force_vec.z = self['Lift']
+		force_vec.normalize()
+		force_vec *= self['Power']
 
 		#
 		# Apply the force.
 		#
-		self.applyImpulse((0.0, 0.0, 0.0), finalVec)
+		self.applyImpulse((0.0, 0.0, 0.0), force_vec)
 		self.jump_sound.play()
 
 	def handle_movement(self, state):
@@ -534,7 +504,8 @@ class BottleCap(ShellBase):
 			#
 			# Decide which direction to jump on the two axes.
 			#
-			self.start_jump(state.direction.y, -state.direction.x)
+			self.direction_mapper.update(self, state.direction)
+			self.start_jump(self.direction_mapper.direction)
 			bat.utils.add_state(self.occupier, 3)
 
 	@bat.bats.expose

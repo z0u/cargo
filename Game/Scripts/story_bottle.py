@@ -252,6 +252,8 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 				self.children["SlugSpawnPos"])
 		self.arm.setParent(self)
 		self.arm.localScale = (0.75, 0.75, 0.75)
+		slug_body = self.arm.children['SlugBody_Min']
+		slug_body.color = bat.render.parse_colour('#FFCC5C')
 
 		# This is modified using ActAttrSet
 		self.bird_arrived = False
@@ -305,7 +307,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		#s.add_condition(bat.story.CondWait(1))
 		#s.add_event("FinishLoading", self)
 		s.add_action(Scripts.story.ActSetCamera('BottleCamera_Close'))
-		s.add_action(Scripts.story.ActSetFocalPoint("SlugLookTarget"))
+		s.add_action(Scripts.story.ActSetFocalPoint("SlugArm_Min"))
 		s.add_action(bat.story.ActGeneric(self.arm.look_at, None))
 		s.add_event("TeleportSnail", "BK_SnailTalkPos")
 
@@ -328,7 +330,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		sbeforelighthouse.add_successor(s)
 		s.add_action(Scripts.story.ActResumeInput())
 		s.add_action(Scripts.story.ActRemoveCamera('BottleCamera_Close'))
-		s.add_action(Scripts.story.ActRemoveFocalPoint("SlugLookTarget"))
+		s.add_action(Scripts.story.ActRemoveFocalPoint("SlugArm_Min"))
 
 		#
 		# Loop back to start when snail moves away. Unless the bird has arrived,

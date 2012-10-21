@@ -28,14 +28,12 @@ import bat.utils
 import bat.anim
 import bat.sound
 import bat.effectors
-import bat.render
 
 import Scripts.director
 import Scripts.inventory
 import Scripts.shells
 import Scripts.camera
 import bat.impulse
-from bat import impulse
 
 class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
@@ -1079,6 +1077,10 @@ class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	look_goal = bat.containers.weakprop('look_goal')
 
 	def __init__(self, old_owner):
+		eye_l = self.children['SlugEye.L']
+		eye_r = self.children['SlugEye.R']
+		self.focal_points = [eye_l, eye_r, self]
+
 		self.look_at(None)
 
 	@bat.bats.expose
@@ -1115,3 +1117,6 @@ class MinSnail(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 			self.add_state(MinSnail.S_LOOKING)
 
 		self.look_goal = goal
+
+	def get_focal_points(self):
+		return self.focal_points[:]

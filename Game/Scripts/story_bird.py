@@ -61,6 +61,8 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.add_action(bat.story.ActMusicPlay('//Sound/Music/Bird1.ogg'))
 		s.add_event("SetStoryLight", "SB_BirdLight")
+		s.add_action(bat.story.ActAction("B_BirdCloseCamAction", 1, 1, 0,
+			ob="B_BirdIntroCam"))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(0.5))

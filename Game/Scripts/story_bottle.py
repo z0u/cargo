@@ -653,10 +653,24 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		scap = scap.create_successor()
 		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		scap.add_event("ShowDialogue", "It's OK, you can keep it. I like not having a door: I get more customers this way.")
+		scap.add_action(bat.story.ActAction('Slug_AfterBottleCap', 1, 45,
+				BarKeeper.L_ANIM, targetDescendant='SlugArm_Min', blendin=3))
+		sloop = scap.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 45,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(bat.story.ActAction('Slug_AfterBottleCap', 45, 70,
+					BarKeeper.L_ANIM, play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+					targetDescendant='SlugArm_Min'))
 
 		scap = scap.create_successor()
 		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		scap.add_event("ShowDialogue", "Only two more shiny red things to go, eh? Sadly I haven't seen anything else that is shiny and red.")
+		scap.add_action(bat.story.ActAction('Slug_AfterBottleCap', 80, 96,
+				BarKeeper.L_ANIM, targetDescendant='SlugArm_Min', blendin=3))
+		sloop = scap.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 96,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(BarKeeper.idle_action)
 
 		scap = scap.create_successor()
 		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))

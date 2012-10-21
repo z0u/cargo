@@ -20,8 +20,8 @@ import bge
 import bat.bats
 import bat.event
 import bat.utils
-
 import bat.store
+import bat.sound
 
 class Tree(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, oldOwner):
@@ -53,6 +53,9 @@ class TreeDoor(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.endObject()
 		bat.event.Event('treeDoorBroken').send()
 		bat.store.put('/game/level/treeDoorBroken', True)
+		sample = bat.sound.Sample('//Sound/cc-by/CrashBoom1.ogg')
+		sample.volume = 0.7
+		sample.play()
 
 	@bat.bats.expose
 	@bat.utils.controller_cls

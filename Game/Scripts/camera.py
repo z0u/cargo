@@ -673,8 +673,10 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	target = bat.containers.weakprop('target')
 
 	def __init__(self, old_owner):
-		# A list of CameraNodes.
-		self.path = []
+		# A list of CameraNodes. Must use a safe list here, because the nodes
+		# attach themselves to nearby objects as children - and if one of those
+		# objects is deleted, the node will be too.
+		self.path = bat.containers.SafeList()
 		self.pathHead = PathCamera.CameraNode()
 		self.linV = bat.bmath.ZEROVEC.copy()
 
@@ -814,7 +816,11 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		# Check the difference in direction of consecutive line segments.
 		dot = 1.0
 		cb = ba.copy()
-		for c in self.path[2:7]:
+		for i, c in enumerate(self.path):#[2:7]:
+			if i < 2:
+				continue
+			if i > 7:
+				break
 			cb = b.owner.worldPosition - c.owner.worldPosition
 			cb.normalize()
 
@@ -824,7 +830,7 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		if dot < 0.999:
 			# The path is bent; project the point in the direction of the
-			# curvature. The cross product gives us the axis of rotation.
+			# curvature. The cross product gives the axis of rotation.
 			rotAxis = ba.cross(cb)
 			upAxis = rotAxis.cross(ba)
 			pp2 = projectedPoint - (upAxis * PathCamera.PREDICT_FWD)

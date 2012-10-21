@@ -118,7 +118,8 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(bat.story.ActAction('HP_AntConverse', 30, 70, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.add_action(bat.story.ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
-		s.add_action(bat.story.ActMusicPlay('//Sound/Music/Ants1.ogg', volume=0.7))
+		s.add_action(bat.story.ActMusicPlay('//Sound/Music/Ants1_loop.ogg',
+				introfile='//Sound/Music/Ants1_intro.ogg', volume=0.7))
 
 		# Gestures fiercely at Cargo
 
@@ -221,6 +222,8 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		senter_start.add_action(Scripts.story.ActSetCamera('AntMidCam'))
 		senter_start.add_action(Scripts.story.ActSetFocalPoint('Ant'))
 		senter_start.add_action(Scripts.story.ActSuspendInput())
+		# No intro here - straight into main part of the song!
+		senter_start.add_action(bat.story.ActMusicPlay('//Sound/Music/Ants2_loop.ogg', volume=0.7))
 		senter_start.add_action(bat.story.ActAction('HP_AntEnter', 1, 40,
 				Ant.L_ANIM, blendin=1.0))
 		senter_start.add_action(bat.story.ActDestroy(target_descendant='Ant_Pick'))

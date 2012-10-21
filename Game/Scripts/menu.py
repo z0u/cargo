@@ -25,13 +25,13 @@ import bat.store
 
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
-	("Story", "Alex Fraser, Lev Lafayette, Lara Micocki"),
+	("Story", "Alex Fraser, Lev Lafayette, Lara Micocki, Jodie Fraser"),
 	("Modelling", "Alex Fraser, Junki Wano"),
 	("Animation", "Alex Fraser"),
 	("Textures", "Alex Fraser, Junki Wano"),
 	("Music", "Robert Leigh"),
 	("Programming", "Alex Fraser, Mark Triggs"),
-	("Sound Effects", "Alex Fraser, freesound.org users: 3bagbrew, FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, qubodup, thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S, batchku, satrebor, gherat"),
+	("Sound Effects", "Alex Fraser, freesound.org users: 3bagbrew, FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, qubodup, thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S, batchku, satrebor, gherat, ZeSoundResearchInc., CGEffex"),
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
 	("Made With", "Blender, Bullet, The GIMP and Inkscape")]
 

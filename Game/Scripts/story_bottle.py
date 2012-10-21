@@ -158,8 +158,7 @@ class Bottle(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObjec
 			# Create bar interior; destroy exterior (so it doesn't get in the
 			# way when crawling).
 			if not 'B_Inner' in sce.objects:
-				inner = sce.addObject('B_Inner', self)
-				self.start_music(inner)
+				sce.addObject('B_Inner', self)
 			if 'B_Outer' in sce.objects:
 				sce.objects['B_Outer'].endObject()
 		else:
@@ -168,14 +167,6 @@ class Bottle(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObjec
 				sce.objects['B_Inner'].endObject()
 			if not 'B_Outer' in sce.objects:
 				sce.addObject('B_Outer', self)
-
-	def start_music(self, inner):
-		'''
-		Play the music for this locality. Don't need to stop it, because the
-		'inner' object gets destroyed when the player leaves.
-		'''
-		bat.sound.Jukebox().play_files(inner, 1,
-				'//Sound/Music/Idea-Random2.ogg')
 
 	def can_handle_input(self, state):
 		'''Don't allow snail to reclaim shell when inside.'''
@@ -270,7 +261,8 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		self.arm.localScale = (0.75, 0.75, 0.75)
 		self.create_state_graph()
 		# This is modified using ActAttrSet
-		self.scared = False
+		self.bird_arrived = False
+		self.first = True
 
 	def create_state_graph(self):
 		#
@@ -284,6 +276,11 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s.add_action(bat.story.ActGeneric(self.arm.look_at, 'Snail'))
 		s.add_action(bat.story.ActAction('Slug_AtBar', 1, 1, BarKeeper.L_ANIM,
 				targetDescendant='SlugArm_Min'))
+
+		sfirsttimeonly = s.create_sub_step()
+		sfirsttimeonly.add_condition(bat.story.CondAttrEq('first', True))
+		sfirsttimeonly.add_action(bat.story.ActMusicPlay('//Sound/Music/Idea-Random2.ogg'))
+		sfirsttimeonly.add_action(bat.story.ActAttrSet('first', False))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(0))
@@ -324,19 +321,19 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s.add_action(Scripts.story.ActRemoveFocalPoint("SlugLookTarget"))
 
 		#
-		# Loop back to start when snail moves away.
+		# Loop back to start when snail moves away. Unless the bird has arrived,
+		# in which case the slug should remain cowering behind the bar, with the
+		# music stopped.
 		#
 		s = s.create_successor("Reset")
 		s.add_condition(bat.story.CondSensorNot('Near'))
-		s.add_condition(bat.story.CondAttrEq('scared', False))
+		s.add_condition(bat.story.CondAttrEq('bird_arrived', False))
 		s.add_successor(self.rootState)
 
 	def sg_beforelighthouse(self, preceding_states):
 		s = bat.story.State("beforelighthouse")
 		for ps in preceding_states:
 			ps.add_successor(s)
-		s.add_action(bat.story.ActAction('Slug_Greet', 1, 40, BarKeeper.L_ANIM,
-				targetDescendant='SlugArm_Min', blendin=3))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 15,
@@ -365,6 +362,8 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s.add_condition(bat.story.CondStore('/game/level/lkMissionStarted', True, False))
 		s.add_event("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
 				("\[envelope].", "1 tomato sauce, please.")))
+		s.add_action(bat.story.ActAction('Slug_Greet', 1, 40, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
 
 		sauce = s.create_successor("sauce please")
 		sauce.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
@@ -451,11 +450,14 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		# Bird arrives! Shake the camera about.
 		sdeliver = sdeliver.create_successor()
 		sdeliver.add_condition(bat.story.CondWait(2))
-		sdeliver.add_action(bat.story.ActAction("BottleCamera_CloseAction", 1, 90, 0,
-				"BottleCamera_Close"))
+		sdeliver.add_action(bat.story.ActAction("BottleCamera_CloseAction",
+				1, 75, 0, ob="BottleCamera_Close"))
 		sdeliver.add_event('BirdArrived')
 		sdeliver.add_action(bat.story.ActAction('Slug_AcceptDelivery', 440, 450,
 				BarKeeper.L_ANIM, targetDescendant='SlugArm_Min', blendin=3))
+		sdeliver.add_action(bat.story.ActMusicStop(fade_rate=0.1))
+		sdeliver.add_action(bat.story.ActSound('//Sound/cc-by/NeedleOff.ogg'))
+		sdeliver.add_action(bat.story.ActSound('//Sound/cc-by/CrashBoom1.ogg', vol=0.6))
 
 		stweet1 = sdeliver.create_sub_step("Bird Sound 1")
 		stweet1.add_condition(bat.story.CondActionGE(0, 20, ob="BottleCamera_Close", tap=True))
@@ -463,14 +465,24 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		stweet1.add_action(bat.story.ActAction('Slug_AcceptDelivery', 450, 500,
 				BarKeeper.L_ANIM, targetDescendant='SlugArm_Min', blendin=3))
 
+		sboom1 = sdeliver.create_sub_step()
+		sboom1.add_condition(bat.story.CondActionGE(0, 30, ob="BottleCamera_Close", tap=True))
+		sboom1.add_action(bat.story.ActSound('//Sound/cc-by/CrashBoom2.ogg', vol=0.6))
+
 		stweet2 = sdeliver.create_sub_step("Bird Sound 2")
 		stweet2.add_condition(bat.story.CondActionGE(0, 50, ob="BottleCamera_Close", tap=True))
 		stweet2.add_action(bat.story.ActSound('//Sound/cc-by/BirdTweet2.ogg'))
+
+		sboom2 = sdeliver.create_sub_step()
+		sboom2.add_condition(bat.story.CondActionGE(0, 60, ob="BottleCamera_Close", tap=True))
+		sboom2.add_action(bat.story.ActSound('//Sound/cc-by/CrashBoom3.ogg', vol=0.6))
 
 		sdeliver = sdeliver.create_successor()
 		sdeliver.add_condition(bat.story.CondWait(1))
 		sdeliver.add_sub_step(stweet1)
 		sdeliver.add_sub_step(stweet2)
+		sdeliver.add_sub_step(sboom1)
+		sdeliver.add_sub_step(sboom2)
 		sdeliver.add_event("ShowDialogue", "Look out! It's that cursed thing again. It must be back for the rest of the lights.")
 
 		sloop = sdeliver.create_sub_step()
@@ -482,7 +494,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 
 		sdeliver = sdeliver.create_successor()
 		sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		sdeliver.add_action(bat.story.ActAttrSet('scared', True))
+		sdeliver.add_action(bat.story.ActAttrSet('bird_arrived', True))
 
 		s = bat.story.State("merge")
 		sauce.add_successor(s)
@@ -496,22 +508,61 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 			ps.add_successor(s)
 		s.add_condition(bat.story.CondStore('/game/level/birdTookShell', True, False))
 		s.add_event("ShowDialogue", "Hi again, Cargo. Terribly sorry to hear about your shell!")
+		s.add_action(BarKeeper.idle_action)
+		s.add_action(bat.story.ActAction('Slug_Greet', 1, 40, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+		sloop = s.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 15,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(BarKeeper.idle_action)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "That pesky bird needs to be taught a lesson!")
+		s.add_action(bat.story.ActAction('Slug_AfterBird', 1, 25, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+		sloop = s.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 25,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(bat.story.ActAction('Slug_AfterBird', 25, 65,
+					BarKeeper.L_ANIM, play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+					targetDescendant='SlugArm_Min'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "It's no good charging up the tree: the bees won't allow it. They're very protective of their honey.")
+		s.add_action(bat.story.ActAction('Slug_AfterBird', 80, 115, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+		sloop = s.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 115,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(bat.story.ActAction('Slug_AfterBird', 115, 155,
+					BarKeeper.L_ANIM, play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+					targetDescendant='SlugArm_Min'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "But, first things first, eh? You need to get your shell back.")
+		s.add_action(bat.story.ActAction('Slug_AfterBird', 160, 180, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+		sloop = s.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 180,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(bat.story.ActAction('Slug_AfterBird', 180, 220,
+					BarKeeper.L_ANIM, play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+					targetDescendant='SlugArm_Min'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I don't know how you'll get to the nest, but, hmm... shiny red things...")
+		s.add_action(bat.story.ActAction('Slug_AfterBird', 220, 264, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+		sloop = s.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 264,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(bat.story.ActAction('Slug_AfterBird', 294, 334,
+					BarKeeper.L_ANIM, play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+					targetDescendant='SlugArm_Min', blendin=10))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))

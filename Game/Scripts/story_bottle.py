@@ -570,10 +570,26 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(2))
 		s.add_event("ShowDialogue", "Ah, that's right! This bottle used to have a bright red lid \[bottlecap]!")
+		s.add_action(bat.story.ActAction('Slug_AfterBird', 370, 385, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+		sloop = s.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 385,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(bat.story.ActAction('Slug_AfterBird', 385, 420,
+					BarKeeper.L_ANIM, play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+					targetDescendant='SlugArm_Min'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I used to use it as a door, but it washed away one day in heavy rain.")
+		s.add_action(bat.story.ActAction('Slug_AfterBird', 430, 468, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+		sloop = s.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 468,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(bat.story.ActAction('Slug_AfterBird', 470, 505,
+					BarKeeper.L_ANIM, play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+					targetDescendant='SlugArm_Min'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
@@ -586,9 +602,23 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "Quick, go and get it!")
+		s.add_action(bat.story.ActAction('Slug_AfterBird', 520, 530, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+		sloop = s.create_sub_step()
+		sloop.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 530,
+				targetDescendant='SlugArm_Min', tap=True))
+		sloop.add_action(bat.story.ActAction('Slug_AfterBird', 530, 586,
+					BarKeeper.L_ANIM, play_mode=bge.logic.KX_ACTION_MODE_LOOP,
+					targetDescendant='SlugArm_Min'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(bat.story.ActAction('Slug_AfterBird', 595, 610, BarKeeper.L_ANIM,
+				targetDescendant='SlugArm_Min', blendin=3))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(BarKeeper.L_ANIM, 605,
+				targetDescendant='SlugArm_Min'))
 		return s
 
 	def sg_afterbottlecap(self, preceding_states):

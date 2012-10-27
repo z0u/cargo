@@ -531,6 +531,14 @@ class Thimble(ShellBase):
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'GravityChanged')
 
+	def on_entered(self):
+		ShellBase.on_entered(self)
+		self.disableRigidBody()
+
+	def on_exited(self):
+		self.enableRigidBody()
+		ShellBase.on_exited(self)
+
 	def on_event(self, evt):
 		if evt.message == 'GravityChanged':
 			antiG = evt.body.copy()

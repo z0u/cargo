@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2010 Alex Fraser <alex@phatcore.com>
+# Copyright 2009-2012 Alex Fraser <alex@phatcore.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,9 @@ import Scripts.director
 import Scripts.inventory
 import Scripts.shells
 import Scripts.camera
+import Scripts.attitude
 import bat.impulse
+
 
 class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
@@ -109,6 +111,12 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.cameraTrack = self.childrenRecursive['Head.2']
 		self.focal_points = [self.eyeLocL, self.eyeLocR, self]
 
+		self.attitude = Scripts.attitude.SurfaceAttitude(self,
+				bat.bats.mutate(self.children['ArcRay_Root.0']),
+				bat.bats.mutate(self.children['ArcRay_Root.1']),
+				bat.bats.mutate(self.children['ArcRay_Root.2']),
+				bat.bats.mutate(self.children['ArcRay_Root.3']))
+
 		# Movement fields
 		self.bend_angle_fore = 0.0
 		self.bend_angle_aft = 0.0
@@ -168,62 +176,10 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
-		counter = bat.bats.Counter()
-		avNormal = bat.bmath.ZEROVEC.copy()
-		ob0, p0, n0 = self.children['ArcRay_Root.0'].getHitPosition()
-		if ob0:
-			avNormal += n0
-			counter.add(ob0)
-		ob1, p1, n1 = self.children['ArcRay_Root.1'].getHitPosition()
-		if ob1:
-			avNormal += n1
-			counter.add(ob1)
-		ob2, p2, n2 = self.children['ArcRay_Root.2'].getHitPosition()
-		if ob2:
-			avNormal += n2
-			counter.add(ob2)
-		ob3, p3, n3 = self.children['ArcRay_Root.3'].getHitPosition()
-		if ob3:
-			avNormal += n3
-			counter.add(ob3)
-
-		#
-		# Inherit the angular velocity of a nearby surface. The object that was
-		# hit by the most rays (above) is used.
-		# TODO: The linear velocity should probably be set, too: fast-moving
-		# objects can be problematic.
-		#
-		self.touchedObject = counter.mode
-		if self.touchedObject != None:
-			angV = self.touchedObject.getAngularVelocity()
-			if angV.magnitude < bat.bmath.EPSILON:
-				angV = bat.bmath.MINVECTOR
-			self.setAngularVelocity(angV)
-
-		#
+		# Use attitude object to apply root orientation.
 		# Set property on object so it knows whether it's falling. This is used
 		# to detect when to transition from S_FALLING to S_CRAWLING.
-		#
-		self['nHit'] = counter.n
-
-		if counter.n > 0:
-			avNormal /= counter.n
-
-		if counter.n == 1:
-			# Only one ray hit; use it to try to snap to a sane orientation.
-			# Subsequent frames should then have more rays hit.
-			self.alignAxisToVect(avNormal, 2)
-		elif counter.n > 1:
-			#
-			# Derive normal from hit points and update orientation. This gives a
-			# smoother transition than just averaging the normals returned by the
-			# rays. Rays that didn't hit will use their last known value.
-			#
-			normal = bat.bmath.quadNormal(p0, p1, p2, p3)
-			if normal.dot(avNormal) < 0.0:
-				normal.negate()
-			self.alignAxisToVect(normal, 2)
-
+		self.touchedObject, self['nHit'] = self.attitude.apply()
 
 		mat_rot = mathutils.Matrix.Rotation(self.bend_angle_fore, 3, 'Z')
 		self.orient_segment(self.children['Head.0'], mat_rot)

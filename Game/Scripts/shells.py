@@ -512,6 +512,13 @@ class BottleCap(ShellBase):
 	def land(self):
 		self.land_sound.play()
 
+class Thimble(ShellBase):
+	def __init__(self, old_owner):
+		ShellBase.__init__(self, old_owner)
+
+	def orient(self):
+		pass
+
 def spawn_shell(c):
 	'''Place an item that has not been picked up yet.'''
 	o = c.owner

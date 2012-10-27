@@ -23,7 +23,7 @@ class Shells(metaclass=bat.bats.Singleton):
 	'''Helper class for handling shell inventory order.'''
 
 	# Shell names are stored in '/game/shellInventory' as a set.
-	SHELL_NAMES = ['Shell', 'BottleCap', 'Nut', 'Wheel'] # 'Thimble'
+	SHELL_NAMES = ['Shell', 'BottleCap', 'Nut', 'Wheel', 'Thimble']
 	DEFAULT_SHELLS = ['Shell']
 	DEFAULT_EQUIPPED = 'Shell'
 

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import mathutils
 import bat.bmath
 import bat.bats
 
@@ -68,3 +69,33 @@ class SurfaceAttitude:
 			self.target.alignAxisToVect(normal, 2)
 
 		return touched_object, counter.n
+
+class Engine:
+	def __init__(self, target):
+		self.target = target
+
+		self.max_rot = 0.02
+		self.rot_factor = 0.2
+
+		self.speed = 0.0
+		self.turn_factor = 0.0
+		self.rot_speed = 0.0
+
+	def apply(self, world_direction, speed):
+		turn_factor = world_direction.dot(self.target.getAxisVect(bat.bmath.XAXIS))
+		agreement = world_direction.dot(self.target.getAxisVect(bat.bmath.YAXIS))
+
+		# Turning
+		target_rot_speed = -self.max_rot * turn_factor
+		rot_speed = bat.bmath.lerp(self.rot_speed, target_rot_speed, self.rot_factor)
+		oRot = mathutils.Matrix.Rotation(rot_speed, 3, bat.bmath.ZAXIS)
+		self.target.localOrientation = self.target.localOrientation * oRot
+
+		# Forward motion
+		if agreement < -0.3:
+			speed = -speed
+		self.target.applyMovement((0.0, speed, 0.0), True)
+
+		self.speed = speed
+		self.turn_factor = turn_factor
+		self.rot_speed = rot_speed

@@ -120,8 +120,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		# Movement fields
 		self.bend_angle_fore = 0.0
 		self.bend_angle_aft = 0.0
-		self.rot_speed = 0.0
 		self.direction_mapper = bat.impulse.DirectionMapperLocal()
+		self.engine = Scripts.attitude.Engine(self)
 
 		# For path camera
 		self.localCoordinates = True
@@ -803,8 +803,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			self.handle_bt_camera(state)
 
 	NORMAL_SPEED = 0.08
-	MAX_ROT = 0.02
-	ROT_FACTOR = 0.2
 	BEND_FACTOR = 0.03
 	MAX_BEND_ANGLE = 0.7 # radians
 
@@ -814,32 +812,22 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		calls decaySpeed.
 		'''
 
-		self.direction_mapper.update(self, state.direction)
-
 		user_speed = state.direction.magnitude
 		speed = Snail.NORMAL_SPEED * self['SpeedMultiplier'] * user_speed
 		if 'SubmergedFactor' in self:
 			# Don't go so fast when under water!
 			speed *= 1.0 - Snail.WATER_DAMPING * self['SubmergedFactor']
-
-		# Turning
-		turn_speed = self.direction_mapper.turn_factor
-		target_rot = -Snail.MAX_ROT * turn_speed
-		self.rot_speed = bat.bmath.lerp(self.rot_speed, target_rot, Snail.ROT_FACTOR)
-		oRot = mathutils.Matrix.Rotation(self.rot_speed, 3, bat.bmath.ZAXIS)
-		self.localOrientation = self.localOrientation * oRot
-
-		# Forward motion
-		if self.direction_mapper.agreement < -0.3:
-			speed = -speed
-		self.applyMovement((0.0, speed, 0.0), True)
 		self.decay_speed()
-		self.armature['LocomotionFrame'] += 5 * speed
+
+		self.direction_mapper.update(self, state.direction)
+		self.engine.apply(self.direction_mapper.direction, speed)
+
+		self.armature['LocomotionFrame'] += 5 * self.engine.speed
 		self.armature['LocomotionFrame'] %= 19
 
 		# Bending
-		target_bend_angle = Snail.MAX_BEND_ANGLE * turn_speed
-		if speed < 0:
+		target_bend_angle = Snail.MAX_BEND_ANGLE * self.engine.turn_factor
+		if self.engine.speed < 0:
 			target_bend_angle = -target_bend_angle
 
 		if self['SpeedMultiplier'] > 1.0:

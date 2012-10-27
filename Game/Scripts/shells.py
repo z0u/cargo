@@ -513,11 +513,41 @@ class BottleCap(ShellBase):
 		self.land_sound.play()
 
 class Thimble(ShellBase):
+	_prefix = 'Th_'
+
+	NORMAL_SPEED = 0.08
+
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
+		self.attitude = Scripts.attitude.SurfaceAttitude(self,
+				bat.bats.mutate(self.children['ArcRay_Root.0']),
+				bat.bats.mutate(self.children['ArcRay_Root.1']),
+				bat.bats.mutate(self.children['ArcRay_Root.2']),
+				bat.bats.mutate(self.children['ArcRay_Root.3']))
+		self.direction_mapper = bat.impulse.DirectionMapperLocal()
+		self.engine = Scripts.attitude.Engine(self)
+
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'GravityChanged')
+
+	def on_event(self, evt):
+		if evt.message == 'GravityChanged':
+			antiG = evt.body.copy()
+			antiG.negate()
+			# Anti-gravity is applied in world coordinates.
+			self.actuators['aAntiGravity'].force = antiG
+			# Artificial gravity is applied in local coordinates.
+			self.actuators['aArtificialGravity'].force = evt.body
+
+	@bat.bats.expose
 	def orient(self):
-		pass
+		self.attitude.apply()
+
+	def handle_movement(self, state):
+		speed = state.direction.magnitude * Thimble.NORMAL_SPEED
+		self.direction_mapper.update(self, state.direction)
+		self.engine.apply(self.direction_mapper.direction, speed)
 
 def spawn_shell(c):
 	'''Place an item that has not been picked up yet.'''

@@ -812,7 +812,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		calls decaySpeed.
 		'''
 
-		user_speed = state.direction.magnitude
+		user_speed = min(1.0, state.direction.magnitude)
 		speed = Snail.NORMAL_SPEED * self['SpeedMultiplier'] * user_speed
 		if 'SubmergedFactor' in self:
 			# Don't go so fast when under water!

@@ -553,7 +553,8 @@ class Thimble(ShellBase):
 		self.attitude.apply()
 
 	def handle_movement(self, state):
-		speed = state.direction.magnitude * Thimble.NORMAL_SPEED
+		speed = min(1.0, state.direction.magnitude)
+		speed *= Thimble.NORMAL_SPEED
 		self.direction_mapper.update(self, state.direction)
 		self.engine.apply(self.direction_mapper.direction, speed)
 

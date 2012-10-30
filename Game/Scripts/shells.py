@@ -535,6 +535,7 @@ class Thimble(ShellBase):
 
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
+		self.mesh = self.children['Thimble_Mesh']
 
 		self.attitude = Scripts.attitude.SurfaceAttitude(self,
 				bat.bats.mutate(self.children['ArcRay_Root.0']),
@@ -591,6 +592,10 @@ class Thimble(ShellBase):
 
 	def handle_movement(self, state):
 		speed = min(1.0, state.direction.magnitude)
+
+		if speed > 0.3 and not self.mesh.isPlayingAction():
+			self.mesh.playAction('ThimbleWaddle', 9, 41)
+
 		speed *= Thimble.NORMAL_SPEED
 		self.direction_mapper.update(self, state.direction)
 		self.engine.apply(self.direction_mapper.direction, speed)

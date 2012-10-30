@@ -186,17 +186,13 @@ class VulnerableActor(Actor):
 
 	_prefix = 'VA_'
 
-	# The number of logic ticks between damages from a particular object
-	DAMAGE_FREQUENCY = 120 # 2 seconds
+	log = logging.getLogger(__name__ + '.VulnerableActor')
 
 	def __init__(self, maxHealth = 1):
 		Actor.__init__(self)
+		self.damage_tracker = DamageTracker()
 		self.maxHealth = maxHealth
 		self.set_health(maxHealth)
-		# A map of current passive attackers, so we can keep track of when we
-		# were last attacked. NOTE this keeps only the IDs of the objects as its
-		# keys to prevent invalid object access.
-		self.attackerIds = {}
 
 	def on_drown(self):
 		'''Respawn happens automatically; we just need to apply damage.'''
@@ -214,8 +210,10 @@ class VulnerableActor(Actor):
 		if value > self.maxHealth:
 			value = self.maxHealth
 
+		VulnerableActor.log.info("%s health = %f", self, value)
 		self['Health'] = value
 		if value <= 0:
+			VulnerableActor.log.info("%s is dying.", self)
 			self.die()
 
 	def damage(self, amount=1):
@@ -236,31 +234,60 @@ class VulnerableActor(Actor):
 		'''Should be attached to a Near or Collision sensor that looks for
 		objects with the Damage property. Note that this is used for healing,
 		too (when an object has a Damage property with a negative value).'''
-		for ob in c.sensors[0].hitObjectList:
-			aid = id(ob)
-			if aid in self.attackerIds:
-				# Wait before attacking again.
-				continue
+		damage, shock, respawn = self.damage_tracker.attack(c.sensors[0].hitObjectList)
 
-			if 'Shock' in ob and ob['Shock']:
-				# This is shocking damage!
-				self.shock()
-			self.damage(ob['Damage'])
-			self.attackerIds[aid] = VulnerableActor.DAMAGE_FREQUENCY
-			if 'Death' in ob:
-				self.respawn()
+		if damage != 0:
+			self.damage(damage)
 
-		# Count down to next attack.
-		for aid in list(self.attackerIds.keys()):
-			self.attackerIds[aid] -= 1
-			if self.attackerIds[aid] <= 0:
-				del self.attackerIds[aid]
+		if respawn:
+			self.respawn()
+		elif shock:
+			self.shock()
 
 	def die(self):
 		'''Called when the actor runs out of health. The default action is for
 		the object to be destroyed; override this function if you don't want
 		that to happen.'''
 		self.endObject()
+
+
+class DamageTracker:
+
+	# The number of logic ticks between damages from a particular object
+	DAMAGE_FREQUENCY = 120 # 2 seconds
+
+	def __init__(self):
+		# A map of current passive attackers, so we can keep track of when we
+		# were last attacked. NOTE this keeps only the IDs of the objects as its
+		# keys to prevent invalid object access.
+		self.attacker_ids = {}
+
+	def attack(self, attackers):
+		damage = 0
+		shock = False
+		force_respawn = False
+
+		for ob in attackers:
+			aid = id(ob)
+			if aid in self.attacker_ids:
+				# Wait before attacking again.
+				continue
+
+			if 'Shock' in ob and ob['Shock']:
+				# This is shocking damage!
+				shock = True
+			damage += ob['Damage']
+			self.attacker_ids[aid] = DamageTracker.DAMAGE_FREQUENCY
+			if 'Death' in ob:
+				force_respawn = True
+
+		# Count down to next attack.
+		for aid in list(self.attacker_ids.keys()):
+			self.attacker_ids[aid] -= 1
+			if self.attacker_ids[aid] <= 0:
+				del self.attacker_ids[aid]
+
+		return damage, shock, force_respawn
 
 
 class Director(bat.impulse.Handler, metaclass=bat.bats.Singleton):

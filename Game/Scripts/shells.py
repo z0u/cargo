@@ -28,7 +28,6 @@ import bat.bmath
 import bat.sound
 
 import Scripts.director
-import Scripts.camera
 import bat.impulse
 import Scripts.inventory
 
@@ -221,6 +220,8 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 
 class Shell(ShellBase):
 
+	equip_message = 'You got the Shell! Your beautiful, dependable house and mail van.'
+
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
@@ -279,6 +280,9 @@ class WheelCameraAlignment:
 		return self.get_home_axes(camera, target)
 
 class Wheel(ShellBase):
+
+	equip_message = "You got the Wheel! It's strong and fast."
+
 	# Speed needed to demolish stuff.
 	DESTRUCTION_SPEED = 5.0
 
@@ -397,11 +401,18 @@ class Wheel(ShellBase):
 
 class Nut(ShellBase):
 
+	equip_message = "You got the Nut! It's not shiny or red, but it's... heavy. Great!"
+
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		bat.event.Event('SetCameraType', 'PathCamera').send()
 
 class BottleCap(ShellBase):
+
+	_prefix = 'BC_'
+
+	equip_message = "You got the Bottle Cap! It looks like it can float. It tastes like hoisin sauce - not bad!"
+
 	# States - be careful not to let conflict with ShellBase states.
 	S_EMERGE = 6
 	S_JUMP = 7
@@ -409,8 +420,6 @@ class BottleCap(ShellBase):
 	# Animation layers
 	L_EMERGE = 1 # Entering/exiting shell
 	L_JUMP = 2   # Jumping
-
-	_prefix = 'BC_'
 
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
@@ -512,8 +521,15 @@ class BottleCap(ShellBase):
 	def land(self):
 		self.land_sound.play()
 
+
 class Thimble(ShellBase):
+
 	_prefix = 'Th_'
+
+	equip_message = "You got the Thimble! It's impervious to sharp objects."
+
+	S_CRAWLING = 19
+	S_SHOCKED = 20
 
 	NORMAL_SPEED = 0.08
 
@@ -528,15 +544,19 @@ class Thimble(ShellBase):
 		self.direction_mapper = bat.impulse.DirectionMapperLocal()
 		self.engine = Scripts.attitude.Engine(self)
 
+		self.damage_tracker = Scripts.director.DamageTracker()
+
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_entered(self):
 		ShellBase.on_entered(self)
+		self.add_state(Thimble.S_CRAWLING)
 		self.disableRigidBody()
 
 	def on_exited(self):
 		self.enableRigidBody()
+		self.rem_state(Thimble.S_CRAWLING)
 		ShellBase.on_exited(self)
 
 	def on_event(self, evt):
@@ -549,6 +569,23 @@ class Thimble(ShellBase):
 			self.actuators['aArtificialGravity'].force = evt.body
 
 	@bat.bats.expose
+	@bat.utils.controller_cls
+	def damage(self, c):
+		if not self.is_occupied:
+			return
+
+		damage, shock, respawn = self.damage_tracker.attack(c.sensors[0].hitObjectList)
+		if damage != 0:
+			self.snail.damage(damage)
+
+		if respawn:
+			self.snail.respawn()
+		elif shock:
+			self.add_state(Thimble.S_SHOCKED)
+			self.rem_state(Thimble.S_CRAWLING)
+			self.localLinearVelocity.z += 20
+
+	@bat.bats.expose
 	def orient(self):
 		self.attitude.apply()
 
@@ -557,6 +594,7 @@ class Thimble(ShellBase):
 		speed *= Thimble.NORMAL_SPEED
 		self.direction_mapper.update(self, state.direction)
 		self.engine.apply(self.direction_mapper.direction, speed)
+
 
 def spawn_shell(c):
 	'''Place an item that has not been picked up yet.'''

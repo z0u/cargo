@@ -488,6 +488,9 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self['HasShell'] = 1
 		self['DynamicMass'] = self['DynamicMass'] + shell['DynamicMass']
 		self.shell.on_picked_up(self, animate)
+
+		bat.event.WeakEvent('ShellEquipped', shell).send()
+		bat.event.Event('ShowDialogue', shell.equip_message).send(30)
 		Scripts.inventory.Shells().equip(shell.name)
 
 		if animate:
@@ -551,6 +554,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
+		if not self.has_state(Snail.S_HASSHELL):
+			return
 		velocity = bat.bmath.ZAXIS.copy()
 		velocity.x += 0.5 - bge.logic.getRandomFloat()
 		velocity = self.getAxisVect(velocity)
@@ -744,6 +749,13 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			self.health_warn_tics -= 1
 		else:
 			self.health_warn_tics = Snail.HEALTH_WARNING_DELAY
+
+	def die(self):
+		if self.has_state(Snail.S_INSHELL):
+			self.exit_shell(False)
+		if self.has_state(Snail.S_HASSHELL):
+			self.drop_shell(False)
+		Scripts.director.VulnerableActor.die(self)
 
 	def on_oxygen_set(self):
 		if not self.has_state(Snail.S_INSHELL):

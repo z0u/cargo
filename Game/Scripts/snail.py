@@ -490,7 +490,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.shell.on_picked_up(self, animate)
 
 		bat.event.WeakEvent('ShellEquipped', shell).send()
-		bat.event.Event('ShowDialogue', shell.equip_message).send(30)
+		if shell.name not in Scripts.inventory.Shells().get_shells():
+			bat.event.Event('ShowDialogue', shell.equip_message).send(30)
 		Scripts.inventory.Shells().equip(shell.name)
 
 		if animate:
@@ -519,8 +520,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			self.shockwave.visible = False
 
 	def unequip_shell(self):
-		self.rem_state(Snail.S_HASSHELL)
 		self.add_state(Snail.S_NOSHELL)
+		self.rem_state(Snail.S_HASSHELL)
 		shell = self.shell
 		shell.removeParent()
 		self.shell = None
@@ -554,7 +555,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 	def on_drop_shell(self):
 		'''Unhooks the current shell by un-setting its parent.'''
-		if not self.has_state(Snail.S_HASSHELL):
+		if self.shell is None:
 			return
 		velocity = bat.bmath.ZAXIS.copy()
 		velocity.x += 0.5 - bge.logic.getRandomFloat()

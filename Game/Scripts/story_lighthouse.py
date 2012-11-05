@@ -230,9 +230,19 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 
 		s = sdeliver_start.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActSetCamera('LK_Cam_Long'))
+		s.add_action(bat.story.ActAttrSet('color', bat.render.WHITE, ob='TorchReflector'))
+		sfade = s.create_sub_step()
+		sfade.add_condition(bat.story.CondWait(0.2))
+		sfade.add_action(bat.story.ActAttrLerp('color', bat.render.WHITE, bat.render.BLACK, 0.2, ob='TorchReflector'))
+		sfade.add_action(bat.story.ActAttrLerp('energy', 1.0, 0.0, 0.2, ob='UserLight1'))
+
+		ob = bge.logic.getCurrentScene().objects['TorchReflector']
+		print(ob.color)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))
+		s.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
 		s.add_event("ShowDialogue", "Oh no! It's a quote for a new button, and it's too expensive.")
 
 		s = s.create_successor()

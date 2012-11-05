@@ -123,6 +123,9 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		LighthouseKeeper.log.info("Creating new LighthouseKeeper")
 		bat.story.Chapter.__init__(self, old_owner)
 		#bat.event.WeakEvent('StartLoading', self).send()
+
+		self.anim_receive = bat.story.AnimBuilder('LK_ReceiveLetter', blendin=0)
+
 		self.create_state_graph()
 		self.playAction('LK_Breathing', 1, 36, LighthouseKeeper.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=4.0)
@@ -226,27 +229,42 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 
 	def sg_accept_delivery(self):
 		sdeliver_start = bat.story.State("delivery")
-		sdeliver_start.add_event("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
 
+		# Take letter
 		s = sdeliver_start.create_successor()
-		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_action(Scripts.story.ActSetCamera('LK_Cam_Long'))
-		s.add_action(bat.story.ActAttrSet('color', bat.render.WHITE, ob='TorchReflector'))
-		sfade = s.create_sub_step()
-		sfade.add_condition(bat.story.CondWait(0.2))
-		sfade.add_action(bat.story.ActAttrLerp('color', bat.render.WHITE, bat.render.BLACK, 0.2, ob='TorchReflector'))
-		sfade.add_action(bat.story.ActAttrLerp('energy', 1.0, 0.0, 0.2, ob='UserLight1'))
+		s.add_event("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
+		self.anim_receive.play(s, 1, 20)
+		sub = s.create_sub_step()
+		sub.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 9, tap=True))
+		sub.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transform', 1.0))
 
-		ob = bge.logic.getCurrentScene().objects['TorchReflector']
-		print(ob.color)
-
+		# Take foot off button; sit down to read letter
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))
-		s.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		self.anim_receive.play(s, 30, 40)
+
+		# Turn off torch
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(0.2))
+#		s.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 36, tap=True))
+		s.add_action(Scripts.story.ActSetCamera('LK_Cam_Long'))
+		s.add_action(bat.story.ActAttrSet('color', bat.render.WHITE, ob='TorchReflector'))
+		sub = s.create_sub_step()
+		sub.add_condition(bat.story.CondWait(0.2))
+		sub.add_action(bat.story.ActAttrLerp('color', bat.render.WHITE, bat.render.BLACK, 0.2, ob='TorchReflector'))
+		sub.add_action(bat.story.ActAttrLerp('energy', 1.0, 0.0, 0.2, ob='UserLight1'))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1.5))
 		s.add_event("ShowDialogue", "Oh no! It's a quote for a new button, and it's too expensive.")
+		sub = s.create_sub_step()
+		sub.add_condition(bat.story.CondWait(0.2))
+		sub.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
 		s.add_event("ShowDialogue", "Blast! I can't believe someone stole it in the first place.")
 
 		s = s.create_successor()

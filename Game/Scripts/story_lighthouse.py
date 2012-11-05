@@ -143,6 +143,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s = self.rootState.create_successor("Init")
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_event("StartLoading", self)
+		s.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transforms', 0.0))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))
@@ -237,7 +238,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		self.anim_receive.play(s, 1, 22)
 		sub = s.create_sub_step()
 		sub.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 9, tap=True))
-		sub.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transform', 1.0))
+		sub.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transforms', 1.0))
 
 		# Take foot off button; sit down to read letter
 		s = s.create_successor()
@@ -248,7 +249,6 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		# Turn off torch
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(0.2))
-#		s.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 36, tap=True))
 		s.add_action(Scripts.story.ActSetCamera('LK_Cam_Long'))
 		s.add_action(bat.story.ActAttrSet('color', bat.render.WHITE, ob='TorchReflector'))
 		sub = s.create_sub_step()
@@ -270,22 +270,24 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		self.anim_receive.play(s, 90, 145)
 		s.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(1))
+		s.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 118))
 		s.add_event("ShowDialogue", "Phew, this is thirsty work.")
 
 		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 143))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", "Can you deliver something for me too?")
-
-		s = s.create_successor()
-		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", "I'm all out of sauce, you see. I'm "\
-				"parched! But I'm stuck here, so I can't get to the sauce bar.")
+		s.add_event("ShowDialogue", "Can you deliver something for me too? I'm all out of sauce, you see. I'm parched!")
+		self.anim_receive.play(s, 150, 200)
+		sub = s.create_sub_step()
+		sub.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 181, tap=True))
+		sub.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transforms', 0.0))
 
 		sdeliver_end = s.create_successor()
+		sdeliver_end.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 200))
 		sdeliver_end.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		return sdeliver_start, sdeliver_end
@@ -297,7 +299,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		smission_start.add_action(Scripts.story.ActShowMarker('B_SauceBarSign'))
 
 		s = smission_start.create_successor()
-		s.add_event("ShowDialogue", ("Please go to the bar and order me some "\
+		s.add_event("ShowDialogue", ("Please go to the Sauce Bar and order me some "\
 				"black bean sauce.", ("Gross!", "No problem.")))
 		s.add_action(Scripts.story.ActSetCamera('LK_Cam_SauceBar_zoom'))
 

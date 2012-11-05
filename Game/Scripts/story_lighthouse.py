@@ -124,7 +124,8 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		bat.story.Chapter.__init__(self, old_owner)
 		#bat.event.WeakEvent('StartLoading', self).send()
 
-		self.anim_receive = bat.story.AnimBuilder('LK_ReceiveLetter', blendin=0)
+		self.anim_receive = bat.story.AnimBuilder('LK_ReceiveLetter',
+				layer=LighthouseKeeper.L_ANIM, blendin=0)
 
 		self.create_state_graph()
 		self.playAction('LK_Breathing', 1, 36, LighthouseKeeper.L_IDLE,
@@ -233,7 +234,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		# Take letter
 		s = sdeliver_start.create_successor()
 		s.add_event("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
-		self.anim_receive.play(s, 1, 20)
+		self.anim_receive.play(s, 1, 22)
 		sub = s.create_sub_step()
 		sub.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 9, tap=True))
 		sub.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transform', 1.0))
@@ -242,7 +243,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		self.anim_receive.play(s, 30, 40)
+		self.anim_receive.play(s, 30, 45)
 
 		# Turn off torch
 		s = s.create_successor()
@@ -258,6 +259,11 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1.5))
 		s.add_event("ShowDialogue", "Oh no! It's a quote for a new button, and it's too expensive.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Blast! I can't believe someone stole it in the first place.")
+		self.anim_receive.play(s, 50, 80)
 		sub = s.create_sub_step()
 		sub.add_condition(bat.story.CondWait(0.2))
 		sub.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
@@ -265,10 +271,6 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(Scripts.story.ActRemoveCamera('LK_Cam_Long'))
-		s.add_event("ShowDialogue", "Blast! I can't believe someone stole it in the first place.")
-
-		s = s.create_successor()
-		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))

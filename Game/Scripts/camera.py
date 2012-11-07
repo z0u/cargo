@@ -44,7 +44,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 
 	log = logging.getLogger(__name__ + '.AutoCamera')
 
-	COLLISION_BIAS = 0.8
+	COLLISION_BIAS = 1.0
 	MIN_FOCAL_DIST = 4.0
 	FOCAL_FAC = 0.1
 	BLUR_MULT_ACCEL = 0.001
@@ -757,10 +757,12 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		elif dist > restFar:
 			acceleration = (dist - restFar) * self.ACCELERATION
 
-		# Apply the acceleration.
+		# Apply the (fake) acceleration.
 		self.linV = self.linV + (dirWay * acceleration)
 		self.linV = self.linV * (1.0 - self.DAMPING)
 		self.worldPosition = self.worldPosition + self.linV
+		# Nullify actual acceleration.
+		self.worldLinearVelocity = (0, 0, 0.0001)
 
 		# Align the camera's Y-axis with the global Z, and align
 		# its Z-axis with the direction to the target. The alignment with Y is

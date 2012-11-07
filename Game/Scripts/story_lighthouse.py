@@ -235,9 +235,9 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		# Take letter
 		s = sdeliver_start.create_successor()
 		s.add_event("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
-		self.anim_receive.play(s, 1, 22)
+		self.anim_receive.play(s, 1, 24)
 		sub = s.create_sub_step()
-		sub.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 9, tap=True))
+		sub.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 13, tap=True))
 		sub.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transforms', 1.0))
 
 		# Take foot off button; sit down to read letter
@@ -281,13 +281,13 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 143))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "Can you deliver something for me too? I'm all out of sauce, you see. I'm parched!")
-		self.anim_receive.play(s, 150, 200)
+		self.anim_receive.play(s, 150, 205)
 		sub = s.create_sub_step()
-		sub.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 181, tap=True))
+		sub.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 189, tap=True))
 		sub.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transforms', 0.0))
 
 		sdeliver_end = s.create_successor()
-		sdeliver_end.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 200))
+		sdeliver_end.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 204))
 		sdeliver_end.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		return sdeliver_start, sdeliver_end

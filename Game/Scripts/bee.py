@@ -116,7 +116,7 @@ class DirectedPath(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.set_default_prop('stride', DirectedPath.DEFAULT_STRIDE)
 
 	def init_path(self):
-		mat = self.worldTransform
+		mat = self.worldTransform.copy()
 		self.path = [mat * v.XYZ for v in bat.utils.iterate_verts(self)]
 
 	def get_next(self, pos, relax_dist, hint=0):

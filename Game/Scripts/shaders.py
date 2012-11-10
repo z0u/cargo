@@ -23,6 +23,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.store
 import bat.utils
 
 DEBUG = False
@@ -291,6 +292,9 @@ def set_basic_shader(ob):
 	 - SH_twosided: Whether to do two-sided lighting. Defaults to False.
 	'''
 
+	if not bat.store.get('/opt/foliage', True) or not bat.store.get('/opt/depthOfField', True):
+		return
+
 	if 'SH_alpha' in ob:
 		alpha = ob['SH_alpha']
 	else:
@@ -329,6 +333,9 @@ def set_windy(ob):
 	 - The first two texture slots must contain textures, but they may be
 	   disabled.
 	'''
+
+	if not bat.store.get('/opt/foliage', True) or not bat.store.get('/opt/depthOfField', True):
+		return
 
 	if 'SH_alpha' in ob:
 		alpha = ob['SH_alpha']

@@ -315,10 +315,14 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		# Note that these are added IN ORDER: if the first one fails, it will
 		# fall through to the second, and so on. Therefore, the ones that come
 		# later in the story are listed first.
-		safterbottlecap = self.sg_afterbottlecap([s])
-		safterbird = self.sg_afterbird([s])
-		sbeforebird = self.sg_beforebird([s])
-		sbeforelighthouse = self.sg_beforelighthouse([s])
+		sstart, safterbottlecap = self.sg_afterbottlecap()
+		sstart.add_predecessor(s)
+		sstart, safterbird = self.sg_afterbird()
+		sstart.add_predecessor(s)
+		sstart, sbeforebird = self.sg_beforebird()
+		sstart.add_predecessor(s)
+		sstart, sbeforelighthouse = self.sg_beforelighthouse()
+		sstart.add_predecessor(s)
 
 		#
 		# Merge, and return to game
@@ -342,12 +346,10 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s.add_condition(bat.story.CondAttrEq('bird_arrived', False))
 		s.add_successor(self.rootState)
 
-	def sg_beforelighthouse(self, preceding_states):
-		s = bat.story.State("beforelighthouse")
-		for ps in preceding_states:
-			ps.add_successor(s)
+	def sg_beforelighthouse(self):
+		sstart = bat.story.State("beforelighthouse")
 
-		s = s.create_successor()
+		s = sstart.create_successor()
 		s.add_condition(bat.story.CondActionGE(0, 15, targetDescendant='SlugArm_Min'))
 		s.add_event("ShowDialogue", "Hi Cargo. What will it be, the usual?")
 		self.anim_idle.recall(s, 'loop')
@@ -364,13 +366,14 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		return s
 
-	def sg_beforebird(self, preceding_states):
-		s = bat.story.State("beforebird")
-		for ps in preceding_states:
-			ps.add_successor(s)
-		s.add_condition(bat.story.CondStore('/game/level/lkMissionStarted', True, False))
+		return sstart, s
+
+	def sg_beforebird(self):
+		sstart = bat.story.State("beforebird")
+		sstart.add_condition(bat.story.CondStore('/game/level/lkMissionStarted', True, False))
+
+		s = sstart.create_successor()
 		s.add_event("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
 				("\[envelope].", "1 tomato sauce, please.")))
 		self.anim_greet.recall(s, 'greet')
@@ -479,38 +482,47 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		sauce.add_successor(s)
 		sdeliver.add_successor(s)
 
-		return s
+		return sstart, s
 
-	def sg_afterbird(self, preceding_states):
-		s = bat.story.State("afterbird")
-		for ps in preceding_states:
-			ps.add_successor(s)
-		s.add_condition(bat.story.CondStore('/game/level/birdTookShell', True, False))
+	def sg_afterbird(self):
+		sstart = bat.story.State("afterbird")
+		sstart.add_condition(bat.story.CondStore('/game/level/birdTookShell', True, False))
+
+		scancel = bat.story.State("Cancel")
+		scancel.add_condition(bat.story.CondEvent('DialogueCancelled', self))
+		scancel.add_condition(bat.story.CondStore('/game/level/slugBottleCapConv1', True, default=False))
+
+		s = sstart.create_successor()
 		s.add_event("ShowDialogue", "Hi again, Cargo. Terribly sorry to hear about your shell!")
 		self.anim_greet.recall(s, 'greet')
 		self.anim_idle.recall(s, 'loop', after=15)
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "That pesky bird needs to be taught a lesson!")
 		self.anim_after_bird.play(s, 1, 25, 65)
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "It's no good charging up the tree: the bees won't allow it. They're very protective of their honey.")
 		self.anim_after_bird.play(s, 80, 115, 155)
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "But, first things first, eh? You need to get your shell back.")
 		self.anim_after_bird.play(s, 160, 180, 220)
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I don't know how you'll get to the nest, but, hmm... shiny red things...")
 		self.anim_after_bird.play(s, 220, 264)
 		self.anim_after_bird.loop(s, 294, 334, after=264)
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
@@ -519,43 +531,59 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s.add_event("ShowDialogue", "Ah, that's right! This bottle used to have a bright red lid \[bottlecap]!")
 		self.anim_after_bird.play(s, 370, 385, 420)
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I used to use it as a door, but it washed away one day in heavy rain.")
 		self.anim_after_bird.play(s, 430, 468)
 		self.anim_after_bird.loop(s, 470, 505, after=468)
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I think I saw the \[bottlecap] on that little island near your house.")
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "The water is deep, though, so you'll have to figure out how to get there dry.")
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "Quick, go and get it!")
 		self.anim_after_bird.play(s, 520, 530, 586)
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		self.anim_after_bird.play(s, 595, 610)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(0, 605, targetDescendant='SlugArm_Min'))
-		return s
+		s.add_action(bat.story.ActStoreSet('/game/level/slugBottleCapConv1', True))
 
-	def sg_afterbottlecap(self, preceding_states):
-		s = bat.story.State("afterbottlecap")
-		for ps in preceding_states:
-			ps.add_successor(s)
-		s.add_condition(bat.story.CondStore('/game/level/birdTookShell', True, False))
-		s.add_condition(Scripts.story.CondHasShell('BottleCap'))
+		sconv_end = bat.story.State()
+		sconv_end.add_predecessor(s)
+		sconv_end.add_predecessor(scancel)
+
+		return sstart, sconv_end
+
+	def sg_afterbottlecap(self):
+		sstart = bat.story.State("afterbottlecap")
+		sstart.add_condition(bat.story.CondStore('/game/level/birdTookShell', True, False))
+		sstart.add_condition(Scripts.story.CondHasShell('BottleCap'))
+
+		scancel = bat.story.State("Cancel")
+		scancel.add_condition(bat.story.CondEvent('DialogueCancelled', self))
+		scancel.add_condition(bat.story.CondStore('/game/level/slugBottleCapConv2', True, default=False))
+
+		s = sstart.create_successor()
 		s.add_event("ShowDialogue", ("Hi Cargo, what's happening?",
 				("\[bottlecap]!", "I'm thirsty.")))
 
 		## Second option.
+		scancel.add_predecessor(s)
 		sauce = s.create_successor("sauce please")
 		sauce.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
 		sauce.add_event("ShowDialogue", "More tomato sauce?")
@@ -571,32 +599,43 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		sauce.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		## First option.
+		scancel.add_predecessor(s)
 		scap = s.create_successor("cap")
 		scap.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
 		scap.add_event("ShowDialogue", "You found my bottle cap! That's great news.")
 
+		scancel.add_predecessor(scap)
 		scap = scap.create_successor()
 		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		scap.add_event("ShowDialogue", "It's OK, you can keep it. I like not having a door: I get more customers this way.")
 		self.anim_bottle_cap.play(scap, 1, 45, 70)
 
+		scancel.add_predecessor(scap)
 		scap = scap.create_successor()
 		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		scap.add_event("ShowDialogue", "Only two more shiny red things to go, eh? Sadly I haven't seen anything else that is shiny and red.")
 		self.anim_bottle_cap.play(scap, 80, 96)
 		self.anim_idle.recall(scap, 'loop', after=96)
 
+		scancel.add_predecessor(scap)
 		scap = scap.create_successor()
 		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		scap.add_event("ShowDialogue", "You'll just have to keep looking.")
 
+		scancel.add_predecessor(scap)
 		scap = scap.create_successor()
 		scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		scap.add_action(bat.story.ActStoreSet('/game/level/slugBottleCapConv2', True))
 
 		s = bat.story.State("merge")
 		sauce.add_successor(s)
 		scap.add_successor(s)
-		return s
+
+		sconv_end = bat.story.State()
+		sconv_end.add_predecessor(s)
+		sconv_end.add_predecessor(scancel)
+
+		return sstart, sconv_end
 
 
 def lighthouse_stub():

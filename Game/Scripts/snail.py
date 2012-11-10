@@ -157,7 +157,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 	def load_items(self):
 		shellName = Scripts.inventory.Shells().get_equipped()
-		if shellName != None:
+		if shellName is not None:
 			shell = Scripts.shells.factory(shellName)
 			self.equip_shell(shell, False)
 
@@ -354,7 +354,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			if target['LookAt'] < maxPriority:
 				continue
 			dist = self.getDistanceTo(target)
-			if nearest == None or dist < minDist:
+			if nearest is None or dist < minDist:
 				nearest = target
 				minDist = dist
 				maxPriority = target['LookAt']
@@ -425,7 +425,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
 		shellName = Scripts.inventory.Shells().get_next(1)
-		if shellName == None:
+		if shellName is None:
 			return
 		if self.shell and shellName == self.shell.name:
 			return
@@ -436,7 +436,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	def switch_previous(self):
 		'''Equip the next-lower shell that the snail has.'''
 		shellName = Scripts.inventory.Shells().get_next(-1)
-		if shellName == None:
+		if shellName is None:
 			return
 		if self.shell and shellName == self.shell.name:
 			return
@@ -445,7 +445,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		bat.event.Event('ShellChanged', 'previous').send()
 
 	def _switch(self, name):
-		if name == None:
+		if name is None:
 			return
 
 		if self.shell and self.shell.name != name:
@@ -538,7 +538,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		if not animate:
 			self.armature.setActionFrame(endFrame, Snail.L_ARM_SHELL)
 
-		if triggerFrame != None:
+		if triggerFrame is not None:
 			bat.anim.add_trigger_gte(self.armature, Snail.L_ARM_SHELL, triggerFrame, callback)
 		else:
 			bat.anim.add_trigger_end(self.armature, Snail.L_ARM_SHELL, callback)
@@ -977,7 +977,7 @@ class Trail(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		#
 		# Attach the spot to the object that the snail is crawling on.
 		#
-		if touchedObject != None:
+		if touchedObject is not None:
 			spot.setParent(touchedObject)
 
 		bat.utils.set_state(spot, speedStyle)

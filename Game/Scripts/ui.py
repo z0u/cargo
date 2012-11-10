@@ -361,7 +361,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 				if self.invalid or not self.currently_shown:
 					return
 				self.children["LS_Icon"].visible = True
-				if cbEvent != None:
+				if cbEvent is not None:
 					print("Sending delayed event", cbEvent)
 					cbEvent.send(delay=2)
 			blackout.visible = True
@@ -376,7 +376,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 				if self.invalid or self.currently_shown:
 					return
 				self.children["LS_Blackout"].visible = False
-				if cbEvent != None:
+				if cbEvent is not None:
 					cbEvent.send(delay=2)
 			icon.visible = False
 			self.playAction('LS_Hide_Arm', 1, 16, layer=LoadingScreen.L_DISPLAY)
@@ -397,7 +397,7 @@ class Filter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			self.show(evt.body)
 
 	def show(self, colourString):
-		if colourString == "" or colourString == None:
+		if colourString == "" or colourString is None:
 			self.visible = False
 		else:
 			colour = bat.render.parse_colour(colourString)
@@ -661,7 +661,7 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		for icon in hook.children:
 			self.release_icon(icon)
 
-		if shellName != None:
+		if shellName is not None:
 			icon = self.claim_icon(shellName)
 			icon.setParent(hook)
 			icon.localScale = (1.0, 1.0, 1.0)
@@ -671,7 +671,7 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def update_icons(self):
 		equipped = Scripts.inventory.Shells().get_equipped()
 		self.set_item(0, equipped)
-		if equipped == None or len(Scripts.inventory.Shells().get_shells()) > 1:
+		if equipped is None or len(Scripts.inventory.Shells().get_shells()) > 1:
 			# Special case: if nothing is equipped, we still want to draw icons
 			# for the next and previous shell - even if there is only one shell
 			# remaining in the inventory.

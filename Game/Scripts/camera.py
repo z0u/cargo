@@ -33,7 +33,7 @@ import bat.store
 
 def hasLineOfSight(ob, other):
 	hitOb, _, _ = bat.bmath.ray_cast_p2p(other, ob, prop = 'Ray')
-	return hitOb == None
+	return (hitOb is None)
 
 class AutoCamera(metaclass=bat.bats.Singleton):
 	'''Manages the transform of the camera, and provides transitions between
@@ -139,7 +139,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 			# safe position.
 			ob, hitPoint, _ = self.camera.rayCast(currentGoal, self.camera, 0.0,
 				'Ray', True, True, False)
-			if ob != None:
+			if ob is not None:
 				vectTo = hitPoint - currentGoal.worldPosition
 				vectTo *= AutoCamera.COLLISION_BIAS
 				self.camera.worldPosition = currentGoal.worldPosition + vectTo
@@ -386,7 +386,7 @@ class MainGoalManager(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			self.set_camera_type(evt.body)
 
 	def set_camera_type(self, name):
-		if self.currentCamera == None or self.cameraType != name:
+		if self.currentCamera is None or self.cameraType != name:
 			sce = self.scene
 			MainGoalManager.log.info("Switching to camera %s in %s",
 					name, sce)
@@ -394,11 +394,11 @@ class MainGoalManager(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			self.currentCamera = bat.bats.add_and_mutate_object(sce, name, self)
 
 			ac = AutoCamera().camera
-			if ac != None:
+			if ac is not None:
 				bat.event.Event('RelocatePlayerCamera',
 						(ac.worldPosition, ac.worldOrientation)).send()
 			self.cameraType = name
-			if oldCamera != None:
+			if oldCamera is not None:
 				oldCamera.endObject()
 
 class OrbitCameraAlignment:
@@ -480,7 +480,7 @@ class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		# Project up.
 		mainChar = Scripts.director.Director().mainCharacter
-		if mainChar == None:
+		if mainChar is None:
 			return
 		target = mainChar.get_camera_tracking_point()
 
@@ -553,7 +553,7 @@ class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		elif evt.message == 'RelocatePlayerCamera':
 			pos, orn = evt.body
 			self.worldPosition = pos
-			if orn != None:
+			if orn is not None:
 				self.worldOrientation = orn
 		elif evt.message == 'SetCameraAlignment':
 			self.alignment = evt.body
@@ -700,7 +700,7 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		elif event.message == 'RelocatePlayerCamera':
 			pos, orn = event.body
 			self.worldPosition = pos
-			if orn != None:
+			if orn is not None:
 				self.worldOrientation = orn
 
 	@bat.bats.expose
@@ -716,7 +716,7 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		# Get the vector from the camera to the target.
 		#
 		actor = self.target
-		if actor == None:
+		if actor is None:
 			return
 
 		# Get the vector from the camera to the next way point.
@@ -810,7 +810,7 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		hitOb, hitPoint, _ = bat.bmath.ray_cast_p2p(
 				projectedPoint, a.owner, prop = 'Ray')
-		if hitOb != None:
+		if hitOb is not None:
 			vect = hitPoint - a.owner.worldPosition
 			vect.magnitude = vect.magnitude * 0.9
 			projectedPoint = a.owner.worldPosition + vect
@@ -839,7 +839,7 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 			hitOb, hitPoint, _ = bat.bmath.ray_cast_p2p(
 					pp2, projectedPoint, prop = 'Ray')
-			if hitOb != None:
+			if hitOb is not None:
 				vect = hitPoint - projectedPoint
 				vect.magnitude = vect.magnitude * 0.9
 				pp2 = projectedPoint + vect
@@ -908,7 +908,7 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def updateWayPoints(self):
 		actor = self.target
-		if actor == None:
+		if actor is None:
 			return
 
 		if actor.localCoordinates:
@@ -936,7 +936,7 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 				node.owner.worldPosition = actor.worldPosition
 			node.owner.worldPosition = actor.worldPosition
 			self.path.insert(0, node)
-			if actor.touchedObject != None:
+			if actor.touchedObject is not None:
 				node.owner.setParent(actor.touchedObject, False)
 			if len(self.path) > self.MAX_NODES:
 				# Delete the oldest node.
@@ -996,14 +996,14 @@ class CameraCollider(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		direction = bat.bmath.ZAXIS.copy()
 		ob = self.cast_for_water(pos, direction)
-		if ob != None:
+		if ob is not None:
 			# Double check - works around bug with rays that strike a glancing
 			# blow on an edge.
 			direction.x = direction.y = 0.1
 			direction.normalize()
 			ob = self.cast_for_water(pos, direction)
 
-		if ob != None:
+		if ob is not None:
 			self.set_filter_colour(ob['VolumeCol'])
 		else:
 			self.set_filter_colour(None)
@@ -1020,7 +1020,7 @@ class CameraCollider(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def cast_for_water(self, pos, direction):
 		through = pos + direction * CameraCollider.MAX_DIST
 		ob, _, normal = bat.bmath.ray_cast_p2p(through, pos, prop='VolumeCol')
-		if ob != None and normal.dot(direction) > 0.0:
+		if ob is not None and normal.dot(direction) > 0.0:
 			return ob
 		else:
 			return None

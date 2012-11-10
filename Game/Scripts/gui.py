@@ -109,7 +109,7 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 		newFocus = mOver.hitObject
 
 		# Bubble up to ancestor if need be
-		while newFocus != None:
+		while newFocus is not None:
 			if 'Widget' in newFocus:
 				break
 			newFocus = newFocus.parent

@@ -254,7 +254,7 @@ def _set_shader(ob, vert_shader, frag_shader, callback=None):
 		_print_code(frag_shader)
 
 	shader = mat.getShader()
-	if shader != None:
+	if shader is not None:
 		if not shader.isValid():
 			shader.setSource(vert_shader, frag_shader, True)
 		shader.setSampler("tCol", 0)

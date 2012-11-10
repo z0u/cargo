@@ -203,15 +203,28 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 			self.handle_movement(state)
 		elif state.name == '1':
 			self.handle_bt_1(state)
+		elif state.name == '2':
+			self.handle_bt_2(state)
 		elif state.name == 'Switch':
 			self.handle_switch(state)
 
 	def handle_bt_1(self, state):
+		'''Hide the dialogue, and inform listeners which option was chosen.'''
 		if not self.options_visible:
 			return
 
 		if state.activated:
 			bat.event.Event("DialogueDismissed", self.selected_option).send()
+			self.hide()
+
+	def handle_bt_2(self, state):
+		'''Hide the dialogue, and suggest that the dialogue be skipped.'''
+		if not self.options_visible:
+			return
+
+		if state.activated:
+			bat.event.Event("DialogueDismissed", self.selected_option).send()
+			bat.event.Event("DialogueCancelled").send()
 			self.hide()
 
 	def handle_switch(self, state):

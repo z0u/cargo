@@ -102,6 +102,12 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sconv_start.add_action(Scripts.story.ActSuspendInput())
 		sconv_start.add_event("StartLoading", self)
 
+		# Catch-many state for when the user cancels a dialogue. Should only be
+		# allowed if the conversation has been played once already.
+		scancel = bat.story.State("Cancel")
+		scancel.add_condition(bat.story.CondEvent('DialogueCancelled', self))
+		scancel.add_condition(bat.story.CondStore('/game/level/antConversation1', True, default=False))
+
 		# Start conversation
 
 		s = sconv_start.create_successor()
@@ -123,6 +129,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		# Gestures fiercely at Cargo
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActGeneric(self.drop_pick))
@@ -137,6 +144,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		# Holds fists tight; then, gestures towards the tree
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActActionStop(Ant.L_IDLE))
@@ -154,6 +162,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		# Sizes up door with hands in front of his eyes
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 140))
@@ -168,6 +177,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		# Pauses to consider
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "If only I had something stronger...")
@@ -181,6 +191,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		# Picks up mattock, and glares at the door
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 300))
@@ -200,6 +211,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		# Play the first bit of the digging animation
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 407))
@@ -210,8 +222,13 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sKnock.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
 				pitchmax=0.76, emitter=self, maxdist=75.0))
 
-		sconv_end = s.create_successor()
-		sconv_end.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 470))
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 470))
+		s.add_action(bat.story.ActStoreSet('/game/level/antConversation1', True))
+
+		sconv_end = bat.story.State()
+		sconv_end.add_predecessor(s)
+		sconv_end.add_predecessor(scancel)
 
 		return sconv_start, sconv_end
 

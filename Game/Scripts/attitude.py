@@ -44,7 +44,7 @@ class SurfaceAttitude:
 		# objects can be problematic.
 		#
 		touched_object = counter.mode
-		if touched_object != None:
+		if touched_object is not None:
 			angV = touched_object.getAngularVelocity()
 			if angV.magnitude < bat.bmath.EPSILON:
 				angV = bat.bmath.MINVECTOR

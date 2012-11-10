@@ -374,7 +374,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 				if self.invalid or not self.currently_shown:
 					return
 				self.children["LS_Icon"].visible = True
-				if cbEvent != None:
+				if cbEvent is not None:
 					print("Sending delayed event", cbEvent)
 					cbEvent.send(delay=2)
 			blackout.visible = True
@@ -389,7 +389,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 				if self.invalid or self.currently_shown:
 					return
 				self.children["LS_Blackout"].visible = False
-				if cbEvent != None:
+				if cbEvent is not None:
 					cbEvent.send(delay=2)
 			icon.visible = False
 			self.playAction('LS_Hide_Arm', 1, 16, layer=LoadingScreen.L_DISPLAY)
@@ -410,7 +410,7 @@ class Filter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			self.show(evt.body)
 
 	def show(self, colourString):
-		if colourString == "" or colourString == None:
+		if colourString == "" or colourString is None:
 			self.visible = False
 		else:
 			colour = bat.render.parse_colour(colourString)
@@ -565,14 +565,23 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def init_uv(self):
 		canvas = self.children['MapPage']
-		self.orig_uv = [v.UV.copy() for v in bat.utils.iterate_verts(canvas)]
+
+		# copy UV's to the second channel
+		canvas.meshes[0].transform_uv(-1, mathutils.Matrix(), 1, 0)
 
 	def centre_page(self, loc):
+		# local copies for fast access
+		zoom = self.zoom
+		uv_offset = self.world_to_uv(loc.xy) * zoom
+		uv_tx_neg = mathutils.Matrix.Translation((uv_offset[0] - 0.5, uv_offset[1] - 0.5, 0))
+		uv_tx_pos = mathutils.Matrix.Translation((0.5, 0.5, 0))  # could make static
+		uv_tx_scale = mathutils.Matrix.Scale(1.0 / zoom, 4)
+		uv_tx_final = uv_tx_pos * uv_tx_scale * uv_tx_neg
+
 		canvas = self.children['MapPage']
-		uvc = self.world_to_uv(loc.xy) * self.zoom
-		HALF = mathutils.Vector((0.5, 0.5))
-		for v, orig in zip(bat.utils.iterate_verts(canvas), self.orig_uv):
-			v.UV = (((orig + uvc) - HALF) / self.zoom) + HALF
+
+		# transform and copy from channel 1
+		canvas.meshes[0].transform_uv(-1, uv_tx_final, 0, 1)
 
 	def rotate_marker(self, orn):
 		marker = self.children['MapDirection']
@@ -665,7 +674,7 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		for icon in hook.children:
 			self.release_icon(icon)
 
-		if shellName != None:
+		if shellName is not None:
 			icon = self.claim_icon(shellName)
 			icon.setParent(hook)
 			icon.localScale = (1.0, 1.0, 1.0)
@@ -675,7 +684,7 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def update_icons(self):
 		equipped = Scripts.inventory.Shells().get_equipped()
 		self.set_item(0, equipped)
-		if equipped == None or len(Scripts.inventory.Shells().get_shells()) > 1:
+		if equipped is None or len(Scripts.inventory.Shells().get_shells()) > 1:
 			# Special case: if nothing is equipped, we still want to draw icons
 			# for the next and previous shell - even if there is only one shell
 			# remaining in the inventory.

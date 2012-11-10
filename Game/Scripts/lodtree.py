@@ -347,12 +347,12 @@ class LODBranch(LODNode):
 		# A branch can only ever be implicitly visible, or hidden (i.e. only
 		# leaves can be explicitly visible).
 		if self.visible == NS_IMPLICIT:
-			if self.objectInstance == None:
+			if self.objectInstance is None:
 				self.objectInstance = bge.logic.getCurrentScene().addObject(self.owner, self.owner)
 				if DEBUG:
 					LODManager().branchesVisible += 1
 		else:
-			if self.objectInstance != None:
+			if self.objectInstance is not None:
 				self.objectInstance.endObject()
 				self.objectInstance = None
 				if DEBUG:

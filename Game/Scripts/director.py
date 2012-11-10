@@ -100,7 +100,7 @@ class Actor(bat.bats.BX_GameObject):
 		'''Called when the Actor is fully submerged in water, and its Oxigen
 		property reaches zero. Consider overriding on_drown instead.
 		'''
-		if self.parent != None:
+		if self.parent is not None:
 			return False
 
 		self.respawn()
@@ -136,7 +136,7 @@ class Actor(bat.bats.BX_GameObject):
 		Returns True if the object seems to be inside the world; False
 		otherwise.
 		'''
-		if self.parent != None:
+		if self.parent is not None:
 			# Responsibility delegated to parent.
 			return True
 
@@ -151,7 +151,7 @@ class Actor(bat.bats.BX_GameObject):
 				1,                   # face
 				1                    # xray
 			)
-			if ob != None:
+			if ob is not None:
 				if "TwoSided" in ob:
 					return True
 				elif normal.dot(vec) <= 0.0:
@@ -338,7 +338,7 @@ class Director(bat.impulse.Handler, metaclass=bat.bats.Singleton):
 	@bat.utils.all_sensors_positive
 	@bat.utils.controller_cls
 	def toggle_suspended(self, c):
-		if self.mainCharacter == None:
+		if self.mainCharacter is None:
 			return
 
 		scene = self.mainCharacter.scene
@@ -349,7 +349,7 @@ class Director(bat.impulse.Handler, metaclass=bat.bats.Singleton):
 
 	@bat.bats.expose
 	def slow_motion_pulse(self):
-		if self.mainCharacter == None:
+		if self.mainCharacter is None:
 			return
 
 		scene = self.mainCharacter.scene

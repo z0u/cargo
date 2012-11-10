@@ -464,7 +464,7 @@ def parse_options():
 def show_layers(layers=None):
 	'''Show only the layers specified in a collection. If 'layers' is None, show
 	all layers.'''
-	if layers == None:
+	if layers is None:
 		for i in range(len(bpy.context.scene.layers)):
 			bpy.context.scene.layers[i] = True
 	else:
@@ -474,7 +474,7 @@ def show_layers(layers=None):
 def set_layers(ob, layers=None):
 	'''Moves an object to the layers specified in a collection. If 'layers' is
 	None, the object will be moved to all layers.'''
-	if layers == None:
+	if layers is None:
 		for i in range(len(bpy.context.scene.layers)):
 			ob.layers[i] = True
 	else:

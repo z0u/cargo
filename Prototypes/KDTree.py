@@ -137,9 +137,9 @@ class KDTree:
 	
 	def prettyPrint(self, n = None, indent = ""):
 		'''Print the tree out.'''
-		if n == None:
+		if n is None:
 			n = self.root
-		if n == None:
+		if n is None:
 			return
 		if n.Elements:
 			for e in n.Elements:

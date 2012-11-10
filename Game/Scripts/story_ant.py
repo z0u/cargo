@@ -141,6 +141,13 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sdrop_pick = s.create_sub_step("Adjust influence")
 		sdrop_pick.add_action(bat.story.ActConstraintFade("Hand.L", "Copy Transforms",
 				1.0, 0.0, 70.0, 76.0, Ant.L_ANIM))
+		# Step sounds
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 76, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep1.ogg'))
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 82, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
 
 		# Holds fists tight; then, gestures towards the tree
 
@@ -174,6 +181,19 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sloop.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 255, tap=True))
 		sloop.add_action(bat.story.ActAction('HP_AntConverse', 255, 283, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
+		# Step sounds
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 245, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep1.ogg'))
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 248, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 267, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 272, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep1.ogg'))
 
 		# Pauses to consider
 
@@ -208,6 +228,16 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sloop.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 407, tap=True))
 		sloop.add_action(bat.story.ActAction('HP_AntConverse', 407, 440, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
+		# Step sounds
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 367, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 373, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 392, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
 
 		# Play the first bit of the digging animation
 
@@ -221,6 +251,13 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sKnock.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 466.5, tap=True))
 		sKnock.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
 				pitchmax=0.76, emitter=self, maxdist=75.0))
+		# Step sounds
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 443, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep1.ogg'))
+		sstep = s.create_sub_step()
+		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 446, tap=True))
+		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 470))

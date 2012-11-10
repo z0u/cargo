@@ -184,7 +184,7 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			else:
 				cam = self.camTop
 
-		if cam == None and self.currentCamera != None:
+		if (cam is None) and (self.currentCamera is not None):
 			# Player is being ejected; update camera position to prevent
 			# jolting.
 			pos = self.currentCamera.worldPosition
@@ -194,9 +194,9 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if cam == self.currentCamera:
 			return
 
-		if self.currentCamera != None:
+		if self.currentCamera is not None:
 			Scripts.camera.AutoCamera().remove_goal(self.currentCamera)
-		if cam != None:
+		if cam is not None:
 			Scripts.camera.AutoCamera().add_goal(cam)
 
 		self.currentCamera = cam

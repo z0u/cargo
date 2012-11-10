@@ -1,5 +1,6 @@
 #
 # Copyright 2012, Alex Fraser <alex@phatcore.com>
+# Copyright 2012, Ben Sturmfels <ben@sturm.com.au>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

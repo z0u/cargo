@@ -1,9 +1,9 @@
 = Contributors =
 Story:            Alex Fraser[1], Lara Mikocki, Lev Lafayette, Jodie Fraser
-Sound effects:    Alex Fraser, Freesound[2] users: 3bagbrew, FreqMan,
-                  HerbertBoland, Percy Duke, klakmart, aUREa, qubodup, thetruwu,
-                  nsp, kangaroovindaloo, ERH, Corsica_S, batchku, satrebor,
-                  gherat, ZeSoundResearchInc., CGEffex
+Sound effects:    Alex Fraser, Ben Sturmfels, Freesound[2] users: 3bagbrew,
+                  FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, qubodup,
+                  thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S, batchku,
+                  satrebor, gherat, ZeSoundResearchInc., CGEffex
 Music:            Robert Leigh
 Concept art:      Alex Fraser, Lara Mikocki, Junki Wano
 Storyboards:      Alex Fraser
@@ -11,7 +11,7 @@ Storyboards:      Alex Fraser
 Rigging:          Alex Fraser
 Animation:        Alex Fraser
 Textures:         Alex Fraser, Junki Wano
-Code:             Alex Fraser, Mark Triggs
+Code:             Alex Fraser, Mark Triggs, Campbell Barton, Ben Sturmfels
 Engines:          The Blender Foundation (Blender)[3], Game Physics Simulation
                   (Bullet)[4]
 Testing:          Jodie Fraser, Lachlan Kanaley, Damien Elmes

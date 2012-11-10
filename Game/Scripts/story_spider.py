@@ -64,10 +64,15 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	@bat.bats.expose
 	@bat.utils.controller_cls
 	def approach_web(self, c):
-		if c.sensors[0].positive:
-			bat.event.Event('ApproachWeb').send()
-		else:
-			bat.event.Event('LeaveWeb').send()
+		for s in c.sensors:
+			if not s.positive:
+				continue
+			player = s.hitObject
+			if not player.is_in_shell:
+				bat.event.Event('ApproachWeb').send()
+			return
+		# else
+		bat.event.Event('LeaveWeb').send()
 
 	@bat.bats.expose
 	@bat.utils.controller_cls

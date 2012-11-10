@@ -105,52 +105,74 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_action(Scripts.story.ActSetFocalPoint('Spider'))
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam"))
 
+		# Catch-many state for when the user cancels a dialogue. Should only be
+		# allowed if the conversation has been played once already.
+		scancel = bat.story.State("Cancel")
+		scancel.add_condition(bat.story.CondEvent('DialogueCancelled', self))
+		scancel.add_condition(bat.story.CondStore('/game/level/spiderWelcome1', True, default=False))
+
 		s = s.create_successor()
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam_CU"))
 		s.add_event("ShowDialogue", "Who goes there?")
 		s.add_action(bat.story.ActAction('Spider_conv', 1, 80, Spider.L_ANIM))
+		scancel.add_predecessor(s)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_CU"))
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam_Side"))
 		s.add_event("ShowDialogue", "Ah, where are my manners? Welcome, my dear! Forgive me; I don't get many visitors.")
+		scancel.add_predecessor(s)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "It's strange, don't you think? Who could resist the beauty of Spider Isle?")
 
+		scancel.add_predecessor(s)
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "Ah, I see you're admiring my collection. Isn't it marvellous?")
+		scancel.add_predecessor(s)
 
 		# START SPLIT 1
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", ("I bet you've never seen the like on Tree Island.",
 			("What about the Lighthouse?", "The Sauce Bar, madam!")))
+		scancel.add_predecessor(s)
 
 		storch = s.create_successor("torch")
 		storch.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
 		storch.add_event("ShowDialogue", "... Yes. The torch is quite a piece.")
+		scancel.add_predecessor(s)
 
 		sbar = s.create_successor("bar")
 		sbar.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
 		sbar.add_event("ShowDialogue", "Oh ho, but it is full of slugs!\n...Mind you, they do serve a smashing gravy.")
+		scancel.add_predecessor(s)
 
 		s = bat.story.State()
 		storch.add_successor(s)
 		sbar.add_successor(s)
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I suppose you may find the occasional trinket there...")
+		scancel.add_predecessor(s)
 		# END SPLIT 1
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "But the unique bay of Spider Isle gathers a volume of treasure that other islands simply cannot compete with.")
+		scancel.add_predecessor(s)
+		s.add_action(bat.story.ActStoreSet('/game/level/spiderWelcome1', True))
 
-		s = s.create_successor("Clean up")
+		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+
+		sconv_end = bat.story.State()
+		sconv_end.add_predecessor(s)
+		sconv_end.add_predecessor(scancel)
+
+		s = sconv_end.create_successor("Clean up")
 		s.add_action(Scripts.story.ActResumeInput())
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Spider'))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Side"))

@@ -240,6 +240,16 @@ class GameLevel(Level):
 			# Listen for load events from portals.
 			level = bat.store.get('/game/levelFile')
 			bge.logic.startGame(level)
+		elif event.message == "ShellEquipped" and event.body is not None:
+			self.on_shell_equipped(event.body)
+
+	def on_shell_equipped(self, shell):
+		if shell.name not in Scripts.inventory.Shells().get_shells():
+			# This is a new shell! Do special story stuff.
+			bat.event.Event('ShowDialogue', shell.equip_message).send(30)
+			if shell.name == 'BottleCap':
+				bat.store.put('/game/level/mapGoal', None)
+				bat.event.Event('MapGoalChanged').send()
 
 def load_level(caller, level, spawnPoint):
 	print('Loading next level: %s, %s' % (level, spawnPoint))

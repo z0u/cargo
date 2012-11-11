@@ -490,8 +490,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.shell.on_picked_up(self, animate)
 
 		bat.event.WeakEvent('ShellEquipped', shell).send()
-		if shell.name not in Scripts.inventory.Shells().get_shells():
-			bat.event.Event('ShowDialogue', shell.equip_message).send(30)
 		Scripts.inventory.Shells().equip(shell.name)
 
 		if animate:

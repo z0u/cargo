@@ -109,7 +109,7 @@ class Bottle(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObjec
 			self.transition_delay = -1
 
 	def enter_bottle(self):
-		bat.store.put('/game/spawnPoint', 'SpawnBottle')
+		bat.store.put('/game/level/spawnPoint', 'SpawnBottle')
 		self.open_window(True)
 		bat.event.Event('TeleportSnail', 'SpawnBottleInner').send()
 		bat.event.Event("AddCameraGoal", 'BottleCamera').send()
@@ -542,6 +542,9 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I think I saw the \[bottlecap] on that little island near your house.")
+		# This map goal is un-set by Scripts.story.GameLevel when the next shell is collected.
+		s.add_action(bat.story.ActStoreSet('/game/level/mapGoal', 'BottleCapSpawn'))
+		s.add_event("MapGoalChanged")
 
 		scancel.add_predecessor(s)
 		s = s.create_successor()

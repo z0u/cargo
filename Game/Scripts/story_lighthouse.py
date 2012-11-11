@@ -320,10 +320,16 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		syes.add_action(Scripts.story.ActRemoveFocalPoint('B_SauceBarSign'))
 		syes.add_action(Scripts.story.ActShowMarker(None))
 
-		smission_end = bat.story.State("merge")
-		smission_end.add_predecessor(syes)
-		smission_end.add_predecessor(sno)
-		smission_end.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		smission_end.add_action(bat.story.ActStoreSet('/game/level/lkMissionStarted', True))
+		s = bat.story.State("merge")
+		s.add_predecessor(syes)
+		s.add_predecessor(sno)
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "The bar is marked on your map.")
+		s.add_action(bat.story.ActStoreSet('/game/level/mapGoal', 'B_SauceBarSign'))
+		s.add_event("MapGoalChanged")
 
-		return smission_start, smission_end
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(bat.story.ActStoreSet('/game/level/lkMissionStarted', True))
+
+		return smission_start, s

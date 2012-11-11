@@ -1,5 +1,6 @@
 #
 # Copyright 2009-2012 Alex Fraser <alex@phatcore.com>
+# Copyright 2012 Campbell Barton <ideasman42@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -512,6 +513,8 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	S_HIDING  = 3
 	S_HIDDEN  = 4
 
+	goal = bat.containers.weakprop('goal')
+
 	def __init__(self, old_owner):
 		self.set_state(self.S_HIDDEN)
 		self.force_hide = False
@@ -519,10 +522,12 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.scale = mathutils.Vector((100.0, 100.0))
 		self.offset = mathutils.Vector((0.0, 0.0))
 		self.zoom = 2.0
+		self.goal = None
 
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'GameModeChanged')
 		bat.event.EventBus().replay_last(self, 'SetMap')
+		bat.event.EventBus().replay_last(self, 'MapGoalChanged')
 
 	def on_event(self, evt):
 		if evt.message == 'GameModeChanged':
@@ -532,6 +537,14 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 				self.hide()
 		elif evt.message == 'SetMap':
 			self.set_map(*evt.body)
+		elif evt.message == 'MapGoalChanged':
+			player = Scripts.director.Director().mainCharacter
+			if player is not None:
+				self.map_goal_changed(player.scene)
+		elif evt.message == 'MainCharacterSet':
+			player = evt.body
+			if player is not None:
+				self.map_goal_changed(player.scene)
 
 	def set_map(self, file_name, scale, offset, zoom):
 		'''Load a texture from an image file and display it as the map.'''
@@ -551,26 +564,38 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.offset = offset
 		self.zoom = zoom
 
+	def map_goal_changed(self, scene):
+		goal = bat.store.get('/game/level/mapGoal', defaultValue=None)
+		if goal is None:
+			self.goal = None
+		else:
+			goal = scene.objects[goal]
+			self.goal = goal
+
 	@bat.bats.expose
 	def update(self):
 		player = Scripts.director.Director().mainCharacter
 		if player is None:
 			return
 
-		pos = player.worldPosition
-		orn = player.worldOrientation
-		self.centre_page(pos)
+		# Make copies for faster access
+		pos = player.worldPosition.copy()
+		orn = player.worldOrientation.copy()
+		if self.goal:
+			goal_pos = self.goal.worldPosition.copy()
+		else:
+			goal_pos = None
+		self.centre_page(pos, goal_pos)
 		self.rotate_marker(orn)
 		self.orient_horizon(orn)
 
 	def init_uv(self):
 		canvas = self.children['MapPage']
 
-		# copy UV's to the second channel
+		# Copy UVs to the second channel.
 		canvas.meshes[0].transform_uv(-1, mathutils.Matrix(), 1, 0)
 
-	def centre_page(self, loc):
-		# local copies for fast access
+	def centre_page(self, loc, goal_pos):
 		zoom = self.zoom
 		uv_offset = self.world_to_uv(loc.xy) * zoom
 		uv_tx_neg = mathutils.Matrix.Translation((uv_offset[0] - 0.5, uv_offset[1] - 0.5, 0))
@@ -578,10 +603,30 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		uv_tx_scale = mathutils.Matrix.Scale(1.0 / zoom, 4)
 		uv_tx_final = uv_tx_pos * uv_tx_scale * uv_tx_neg
 
+		# Transform and copy from channel 1.
 		canvas = self.children['MapPage']
-
-		# transform and copy from channel 1
 		canvas.meshes[0].transform_uv(-1, uv_tx_final, 0, 1)
+
+		# Move goal marker (for showing where the player should go next).
+		positionalMarker = self.children['MapGoal']
+		directionalMarker = self.children['MapGoalDirection']
+		if goal_pos:
+			uv_offset_goal = self.world_to_uv(goal_pos.xy) * zoom
+			uv_offset_goal -= uv_offset
+			if uv_offset_goal.magnitude > 1:
+				uv_offset_goal.normalize()
+				directionalMarker.localPosition.xy = uv_offset_goal
+				directionalMarker.alignAxisToVect(directionalMarker.localPosition, 1)
+				directionalMarker.alignAxisToVect(bat.bmath.ZAXIS, 2)
+				positionalMarker.visible = False
+				directionalMarker.visible = True
+			else:
+				positionalMarker.localPosition.xy = uv_offset_goal
+				positionalMarker.visible = True
+				directionalMarker.visible = False
+		else:
+			positionalMarker.visible = False
+			directionalMarker.visible = False
 
 	def rotate_marker(self, orn):
 		marker = self.children['MapDirection']
@@ -601,10 +646,19 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def show(self):
 		if not self.has_state(self.S_VISIBLE):
 			self.set_state(self.S_VISIBLE)
+			self.setVisible(True, True)
+			# These will be changed during update
+			self.children['MapGoal'].visible = False
+			self.children['MapGoalDirection'].visible = False
 
 	def hide(self):
 		if self.has_state(self.S_VISIBLE):
 			self.set_state(self.S_HIDING)
+
+def set_map_goal(c):
+	o = c.owner
+	bat.store.put('/game/level/mapGoal', o.name)
+	bat.event.Event('MapGoalChanged').send()
 
 
 class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):

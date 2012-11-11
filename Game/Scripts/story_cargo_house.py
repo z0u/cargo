@@ -289,6 +289,14 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Lighthouse'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Torch'))
 		s.add_action(Scripts.story.ActShowMarker(None))
+
+		s = s.create_successor()
+		s.add_event("ShowDialogue", "The lighthouse is marked in red on your map.")
+		s.add_action(bat.story.ActStoreSet('/game/level/mapGoal', 'Torch'))
+		s.add_event("MapGoalChanged")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "See you later!")
 		s.add_action(bat.story.ActSound('//Sound/WormBye.ogg'))
 		s.add_action(bat.story.ActAction('BurstOut', 395, 420, Worm.L_ANIM))

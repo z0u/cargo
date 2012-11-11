@@ -602,13 +602,20 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.shell.setLinearVelocity(linV)
 		self.shell.setAngularVelocity(angV)
 
-		#
 		# Swap mass with shell so the shell can influence bendy leaves properly
-		#
 		dm = self.shell['DynamicMass']
 		self.shell['DynamicMass'] = self['DynamicMass']
 		self['DynamicMass'] = dm
 
+		# Special case for buoyancy so you don't immediately sink if you enter
+		# the shell when half in the water.
+		try:
+			if self['SubmergedFactor'] < 0.9:
+				Snail.log.info("Resetting buoyancy.")
+				self['CurrentBuoyancy'] = self['Buoyancy']
+				self.shell['CurrentBuoyancy'] = self.shell['Buoyancy']
+		except KeyError:
+			pass
 
 		self['InShell'] = 1
 		self.shell.on_entered()

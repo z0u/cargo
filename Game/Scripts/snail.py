@@ -771,10 +771,13 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	@bat.utils.controller_cls
 	def power_up(self, c):
 		for powerUp in c.sensors[0].hitObjectList:
-			if powerUp['SpeedMultiplier']:
+			if 'SpeedMultiplier' in powerUp:
 				self['SpeedMultiplier'] = powerUp['SpeedMultiplier']
 
-			if powerUp['SingleUse']:
+			power_up_type = powerUp['Pickup']
+			bat.event.Event('PickupReceived', power_up_type).send()
+
+			if 'SingleUse' in powerUp and powerUp['SingleUse']:
 				powerUp.endObject()
 
 	def on_float(self, water):

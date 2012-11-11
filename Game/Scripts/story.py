@@ -242,6 +242,8 @@ class GameLevel(Level):
 			bge.logic.startGame(level)
 		elif event.message == "ShellEquipped" and event.body is not None:
 			self.on_shell_equipped(event.body)
+		elif event.message == "PickupReceived":
+			self.on_pickup(event.body)
 
 	def on_shell_equipped(self, shell):
 		if shell.name not in Scripts.inventory.Shells().get_shells():
@@ -250,6 +252,13 @@ class GameLevel(Level):
 			if shell.name == 'BottleCap':
 				bat.store.put('/game/level/mapGoal', None)
 				bat.event.Event('MapGoalChanged').send()
+
+	def on_pickup(self, power_up_type):
+		if power_up_type == 'Nectar':
+			if not bat.store.get('/game/hasUsedNectar', defaultValue=False):
+				bat.event.Event('ShowDialogue', 'Speed boost! These flowers drop nectar which makes you go fast.').send()
+				bat.store.put('/game/hasUsedNectar', True)
+
 
 def load_level(caller, level, spawnPoint):
 	print('Loading next level: %s, %s' % (level, spawnPoint))

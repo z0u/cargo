@@ -17,6 +17,7 @@
 #
 
 import time
+import logging
 
 import bge
 import mathutils
@@ -508,6 +509,8 @@ class Gauge(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'Map_'
 
+	log = logging.getLogger(__name__ + '.MapWidget')
+
 	S_INIT = 1
 	S_VISIBLE = 2
 	S_HIDING  = 3
@@ -529,6 +532,8 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		bat.event.EventBus().replay_last(self, 'SetMap')
 		bat.event.EventBus().replay_last(self, 'MapGoalChanged')
 
+		self.map_goal_changed()
+
 	def on_event(self, evt):
 		if evt.message == 'GameModeChanged':
 			if evt.body == 'Playing':
@@ -538,24 +543,27 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		elif evt.message == 'SetMap':
 			self.set_map(*evt.body)
 		elif evt.message == 'MapGoalChanged':
-			player = Scripts.director.Director().mainCharacter
-			if player is not None:
-				self.map_goal_changed(player.scene)
+			self.map_goal_changed()
 		elif evt.message == 'MainCharacterSet':
 			player = evt.body
 			if player is not None:
 				self.map_goal_changed(player.scene)
+			else:
+				self.map_goal_changed()
 
 	def set_map(self, file_name, scale, offset, zoom):
 		'''Load a texture from an image file and display it as the map.'''
 		canvas = self.children['MapPage']
 
-		matid = bge.texture.materialID(canvas, 'MAMapPage')
-		tex = bge.texture.Texture(canvas, matid)
-		source = bge.texture.ImageFFmpeg(bge.logic.expandPath(file_name))
-
-		tex.source = source
-		tex.refresh(False)
+		try:
+			matid = bge.texture.materialID(canvas, 'MAMapPage')
+			tex = bge.texture.Texture(canvas, matid)
+			source = bge.texture.ImageFFmpeg(bge.logic.expandPath(file_name))
+			tex.source = source
+			tex.refresh(False)
+		except:
+			MapWidget.log.error("Could not load map image %s.", file_name, exc_info=True)
+			return
 
 		# Must be stored, or it will be freed.
 		bge.logic.maptex = tex
@@ -564,8 +572,16 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.offset = offset
 		self.zoom = zoom
 
-	def map_goal_changed(self, scene):
+	def map_goal_changed(self, scene=None):
+		if scene is None:
+			player = Scripts.director.Director().mainCharacter
+			if player is None:
+				MapWidget.log.info("Can't determine scene.")
+				return
+			scene = player.scene
+
 		goal = bat.store.get('/game/level/mapGoal', defaultValue=None)
+		MapWidget.log.info("Using map goal %s", goal)
 		if goal is None:
 			self.goal = None
 		else:

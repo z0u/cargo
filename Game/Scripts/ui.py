@@ -555,6 +555,11 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		'''Load a texture from an image file and display it as the map.'''
 		canvas = self.children['MapPage']
 
+		MapWidget.log.info("Setting map to %s", file_name)
+		MapWidget.log.info("Scale: %s", scale)
+		MapWidget.log.info("Offset: %s", offset)
+		MapWidget.log.info("Zoom: %s", zoom)
+
 		try:
 			matid = bge.texture.materialID(canvas, 'MAMapPage')
 			tex = bge.texture.Texture(canvas, matid)
@@ -609,7 +614,7 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		canvas = self.children['MapPage']
 
 		# Copy UVs to the second channel.
-		canvas.meshes[0].transform_uv(-1, mathutils.Matrix(), 1, 0)
+		canvas.meshes[0].transformUV(-1, mathutils.Matrix(), 1, 0)
 
 	def centre_page(self, loc, goal_pos):
 		zoom = self.zoom
@@ -621,7 +626,7 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		# Transform and copy from channel 1.
 		canvas = self.children['MapPage']
-		canvas.meshes[0].transform_uv(-1, uv_tx_final, 0, 1)
+		canvas.meshes[0].transformUV(-1, uv_tx_final, 0, 1)
 
 		# Move goal marker (for showing where the player should go next).
 		positionalMarker = self.children['MapGoal']
@@ -629,18 +634,21 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if goal_pos:
 			uv_offset_goal = self.world_to_uv(goal_pos.xy) * zoom
 			uv_offset_goal -= uv_offset
-			if uv_offset_goal.magnitude > 1:
+			if uv_offset_goal.magnitude <= 1:
+				# Within map; show cross at exact location.
+				positionalMarker.localPosition.xy = uv_offset_goal
+				positionalMarker.visible = True
+				directionalMarker.visible = False
+			else:
+				# Beyond edge of map; show arrow pointing towards marker.
 				uv_offset_goal.normalize()
 				directionalMarker.localPosition.xy = uv_offset_goal
 				directionalMarker.alignAxisToVect(directionalMarker.localPosition, 1)
 				directionalMarker.alignAxisToVect(bat.bmath.ZAXIS, 2)
 				positionalMarker.visible = False
 				directionalMarker.visible = True
-			else:
-				positionalMarker.localPosition.xy = uv_offset_goal
-				positionalMarker.visible = True
-				directionalMarker.visible = False
 		else:
+			# No marker.
 			positionalMarker.visible = False
 			directionalMarker.visible = False
 

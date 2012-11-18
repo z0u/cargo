@@ -16,10 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import bge.logic
+import bge
 
 import bat.bats
-import bat.containers
 
 import Scripts.director
 

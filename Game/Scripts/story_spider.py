@@ -96,7 +96,8 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			# Snail is upside down, therefore on wrong side of catapult
 			return
 
-		bat.bats.add_and_mutate_object(self.scene, "FlyingCutscene", self)
+		spawn_point = self.scene.objects["FC_SpawnPoint"]
+		bat.bats.add_and_mutate_object(self.scene, "FlyingCutscene", spawn_point)
 
 
 class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):

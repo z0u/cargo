@@ -151,9 +151,9 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 				self.camera.lens = currentGoal.lens
 			self._update_focal_depth(instant=True)
 			self.instantCut = False
-
-		bat.bmath.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
-		bat.bmath.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
+		else:
+			bat.bmath.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
+			bat.bmath.slow_copy_rot(self.camera, currentGoal, currentGoal['RotFac'])
 
 		# Update focal length.
 		targetLens = self.defaultLens

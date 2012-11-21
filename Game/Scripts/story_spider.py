@@ -78,6 +78,11 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	@bat.utils.controller_cls
 	def catapult_end_touched(self, c):
 		self.catapult_primed = c.sensors[0].positive
+		if self.catapult_primed:
+			print("side cam")
+			bat.event.Event("AddCameraGoal", "FC_SideCamera_Preview").send()
+		else:
+			bat.event.Event("RemoveCameraGoal", "FC_SideCamera_Preview").send()
 
 	def play_flying_cutscene(self, shell):
 		if not self.catapult_primed:
@@ -242,12 +247,12 @@ class FlyingCutscene(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.KX_Gam
 
 	def hold_snail(self):
 		snail = Scripts.director.Director().mainCharacter
-		anchor = self.children['FC_SnailShoot']
+		anchor = self.scene.objects['FC_SnailShoot']
 		bat.bmath.copy_transform(anchor, snail)
 		snail.localLinearVelocity = bat.bmath.MINVECTOR
 
 	def shoot_snail(self):
 		snail = Scripts.director.Director().mainCharacter
-		anchor = self.children['FC_SnailShoot']
+		anchor = self.scene.objects['FC_SnailShoot']
 		bat.bmath.copy_transform(anchor, snail)
 		snail.localLinearVelocity = bat.bmath.YAXIS * 75.0

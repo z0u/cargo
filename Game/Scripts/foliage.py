@@ -226,3 +226,25 @@ class Web(FlexibleObject):
 			intrusion = cPos.z - colRad
 		intrusion = bat.bmath.clamp(-colRad, colRad, intrusion) * 100.0
 		return mathutils.Vector((intrusion, intrusion))
+
+def salt_crystal_destroy(c):
+	ob = c.owner
+	sce = bge.logic.getCurrentScene()
+
+	# Transform name "Salt_X.Y_T" -> "Salt_X.Y_Fractured"
+	name = ob.name[:-1] + "Fractured"
+
+	# Replace current object with fractured object
+	MAX_LIFE = 120
+	new_ob = sce.addObject(name, ob, MAX_LIFE)
+	ob.endObject()
+
+	sample = bat.sound.Sample(
+		'//Sound/cc-by/CrashBoom1.ogg',
+		'//Sound/cc-by/CrashBoom2.ogg',
+		'//Sound/cc-by/CrashBoom3.ogg')
+	sample.volume = 0.7
+	sample.pitchmin = 0.9
+	sample.pitchmax = 1.4
+	sample.add_effect(bat.sound.Localise(new_ob))
+	sample.play()

@@ -235,7 +235,7 @@ def salt_crystal_destroy(c):
 	name = ob.name[:-1] + "Fractured"
 
 	# Replace current object with fractured object
-	MAX_LIFE = 120
+	MAX_LIFE = 300
 	new_ob = sce.addObject(name, ob, MAX_LIFE)
 	ob.endObject()
 
@@ -248,3 +248,5 @@ def salt_crystal_destroy(c):
 	sample.pitchmax = 1.4
 	sample.add_effect(bat.sound.Localise(new_ob))
 	sample.play()
+
+	sce.addObject('Salt_Dust', ob, MAX_LIFE)

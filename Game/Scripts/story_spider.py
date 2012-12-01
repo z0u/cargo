@@ -238,6 +238,7 @@ class FlyingCutscene(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.KX_Gam
 		s = s.create_successor("Pick up wheel")
 		s.add_condition(bat.story.CondActionGE(0, 49, ob="FC_Airstream"))
 		s.add_action(Scripts.story.ActRemoveCamera("FC_Camera"))
+		s.add_action(Scripts.story.ActRemoveFocalPoint("FC_SnailFlyFocus"))
 		s.add_action(bat.story.ActGeneric(self.shoot_snail))
 
 		s = s.create_successor("Clean up")

@@ -138,46 +138,75 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "It's strange, don't you think? Who could resist the beauty of Spider Isle?")
-
 		scancel.add_predecessor(s)
+
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", "Ah, I see you're admiring my collection. Isn't it marvellous?")
+		s.add_event("ShowDialogue", "I just love the salt forest. And you won't believe this...")
+		scancel.add_predecessor(s)
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "... Treasure simply washes up on the shore! Ha ha!")
 		scancel.add_predecessor(s)
 
 		# START SPLIT 1
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", ("I bet you've never seen the like on Tree Island.",
-			("What about the Lighthouse?", "The Sauce Bar, madam!")))
+		s.add_event("ShowDialogue", ("This is my latest find. Isn't it marvelous?",
+			("That bird took my \[shell]!", "Please, can I have it?")))
 		scancel.add_predecessor(s)
 
-		storch = s.create_successor("torch")
-		storch.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
-		storch.add_event("ShowDialogue", "... Yes. The torch is quite a piece.")
+		ssob = s.create_successor("sobstory")
+		ssob.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
+		ssob.add_event("ShowDialogue", "Oh, what a nuisance. He is indeed a pesky bird.")
 		scancel.add_predecessor(s)
 
-		sbar = s.create_successor("bar")
-		sbar.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
-		sbar.add_event("ShowDialogue", "Oh ho, but it is full of slugs!\n...Mind you, they do serve a smashing gravy.")
+		sask = s.create_successor("bar")
+		sask.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
+		sask.add_event("ShowDialogue", "Oh ho, you must be joking!")
+		scancel.add_predecessor(s)
+
+		# END SPLIT 1; START SPLIT 2
+		s = bat.story.State()
+		ssob.add_successor(s)
+		sask.add_successor(s)
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", ("But no, I can't just give it to you. It is too precious.",
+			("I'll be your best friend.", "You're not even using it!")))
+		scancel.add_predecessor(s)
+
+		splead = s.create_successor("plead")
+		splead.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
+		splead.add_event("ShowDialogue", "Hmm... well, let's play a game.")
+		scancel.add_predecessor(s)
+
+		sdemand = s.create_successor("demand")
+		sdemand.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
+		sdemand.add_event("ShowDialogue", "What a rude snail you are! You shall not have it.")
+		scancel.add_predecessor(s)
+
+		sdemand = sdemand.create_successor()
+		sdemand.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		sdemand.add_event("ShowDialogue", "But allow me to taunt you. Hehehe...")
 		scancel.add_predecessor(s)
 
 		s = bat.story.State()
-		storch.add_successor(s)
-		sbar.add_successor(s)
+		splead.add_successor(s)
+		sdemand.add_successor(s)
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", "I suppose you may find the occasional trinket there...")
+		s.add_event("ShowDialogue", "If you can touch the wheel \[wheel], you can keep it.")
 		scancel.add_predecessor(s)
-		# END SPLIT 1
+		# END SPLIT 2
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", "But the unique bay of Spider Isle gathers a volume of treasure that other islands simply cannot compete with.")
+		s.add_event("ShowDialogue", "But let's not fool ourselves: it's going to be tricky!")
 		scancel.add_predecessor(s)
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActStoreSet('/game/level/spiderWelcome1', True))
-
-		s = s.create_successor()
-		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		sconv_end = bat.story.State()
 		sconv_end.add_predecessor(s)

@@ -490,15 +490,18 @@ def make_lod_tree(source_group, target_group):
 	sg = bpy.data.groups[source_group]
 	dupliObs = []
 	for sourceOb in sg.objects:
-		# Make dupli-objects (e.g. particle instances) real, and select them.
-		bpy.ops.object.select_all(action='DESELECT')
-		bpy.context.scene.objects.active = sourceOb
-		sourceOb.select = True
-		bpy.ops.object.duplicates_make_real()
-		sourceOb.select = False
-
-		# Make KD tree and clusters from duplicated objects.
-		dupliObs.extend(bpy.context.selected_objects)
+		if len(sourceOb.particle_systems) > 0:
+			# Make dupli-objects (e.g. particle instances) real, and select them.
+			bpy.ops.object.select_all(action='DESELECT')
+			bpy.context.scene.objects.active = sourceOb
+			sourceOb.select = True
+			bpy.ops.object.duplicates_make_real()
+			sourceOb.select = False
+			# Make KD tree and clusters from duplicated objects.
+			dupliObs.extend(bpy.context.selected_objects)
+		else:
+			# Just use object as-is (explicit placement).
+			dupliObs.append(sourceOb)
 
 	print('Creating LOD tree')
 	tree = KDTree(dupliObs, target_group, target_group[0:2])

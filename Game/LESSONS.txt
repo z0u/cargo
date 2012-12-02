@@ -1,0 +1,6 @@
+== Shaders ==
+ - Custom shader controls are tricky; best to only have one in the scene. The
+   prime example of this is grass and leaves in LoD trees: if there is an LoD
+   tree in the level, it is essential that all leaf instances are controlled by
+   that tree. If explicit instances are placed around the level, e.g. in
+   SpiderIsle or CargoHouse, the shaders will not match the baked LoD tree.

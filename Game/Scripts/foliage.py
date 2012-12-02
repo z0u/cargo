@@ -250,3 +250,9 @@ def salt_crystal_destroy(c):
 	sample.play()
 
 	sce.addObject('Salt_Dust', ob, MAX_LIFE)
+
+def pond_scum_touched(c):
+	s = c.sensors[0]
+	for ob in s.hitObjectList:
+		ob.worldLinearVelocity = ob.worldLinearVelocity * 0.5
+

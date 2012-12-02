@@ -135,6 +135,10 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.health_warn_tics = 0
 		self.shock_tics = 0
 
+		self['SpeedMultiplier'] = 1.0
+		self.speed_priority = 0
+		self.speed_tics = 0
+
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'GravityChanged')
 
@@ -767,12 +771,15 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		if not self.has_state(Snail.S_INSHELL):
 			bat.event.Event('OxygenSet', self['Oxygen']).send()
 
+	DEFAULT_SPEED_TICS = 4 * 60
+
 	@bat.bats.expose
 	@bat.utils.controller_cls
 	def power_up(self, c):
 		for powerUp in c.sensors[0].hitObjectList:
 			if 'SpeedMultiplier' in powerUp:
-				self['SpeedMultiplier'] = powerUp['SpeedMultiplier']
+				if not self.alter_speed_by_ob(powerUp):
+					continue
 
 			power_up_type = powerUp['Pickup']
 			bat.event.Event('PickupReceived', power_up_type).send()
@@ -780,17 +787,59 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			if 'SingleUse' in powerUp and powerUp['SingleUse']:
 				powerUp.endObject()
 
+	def alter_speed_by_ob(self, ob):
+		if 'SpeedMultiplier' in ob:
+			speed = ob['SpeedMultiplier']
+		else:
+			speed = 2.0
+		if 'SpeedPriority' in ob:
+			priority = ob['SpeedPriority']
+		else:
+			priority = 0
+		# How long to change speed for
+		if 'SpeedTics' in ob:
+			tics = ob['SpeedTics']
+		else:
+			tics = Snail.DEFAULT_SPEED_TICS
+
+		return self.alter_speed(speed, priority, tics)
+
+	def alter_speed(self, speed, priority, tics):
+		if priority < self.speed_priority:
+			return False
+		self.set_speed(speed)
+		self.speed_priority = priority
+		self.speed_tics = tics
+		return True
+
+	def set_speed(self, speed):
+		if Snail.log.isEnabledFor(logging.INFO):
+			if self['SpeedMultiplier'] != speed:
+				Snail.log.info("Speed changing to %g", speed)
+		self['SpeedMultiplier'] = speed
+
 	def on_float(self, water):
 		# Assume water gives speed up unless otherwise specified (e.g. honey
 		# slows you down).
-		speed = 2.0
-		if 'SpeedMultiplier' in water:
-			speed = water['SpeedMultiplier']
+		if 'SpeedMultiplier' not in water:
+			water['SpeedMultiplier'] = 2.0
+		self.alter_speed_by_ob(water)
 
-		if speed > 1.0 and self['SpeedMultiplier'] < speed:
-			self['SpeedMultiplier'] = speed
-		elif speed < 1.0 and self['SpeedMultiplier'] > speed:
-			self['SpeedMultiplier'] = speed
+	@bat.bats.expose
+	def speed_cheat(self):
+		self.alter_speed(3.0, 10, Snail.DEFAULT_SPEED_TICS)
+
+	def decay_speed(self):
+		'''Bring the speed of the snail one step closer to normal speed.'''
+		self.speed_tics -= 1
+		if self.speed_tics <= 0:
+			# Reset
+			self.speed_tics = 0
+			self.speed_priority = 0
+			self.set_speed(1.0)
+
+		# Make noise when going fast.
+		self.armature['Squeaking'] = self['SpeedMultiplier'] > 1.0
 
 	def hit_mushroom(self):
 		bat.event.Event('BlurAdd', 0.5).send()
@@ -866,21 +915,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			if self.touchedObject is not None:
 				self.children['Trail'].moved(self['SpeedMultiplier'],
 					self.touchedObject)
-
-	def decay_speed(self):
-		'''Bring the speed of the snail one step closer to normal speed.'''
-		dr = self['SpeedDecayRate']
-		mult = self['SpeedMultiplier']
-
-		# Make noise when going fast.
-		self.armature['Squeaking'] = mult > 1.0
-
-		if mult == 1.0:
-			return
-		elif mult > 1.0:
-			self['SpeedMultiplier'] = max(mult - dr, 1.0)
-		else:
-			self['SpeedMultiplier'] = min(mult + dr, 1.0)
 
 	def handle_bt_1(self, state):
 		'''

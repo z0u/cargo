@@ -225,7 +225,7 @@ class Shell(ShellBase):
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
-		self.direction_mapper = bat.impulse.DirectionMapperGlobal()
+		self.direction_mapper = bat.impulse.DirectionMapperViewGlobal()
 
 		self.rolling_sound = bat.sound.Sample('//Sound/cc-by/Rolling.ogg')
 		self.rolling_sound.loop = True
@@ -424,7 +424,7 @@ class BottleCap(ShellBase):
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
-		self.direction_mapper = bat.impulse.DirectionMapperGlobal()
+		self.direction_mapper = bat.impulse.DirectionMapperViewGlobal()
 
 		self.jump_sound = bat.sound.Sample('//Sound/MouthPopOpen.ogg')
 		self.jump_sound.pitchmin = 0.9
@@ -542,7 +542,7 @@ class Thimble(ShellBase):
 				bat.bats.mutate(self.children['ArcRay_Root.1']),
 				bat.bats.mutate(self.children['ArcRay_Root.2']),
 				bat.bats.mutate(self.children['ArcRay_Root.3']))
-		self.direction_mapper = bat.impulse.DirectionMapperLocal()
+		self.direction_mapper = bat.impulse.DirectionMapperViewLocal()
 		self.engine = Scripts.attitude.Engine(self)
 
 		self.damage_tracker = Scripts.director.DamageTracker()

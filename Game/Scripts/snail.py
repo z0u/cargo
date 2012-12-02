@@ -121,6 +121,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.bend_angle_fore = 0.0
 		self.bend_angle_aft = 0.0
 		self.direction_mapper = bat.impulse.DirectionMapperLocal()
+		self.direction_mapper_joystick = bat.impulse.DirectionMapperViewLocal()
 		self.engine = Scripts.attitude.Engine(self)
 
 		# For path camera
@@ -877,20 +878,26 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	MAX_BEND_ANGLE = 0.7 # radians
 
 	def handle_movement(self, state):
-		'''
-		Make the snail move. If moving forward or backward, this implicitly
-		calls decaySpeed.
-		'''
+		'''Make the snail move.'''
 
 		user_speed = min(1.0, state.direction.magnitude)
 		speed = Snail.NORMAL_SPEED * self['SpeedMultiplier'] * user_speed
 		if 'SubmergedFactor' in self:
-			# Don't go so fast when under water!
+			# Don't go so fast when under water! Note this is separate to, and
+			# may conflict with, the water's SpeedMultiplier setting. This is
+			# intentional: the speed multiplier should apply when the snail is
+			# in shallow water; this dampening happens when under water.
 			speed *= 1.0 - Snail.WATER_DAMPING * self['SubmergedFactor']
 		self.decay_speed()
 
-		self.direction_mapper.update(self, state.direction)
-		self.engine.apply(self.direction_mapper.direction, speed)
+		if state.source & bat.impulse.SRC_JOYSTICK_AXIS:
+			# Use special joystick mapper for view-based movement.
+			self.direction_mapper_joystick.update(self, state.direction)
+			self.engine.apply(self.direction_mapper_joystick.direction, speed)
+		else:
+			# Use snake-like movement controls.
+			self.direction_mapper.update(self, state.direction)
+			self.engine.apply(self.direction_mapper.direction, speed)
 
 		self.armature['LocomotionFrame'] += 5 * self.engine.speed
 		self.armature['LocomotionFrame'] %= 19

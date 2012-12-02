@@ -101,11 +101,12 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 
 class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
-	L_IDLE = 0
-	L_ANIM = 1
+	L_ANIM = 0
+	L_IDLE = 1
 
 	def __init__(self, old_owner):
 		bat.story.Chapter.__init__(self, old_owner)
+		self.anim_welcome = bat.story.AnimBuilder('Spider_conv', layer=Spider.L_ANIM)
 		self.create_state_graph()
 		self.playAction('Spider_conv', 1, 1)
 
@@ -115,6 +116,8 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_action(Scripts.story.ActSetFocalPoint('Spider'))
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam"))
+		s.add_action(bat.story.ActAction('Spider_idle', 1, 60, Spider.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 
 		# Catch-many state for when the user cancels a dialogue. Should only be
 		# allowed if the conversation has been played once already.
@@ -125,29 +128,37 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s = s.create_successor()
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam_CU"))
 		s.add_event("ShowDialogue", "Who goes there?")
-		s.add_action(bat.story.ActAction('Spider_conv', 1, 80, Spider.L_ANIM))
+		self.anim_welcome.play(s, 1, 20)
 		scancel.add_predecessor(s)
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Ah, where are my manners? Welcome, my dear! Forgive me; I don't get many visitors.")
+		self.anim_welcome.play(s, 30, 45)
+		scancel.add_predecessor(s)
+		sub = s.create_sub_step()
+		sub.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 36, tap=True))
+		sub.add_action(Scripts.story.ActRemoveCamera("SpiderCam_CU"))
+		sub.add_action(Scripts.story.ActSetCamera("SpiderCam_Side"))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_CU"))
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam_Side"))
-		s.add_event("ShowDialogue", "Ah, where are my manners? Welcome, my dear! Forgive me; I don't get many visitors.")
-		scancel.add_predecessor(s)
-
-		s = s.create_successor()
-		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "It's strange, don't you think? Who could resist the beauty of Spider Isle?")
+		self.anim_welcome.play(s, 50, 60)
 		scancel.add_predecessor(s)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I just love the salt forest. And you won't believe this...")
+		self.anim_welcome.play(s, 70, 120)
 		scancel.add_predecessor(s)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "... Treasure simply washes up on the shore! Ha ha!")
+		self.anim_welcome.play(s, 130, 150)
 		scancel.add_predecessor(s)
 
 		# START SPLIT 1
@@ -155,16 +166,24 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", ("This is my latest find. Isn't it marvelous?",
 			("That bird took my \[shell]!", "Please, can I have it?")))
+		self.anim_welcome.play(s, 160, 170)
 		scancel.add_predecessor(s)
+		sub = s.create_sub_step()
+		sub.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 163, tap=True))
+		sub.add_action(Scripts.story.ActSetCamera("SpiderCam_Wheel"))
 
 		ssob = s.create_successor("sobstory")
+		ssob.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 170))
 		ssob.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
 		ssob.add_event("ShowDialogue", "Oh, what a nuisance. He is indeed a pesky bird.")
+		ssob.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
 		scancel.add_predecessor(s)
 
 		sask = s.create_successor("bar")
+		ssob.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 170))
 		sask.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
 		sask.add_event("ShowDialogue", "Oh ho, you must be joking!")
+		sask.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
 		scancel.add_predecessor(s)
 
 		# END SPLIT 1; START SPLIT 2
@@ -216,6 +235,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_action(Scripts.story.ActResumeInput())
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Spider'))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Side"))
+		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_CU"))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam"))
 

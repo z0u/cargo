@@ -86,7 +86,10 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		self.frame = self.childrenRecursive['Dlg_Frame']
 
 		self.response = self.children['ResponseBox']
-		self.response_canvas = bat.bats.mutate(self.childrenRecursive['Rsp_TextCanvas'])
+		self.response_canvas1 = bat.bats.mutate(self.childrenRecursive['Rsp_TextCanvas.0'])
+		self.response_canvas2 = bat.bats.mutate(self.childrenRecursive['Rsp_TextCanvas.1'])
+		self.response_canvas1['colour'] = '#99ff99'
+		self.response_canvas2['colour'] = '#9999ff'
 		self.response_armature = self.childrenRecursive['Rsp_FrameArmature']
 		self.response_frame = self.childrenRecursive['Rsp_Frame']
 		self.response_cursor = self.childrenRecursive['Rsp_OptionCursor']
@@ -159,7 +162,8 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 			self.set_selected_option(None)
 		else:
 			self.set_selected_option(0)
-			self.response_canvas.set_text("%s\n%s" % self.options)
+			self.response_canvas1.set_text(self.options[0])
+			self.response_canvas2.set_text(self.options[1])
 			start = self.response_armature.getActionFrame()
 			self.response_armature.playAction('DialogueBoxBoing', start,
 					DialogueBox.ARM_SHOW_FRAME, layer=DialogueBox.L_DISPLAY)
@@ -175,7 +179,8 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		if not self.options_visible:
 			return
 		self.set_selected_option(None)
-		self.response_canvas.set_text("")
+		self.response_canvas1.set_text("")
+		self.response_canvas2.set_text("")
 		start = self.response_armature.getActionFrame()
 		self.response_armature.playAction('DialogueBoxBoing', start,
 				DialogueBox.ARM_HIDE_FRAME, layer=DialogueBox.L_DISPLAY)

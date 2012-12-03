@@ -107,6 +107,8 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 	def __init__(self, old_owner):
 		bat.story.Chapter.__init__(self, old_owner)
 		self.anim_welcome = bat.story.AnimBuilder('Spider_conv', layer=Spider.L_ANIM)
+		self.anim_nice = bat.story.AnimBuilder('Spider_conv_nice', layer=Spider.L_ANIM)
+		self.anim_rude = bat.story.AnimBuilder('Spider_conv_rude', layer=Spider.L_ANIM)
 		self.create_state_graph()
 		self.playAction('Spider_conv', 1, 1)
 
@@ -165,57 +167,61 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", ("This is my latest find. Isn't it marvelous?",
-			("That bird took my \[shell]!", "Please, can I have it?")))
+			("Can I have it?", "Hey, my \[shell] was taken, so...")))
 		self.anim_welcome.play(s, 160, 170)
-		scancel.add_predecessor(s)
+		s.add_predecessor(scancel)
 		sub = s.create_sub_step()
 		sub.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 163, tap=True))
 		sub.add_action(Scripts.story.ActSetCamera("SpiderCam_Wheel"))
 
+		sask = s.create_successor("bar")
+		sask.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 170))
+		sask.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
+		sask.add_event("ShowDialogue", "Oh ho, you must be joking!")
+		self.anim_rude.play(sask, 1, 30)
+		sask.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
+		sask.add_predecessor(scancel)
+
 		ssob = s.create_successor("sobstory")
 		ssob.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 170))
-		ssob.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
+		ssob.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
 		ssob.add_event("ShowDialogue", "Oh, what a nuisance. He is indeed a pesky bird.")
+		self.anim_nice.play(ssob, 1, 30)
 		ssob.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
-		scancel.add_predecessor(s)
-
-		sask = s.create_successor("bar")
-		ssob.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 170))
-		sask.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
-		sask.add_event("ShowDialogue", "Oh ho, you must be joking!")
-		sask.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
-		scancel.add_predecessor(s)
+		ssob.add_predecessor(scancel)
 
 		# END SPLIT 1; START SPLIT 2
 		s = bat.story.State()
 		ssob.add_successor(s)
 		sask.add_successor(s)
+		sask.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 30))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", ("But no, I can't just give it to you. It is too precious.",
 			("I'll be your best friend.", "You're not even using it!")))
-		scancel.add_predecessor(s)
+		self.anim_welcome.play(s, 180, 200, blendin=10)
+		s.add_predecessor(scancel)
 
 		splead = s.create_successor("plead")
 		splead.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
 		splead.add_event("ShowDialogue", "Hmm... well, let's play a game.")
-		scancel.add_predecessor(s)
+		splead.add_successor(scancel)
 
 		sdemand = s.create_successor("demand")
 		sdemand.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
 		sdemand.add_event("ShowDialogue", "What a rude snail you are! You shall not have it.")
-		scancel.add_predecessor(s)
+		sdemand.add_successor(scancel)
 
 		sdemand = sdemand.create_successor()
 		sdemand.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		sdemand.add_event("ShowDialogue", "But allow me to taunt you. Hehehe...")
-		scancel.add_predecessor(s)
+		sdemand.add_successor(scancel)
 
 		s = bat.story.State()
 		splead.add_successor(s)
 		sdemand.add_successor(s)
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "If you can touch the wheel \[wheel], you can keep it.")
-		scancel.add_predecessor(s)
+		s.add_predecessor(scancel)
 		# END SPLIT 2
 
 		s = s.create_successor()

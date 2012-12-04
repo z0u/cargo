@@ -203,7 +203,8 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 
 		splead = s.create_successor("plead")
 		splead.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
-		splead.add_event("ShowDialogue", "Hmm... well, let's play a game.")
+		splead.add_event("ShowDialogue", "Oh! Well then... let's play a game.")
+		self.anim_nice.play(splead, 40, 100)
 		splead.add_successor(scancel)
 
 		sdemand = s.create_successor("demand")

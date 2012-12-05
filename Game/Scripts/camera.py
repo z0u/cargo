@@ -45,7 +45,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 	log = logging.getLogger(__name__ + '.AutoCamera')
 
 	COLLISION_BIAS = 1.0
-	MIN_FOCAL_DIST = 4.0
+	MIN_FOCAL_DIST = 3.0
 	FOCAL_FAC = 0.1
 	BLUR_MULT_ACCEL = 0.001
 	BLUR_MULT_MAX = 10.0

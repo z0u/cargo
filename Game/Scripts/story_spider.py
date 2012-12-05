@@ -210,11 +210,16 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		sdemand = s.create_successor("demand")
 		sdemand.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
 		sdemand.add_event("ShowDialogue", "What a rude snail you are! You shall not have it.")
+		self.anim_rude.play(sdemand, 40, 100)
 		sdemand.add_successor(scancel)
+		sub = sdemand.create_sub_step()
+		sub.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 74, tap=True))
+		sub.add_action(Scripts.story.ActSetCamera("SpiderCam_ECU"))
 
 		sdemand = sdemand.create_successor()
 		sdemand.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		sdemand.add_event("ShowDialogue", "But allow me to taunt you. Hehehe...")
+		sdemand.add_action(Scripts.story.ActRemoveCamera("SpiderCam_ECU"))
 		sdemand.add_successor(scancel)
 
 		s = bat.story.State()
@@ -244,6 +249,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Side"))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_CU"))
+		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_ECU"))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam"))
 
 		s = s.create_successor("Reset")

@@ -118,6 +118,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_action(Scripts.story.ActSetFocalPoint('Spider'))
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam"))
+		self.anim_welcome.play(s, 1, 1)
 		s.add_action(bat.story.ActAction('Spider_idle', 1, 60, Spider.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 
@@ -249,6 +250,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 260))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "But we both know it's going to be tricky!")
+		self.anim_welcome.play(s, 290, 330)
 		s.add_action(bat.story.ActAttrSet("visible", False, ob="Wheel_Icon"))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Wheel_Icon'))
 		scancel.add_predecessor(s)

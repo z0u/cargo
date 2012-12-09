@@ -119,7 +119,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 
 		if AutoCamera.log.isEnabledFor(10):
 			# Write entire queue when in DEBUG
-			sys.stdout.write("\rCamera queue: {}".format(self.queue))
+			sys.stdout.write("\rCamera: {} Focus: {}".format(self.queue, self.focusQueue))
 			sys.stdout.flush()
 
 		currentGoal = None

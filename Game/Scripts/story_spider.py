@@ -194,7 +194,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s = bat.story.State()
 		ssob.add_successor(s)
 		sask.add_successor(s)
-		sask.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 30))
+		s.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 30))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", ("But no, I can't just give it to you. It is too precious.",
 			("I'll be your best friend.", "You're not even using it!")))
@@ -202,12 +202,18 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_predecessor(scancel)
 
 		splead = s.create_successor("plead")
+		splead.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 200))
 		splead.add_condition(bat.story.CondEventEq("DialogueDismissed", 0, self))
 		splead.add_event("ShowDialogue", "Oh! Well then... let's play a game.")
 		self.anim_nice.play(splead, 40, 100)
 		splead.add_successor(scancel)
 
+		splead = splead.create_successor()
+		splead.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 100))
+		splead.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+
 		sdemand = s.create_successor("demand")
+		sdemand.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 200))
 		sdemand.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
 		sdemand.add_event("ShowDialogue", "What a rude snail you are! You shall not have it.")
 		self.anim_rude.play(sdemand, 40, 100)
@@ -217,22 +223,34 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		sub.add_action(Scripts.story.ActSetCamera("SpiderCam_ECU"))
 
 		sdemand = sdemand.create_successor()
+		sdemand.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 80))
 		sdemand.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		sdemand.add_event("ShowDialogue", "But allow me to taunt you. Hehehe...")
+		self.anim_rude.play(sdemand, 110, 150)
 		sdemand.add_action(Scripts.story.ActRemoveCamera("SpiderCam_ECU"))
 		sdemand.add_successor(scancel)
+
+		sdemand = sdemand.create_successor()
+		sdemand.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 150))
+		sdemand.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		s = bat.story.State()
 		splead.add_successor(s)
 		sdemand.add_successor(s)
-		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "If you can touch the wheel \[wheel], you can keep it.")
+		self.anim_welcome.play(s, 210, 280, blendin=7)
+		s.add_action(Scripts.story.ActSetFocalPoint("Wheel_Icon"))
+		s.add_action(bat.story.ActAttrSet("visible", True, ob="Wheel_Icon"))
+		s.add_action(bat.story.ActAction("Wheel_IconAction", 210, 280, ob="Wheel_Icon"))
 		s.add_predecessor(scancel)
 		# END SPLIT 2
 
 		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 260))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", "But let's not fool ourselves: it's going to be tricky!")
+		s.add_event("ShowDialogue", "But we both know it's going to be tricky!")
+		s.add_action(bat.story.ActAttrSet("visible", False, ob="Wheel_Icon"))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Wheel_Icon'))
 		scancel.add_predecessor(s)
 
 		s = s.create_successor()
@@ -246,6 +264,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s = sconv_end.create_successor("Clean up")
 		s.add_action(Scripts.story.ActResumeInput())
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Spider'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Wheel_Icon'))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Side"))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_CU"))

@@ -39,7 +39,7 @@ class CondHasShell(bat.story.Condition):
 		return self.name in Scripts.inventory.Shells().get_shells()
 
 	def get_short_name(self):
-		return " HS"
+		return "HasShell(%s)" % self.name
 
 class ActSuspendInput(bat.story.BaseAct):
 	'''Prevent the player from moving around.'''

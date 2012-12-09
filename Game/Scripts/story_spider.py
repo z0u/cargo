@@ -110,17 +110,26 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		self.anim_nice = bat.story.AnimBuilder('Spider_conv_nice', layer=Spider.L_ANIM)
 		self.anim_rude = bat.story.AnimBuilder('Spider_conv_rude', layer=Spider.L_ANIM)
 		self.create_state_graph()
-		self.playAction('Spider_conv', 1, 1)
 
 	def create_state_graph(self):
-		s = self.rootState.create_successor("Init")
+		sinit = self.rootState.create_successor("Init")
+		self.anim_welcome.play(sinit, 1, 1)
+		sinit.add_action(bat.story.ActAction('Spider_idle', 1, 60, Spider.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
+
+		swelcome_start, swelcome_end = self.create_welcome_graph()
+		swelcome_start.add_predecessor(sinit)
+
+		sinit.add_predecessor(swelcome_end)
+
+	def create_welcome_graph(self):
+		sstart = bat.story.State("Welcome")
+
+		s = sstart.create_successor()
 		s.add_condition(bat.story.CondEvent("ApproachWeb", self))
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_action(Scripts.story.ActSetFocalPoint('Spider'))
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam"))
-		self.anim_welcome.play(s, 1, 1)
-		s.add_action(bat.story.ActAction('Spider_idle', 1, 60, Spider.L_IDLE,
-				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 
 		# Catch-many state for when the user cancels a dialogue. Should only be
 		# allowed if the conversation has been played once already.
@@ -273,9 +282,10 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_ECU"))
 		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam"))
 
-		s = s.create_successor("Reset")
-		s.add_condition(bat.story.CondEvent("LeaveWeb", self))
-		s.add_successor(self.rootState)
+		send = s.create_successor("end")
+		send.add_condition(bat.story.CondEvent("LeaveWeb", self))
+
+		return sstart, send
 
 	def get_focal_points(self):
 		return [self.children['Spider_Face'], self]

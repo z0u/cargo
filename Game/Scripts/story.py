@@ -242,29 +242,27 @@ class GameLevel(Level):
 			# Listen for load events from portals.
 			level = bat.store.get('/game/levelFile')
 			bge.logic.startGame(level)
-		elif event.message == "ShellFound" and event.body is not None:
-			self.on_shell_equipped(event.body)
+		elif event.message == "ShellFound":
+			self.on_shell_found(event.body)
 		elif event.message == "PickupReceived":
 			self.on_pickup(event.body)
 
-	def on_shell_equipped(self, shell):
-		if shell not in Scripts.inventory.Shells().get_shells():
-			# This is a new shell! Do special story stuff.
-			if shell == 'Shell':
-				bat.event.Event('ShowDialogue', "You got the Shell! Your beautiful, dependable house and mail van.").send(30)
-			elif shell == 'BottleCap':
-				bat.event.Event('ShowDialogue', "You got the Bottle Cap! It looks like it can float. It tastes like hoisin sauce - not bad!").send(30)
-				bat.store.put('/game/level/mapGoal', None)
-				bat.event.Event('MapGoalChanged').send()
-			elif shell == 'Nut':
-				bat.event.Event('ShowDialogue', "You got the Nut! It's not shiny or red, but it's... heavy. Great!").send(30)
-			elif shell == 'Wheel':
-				# Wheel is handled specially in story_spider.py
-				pass
-			elif shell == 'Thimble':
-				bat.event.Event('ShowDialogue', "You got the Thimble! It's impervious to sharp objects.").send(30)
-			else:
-				GameLevel.log.warn('Unrecognised shell %s', shell)
+	def on_shell_found(self, shell):
+		if shell == 'Shell':
+			bat.event.Event('ShowDialogue', "You got the Shell! Your beautiful, dependable house and mail van.").send(30)
+		elif shell == 'BottleCap':
+			bat.event.Event('ShowDialogue', "You got the Bottle Cap! It looks like it can float. It tastes like hoisin sauce - not bad!").send(30)
+			bat.store.put('/game/level/mapGoal', None)
+			bat.event.Event('MapGoalChanged').send()
+		elif shell == 'Nut':
+			bat.event.Event('ShowDialogue', "You got the Nut! It's not shiny or red, but it's... heavy. Great!").send(30)
+		elif shell == 'Wheel':
+			# Wheel is handled specially in story_spider.py
+			pass
+		elif shell == 'Thimble':
+			bat.event.Event('ShowDialogue', "You got the Thimble! It's impervious to sharp objects.").send(30)
+		else:
+			GameLevel.log.warn('Unrecognised shell %s', shell)
 
 	def on_pickup(self, power_up_type):
 		if power_up_type == 'Nectar':

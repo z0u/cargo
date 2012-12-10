@@ -90,124 +90,127 @@ def flower_head_init(c):
 	accel *= 0.5
 	act.force = accel
 
+
 def init_lower_buckets(c):
 	o = c.owner
-	bat.anim.play_children_with_offset(o.children, 'BucketsLower',
-		Bucket.FRAME_MIN, Bucket.FRAME_MAX, layer=Bucket.L_ANIM)
+	bat.anim.play_children_with_offset(o.children, 'BucketsLower', 1, 400)
+
+def init_upper_buckets(c):
+	o = c.owner
+	bat.anim.play_children_with_offset(o.children, 'BucketsUpper', 1, 1334)
 
 class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
-	L_ANIM = 0
 
-	FRAME_MIN = 1
-	FRAME_MAX = 400
+	log = logging.getLogger(__name__ + '.Bucket')
 
-	DIR_UP = 1
-	DIR_DOWN = 2
-
-	LOC_TOP = 1
-	LOC_BOTTOM = 2
-
-	PROJECTION = [0.0, 0.0, 20.0]
-
-	camTop = bat.containers.weakprop('camTop')
-	camBottom = bat.containers.weakprop('camBottom')
-	currentCamera = bat.containers.weakprop('currentCamera')
-	player = bat.containers.weakprop('player')
+	WATERBALL_VELOCITY = [0.0, 0.0, 20.0]
 
 	def __init__(self, old_owner):
-		scene = bge.logic.getCurrentScene()
-		self.water = self.find_descendant([('Type', 'BucketWater')])
-		self.camTop = scene.objects['BucketTopCam']
-		self.camBottom = scene.objects['BucketBottomCam']
-		self.currentCamera = None
+		self.occupied = False
 
-		self.direction = Bucket.DIR_UP
-		self.loc = Bucket.LOC_BOTTOM
-		self.isTouchingPlayer = False
+	def set_location(self, location):
+		if location == 'TIPPING':
+			self.tip()
+		elif location == 'ASCENDING':
+			self.ascend()
 
-	@bat.bats.expose
-	@bat.utils.controller_cls
-	def update(self, c):
-		sCollision = c.sensors['sPlayer']
-		self.frame_changed()
+	def tip(self):
+		Bucket.log.debug("%s %s", self.name, "TIPPING")
+		water = self.children[0]
+		water.visible = False
+		waterBall = self.scene.addObject('WaterBall', water)
+		waterBall.setLinearVelocity(water.getAxisVect(Bucket.WATERBALL_VELOCITY))
 
-		if Scripts.director.Director().mainCharacter in sCollision.hitObjectList:
-			self.set_touching_player(True)
-		else:
-			self.set_touching_player(False)
+	def ascend(self):
+		Bucket.log.debug("%s %s", self.name, "ASCENDING")
+		water = self.children[0]
+		water.visible = True
 
-	def spawn_water_ball(self):
-		'''Drop a ball of water at the top to make a splash.'''
-		scene = bge.logic.getCurrentScene()
-		waterBall = scene.addObject(self['WaterBallTemplate'], self.water)
-		waterBall.setLinearVelocity(self.water.getAxisVect(Bucket.PROJECTION))
-
-	def set_direction(self, direction):
-		if direction == self.direction:
+	def set_occupied(self, occupied):
+		if self.occupied == occupied:
 			return
+		Bucket.log.debug("%s %s = %s", self.name, "OCCUPIED", occupied)
+		self.occupied = occupied
 
-		if direction == Bucket.DIR_UP:
-			self.water.setVisible(True, False)
+class BucketLower(Bucket):
+	def __init__(self, old_owner):
+		Bucket.__init__(self, old_owner)
+		self.at_top = False
+		self.current_camera = None
+
+	def set_location(self, location):
+		if location == 'TOP':
+			self.approach_top()
+		elif location == 'BOTTOM':
+			self.approach_bottom()
 		else:
-			self.water.setVisible(False, False)
-			self.spawn_water_ball()
-		self.direction = direction
+			Bucket.set_location(self, location)
 
-	def set_location(self, loc):
-		if loc == self.loc:
+	def approach_top(self):
+		if self.at_top:
 			return
-
-		if loc == Bucket.LOC_TOP:
-			self.water.setVisible(True, False)
-		else:
-			self.water.setVisible(False, False)
-		self.loc = loc
+		Bucket.log.debug("%s %s", self.name, "TOP")
+		self.at_top = True
 		self.update_camera()
 
-	def frame_changed(self):
-		frame = self.getActionFrame(Bucket.L_ANIM) % Bucket.FRAME_MAX
-		if frame < 170:
-			self.set_direction(Bucket.DIR_UP)
-		else:
-			self.set_direction(Bucket.DIR_DOWN)
-
-		if frame > 100 and frame < 260:
-			self.set_location(Bucket.LOC_TOP)
-		else:
-			self.set_location(Bucket.LOC_BOTTOM)
-
-	def update_camera(self):
-		cam = None
-		if self.isTouchingPlayer:
-			if self.loc == Bucket.LOC_BOTTOM:
-				cam = self.camBottom
-			else:
-				cam = self.camTop
-
-		if (cam is None) and (self.currentCamera is not None):
-			# Player is being ejected; update camera position to prevent
-			# jolting.
-			pos = self.currentCamera.worldPosition
-			orn = self.currentCamera.worldOrientation
-			bat.event.Event('RelocatePlayerCamera', (pos, orn)).send()
-
-		if cam == self.currentCamera:
+	def approach_bottom(self):
+		if not self.at_top:
 			return
+		Bucket.log.debug("%s %s", self.name, "BOTTOM")
+		self.at_top = False
+		self.update_camera()
 
-		if self.currentCamera is not None:
-			Scripts.camera.AutoCamera().remove_goal(self.currentCamera)
-		if cam is not None:
-			Scripts.camera.AutoCamera().add_goal(cam)
-
-		self.currentCamera = cam
-
-	def set_touching_player(self, isTouchingPlayer):
-		if isTouchingPlayer == self.isTouchingPlayer:
+	def set_occupied(self, occupied):
+		if self.occupied == occupied:
 			return
-
-		self.isTouchingPlayer = isTouchingPlayer
-		if isTouchingPlayer:
+		Bucket.log.debug("%s %s = %s", self.name, "OCCUPIED", occupied)
+		self.occupied = occupied
+		if occupied:
 			bat.event.Event('GameModeChanged', 'Cutscene').send()
 		else:
 			bat.event.Event('GameModeChanged', 'Playing').send()
 		self.update_camera()
+
+	def update_camera(self):
+		cam = None
+		if self.occupied:
+			if not self.at_top:
+				cam = 'BucketBottomCam'
+			else:
+				cam = 'BucketTopCam'
+
+		if (cam is None) and (self.current_camera is not None):
+			# Player is being ejected; update camera position to prevent
+			# jolting.
+			Bucket.log.info("Relocating player camera")
+			camob = self.scene.objects[self.current_camera]
+			pos = camob.worldPosition
+			orn = camob.worldOrientation
+			bat.event.Event('RelocatePlayerCamera', (pos, orn)).send()
+
+		if cam is self.current_camera:
+			return
+
+		Bucket.log.info("Setting camera to %s", cam)
+
+		# Add new camera first for better cutting
+		if cam is not None:
+			bat.event.Event('AddCameraGoal', cam).send()
+		if self.current_camera is not None:
+			bat.event.Event('RemoveCameraGoal', self.current_camera).send()
+
+		self.current_camera = cam
+
+def bucket_water_touched(c):
+	# Called by a sensor inside the bucket, which is a child of the bucket.
+	s = c.sensors[0]
+	is_occupied = Scripts.director.Director().mainCharacter in s.hitObjectList
+	c.owner.parent.set_occupied(is_occupied)
+
+def bucket_location(c):
+	# Called by sensors around the bucket track, which are independent.
+	s = c.sensors[0]
+	if not s.positive:
+		return
+	for ob in s.hitObjectList:
+		ob.set_location(c.owner['location'])

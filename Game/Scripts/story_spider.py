@@ -49,8 +49,15 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	@bat.bats.expose
 	@bat.utils.controller_cls
+	def approach_isle(self, c):
+		if c.sensors[0].positive:
+			bat.store.put('/game/level/spawnPoint', 'SI_StartSpawnPoint')
+
+	@bat.bats.expose
+	@bat.utils.controller_cls
 	def approach_centre(self, c):
 		if c.sensors[0].positive:
+			bat.store.put('/game/level/spawnPoint', 'SI_WebSpawnPoint')
 			if 'Spider' in self.scene.objects:
 				return
 			spider = factory(self.scene)

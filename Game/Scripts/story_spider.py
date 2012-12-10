@@ -110,6 +110,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		self.anim_welcome = bat.story.AnimBuilder('Spider_conv', layer=Spider.L_ANIM)
 		self.anim_nice = bat.story.AnimBuilder('Spider_conv_nice', layer=Spider.L_ANIM)
 		self.anim_rude = bat.story.AnimBuilder('Spider_conv_rude', layer=Spider.L_ANIM)
+		self.anim_get = bat.story.AnimBuilder('Spider_conv_get', layer=Spider.L_ANIM)
 		self.create_state_graph()
 
 	def create_state_graph(self):
@@ -316,16 +317,22 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 
 		s = s.create_successor()
 		s.add_event("ShowDialogue", "Good gracious!")
+		self.anim_get.play(s, 1, 45)
 
 		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 45))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "... I must admit, I'm impressed. I didn't expect you to be able to reach it.")
+		self.anim_get.play(s, 50, 80)
 
 		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 75))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "But I am a lady of my word. Keep it. May it serve you well.")
+		self.anim_get.play(s, 90, 130)
 
 		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 130))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 
 		s = s.create_successor("Clean up")
@@ -348,7 +355,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam_Side"))
 
 		s = s.create_successor()
-		s.add_event("ShowDialogue", "How is the new shell going? It looks like fun!")
+		s.add_event("ShowDialogue", "How is the new shell? It looks like fun.")
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))

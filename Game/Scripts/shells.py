@@ -220,8 +220,6 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 
 class Shell(ShellBase):
 
-	equip_message = 'You got the Shell! Your beautiful, dependable house and mail van.'
-
 	def __init__(self, old_owner):
 		ShellBase.__init__(self, old_owner)
 
@@ -280,8 +278,6 @@ class WheelCameraAlignment:
 		return self.get_home_axes(camera, target)
 
 class Wheel(ShellBase):
-
-	equip_message = "You got the Wheel! It's strong and fast."
 
 	# Speed needed to demolish stuff.
 	DESTRUCTION_SPEED = 5.0
@@ -401,8 +397,6 @@ class Wheel(ShellBase):
 
 class Nut(ShellBase):
 
-	equip_message = "You got the Nut! It's not shiny or red, but it's... heavy. Great!"
-
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		bat.event.Event('SetCameraType', 'PathCamera').send()
@@ -410,8 +404,6 @@ class Nut(ShellBase):
 class BottleCap(ShellBase):
 
 	_prefix = 'BC_'
-
-	equip_message = "You got the Bottle Cap! It looks like it can float. It tastes like hoisin sauce - not bad!"
 
 	# States - be careful not to let conflict with ShellBase states.
 	S_EMERGE = 6
@@ -525,8 +517,6 @@ class BottleCap(ShellBase):
 class Thimble(ShellBase):
 
 	_prefix = 'Th_'
-
-	equip_message = "You got the Thimble! It's impervious to sharp objects."
 
 	S_CRAWLING = 19
 	S_SHOCKED = 20

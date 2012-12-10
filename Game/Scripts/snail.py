@@ -494,8 +494,10 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self['DynamicMass'] = self['DynamicMass'] + shell['DynamicMass']
 		self.shell.on_picked_up(self, animate)
 
-		bat.event.WeakEvent('ShellEquipped', shell).send()
+		is_new_shell = shell.name not in Scripts.inventory.Shells().get_shells()
 		Scripts.inventory.Shells().equip(shell.name)
+		if is_new_shell:
+			bat.event.Event('ShellFound', shell.name).send()
 
 		if animate:
 			self.show_shockwave()

@@ -183,6 +183,8 @@ class GameLevel(Level):
 	points and level transitions. Test scenes may use these too, but it is not
 	required.'''
 
+	log = logging.getLogger(__name__ + ".GameLevel")
+
 	def __init__(self, old_owner):
 		Level.__init__(self, old_owner)
 
@@ -240,18 +242,29 @@ class GameLevel(Level):
 			# Listen for load events from portals.
 			level = bat.store.get('/game/levelFile')
 			bge.logic.startGame(level)
-		elif event.message == "ShellEquipped" and event.body is not None:
+		elif event.message == "ShellFound" and event.body is not None:
 			self.on_shell_equipped(event.body)
 		elif event.message == "PickupReceived":
 			self.on_pickup(event.body)
 
 	def on_shell_equipped(self, shell):
-		if shell.name not in Scripts.inventory.Shells().get_shells():
+		if shell not in Scripts.inventory.Shells().get_shells():
 			# This is a new shell! Do special story stuff.
-			bat.event.Event('ShowDialogue', shell.equip_message).send(30)
-			if shell.name == 'BottleCap':
+			if shell == 'Shell':
+				bat.event.Event('ShowDialogue', "You got the Shell! Your beautiful, dependable house and mail van.").send(30)
+			elif shell == 'BottleCap':
+				bat.event.Event('ShowDialogue', "You got the Bottle Cap! It looks like it can float. It tastes like hoisin sauce - not bad!").send(30)
 				bat.store.put('/game/level/mapGoal', None)
 				bat.event.Event('MapGoalChanged').send()
+			elif shell == 'Nut':
+				bat.event.Event('ShowDialogue', "You got the Nut! It's not shiny or red, but it's... heavy. Great!").send(30)
+			elif shell == 'Wheel':
+				# Wheel is handled specially in story_spider.py
+				pass
+			elif shell == 'Thimble':
+				bat.event.Event('ShowDialogue', "You got the Thimble! It's impervious to sharp objects.").send(30)
+			else:
+				GameLevel.log.warn('Unrecognised shell %s', shell)
 
 	def on_pickup(self, power_up_type):
 		if power_up_type == 'Nectar':

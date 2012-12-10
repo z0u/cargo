@@ -24,6 +24,7 @@ import bat.bmath
 import bat.story
 
 import Scripts.story
+import Scripts.shells
 
 def factory(sce):
 	if not "Spider" in sce.objectsInactive:
@@ -117,16 +118,29 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		sinit.add_action(bat.story.ActAction('Spider_idle', 1, 60, Spider.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 
+		# This graph plays the first time you meet the spider.
 		swelcome_start, swelcome_end = self.create_welcome_graph()
 		swelcome_start.add_predecessor(sinit)
 
+		# This one plays when you pick up the wheel.
+		sget_start, sget_end = self.create_wheel_get_graph()
+		sget_start.add_predecessor(sinit)
+
+		# This one plays if you approach the spider again after getting the
+		# wheel.
+		safter_start, safter_end = self.create_after_wheel_graph()
+		safter_start.add_predecessor(sinit)
+
 		sinit.add_predecessor(swelcome_end)
+		sinit.add_predecessor(sget_end)
+		sinit.add_predecessor(safter_end)
 
 	def create_welcome_graph(self):
 		sstart = bat.story.State("Welcome")
+		sstart.add_condition(bat.story.CNot(Scripts.story.CondHasShell("Wheel")))
+		sstart.add_condition(bat.story.CondEvent("ApproachWeb", self))
 
 		s = sstart.create_successor()
-		s.add_condition(bat.story.CondEvent("ApproachWeb", self))
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_action(Scripts.story.ActSetFocalPoint('Spider'))
 		s.add_action(Scripts.story.ActSetCamera("SpiderCam"))
@@ -179,7 +193,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_event("ShowDialogue", ("This is my latest find. Isn't it marvelous?",
 			("Can I have it?", "Hey, my \[shell] was taken, so...")))
 		self.anim_welcome.play(s, 160, 170)
-		s.add_predecessor(scancel)
+		s.add_successor(scancel)
 		sub = s.create_sub_step()
 		sub.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 163, tap=True))
 		sub.add_action(Scripts.story.ActSetCamera("SpiderCam_Wheel"))
@@ -190,7 +204,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		sask.add_event("ShowDialogue", "Oh ho, you must be joking!")
 		self.anim_rude.play(sask, 1, 30)
 		sask.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
-		sask.add_predecessor(scancel)
+		sask.add_successor(scancel)
 
 		ssob = s.create_successor("sobstory")
 		ssob.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 170))
@@ -198,7 +212,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		ssob.add_event("ShowDialogue", "Oh, what a nuisance. He is indeed a pesky bird.")
 		self.anim_nice.play(ssob, 1, 30)
 		ssob.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Wheel"))
-		ssob.add_predecessor(scancel)
+		ssob.add_successor(scancel)
 
 		# END SPLIT 1; START SPLIT 2
 		s = bat.story.State()
@@ -209,7 +223,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_event("ShowDialogue", ("But no, I can't just give it to you. It is too precious.",
 			("I'll be your best friend.", "You're not even using it!")))
 		self.anim_welcome.play(s, 180, 200, blendin=10)
-		s.add_predecessor(scancel)
+		s.add_successor(scancel)
 
 		splead = s.create_successor("plead")
 		splead.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 200))
@@ -252,7 +266,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s.add_action(Scripts.story.ActSetFocalPoint("Wheel_Icon"))
 		s.add_action(bat.story.ActAttrSet("visible", True, ob="Wheel_Icon"))
 		s.add_action(bat.story.ActAction("Wheel_IconAction", 210, 280, ob="Wheel_Icon"))
-		s.add_predecessor(scancel)
+		s.add_successor(scancel)
 		# END SPLIT 2
 
 		s = s.create_successor()
@@ -284,6 +298,67 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 
 		send = s.create_successor("end")
 		send.add_condition(bat.story.CondEvent("LeaveWeb", self))
+
+		return sstart, send
+
+	def create_wheel_get_graph(self):
+		sstart = bat.story.State("Get")
+		sstart.add_condition(bat.story.CondEventEq("ShellFound", "Wheel", self))
+
+		s = sstart.create_successor()
+		s.add_event("ShowDialogue", "You got the Wheel! It's strong and fast.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_action(Scripts.story.ActSetFocalPoint('Spider'))
+		s.add_action(Scripts.story.ActSetCamera("SpiderCam_Side"))
+
+		s = s.create_successor()
+		s.add_event("ShowDialogue", "Good gracious!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "... I must admit, I'm impressed. I didn't expect you to be able to reach it.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "But I am a lady of my word. Keep it. May it serve you well.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+
+		s = s.create_successor("Clean up")
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Spider'))
+		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Side"))
+
+		send = s.create_successor("end")
+
+		return sstart, send
+
+	def create_after_wheel_graph(self):
+		sstart = bat.story.State("Get")
+		sstart.add_condition(Scripts.story.CondHasShell("Wheel"))
+		sstart.add_condition(bat.story.CondEvent("ApproachWeb", self))
+
+		s = sstart.create_successor()
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_action(Scripts.story.ActSetFocalPoint('Spider'))
+		s.add_action(Scripts.story.ActSetCamera("SpiderCam_Side"))
+
+		s = s.create_successor()
+		s.add_event("ShowDialogue", "How is the new shell going? It looks like fun!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+
+		s = s.create_successor("Clean up")
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Spider'))
+		s.add_action(Scripts.story.ActRemoveCamera("SpiderCam_Side"))
+
+		send = s.create_successor("end")
 
 		return sstart, send
 

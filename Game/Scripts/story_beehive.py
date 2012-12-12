@@ -21,11 +21,10 @@ import bge
 import mathutils
 
 import bat.bats
-import bat.containers
 import bat.event
 import bat.sound
 import bat.anim
-import bat.utils
+import bat.render
 
 import Scripts.story
 import Scripts.shaders
@@ -100,6 +99,7 @@ def init_upper_buckets(c):
 	bat.anim.play_children_with_offset(o.children, 'BucketsUpper', 1, 1334)
 
 class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+	'''An animated conveyor object.'''
 
 	log = logging.getLogger(__name__ + '.Bucket')
 
@@ -107,8 +107,15 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		self.occupied = False
+		if 'color' in self:
+			col= bat.render.parse_colour(self['color'])
+			self.color = col
 
 	def set_location(self, location):
+		'''
+		Called by sensors along the animated path of the bucket. Allows the
+		bucket to perform actions at certain locations. See bucket_location().
+		'''
 		if location == 'TIPPING':
 			self.tip()
 		elif location == 'ASCENDING':
@@ -133,6 +140,7 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.occupied = occupied
 
 class BucketLower(Bucket):
+	'''Specialised bucket that controls the camera while the player is inside.'''
 	def __init__(self, old_owner):
 		Bucket.__init__(self, old_owner)
 		self.at_top = False

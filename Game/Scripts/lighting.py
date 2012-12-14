@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 import bge
 
 import bat.containers
@@ -23,89 +25,149 @@ import bat.bmath
 import bat.utils
 import bat.bats
 
-class StoryLight(bat.bats.BX_GameObject, bge.types.KX_LightObject):
+import Scripts.director
+
+class LightNode:
+	def __init__(self, index, pos, colour):
+		self.index = index
+		self.neighbours = set()
+		self.pos = pos
+		self.colour = colour
+
+class LightNetwork(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''
-	This light is used to add special lighting to the cut-scenes. To use it:
-	 - Ensure Utilities -> BasicKit is in the current scene.
-	 - Send a 'SetStoryLight' message, containing an object as its body.
-	The light will then mimic the orientation of the given object, and will
-	adjust its energy to match the object's 'energy' property.
+	Allows lights to be moved and reused between several rooms.
+
+	This should be applied to a mesh object that is in the form of a network. As
+	the player moves around the level, there will always be one active node: the
+	closest node that is visible to the player. Lights will be placed at that
+	node and each adjacent node (its neighbours).
+
+	Each polygon should have two pairs of close vertices. Those pairs will be
+	merged into a node, which is shared with the next polygon. Thus vertex pairs
+	are nodes, and polygons are edges in the network.
+
+	Lights will be taken from a pool of lights and will be reused. They must all
+	have the name "UserLightN", where N is a number from 1-MAX_LAMPS. The number
+	of lights required is equal to the maximum degree of any node in the network
+	+ 2, i.e. if the network has a 3-way intersection there should be 5 lights.
 	'''
 
-	_prefix = 'SL_'
+	_prefix = 'LN_'
 
-	SPEEDFAC = 0.1
-	TOLERANCE = 0.01
-	S_UPDATING = 2
+	log = logging.getLogger(__name__ + '.LightNetwork')
 
-	goal = bat.containers.weakprop('goal')
+	MERGE_THRESHOLD = 3.0
+	MAX_LAMPS = 10
 
 	def __init__(self, old_owner):
-		self.set_goal(None)
-		bat.event.EventBus().add_listener(self)
-		bat.event.EventBus().replay_last(self, 'SetStoryLight')
+		self.current_node = None
+		self.use_colours = 'UseVcol' in self and self['UseVcol']
+		self.construct_node_graph()
+		self.gather_lamps()
 
-	def on_event(self, evt):
-		if evt.message == 'SetStoryLight':
-			if isinstance(evt.body, str):
-				self.set_goal(self.scene.objects[evt.body])
-			else:
-				self.set_goal(evt.body)
+	def gather_lamps(self):
+		self.lamps = []
+		sce = self.scene
+		for i in range(LightNetwork.MAX_LAMPS):
+			try:
+				lamp = sce.objects['UserLight%d' % (i + 1)]
+				lamp['_default_colour'] = lamp.color
+				lamp['_default_energy'] = lamp.energy
+				self.lamps.append(lamp)
+			except KeyError:
+				pass
+		LightNetwork.log.info("Found %d lamps", len(self.lamps))
+		if len(self.lamps) < 3:
+			LightNetwork.log.info("Found few lamps. Lamp objects should be named UserLightN.")
 
-	def set_goal(self, goal):
-		if goal is not None:
-			bat.utils.set_default_prop(goal, 'energy', 1.0)
-			bat.utils.set_default_prop(goal, 'spotsize', 45.0)
-			bat.utils.set_default_prop(goal, 'spotblend', 1.0)
-			bat.utils.set_default_prop(goal, 'distance', 50.0)
-		self.goal = goal
-		self.add_state(StoryLight.S_UPDATING)
+	def construct_node_graph(self):
+		# Create list of vertices and their connections.
+		# Would be nice to put this into a BSP tree one day...
+		self.nodes = []
+		me = self.meshes[0]
+		index = 0
+		mat = self.worldTransform.copy()
+		for poly in self.polys:
+			# Each polygon is expected to be elongated, with one vertex or two
+			# close vertices at either end. The close vertices will be merged;
+			# thus each polygon is a single edge connecting two nodes in the
+			# network.
+			positions = []
+			colours = []
+			for vert in bat.utils.iterate_poly_verts(me, poly):
+				pos = mat * vert.getXYZ()
+				dup = False
+				for p in positions:
+					if (pos - p).magnitude < LightNetwork.MERGE_THRESHOLD:
+						dup = True
+						break
+				if not dup:
+					positions.append(pos)
+					colours.append(vert.color.copy())
+
+			if len(positions) != 2:
+				raise ValueError("Edge has %d vertices: %s" % (len(positions), positions))
+
+			nodes = []
+			for pos, col in zip(positions, colours):
+				node = None
+				for n in self.nodes:
+					if (pos - n.pos).magnitude < LightNetwork.MERGE_THRESHOLD:
+						node = n
+						break
+				if node is None:
+					node = LightNode(index, pos, col)
+					index += 1
+					self.nodes.append(node)
+				nodes.append(node)
+			nodes[0].neighbours.add(nodes[1])
+			nodes[1].neighbours.add(nodes[0])
+
+		LightNetwork.log.debug("Created network with %d nodes", len(self.nodes))
 
 	@bat.bats.expose
 	def update(self):
-		if self.goal is None:
-			target_energy = 0.0
-			target_size = 45.0
-			target_blend = 1.0
-			target_distance = 50.0
-			goal = self
+		player = Scripts.director.Director().mainCharacter
+		if player is None:
+			return
+		pos = player.worldPosition.copy()
+		node = self.find_closest_node(pos)
+		if node is None or node is self.current_node:
+			return
+
+		self.activate_node(node)
+
+	def find_closest_node(self, pos):
+		def distance_key(_n):
+			return (pos - _n.pos).magnitude
+		self.nodes.sort(key=distance_key)
+		n = self.nodes[0]
+
+		dist = (n.pos - pos).magnitude
+		hit_ob, _, _ = self.rayCast(n.pos, pos, dist, 'Ray')
+		if hit_ob is None or hit_ob is self:
+			LightNetwork.log.debug('Hit node %d', n.index)
+			return n
 		else:
-			target_energy = self.goal['energy']
-			target_size = self.goal['spotsize']
-			target_blend = self.goal['spotblend']
-			target_distance = self.goal['distance']
-			goal = self.goal
+			LightNetwork.log.debug('Missed node %d, dist: %f, hit %s', n.index, dist, hit_ob.name)
+			return None
 
-		self.energy = bat.bmath.lerp(self.energy, target_energy,
-				StoryLight.SPEEDFAC)
-		self.spotsize = bat.bmath.lerp(self.spotsize, target_size,
-				StoryLight.SPEEDFAC)
-		self.spotblend = bat.bmath.lerp(self.spotblend, target_blend,
-				StoryLight.SPEEDFAC)
-		self.distance = bat.bmath.lerp(self.distance, target_distance,
-				StoryLight.SPEEDFAC)
-		bat.bmath.slow_copy_rot(self, goal, StoryLight.SPEEDFAC)
-		bat.bmath.slow_copy_loc(self, goal, StoryLight.SPEEDFAC)
+	def activate_node(self, node):
+		LightNetwork.log.info('Activating node %d', node.index)
+		self.current_node = node
+		nodes = [node]
+		nodes.extend(node.neighbours)
+		for n, lamp in zip(nodes, self.lamps):
+			lamp.worldPosition = n.pos
+			lamp.energy = lamp['_default_energy']
+			if self.use_colours:
+				lamp.color = node.colour
 
-		# Check tolerance, and stop updating if close enough.
-		if abs(self.energy - target_energy) > StoryLight.TOLERANCE:
-			return
-		if abs(self.spotsize - target_size) > StoryLight.TOLERANCE:
-			return
-		if abs(self.spotblend - target_blend) > StoryLight.TOLERANCE:
-			return
-		if abs(self.distance - target_distance) > StoryLight.TOLERANCE:
-			return
+		LightNetwork.log.info('Using %d lamps', len(nodes))
+		if len(self.lamps) < len(nodes):
+			LightNetwork.log.warn('Not enough user lights to satisfy node. %d lights required.', len(nodes))
 
-		vec1 = self.getAxisVect(bat.bmath.ZAXIS)
-		vec2 = goal.getAxisVect(bat.bmath.ZAXIS)
-		orn_diff = 1.0 - vec1.dot(vec2)
-		if orn_diff > StoryLight.TOLERANCE:
-			return
-		loc_diff = (self.worldPosition - goal.worldPosition).magnitude
-		if loc_diff > StoryLight.TOLERANCE:
-			return
-
-		self.energy = target_energy
-		self.worldOrientation = goal.worldOrientation
-		self.rem_state(StoryLight.S_UPDATING)
+		# Deactivate remaining lamps.
+		for lamp in self.lamps[len(nodes):]:
+			lamp.energy = 0.0

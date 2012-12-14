@@ -28,6 +28,7 @@ import bat.render
 
 import Scripts.story
 import Scripts.shaders
+import Scripts.director
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +40,16 @@ class LevelBeehive(Scripts.story.GameLevel):
 		bat.sound.Jukebox().play_files(self, 1,
 				'//Sound/Music/bumbly.wav',
 				volume=0.4)
+
+
+KEY_LIGHT_OFFSET = mathutils.Vector((10.0, 0.0, 30.0))
+def key_light(c):
+	player = Scripts.director.Director().mainCharacter
+	if player is None:
+		return
+	o = c.owner
+	o.worldPosition = player.worldPosition# + KEY_LIGHT_OFFSET
+
 
 def init_conveyor(c):
 	o = c.owner
@@ -107,8 +118,8 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def __init__(self, old_owner):
 		self.occupied = False
-		if 'color' in self:
-			col= bat.render.parse_colour(self['color'])
+		if 'colour' in self:
+			col= bat.render.parse_colour(self['colour'])
 			self.color = col
 
 	def set_location(self, location):

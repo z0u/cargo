@@ -48,6 +48,7 @@ class Lamp:
 	def __init__(self, ob):
 		self.ob = ob
 		self.default_energy = ob.energy
+		self.instant = True
 		self.current_node = None
 		self.target_node = None
 
@@ -57,6 +58,12 @@ class Lamp:
 
 	def update(self):
 		ob = self.ob
+
+		if self.instant:
+			self.relocate()
+			self.instant = False
+			return
+
 		if self.current_node is not self.target_node:
 			if ob.energy <= 0.0:
 				# Lamp is currently off; relocation is OK.
@@ -99,6 +106,8 @@ class Lamp:
 			ob.worldPosition = self.target_node.pos
 			if self.target_node.colour is not None:
 				ob.color = self.target_node.colour
+			if self.instant:
+				ob.energy = self.default_energy
 		else:
 			ob.energy = 0.0
 

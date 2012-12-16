@@ -43,7 +43,7 @@ class LightNode:
 class Lamp:
 	log = logging.getLogger(__name__ + '.Lamp')
 
-	FADE_RATE = 0.1
+	FADE_RATE = 0.04
 
 	def __init__(self, ob):
 		self.ob = ob

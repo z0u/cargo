@@ -492,11 +492,7 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		target = mainChar.get_camera_tracking_point()
 
 		# Find directions to project along
-		if self.reset:
-			fwdDir, upDir = self.alignment.get_home_axes(self, target)
-			self.reset = False
-		else:
-			fwdDir, upDir = self.alignment.get_axes(self, target)
+		fwdDir, upDir = self.alignment.get_axes(self, target)
 
 		# Adjust based on user camera movement input. Transform is:
 		# 1. Rotate around up-axis by horizontal movement.
@@ -535,6 +531,8 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		# Orient the camera towards the target.
 		self.alignAxisToVect(upDir, 1)
 		self.alignAxisToVect(fwdDir, 2)
+
+		self.reset = False
 
 	def cast_ray(self, origin, direction, lastDist, maxDist):
 		through = origin + direction
@@ -578,11 +576,40 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 			self.handle_reset(state)
 
 	def handle_movement(self, state):
-		self.cam_shift = state.direction.copy()
+		if not self.reset:
+			self.cam_shift.xy = state.direction.xy
+		else:
+			self.cam_shift.y = state.direction.y
 
 	def handle_reset(self, state):
-		if state.positive:
-			self.reset = True
+		if not state.positive:
+			return
+
+		mainChar = Scripts.director.Director().mainCharacter
+		if mainChar is None:
+			return
+		target = mainChar.get_camera_tracking_point()
+		target_fwd_dir, target_up_dir = self.alignment.get_home_axes(self, target)
+
+		fwdDir = self.getAxisVect(bat.bmath.ZAXIS)
+
+		yrot_diff = fwdDir.angle(target_fwd_dir, 0)
+		RESET_MIN_ROT = math.radians(2)
+		if abs(yrot_diff) < RESET_MIN_ROT:
+			return
+
+		# Find sign of rotation
+		target_right_dir = target_fwd_dir.cross(target_up_dir)
+		right_component = fwdDir.project(target_right_dir)
+		clockwise = right_component.dot(target_right_dir) > 0
+
+		yrot = min(OrbitCamera.HROT_STEP, yrot_diff)
+		yrot /= OrbitCamera.HROT_STEP
+		if not clockwise:
+			yrot = -yrot
+
+		self.cam_shift.x = yrot
+		self.reset = True
 
 	def on_event(self, evt):
 		if evt.message == 'RelocatePlayerCamera':

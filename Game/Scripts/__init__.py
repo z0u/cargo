@@ -35,7 +35,7 @@ Scripts.ui.HUDState()
 def configure_controls():
 	'''Bind keys and buttons to the interfaces.'''
 
-		# Acquire movement from a 2D directional pad.
+	# Acquire movement from a 2D directional pad.
 	movement = bat.impulse.DPad2D("Movement", 'u', 'd', 'l', 'r')
 	movement.up.sensors.append(bat.impulse.KeyboardSensor(bge.events.UPARROWKEY))
 	movement.up.sensors.append(bat.impulse.KeyboardSensor(bge.events.WKEY))
@@ -51,6 +51,14 @@ def configure_controls():
 	movement.left.sensors.append(bat.impulse.JoystickDpadSensor(0, 8))
 	movement.xaxes.append(bat.impulse.JoystickAxisSensor(0))
 	movement.yaxes.append(bat.impulse.JoystickAxisSensor(1))
+
+	camera = bat.impulse.DPad2D("CameraMovement", '^', '_', '<', '>')
+	camera.up.sensors.append(bat.impulse.KeyboardSensor(bge.events.IKEY))
+	camera.right.sensors.append(bat.impulse.KeyboardSensor(bge.events.LKEY))
+	camera.down.sensors.append(bat.impulse.KeyboardSensor(bge.events.KKEY))
+	camera.left.sensors.append(bat.impulse.KeyboardSensor(bge.events.JKEY))
+	camera.xaxes.append(bat.impulse.JoystickAxisSensor(2))
+	camera.yaxes.append(bat.impulse.JoystickAxisSensor(3))
 
 	# The switch command can be "next" or "previous"; use a 1D pad to filter
 	# out multiple conflicting button presses.
@@ -70,13 +78,14 @@ def configure_controls():
 	btn2.sensors.append(bat.impulse.KeyboardSensor(bge.events.XKEY))
 	btn2.sensors.append(bat.impulse.JoystickButtonSensor(1))
 
-	btn_cam = bat.impulse.Button("Camera", 'c')
+	btn_cam = bat.impulse.Button("CameraReset", 'c')
 	btn_cam.sensors.append(bat.impulse.KeyboardSensor(bge.events.CKEY))
 	btn_cam.sensors.append(bat.impulse.JoystickButtonSensor(0))
 
 	ip = bat.impulse.Input()
 	ip.clear_buttons()
 	ip.add_button(movement)
+	ip.add_button(camera)
 	ip.add_button(switch)
 	ip.add_button(btn1)
 	ip.add_button(btn2)

@@ -151,7 +151,7 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 
 	def can_handle_input(self, state):
 		# Allow the snail to handle the camera event
-		return state.name != 'Camera'
+		return state.name not in {'CameraMovement', 'CameraReset'}
 
 	def handle_input(self, state):
 		if state.name == '1':

@@ -152,6 +152,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.DEBUGpositions = [self.worldPosition.copy()]
 		bat.impulse.Input().add_handler(self)
 		bat.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
+		bat.impulse.Input().add_sequence("uuddllrr", bat.event.Event("GiveFullHealth"))
 		bat.event.EventBus().replay_last(self, 'TeleportSnail')
 
 		self.shell_change_sound = bat.sound.Sample(
@@ -262,6 +263,9 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			for name in Scripts.inventory.Shells().get_all_shells():
 				Scripts.inventory.Shells().add(name)
 				bat.event.Event('ShellChanged', 'new').send()
+		elif evt.message == 'GiveFullHealth':
+			# Cheat ;)
+			self.heal(7)
 		elif evt.message == 'HitMushroom':
 			self.hit_mushroom()
 
@@ -861,7 +865,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.setLinearVelocity(bat.bmath.MINVECTOR, False)
 
 	def can_handle_input(self, state):
-		return state.name in ('Movement', '1', '2', 'Camera', 'Switch')
+		return state.name in {'Movement', '1', '2', 'Switch'}
 
 	def handle_input(self, state):
 		if state.name == 'Movement':
@@ -872,8 +876,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			self.handle_bt_2(state)
 		elif state.name == 'Switch':
 			self.handle_switch(state)
-		elif state.name == 'Camera':
-			self.handle_bt_camera(state)
 
 	NORMAL_SPEED = 0.08
 	BEND_FACTOR = 0.03
@@ -962,11 +964,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 				self.switch_next()
 			elif state.direction < -0.1:
 				self.switch_previous()
-
-	def handle_bt_camera(self, state):
-		'''Move camera to be directly behind the snail.'''
-		if state.activated:
-			bat.event.Event('ResetCameraPos', None).send()
 
 	def get_camera_tracking_point(self):
 		return self.cameraTrack

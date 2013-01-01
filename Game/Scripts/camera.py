@@ -17,9 +17,11 @@
 
 import sys
 import logging
+import math
 
 import bge
 import aud
+import mathutils
 
 import bat.utils
 import bat.bmath
@@ -446,7 +448,7 @@ class OrbitCameraAlignment:
 
 		return fwdDir, rawUpDir
 
-class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''A 3rd-person camera that stays a constant distance from its target.'''
 
 	_prefix = 'Orb_'
@@ -456,6 +458,9 @@ class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	DIST_BIAS = 0.5
 	EXPAND_FAC = 0.005
 	ZALIGN_FAC = 0.025
+
+	HROT_STEP = math.radians(5)
+	VROT_MAX = math.radians(45)
 
 	def __init__(self, old_owner):
 		self.reset = False
@@ -468,6 +473,9 @@ class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		self.alignment = None
 
+		self.cam_shift = mathutils.Vector((0, 0))
+		bat.impulse.Input().add_handler(self)
+
 		AutoCamera().add_goal(self)
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'RelocatePlayerCamera')
@@ -478,17 +486,29 @@ class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if self.alignment is None:
 			return
 
-		# Project up.
 		mainChar = Scripts.director.Director().mainCharacter
 		if mainChar is None:
 			return
 		target = mainChar.get_camera_tracking_point()
 
+		# Find directions to project along
 		if self.reset:
 			fwdDir, upDir = self.alignment.get_home_axes(self, target)
 			self.reset = False
 		else:
 			fwdDir, upDir = self.alignment.get_axes(self, target)
+
+		# Adjust based on user camera movement input. Transform is:
+		# 1. Rotate around up-axis by horizontal movement.
+		# 2. Rotate around right-axis by vertical movement.
+		if abs(self.cam_shift.x) > 0.0001 or abs(self.cam_shift.y) > 0.0001:
+			rightDir = fwdDir.cross(upDir)
+			yrot = mathutils.Quaternion(upDir, self.cam_shift.x * OrbitCamera.HROT_STEP)
+			xrot = mathutils.Quaternion(rightDir, self.cam_shift.y * OrbitCamera.VROT_MAX)
+			transform = yrot * xrot
+
+			fwdDir = transform * fwdDir
+			upDir = transform * upDir
 
 		if self.distUp is None:
 			# The first time this is run (after creation), distUp and distBack
@@ -509,6 +529,7 @@ class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		backPos, self.distBack = self.cast_ray(upPos, backDir, self.distBack,
 				OrbitCamera.BACK_DIST)
 		self.worldPosition = backPos
+		# Set linv to something very small; zero would be ignored.
 		self.worldLinearVelocity = (0, 0, 0.0001)
 
 		# Orient the camera towards the target.
@@ -547,10 +568,24 @@ class OrbitCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		pos = origin + (direction * dist)
 		return pos, dist
 
-	def on_event(self, evt):
-		if evt.message == 'ResetCameraPos':
+	def can_handle_input(self, state):
+		return state.name in {'CameraMovement', 'CameraReset'}
+
+	def handle_input(self, state):
+		if state.name == 'CameraMovement':
+			self.handle_movement(state)
+		elif state.name == 'CameraReset':
+			self.handle_reset(state)
+
+	def handle_movement(self, state):
+		self.cam_shift = state.direction.copy()
+
+	def handle_reset(self, state):
+		if state.positive:
 			self.reset = True
-		elif evt.message == 'RelocatePlayerCamera':
+
+	def on_event(self, evt):
+		if evt.message == 'RelocatePlayerCamera':
 			pos, orn = evt.body
 			self.worldPosition = pos
 			if orn is not None:

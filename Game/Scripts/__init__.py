@@ -91,4 +91,9 @@ def configure_controls():
 	ip.add_button(btn2)
 	ip.add_button(btn_cam)
 
+	# Cheats!
+	bat.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
+	bat.impulse.Input().add_sequence("uuddllrr", bat.event.Event("GiveFullHealth"))
+	bat.impulse.Input().add_sequence("udud22", bat.event.Event("TeleportCheat"))
+
 configure_controls()

@@ -146,6 +146,13 @@ class LightNetwork(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.use_colours = 'UseVcol' in self and self['UseVcol']
 		self.construct_node_graph()
 		self.gather_lamps()
+		bat.event.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message in {'TeleportSnail'}:
+			for lamp in self.lamps:
+				lamp.instant = True
+			self.update()
 
 	def gather_lamps(self):
 		self.lamps = []
@@ -281,5 +288,4 @@ class LightNetwork(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		# Deactivate remaining lamps.
 		for lamp in available_lamps:
-			
 			lamp.target_node = None

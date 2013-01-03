@@ -24,7 +24,6 @@ import bat.bmath
 import bat.story
 
 import Scripts.story
-import Scripts.shells
 
 def factory(sce):
 	if not "Spider" in sce.objectsInactive:

@@ -151,8 +151,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 		self.DEBUGpositions = [self.worldPosition.copy()]
 		bat.impulse.Input().add_handler(self)
-		bat.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
-		bat.impulse.Input().add_sequence("uuddllrr", bat.event.Event("GiveFullHealth"))
 		bat.event.EventBus().replay_last(self, 'TeleportSnail')
 
 		self.shell_change_sound = bat.sound.Sample(

@@ -30,6 +30,7 @@ import Scripts.inventory
 
 GRAVITY = 75.0
 
+log = logging.getLogger(__name__)
 
 class CondHasShell(bat.story.Condition):
 	def __init__(self, name):
@@ -185,6 +186,16 @@ class GameLevel(Level):
 
 	log = logging.getLogger(__name__ + ".GameLevel")
 
+	@property
+	def spawn_points(self):
+		return [
+				# Main island
+				'SpawnCargoHouse', 'SpawnTorch', 'SpawnBottle',
+				'SI_StartSpawnPoint', 'SI_WebSpawnPoint',
+				# Dungeon
+				'SpawnBottomDoor', 'SpawnFirstLanding', 'SpawnMaelstrom',
+				'SpawnMachine', 'SpawnHive', 'SpawnTopDoor']
+
 	def __init__(self, old_owner):
 		Level.__init__(self, old_owner)
 
@@ -246,6 +257,8 @@ class GameLevel(Level):
 			self.on_shell_found(event.body)
 		elif event.message == "PickupReceived":
 			self.on_pickup(event.body)
+		elif event.message == "TeleportCheat":
+			self.on_teleport_cheat()
 
 	def on_shell_found(self, shell):
 		if shell == 'Shell':
@@ -270,9 +283,33 @@ class GameLevel(Level):
 				bat.event.Event('ShowDialogue', 'Speed boost! These flowers drop nectar which makes you go fast.').send()
 				bat.store.put('/game/hasUsedNectar', True)
 
+	def on_teleport_cheat(self):
+		character = Scripts.director.Director().mainCharacter
+		if character is None:
+			return
+
+		GameLevel.log.info("Teleporting!")
+
+		# Find closest
+		sps = []
+		for sp in self.spawn_points:
+			try:
+				sps.append(self.scene.objects[sp])
+			except KeyError:
+				continue
+		closest, index, _ = bat.bmath.find_closest(character.worldPosition, sps)
+		GameLevel.log.info("Closest: %s @ %s", closest, index)
+
+		# Move to next spawn point
+		index += 1
+		index %= len(sps)
+		next_sp = sps[index]
+		GameLevel.log.info("Next: %s @ %s", next_sp, index)
+		bat.event.Event('TeleportSnail', next_sp.name).send()
+
 
 def load_level(caller, level, spawnPoint):
-	print('Loading next level: %s, %s' % (level, spawnPoint))
+	log.info('Loading next level: %s, %s' % (level, spawnPoint))
 
 	bat.store.put('/game/levelFile', level)
 	bat.store.put('/game/level/spawnPoint', spawnPoint, level=level)
@@ -293,4 +330,11 @@ def activate_portal(c):
 	'''
 	if Scripts.director.Director().mainCharacter in c.sensors[0].hitObjectList:
 		portal = c.owner
+		log.info("Portal touched: %s", portal)
 		load_level(portal, portal['level'], portal['spawnPoint'])
+
+def set_spawn_point(c):
+	if Scripts.director.Director().mainCharacter in c.sensors[0].hitObjectList:
+		sp = c.owner
+		log.info("Setting spawn point to %s", sp)
+		bat.store.put('/game/level/spawnPoint', sp.name)

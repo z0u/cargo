@@ -24,6 +24,8 @@ import Scripts.shaders
 import Scripts.story
 
 class LevelOut(Scripts.story.GameLevel):
+	default_spawn_point = ''
+
 	def __init__(self, oldOwner):
 		Scripts.story.GameLevel.__init__(self, oldOwner)
 

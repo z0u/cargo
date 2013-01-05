@@ -117,6 +117,7 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	WATERBALL_VELOCITY = [0.0, 0.0, 20.0]
 
 	def __init__(self, old_owner):
+		self.water = self.find_descendant([('Type', 'BucketWater')])
 		self.occupied = False
 		if 'colour' in self:
 			col= bat.render.parse_colour(self['colour'])
@@ -134,14 +135,14 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def tip(self):
 		Bucket.log.debug("%s %s", self.name, "TIPPING")
-		water = self.children[0]
+		water = self.water
 		water.visible = False
 		waterBall = self.scene.addObject('WaterBall', water)
 		waterBall.setLinearVelocity(water.getAxisVect(Bucket.WATERBALL_VELOCITY))
 
 	def ascend(self):
 		Bucket.log.debug("%s %s", self.name, "ASCENDING")
-		water = self.children[0]
+		water = self.water
 		water.visible = True
 
 	def set_occupied(self, occupied):

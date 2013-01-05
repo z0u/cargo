@@ -55,14 +55,14 @@ def init_conveyor(c):
 	o = c.owner
 	cpath = o.children['ConveyorBelt']
 	bat.anim.play_children_with_offset(cpath.children, 'ConveyorBelt_SegAction',
-		1, 401)
+		1, 601)
 
 	flower_box = o.childrenRecursive['FlowerBox']
 	flower_box.playAction('FlowerBoxAction', 1, 61,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 
 	roller_holder = o.childrenRecursive['RollerHolder.1']
-	roller_holder.playAction('RollerHolder.1Action', 1, 61,
+	roller_holder.playAction('RollerHolder.1Action', 1, 91,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 
 	peg1 = o.children['ConveyorPeg.1']
@@ -74,18 +74,18 @@ def init_conveyor(c):
 
 	crusher1 = o.children['ConveyorCrusher_root.1']
 	crusher1loc = crusher1.children[0]
-	crusher1loc.playAction('ConveyorCrusher_Loc.1Action', 1, 401,
+	crusher1loc.playAction('ConveyorCrusher_Loc.1Action', 1, 601,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 	crusher1rot = crusher1loc.children[0]
-	crusher1rot.playAction('ConveyorCrusher_RotAction', 1, 61,
+	crusher1rot.playAction('ConveyorCrusher_RotAction', 1, 91,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 
 	crusher2 = o.children['ConveyorCrusher_root.2']
 	crusher2loc = crusher2.children[0]
-	crusher2loc.playAction('ConveyorCrusher_Loc.2Action', 1, 401,
+	crusher2loc.playAction('ConveyorCrusher_Loc.2Action', 1, 601,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 	crusher2rot = crusher2loc.children[0]
-	crusher2rot.playAction('ConveyorCrusher_RotAction', 1, 61,
+	crusher2rot.playAction('ConveyorCrusher_RotAction', 1, 91,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 
 def flower_head_init(c):

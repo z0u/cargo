@@ -126,7 +126,8 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.add_action(bat.story.ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
 		s.add_action(bat.story.ActMusicPlay('//Sound/Music/Ants1_loop.ogg',
-				introfile='//Sound/Music/Ants1_intro.ogg', volume=0.7))
+				introfile='//Sound/Music/Ants1_intro.ogg', volume=0.7,
+				fade_in_rate=1))
 
 		# Gestures fiercely at Cargo
 

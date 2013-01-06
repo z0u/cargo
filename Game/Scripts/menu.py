@@ -94,7 +94,7 @@ class MenuController(Scripts.gui.UiController):
 		bat.sound.Jukebox().play_files(self, 1,
 				'//Sound/Music/Theme_loop.ogg',
 				introfile='//Sound/Music/Theme_intro.ogg',
-				fade_rate=0.05, volume=0.6)
+				fade_in_rate=1, fade_out_rate=0.05, volume=0.6)
 
 	def on_event(self, evt):
 		Scripts.gui.UiController.on_event(self, evt)

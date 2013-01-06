@@ -291,7 +291,10 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 
 		sfirsttimeonly = s.create_sub_step()
 		sfirsttimeonly.add_condition(bat.story.CondAttrEq('first', True))
-		sfirsttimeonly.add_action(bat.story.ActMusicPlay('//Sound/Music/Idea-Random2.ogg'))
+		sfirsttimeonly.add_action(bat.story.ActMusicPlay(
+				'//Sound/Music/04-TheBar_loop.ogg',
+				introfile='//Sound/Music/04-TheBar_intro.ogg',
+				fade_in_rate=1))
 		sfirsttimeonly.add_action(bat.story.ActAttrSet('first', False))
 
 		s = s.create_successor()

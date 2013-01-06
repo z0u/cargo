@@ -92,8 +92,9 @@ class MenuController(Scripts.gui.UiController):
 		# Menu music. Note that the fade rate is set higher than the default, so
 		# that the music completely fades out before the game starts.
 		bat.sound.Jukebox().play_files(self, 1,
-				'//Sound/Music/Theme_loop.ogg',
-				introfile='//Sound/Music/Theme_intro.ogg',
+				'//Sound/Music/01-TheStart_loop1.ogg',
+				'//Sound/Music/01-TheStart_loop2.ogg',
+				introfile='//Sound/Music/01-TheStart_intro.ogg',
 				fade_in_rate=1, fade_out_rate=0.05, volume=0.6)
 
 	def on_event(self, evt):

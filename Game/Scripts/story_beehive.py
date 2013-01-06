@@ -37,17 +37,35 @@ class LevelBeehive(Scripts.story.GameLevel):
 		Scripts.story.GameLevel.__init__(self, oldOwner)
 		Scripts.shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.0, 0.0, 0.0)))
-		bat.sound.Jukebox().play_files(self, 1, '//Sound/Music/bumbly.wav',
-				volume=0.4)
 
 
-KEY_LIGHT_OFFSET = mathutils.Vector((10.0, 0.0, 30.0))
-def key_light(c):
-	player = Scripts.director.Director().mainCharacter
-	if player is None:
+def _music_start(owner):
+	bat.sound.Jukebox().play_files(owner, 1,
+			'//Sound/Music/09-TheDungeon_loop.ogg',
+			introfile='//Sound/Music/09-TheDungeon_intro.ogg',
+			volume=0.4, name='dungeon', fade_in_rate=1, fade_out_rate=0.002)
+
+def _music_stop():
+	bat.sound.Jukebox().stop('dungeon')
+
+def music(c):
+	s = c.sensors[0]
+	if not s.triggered:
 		return
-	o = c.owner
-	o.worldPosition = player.worldPosition# + KEY_LIGHT_OFFSET
+	if s.positive:
+		_music_start(c.owner)
+	else:
+		_music_stop()
+
+def music_start(c):
+	s = c.sensors[0]
+	if s.triggered and s.positive:
+		_music_start(c.owner)
+
+def music_stop(c):
+	s = c.sensors[0]
+	if s.triggered and s.positive:
+		_music_stop()
 
 
 def init_conveyor(c):

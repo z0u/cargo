@@ -334,7 +334,17 @@ def activate_portal(c):
 		load_level(portal, portal['level'], portal['spawnPoint'])
 
 def set_spawn_point(c):
-	if Scripts.director.Director().mainCharacter in c.sensors[0].hitObjectList:
-		sp = c.owner
-		log.info("Setting spawn point to %s", sp)
-		bat.store.put('/game/level/spawnPoint', sp.name)
+	s = c.sensors[0]
+	if not s.positive:
+		return
+	char = Scripts.director.Director().mainCharacter
+	for ob in s.hitObjectList:
+		# Search up through hierarchy in case sensor was triggered by snail in
+		# shell
+		while ob is not None:
+			if ob is char:
+				sp = c.owner
+				log.info("Setting spawn point to %s", sp)
+				bat.store.put('/game/level/spawnPoint', sp.name)
+				return
+			ob = ob.parent

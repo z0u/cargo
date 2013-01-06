@@ -60,6 +60,8 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 	def __init__(self, old_owner):
 		bat.story.Chapter.__init__(self, old_owner)
+		self.aknock = bat.story.ActSound('//Sound/Knock.ogg', vol=0.5, pitchmin=0.7,
+				pitchmax=0.76, emitter=self, maxdist=60.0)
 		self.create_state_graph()
 		self.pick = self.childrenRecursive['Ant_Pick']
 
@@ -70,8 +72,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		sKnock = s.create_sub_step("Knock sound")
 		sKnock.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 34.5, tap=True))
-		sKnock.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
-				pitchmax=0.76, emitter=self, maxdist=40.0))
+		sKnock.add_action(self.aknock)
 
 		sconv_start, sconv_end = self.create_conversation()
 		sconv_start.add_predecessor(s)
@@ -251,8 +252,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(bat.story.ActConstraintSet("Hand.L", "Copy Transforms", 1.0))
 		sKnock = s.create_sub_step("Knock sound")
 		sKnock.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 466.5, tap=True))
-		sKnock.add_action(bat.story.ActSound('//Sound/Knock.ogg', vol=1.0, pitchmin=0.7,
-				pitchmax=0.76, emitter=self, maxdist=75.0))
+		sKnock.add_action(self.aknock)
 		# Step sounds
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 443, tap=True))

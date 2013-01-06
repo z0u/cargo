@@ -18,12 +18,15 @@
 import bge
 
 import bat.impulse
+import bat.sound
 
 import Scripts.camera
 import Scripts.director
 import Scripts.lodtree
 import Scripts.menu
 import Scripts.ui
+
+bat.sound.use_linear_clamped_falloff(dist_min=5, dist_max=50)
 
 # Create singletons. Order should not be important.
 Scripts.camera.AutoCamera()

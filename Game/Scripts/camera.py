@@ -98,11 +98,6 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		self.defaultLens = camera.lens
 		bat.utils.get_scene(camera).active_camera = camera
 
-		try:
-			aud.device().distance_model = aud.AUD_DISTANCE_MODEL_INVERSE_CLAMPED
-		except aud.error as e:
-			AutoCamera.log.warn("Can't set audio 3D model: %s", e)
-
 	@bat.bats.expose
 	@bat.utils.controller_cls
 	def init_filters(self, c):

@@ -51,7 +51,6 @@ def ripple(c):
 	sample.play()
 
 def machinery(c):
-	print("Hi")
 	sample = bat.sound.Sample(
 			'//Sound/Machine1.ogg')
 	sample.volume = 0.5

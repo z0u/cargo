@@ -37,8 +37,7 @@ class LevelBeehive(Scripts.story.GameLevel):
 		Scripts.story.GameLevel.__init__(self, oldOwner)
 		Scripts.shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.0, 0.0, 0.0)))
-		bat.sound.Jukebox().play_files(self, 1,
-				'//Sound/Music/bumbly.wav',
+		bat.sound.Jukebox().play_files(self, 1, '//Sound/Music/bumbly.wav',
 				volume=0.4)
 
 

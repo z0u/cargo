@@ -96,9 +96,9 @@ class Lighthouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if sNear.triggered:
 			if sNear.positive:
 				bat.sound.Jukebox().play_files(self, 1,
-						'//Sound/Music/Idea-Random_loop.ogg',
-						introfile='//Sound/Music/Idea-Random_intro.ogg',
-						fade_in_rate=1)
+						'//Sound/Music/05-TheFirefly_loop.ogg',
+						introfile='//Sound/Music/05-TheFirefly_intro.ogg',
+						fade_in_rate=1, fade_out_rate=0.005)
 			else:
 				bat.sound.Jukebox().stop(self)
 

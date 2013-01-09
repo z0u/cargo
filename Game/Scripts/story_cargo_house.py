@@ -42,7 +42,7 @@ class CargoHouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			# Create the worm *before* starting the music, because the worm may
 			# want to override the tune.
 			self.init_worm()
-			bat.sound.Jukebox().play_files(self, 1, '//Sound/Music/House.ogg', volume=0.7)
+			bat.sound.Jukebox().play_files(self, 1, '//Sound/Music/03-TheHouse.ogg', volume=0.7, loop=False)
 		else:
 			bat.sound.Jukebox().stop(self)
 

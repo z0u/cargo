@@ -59,7 +59,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s.add_action(Scripts.story.ActSetFocalPoint('Bi_FootHook.L'))
 		s.add_action(bat.story.ActAction('Bi_Excited', 1, 25, Bird.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-		s.add_action(bat.story.ActMusicPlay('//Sound/Music/Bird1.ogg'))
+		s.add_action(bat.story.ActMusicPlay(
+				'//Sound/Music/06-TheBird_loop.ogg',
+				introfile='//Sound/Music/06-TheBird_intro.ogg',
+				fade_in_rate=1))
 		s.add_action(bat.story.ActAction("B_BirdCloseCamAction", 1, 1, 0,
 			ob="B_BirdIntroCam"))
 

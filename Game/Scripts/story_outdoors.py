@@ -29,7 +29,7 @@ class LevelOut(Scripts.story.GameLevel):
 	def __init__(self, oldOwner):
 		Scripts.story.GameLevel.__init__(self, oldOwner)
 
-		bat.sound.Jukebox().play_permutation(self, 0,
+		bat.sound.Jukebox().play_permutation('pond', self, 0,
 				"//Sound/cc-by/PondAmbience1.ogg",
 				"//Sound/cc-by/PondAmbience2.ogg",
 				"//Sound/cc-by/PondAmbience3.ogg",

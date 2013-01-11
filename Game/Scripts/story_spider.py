@@ -18,6 +18,7 @@
 import bge
 
 import bat.bats
+import bat.sound
 import bat.event
 import bat.utils
 import bat.bmath
@@ -46,11 +47,21 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if evt.message == 'ShellDropped':
 			self.play_flying_cutscene(evt.body)
 
+	def play_music(self):
+		bat.sound.Jukebox().play_files('spider', self, 1,
+				'//Sound/Music/07-TheSpider_loop.ogg',
+				introfile='//Sound/Music/07-TheSpider_intro.ogg',
+				fade_in_rate=1)
+
+	def stop_music(self):
+		bat.sound.Jukebox().stop('spider')
+
 	@bat.bats.expose
 	@bat.utils.controller_cls
 	def approach_isle(self, c):
 		if c.sensors[0].positive:
 			bat.store.put('/game/level/spawnPoint', 'SI_StartSpawnPoint')
+			self.play_music()
 
 	@bat.bats.expose
 	@bat.utils.controller_cls
@@ -62,6 +73,7 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			spider = factory(self.scene)
 			spawn_point = self.scene.objects['Spider_SpawnPoint']
 			bat.bmath.copy_transform(spawn_point, spider)
+			self.play_music()
 		else:
 			if 'Spider' not in self.scene.objects:
 				return
@@ -80,6 +92,12 @@ class SpiderIsle(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			return
 		# else
 		bat.event.Event('LeaveWeb').send()
+
+	@bat.bats.expose
+	@bat.utils.controller_cls
+	def in_bounds(self, c):
+		if not c.sensors[0].positive:
+			self.stop_music()
 
 	@bat.bats.expose
 	@bat.utils.controller_cls

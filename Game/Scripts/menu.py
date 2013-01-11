@@ -91,7 +91,7 @@ class MenuController(Scripts.gui.UiController):
 
 		# Menu music. Note that the fade rate is set higher than the default, so
 		# that the music completely fades out before the game starts.
-		bat.sound.Jukebox().play_files(self, 1,
+		bat.sound.Jukebox().play_files('menu', self, 1,
 				'//Sound/Music/01-TheStart_loop1.ogg',
 				'//Sound/Music/01-TheStart_loop2.ogg',
 				introfile='//Sound/Music/01-TheStart_intro.ogg',
@@ -99,10 +99,8 @@ class MenuController(Scripts.gui.UiController):
 
 	def on_event(self, evt):
 		Scripts.gui.UiController.on_event(self, evt)
-		if evt.message == 'startGame':
-			bat.sound.Jukebox().stop(self)
-		elif evt.message == 'quit':
-			bat.sound.Jukebox().stop(self)
+		if evt.message in {'startGame', 'quit'}:
+			bat.sound.Jukebox().stop('menu')
 
 	def get_default_widget(self, screen_name):
 		if screen_name == 'LoadingScreen':

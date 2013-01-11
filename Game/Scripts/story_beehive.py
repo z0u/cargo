@@ -40,10 +40,10 @@ class LevelBeehive(Scripts.story.GameLevel):
 
 
 def _music_start(owner):
-	bat.sound.Jukebox().play_files(owner, 1,
+	bat.sound.Jukebox().play_files('dungeon', owner, 1,
 			'//Sound/Music/09-TheDungeon_loop.ogg',
 			introfile='//Sound/Music/09-TheDungeon_intro.ogg',
-			volume=0.4, name='dungeon', fade_in_rate=1, fade_out_rate=0.002)
+			volume=0.4, fade_in_rate=1, fade_out_rate=0.002)
 
 def _music_stop():
 	bat.sound.Jukebox().stop('dungeon')

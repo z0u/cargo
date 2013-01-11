@@ -291,6 +291,8 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 
 		sfirsttimeonly = s.create_sub_step()
 		sfirsttimeonly.add_condition(bat.story.CondAttrEq('first', True))
+		# No need to stop the music, because this object is destroyed when
+		# leaving the area.
 		sfirsttimeonly.add_action(bat.story.ActMusicPlay(
 				'//Sound/Music/04-TheBar_loop.ogg',
 				introfile='//Sound/Music/04-TheBar_intro.ogg',

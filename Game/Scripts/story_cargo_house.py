@@ -42,9 +42,9 @@ class CargoHouse(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			# Create the worm *before* starting the music, because the worm may
 			# want to override the tune.
 			self.init_worm()
-			bat.sound.Jukebox().play_files(self, 1, '//Sound/Music/03-TheHouse.ogg', volume=0.7, loop=False)
+			bat.sound.Jukebox().play_files('house', self, 1, '//Sound/Music/03-TheHouse.ogg', volume=0.7, loop=False)
 		else:
-			bat.sound.Jukebox().stop(self)
+			bat.sound.Jukebox().stop('house')
 
 	def init_worm(self):
 		if not bat.store.get('/game/level/wormMissionStarted', False):
@@ -68,8 +68,9 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		bat.story.Chapter.__init__(self, old_owner)
 		bat.event.WeakEvent('StartLoading', self).send()
 		self.create_state_graph()
-		bat.sound.Jukebox().play_files(self, 2, '//Sound/Music/Worm1.ogg',
-				volume=0.7)
+		bat.sound.Jukebox().play_files('worm', self, 2,
+				'//Sound/Music/02-TheWorm_loop.ogg',
+				introfile='//Sound/Music/02-TheWorm_intro.ogg', volume=0.7)
 
 	def create_state_graph(self):
 		def letter_auto(c):
@@ -307,7 +308,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActAction('BurstOut', 420, 540, Worm.L_ANIM))
 		s.add_action(bat.story.ActAction('BurstOut_S', 420, 540, Worm.L_ANIM, 'WormBody'))
-		s.add_action(bat.story.ActMusicStop())
+		s.add_action(bat.story.ActMusicStop(name='worm'))
 
 		#
 		# Return to game

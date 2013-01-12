@@ -67,6 +67,8 @@ substitute it into this URL:
     Jan 12, 2013
         By Corsica_S (http://www.freesound.org/people/Corsica_S/)
             foam-pluck-01.wav - 148078 - CC-BY
+        By UncleSigmund (http://www.freesound.org/people/UncleSigmund/)
+            wetrubber.wav - 41369 - CC-0
 
 
 == Sample catalogue ==
@@ -130,3 +132,6 @@ CrashBoom*.ogg
 
 RubberBandTwang.ogg
     - 148078 by Corsica_S
+
+RubberBandRub*.ogg
+    - 41369 by UncleSigmund

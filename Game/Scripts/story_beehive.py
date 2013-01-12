@@ -148,6 +148,49 @@ def init_upper_buckets(c):
 	o = c.owner
 	bat.anim.play_children_with_offset(o.children, 'BucketsUpper', 1, 1334)
 
+def rubber_band_sound(c):
+	s = c.sensors[0]
+	if s.positive and s.triggered:
+		sample = bat.sound.Sample(
+				'//Sound/cc-by/RubberBandRub1.ogg',
+				'//Sound/cc-by/RubberBandRub2.ogg',
+				'//Sound/cc-by/RubberBandRub3.ogg',
+				'//Sound/cc-by/RubberBandRub4.ogg')
+		sample.volume = 0.7
+		sample.add_effect(bat.sound.Localise(c.owner, distmax=70))
+		sample.pitchmin = 0.9
+		sample.pitchmax = 1.0
+		sample.play()
+	else:
+		# No need to stop because sounds don't loop.
+		pass
+
+def draining_sound(c):
+	s = c.sensors[0]
+	if s.positive and s.triggered:
+		sample = bat.sound.Sample('//Sound/cc-by/Draining.ogg')
+		sample.volume = 0.4
+		sample.add_effect(bat.sound.Localise(c.owner, distmax=70))
+		sample.loop = True
+		c.owner['drain_sound'] = sample
+		sample.play()
+	elif not s.positive and s.triggered:
+		sample = c.owner['drain_sound']
+		sample.stop()
+
+def machine_sound(c):
+	s = c.sensors[0]
+	if s.positive and s.triggered:
+		sample = bat.sound.Sample('//Sound/Machine1.ogg')
+		sample.volume = 0.7
+		sample.add_effect(bat.sound.Localise(c.owner, distmax=50))
+		sample.loop = True
+		c.owner['machine_sound'] = sample
+		sample.play()
+	elif not s.positive and s.triggered:
+		sample = c.owner['machine_sound']
+		sample.stop()
+
 class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''An animated conveyor object.'''
 

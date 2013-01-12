@@ -49,11 +49,3 @@ def ripple(c):
 	sample.volume = 0.5
 	sample.add_effect(bat.sound.Localise(c.owner))
 	sample.play()
-
-def machinery(c):
-	sample = bat.sound.Sample(
-			'//Sound/Machine1.ogg')
-	sample.volume = 0.5
-	sample.add_effect(bat.sound.Localise(c.owner))
-	sample.loop = True
-	sample.play()

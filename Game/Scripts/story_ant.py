@@ -279,7 +279,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		senter_start.add_action(Scripts.story.ActSetFocalPoint('Ant'))
 		senter_start.add_action(Scripts.story.ActSuspendInput())
 		# No intro here - straight into main part of the song!
-		senter_start.add_action(bat.story.ActMusicPlay('//Sound/Music/Ants2_loop.ogg', volume=0.7))
+		senter_start.add_action(bat.story.ActMusicPlay('//Sound/Music/10-TheAntReturns_loop.ogg', volume=0.7))
 		senter_start.add_action(bat.story.ActAction('HP_AntEnter', 1, 40,
 				Ant.L_ANIM, blendin=1.0))
 		senter_start.add_action(bat.story.ActDestroy(target_descendant='Ant_Pick'))

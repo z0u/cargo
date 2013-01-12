@@ -64,6 +64,10 @@ substitute it into this URL:
         By CGEffex (http://www.freesound.org/people/CGEffex/)
             Step.wav - 95755 - CC-BY
 
+    Jan 12, 2013
+        By Corsica_S (http://www.freesound.org/people/Corsica_S/)
+            foam-pluck-01.wav - 148078 - CC-BY
+
 
 == Sample catalogue ==
 These are sounds created from various samples. The IDs link to the samples above. All were remixed by Alex Fraser.
@@ -123,3 +127,6 @@ NeedleUp.ogg
 
 CrashBoom*.ogg
     - 95755 by CGEffex
+
+RubberBandTwang.ogg
+    - 148078 by Corsica_S

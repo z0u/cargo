@@ -21,6 +21,7 @@ import bge
 import mathutils
 
 import bat.bats
+import bat.bmath
 import bat.event
 import bat.sound
 import bat.anim
@@ -29,6 +30,7 @@ import bat.render
 import Scripts.story
 import Scripts.shaders
 import Scripts.director
+import Scripts.story_ant
 
 log = logging.getLogger(__name__)
 
@@ -66,6 +68,26 @@ def music_stop(c):
 	s = c.sensors[0]
 	if s.triggered and s.positive:
 		_music_stop()
+
+
+#class AntControl(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
+#	_prefix = 'AC_'
+#	def __init__(self, old_owner):
+#		pass
+#
+#	@bat.types.expose
+#	@bat.utils.controller_cls
+
+def create_ant(c):
+	''''Create and position ant. The Ant class takes care of the rest.'''
+	spawn_point = c.owner
+	ant = Scripts.story_ant.factory()
+	bat.bmath.copy_transform(spawn_point, ant)
+
+def approach_window(c):
+	'''Triggers the animation of the ant grabbing the bucket.'''
+	if c.sensors[0].positive and c.sensors[0].triggered:
+		bat.event.Event('ApproachWindow').send()
 
 
 def init_conveyor(c):

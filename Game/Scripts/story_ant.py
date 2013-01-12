@@ -60,19 +60,46 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 	def __init__(self, old_owner):
 		bat.story.Chapter.__init__(self, old_owner)
-		self.aknock = bat.story.ActSound('//Sound/Knock.ogg', vol=0.5, pitchmin=0.7,
-				pitchmax=0.76, emitter=self, maxdist=60.0)
-		self.create_state_graph()
+		self.music1_action = bat.story.ActMusicPlay(
+				'//Sound/Music/08-TheAnt_loop.ogg',
+				introfile='//Sound/Music/08-TheAnt_intro.ogg', volume=0.7,
+				fade_in_rate=1)
+		self.knock_sound_action = bat.story.ActSound('//Sound/Knock.ogg',
+				vol=0.5, pitchmin=0.7, pitchmax=0.76, emitter=self,
+				maxdist=60.0)
+		self.step_sound_action = bat.story.ActSound('//Sound/AntStep1.ogg',
+				'//Sound/AntStep2.ogg')
 		self.pick = self.childrenRecursive['Ant_Pick']
 
-	def create_state_graph(self):
+		if 'Level_Dungeon' in self.scene.objects:
+			self.create_dungeon_state_graph()
+		else:
+			self.create_outdoors_state_graph()
+
+	def pick_up(self):
+		''';)'''
+		bat.bmath.copy_transform(self.children['Ant_RH_Hook'], self.pick)
+		self.pick.setParent(self.children['Ant_RH_Hook'])
+
+	def drop_pick(self):
+		'''Release the pick, and leave it stuck where it is.'''
+		self.pick.removeParent()
+
+	def get_focal_points(self):
+		return [self.children['Ant_Face'], self]
+
+	#########################
+	# Outdoors
+	#########################
+
+	def create_outdoors_state_graph(self):
 		s = self.rootState.create_successor("Init")
 		s.add_action(bat.story.ActConstraintSet("Hand.L", "Copy Transforms", 1.0))
 		s.add_action(bat.story.ActAction('Ant_Digging1', 1, 38, Ant.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		sKnock = s.create_sub_step("Knock sound")
 		sKnock.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 34.5, tap=True))
-		sKnock.add_action(self.aknock)
+		sKnock.add_action(self.knock_sound_action)
 
 		sconv_start, sconv_end = self.create_conversation()
 		sconv_start.add_predecessor(s)
@@ -126,9 +153,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(bat.story.ActAction('HP_AntConverse', 30, 70, Ant.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		s.add_action(bat.story.ActAction('HP_AntConverse', 1, 30, Ant.L_ANIM))
-		s.add_action(bat.story.ActMusicPlay('//Sound/Music/08-TheAnt_loop.ogg',
-				introfile='//Sound/Music/08-TheAnt_intro.ogg', volume=0.7,
-				fade_in_rate=1))
+		s.add_action(self.music1_action)
 
 		# Gestures fiercely at Cargo
 
@@ -147,10 +172,10 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		# Step sounds
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 76, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep1.ogg'))
+		sstep.add_action(self.step_sound_action)
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 82, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep.add_action(self.step_sound_action)
 
 		# Holds fists tight; then, gestures towards the tree
 
@@ -187,16 +212,16 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		# Step sounds
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 245, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep1.ogg'))
+		sstep.add_action(self.step_sound_action)
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 248, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep.add_action(self.step_sound_action)
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 267, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep.add_action(self.step_sound_action)
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 272, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep1.ogg'))
+		sstep.add_action(self.step_sound_action)
 
 		# Pauses to consider
 
@@ -234,13 +259,13 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		# Step sounds
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 367, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep.add_action(self.step_sound_action)
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 373, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep.add_action(self.step_sound_action)
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 392, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep.add_action(self.step_sound_action)
 
 		# Play the first bit of the digging animation
 
@@ -252,14 +277,14 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(bat.story.ActConstraintSet("Hand.L", "Copy Transforms", 1.0))
 		sKnock = s.create_sub_step("Knock sound")
 		sKnock.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 466.5, tap=True))
-		sKnock.add_action(self.aknock)
+		sKnock.add_action(self.knock_sound_action)
 		# Step sounds
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 443, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep1.ogg'))
+		sstep.add_action(self.step_sound_action)
 		sstep = s.create_sub_step()
 		sstep.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 446, tap=True))
-		sstep.add_action(bat.story.ActSound('//Sound/AntStep2.ogg'))
+		sstep.add_action(self.step_sound_action)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 470))
@@ -336,17 +361,81 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		return senter_start, senter_end
 
-	def pick_up(self):
-		''';)'''
-		bat.bmath.copy_transform(self.children['Ant_RH_Hook'], self.pick)
-		self.pick.setParent(self.children['Ant_RH_Hook'])
+	#########################
+	# Dungeon
+	#########################
 
-	def drop_pick(self):
-		'''Release the pick, and leave it stuck where it is.'''
-		self.pick.removeParent()
+	def create_dungeon_state_graph(self):
+		s = self.rootState.create_successor("Init")
+		# Hide ant first thing
+		s.add_action(bat.story.ActAttrSet('visible', False, target_descendant="Ant_Body"))
 
-	def get_focal_points(self):
-		return [self.children['Ant_Face'], self]
+		sgrab_start, sgrab_end = self.create_grab_states()
+		sgrab_start.add_predecessor(s)
+
+		srescue_start, srescue_end = self.create_rescue_states()
+		srescue_start.add_predecessor(s)
+
+		#
+		# Loop back to start.
+		#
+		s = bat.story.State("Reset")
+		s.add_predecessor(sgrab_end)
+		s.add_predecessor(srescue_end)
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(Scripts.story.ActRemoveCamera('WindowCam'))
+		s.add_action(Scripts.story.ActRemoveCamera('AntGrabCam'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
+		s.add_action(bat.story.ActMusicStop())
+		s.add_action(bat.story.ActActionStop(Ant.L_IDLE))
+		s.add_successor(self.rootState)
+
+	def create_grab_states(self):
+		s = s_start = bat.story.State("Grab")
+		s.add_condition(bat.story.CondEvent("ApproachWindow", self))
+		s.add_condition(bat.story.CondStore('/game/level/AntGrabbed', False, False))
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_action(self.music1_action)
+		s.add_action(bat.story.ActAddObject('Thimble_ant'))
+
+		s = s.create_successor()
+		s.add_action(Scripts.story.ActSetCamera('WindowCam'))
+		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
+		s.add_action(Scripts.story.ActSetCamera('AntGrabCam'))
+		s.add_action(bat.story.ActAttrSet('visible', True, target_descendant="Ant_Body"))
+		s.add_action(bat.story.ActAction('Ant_GetThimble', 880, 1000, Ant.L_ANIM))
+		s.add_action(bat.story.ActAction('RubberBandPluck', 880, 1000, ob='RubberBand_upper'))
+		s.add_action(bat.story.ActAction('Thimble_ant_grab', 880, 1000, ob='Thimble_ant'))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 986))
+		s.add_action(bat.story.ActSound('//Sound/cc-by/RubberBandTwang.ogg'))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(10))
+		s.add_action(bat.story.ActDestroy(ob='Thimble_ant'))
+
+		s_end = s.create_successor()
+
+		return s_start, s_end
+
+	def create_rescue_states(self):
+		s = s_start = bat.story.State("Rescue")
+		s.add_condition(bat.story.CondStore('/game/level/AntGrabbed', True, False))
+		s.add_action(bat.story.ActAttrSet('visible', True, target_descendant="Ant_Body"))
+
+		s_end = s.create_successor()
+
+		return s_start, s_end
+
+	def create_post_rescue_states(self):
+		s = s_start = bat.story.State("Finished")
+		s.add_condition(bat.story.CondStore('/game/level/AntRescued', True, False))
+		s.add_action(bat.story.ActDestroy())
+
+		s_end = s.create_successor()
+
+		return s_start, s_end
 
 def oversee(c):
 	if bat.store.get('/game/level/treeDoorBroken', False):

@@ -26,6 +26,7 @@ import bat.event
 import bat.sound
 import bat.anim
 import bat.render
+import bat.store
 
 import Scripts.story
 import Scripts.shaders
@@ -140,14 +141,6 @@ def flower_head_init(c):
 	act.force = accel
 
 
-def init_lower_buckets(c):
-	o = c.owner
-	bat.anim.play_children_with_offset(o.children, 'BucketsLower', 1, 400)
-
-def init_upper_buckets(c):
-	o = c.owner
-	bat.anim.play_children_with_offset(o.children, 'BucketsUpper', 1, 1334)
-
 def rubber_band_sound(c):
 	s = c.sensors[0]
 	if s.positive and s.triggered:
@@ -191,6 +184,46 @@ def machine_sound(c):
 		sample = c.owner['machine_sound']
 		sample.stop()
 
+
+def init_lower_buckets(c):
+	log.info('Starting lower buckets')
+	o = c.owner
+	bat.anim.play_children_with_offset(o.children, 'BucketsLower', 1, 400)
+
+class BucketControlUpper(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+	'''
+	Second set of buckets is a little more complicated because they need to
+	interact with the Ant.
+	'''
+
+	log = logging.getLogger(__name__ + '.BucketControlUpper')
+
+	def __init__(self, old_owner):
+		self.start()
+		bat.event.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'ParkBuckets':
+			self.park()
+		elif evt.message == 'StartBuckets':
+			self.start()
+
+	def start(self):
+		BucketControlUpper.log.info('Starting upper buckets')
+		bat.anim.play_children_with_offset(self.children, 'BucketsUpper', 1, 1334)
+		if bat.store.get('/game/level/AntGrabbed', defaultValue=False):
+			BucketControlUpper.log.info('Deleting thimble bucket')
+			# Hackish: This happens to work because it only happens once. If the
+			# buckets were re-started after this, the spacing would be wrong.
+			# But that's not such a big deal, anyway.
+			self.childrenRecursive['ThimbleBucket'].endObject()
+
+	def park(self):
+		BucketControlUpper.log.info('Parking upper buckets')
+		for child in self.children:
+			child.playAction('BucketsUpper', 1, 1, 0)
+
+
 class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''An animated conveyor object.'''
 
@@ -232,6 +265,7 @@ class Bucket(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			return
 		Bucket.log.debug("%s %s = %s", self.name, "OCCUPIED", occupied)
 		self.occupied = occupied
+
 
 class BucketLower(Bucket):
 	'''Specialised bucket that controls the camera while the player is inside.'''

@@ -369,6 +369,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = self.rootState.create_successor("Init")
 		# Hide ant first thing
 		s.add_action(bat.story.ActAttrSet('visible', False, target_descendant="Ant_Body"))
+		s.add_action(bat.story.ActAttrSet('visible', False, target_descendant="Ant_Pick"))
 
 		sgrab_start, sgrab_end = self.create_grab_states()
 		sgrab_start.add_predecessor(s)
@@ -397,23 +398,33 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_action(self.music1_action)
 		s.add_action(bat.story.ActAddObject('Thimble_ant'))
+		s.add_event('ParkBuckets')
 
 		s = s.create_successor()
 		s.add_action(Scripts.story.ActSetCamera('WindowCam'))
 		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
-		s.add_action(Scripts.story.ActSetCamera('AntGrabCam'))
 		s.add_action(bat.story.ActAttrSet('visible', True, target_descendant="Ant_Body"))
 		s.add_action(bat.story.ActAction('Ant_GetThimble', 880, 1000, Ant.L_ANIM))
 		s.add_action(bat.story.ActAction('RubberBandPluck', 880, 1000, ob='RubberBand_upper'))
 		s.add_action(bat.story.ActAction('Thimble_ant_grab', 880, 1000, ob='Thimble_ant'))
 
 		s = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 935))
+		s.add_action(Scripts.story.ActSetCamera('AntGrabCam'))
+
+		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 986))
 		s.add_action(bat.story.ActSound('//Sound/cc-by/RubberBandTwang.ogg'))
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(10))
+		s.add_condition(bat.story.CondWait(5))
 		s.add_action(bat.story.ActDestroy(ob='Thimble_ant'))
+		s.add_action(Scripts.story.ActRemoveCamera('WindowCam'))
+		s.add_action(Scripts.story.ActRemoveCamera('AntGrabCam'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
+
+		s = s.create_successor()
+		s.add_event('StartBuckets')
 
 		s_end = s.create_successor()
 

@@ -72,7 +72,8 @@ class ShaderCtrl(metaclass=bat.bats.Singleton):
 		be called. This is the only place that mist colour needs to be defined,
 		as it updates the colour for Blender materials too.
 		'''
-		#self._mist_colour = colour.copy()
+		# Assume colour is specified in sRGB; convert to linear (as Blender
+		# would).
 		self._mist_colour = srgb2lin(colour)
 		self.update_globals()
 		bge.render.setMistColor(colour)
@@ -652,22 +653,6 @@ def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 	${varying}
 	varying vec4 position;
 
-	vec3 srgb2lin(vec3 col) {
-		vec3 is_small = clamp(floor(col / vec3(0.0031308)), 0.0, 1.0);
-		vec3 small = col * vec3(12.92);
-		vec3 large = 1.055 * pow(col, vec3(1.0/2.4)) - 0.055;
-		col = mix(small, large, is_small);
-		return col;
-	}
-
-	vec3 lin2srgb(vec3 col) {
-		vec3 is_small = clamp(floor(col / vec3(0.04045)), 0.0, 1.0);
-		vec3 small = col * (1.0 / 12.92);
-		vec3 large = pow((col + 0.055) * (1.0/1.055), vec3(2.4));
-		col = mix(small, large, is_small);
-		return col;
-	}
-
 	void main() {
 		vec4 col = texture2D(tCol, gl_TexCoord[0].st);
 
@@ -682,7 +667,6 @@ def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 		// This is pretty close to Blender's "Inverse quadratic" mist.
 		float mist_fac = sqrt(position.z / (mist_depth * 0.8));
 		vec3 misted = mix(gl_FragColor.xyz, mist_colour, clamp(mist_fac, 0.0, 1.0));
-		//vec3 misted = mix(gl_FragColor.xyz, srgb2lin(mist_colour), clamp(mist_fac, 0.0, 1.0));
 		gl_FragColor.xyz = mix(gl_FragColor.rgb, misted, 1);
 	}
 	""")

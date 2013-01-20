@@ -40,6 +40,7 @@ class LevelBeehive(Scripts.story.GameLevel):
 		Scripts.story.GameLevel.__init__(self, oldOwner)
 		Scripts.shaders.ShaderCtrl().set_mist_colour(
 				mathutils.Vector((0.0, 0.0, 0.0)))
+		Scripts.shaders.ShaderCtrl().set_mist_depth(100)
 
 
 def _music_start(owner):

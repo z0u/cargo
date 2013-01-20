@@ -39,7 +39,8 @@ class LevelOut(Scripts.story.GameLevel):
 		self.load_foaliage()
 
 		Scripts.shaders.ShaderCtrl().set_mist_colour(
-				mathutils.Vector((0.565, 0.572, 0.578)))
+				mathutils.Vector((0.485, 0.491, 0.515)))
+		Scripts.shaders.ShaderCtrl().set_mist_depth(5000)
 
 	def load_foaliage(self):
 		'''Load extra files'''

@@ -41,11 +41,10 @@ class ShaderCtrl(metaclass=bat.bats.Singleton):
 
 	def __init__(self):
 		self.shaders = set()
-		self.set_mist_colour(mathutils.Vector((1.0, 1.0, 1.0)))
-
-		sce = bge.logic.getCurrentScene()
-		cam = sce.active_camera
-		self.set_mist_depth(cam.far)
+#		self.set_mist_colour(mathutils.Vector((1.0, 1.0, 1.0)))
+#		self.set_mist_colour(mathutils.Vector((0.729, 0.729, 0.745)))
+		self.set_mist_colour(mathutils.Vector((0.485, 0.491, 0.515)))
+		self.set_mist_depth(5000)
 
 	def add_shader(self, shader, callback=None, uses_lights=True,
 				needs_worlviewmat=False, needs_viewworldmat=False):
@@ -73,7 +72,8 @@ class ShaderCtrl(metaclass=bat.bats.Singleton):
 		be called. This is the only place that mist colour needs to be defined,
 		as it updates the colour for Blender materials too.
 		'''
-		self._mist_colour = colour.copy()
+		#self._mist_colour = colour.copy()
+		self._mist_colour = srgb2lin(colour)
 		self.update_globals()
 		bge.render.setMistColor(colour)
 
@@ -572,6 +572,18 @@ def create_vert_shader(model='PHONG', position_fn=None):
 	return verts.substitute(light_header=light_header, model=model,
 			varying=varying, position_fn=position_fn, lighting=lighting)
 
+def srgb2lin(colour):
+	def _srgb2lin_comp(component):
+		if component < 0.0031308:
+			return component * 12.92;
+		else:
+			return 1.055 * pow(component, 1.0/2.4) - 0.055;
+
+	colour = colour.copy()
+	for i in range(3):
+		colour[i] = _srgb2lin_comp(colour[i])
+	return colour
+
 def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 	if alpha == 'CLIP':
 		alpha1 = """
@@ -640,6 +652,22 @@ def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 	${varying}
 	varying vec4 position;
 
+	vec3 srgb2lin(vec3 col) {
+		vec3 is_small = clamp(floor(col / vec3(0.0031308)), 0.0, 1.0);
+		vec3 small = col * vec3(12.92);
+		vec3 large = 1.055 * pow(col, vec3(1.0/2.4)) - 0.055;
+		col = mix(small, large, is_small);
+		return col;
+	}
+
+	vec3 lin2srgb(vec3 col) {
+		vec3 is_small = clamp(floor(col / vec3(0.04045)), 0.0, 1.0);
+		vec3 small = col * (1.0 / 12.92);
+		vec3 large = pow((col + 0.055) * (1.0/1.055), vec3(2.4));
+		col = mix(small, large, is_small);
+		return col;
+	}
+
 	void main() {
 		vec4 col = texture2D(tCol, gl_TexCoord[0].st);
 
@@ -647,13 +675,15 @@ def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 		${lighting}
 		${alpha2}
 
-		gl_FragColor.xyz = mix(gl_FragColor.xyz, mist_colour,
-				position.z / mist_depth);
+		// Linear mist
+		//gl_FragColor.xyz = mix(gl_FragColor.xyz, mist_colour,
+		//		position.z / mist_depth);
 
-		// Prevent pure black, as it messes with the DoF shader.
-		gl_FragColor.g += 0.01;
-
-        gl_FragColor = gl_FragColor;
+		// This is pretty close to Blender's "Inverse quadratic" mist.
+		float mist_fac = sqrt(position.z / (mist_depth * 0.8));
+		vec3 misted = mix(gl_FragColor.xyz, mist_colour, clamp(mist_fac, 0.0, 1.0));
+		//vec3 misted = mix(gl_FragColor.xyz, srgb2lin(mist_colour), clamp(mist_fac, 0.0, 1.0));
+		gl_FragColor.xyz = mix(gl_FragColor.rgb, misted, 1);
 	}
 	""")
 	return frag.substitute(model=model, light_header=light_header,

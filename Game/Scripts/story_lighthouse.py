@@ -146,6 +146,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_event("StartLoading", self)
 		s.add_action(bat.story.ActConstraintSet('Equip.R', 'Copy Transforms', 0.0))
 		s.add_action(bat.story.ActAttrSet('color', bat.render.WHITE, ob='TorchReflector'))
+		s.add_action(bat.story.ActAttrSet('color', bat.render.WHITE, ob='TorchRay'))
 		s.add_action(bat.story.ActAttrSet('energy', 5.0, ob='UserLight1'))
 
 		s = s.create_successor()
@@ -222,6 +223,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_action(bat.story.ActAction('LK_WorkingHard', 1, 36, LighthouseKeeper.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=4.0))
 		s.add_action(bat.story.ActAttrSet('color', bat.render.WHITE, ob='TorchReflector'))
+		s.add_action(bat.story.ActAttrSet('color', bat.render.WHITE, ob='TorchRay'))
 		s.add_action(bat.story.ActAttrSet('energy', 5.0, ob='UserLight1'))
 
 		#
@@ -259,6 +261,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		sub = s.create_sub_step()
 		sub.add_condition(bat.story.CondWait(0.2))
 		sub.add_action(bat.story.ActAttrLerp('color', bat.render.WHITE, bat.render.BLACK, 0.2, ob='TorchReflector'))
+		sub.add_action(bat.story.ActAttrLerp('color', bat.render.WHITE, bat.render.BLACK, 0.2, ob='TorchRay'))
 		sub.add_action(bat.story.ActAttrLerp('energy', 5.0, 0.0, 0.2, ob='UserLight1'))
 
 		s = s.create_successor()

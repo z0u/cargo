@@ -25,6 +25,7 @@ import mathutils
 import bat.bats
 import bat.store
 import bat.utils
+import bat.render
 
 DEBUG = False
 DEBUG_LINE_NUMBERS = True
@@ -74,7 +75,7 @@ class ShaderCtrl(metaclass=bat.bats.Singleton):
 		'''
 		# Assume colour is specified in sRGB; convert to linear (as Blender
 		# would).
-		self._mist_colour = srgb2lin(colour)
+		self._mist_colour = bat.render.srgb2lin(colour)
 		self.update_globals()
 		bge.render.setMistColor(colour)
 
@@ -572,18 +573,6 @@ def create_vert_shader(model='PHONG', position_fn=None):
 	""")
 	return verts.substitute(light_header=light_header, model=model,
 			varying=varying, position_fn=position_fn, lighting=lighting)
-
-def srgb2lin(colour):
-	def _srgb2lin_comp(component):
-		if component < 0.0031308:
-			return component * 12.92;
-		else:
-			return 1.055 * pow(component, 1.0/2.4) - 0.055;
-
-	colour = colour.copy()
-	for i in range(3):
-		colour[i] = _srgb2lin_comp(colour[i])
-	return colour
 
 def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 	if alpha == 'CLIP':

@@ -400,15 +400,18 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(bat.story.ActAddObject('Thimble_ant'))
 		s.add_event('ParkBuckets')
 
+		s_fra = 855
+		e_fra = 1020
+
 		s = s.create_successor()
 		s.add_action(Scripts.story.ActSetCamera('WindowCam'))
 		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
 		s.add_action(bat.story.ActAttrSet('visible', True, target_descendant="Ant_Body"))
-		s.add_action(bat.story.ActAction('Ant_GetThimble', 715, 1020, Ant.L_ANIM))
-		s.add_action(bat.story.ActAction('WindowCam', 715, 1020, ob='WindowCam'))
-		s.add_action(bat.story.ActAction('AntGrabCam', 715, 1020, ob='AntGrabCam'))
-		s.add_action(bat.story.ActAction('RubberBandPluck', 715, 1020, ob='RubberBand_upper'))
-		s.add_action(bat.story.ActAction('Thimble_ant_grab', 715, 1020, ob='Thimble_ant'))
+		s.add_action(bat.story.ActAction('Ant_GetThimble', s_fra, e_fra, Ant.L_ANIM))
+		s.add_action(bat.story.ActAction('WindowCam', s_fra, e_fra, ob='WindowCam'))
+		s.add_action(bat.story.ActAction('AntGrabCam', s_fra, e_fra, ob='AntGrabCam'))
+		s.add_action(bat.story.ActAction('RubberBandPluck', s_fra, e_fra, ob='RubberBand_upper'))
+		s.add_action(bat.story.ActAction('Thimble_ant_grab', s_fra, e_fra, ob='Thimble_ant'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 935))
@@ -425,6 +428,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_condition(bat.story.CondWait(1))
 		s.add_action(bat.story.ActDestroy(ob='Thimble_ant'))
 		s.add_action(Scripts.story.ActRemoveCamera('WindowCam'))
+		s.add_action(Scripts.story.ActRemoveCamera('WindowCam.001'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntGrabCam'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
 

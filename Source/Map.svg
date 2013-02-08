@@ -119,13 +119,13 @@
       <stop
          id="stop4209"
          offset="0.4992536"
-         style="stop-color:#adb5f5;stop-opacity:1" />
+         style="stop-color:#dee3fc;stop-opacity:1" />
       <stop
-         style="stop-color:#80c080;stop-opacity:1"
+         style="stop-color:#9c7256;stop-opacity:1"
          offset="0.4992536"
          id="stop4211" />
       <stop
-         style="stop-color:#b4dfb5;stop-opacity:1"
+         style="stop-color:#99896f;stop-opacity:1"
          offset="1"
          id="stop4205" />
     </linearGradient>
@@ -417,7 +417,7 @@
      inkscape:cx="126.6298"
      inkscape:cy="42.964595"
      inkscape:document-units="px"
-     inkscape:current-layer="layer2"
+     inkscape:current-layer="layer4"
      showgrid="false"
      width="0px"
      height="0px"

@@ -371,11 +371,14 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(bat.story.ActAttrSet('visible', False, target_descendant="Ant_Body"))
 		s.add_action(bat.story.ActAttrSet('visible', False, target_descendant="Ant_Pick"))
 
-		sgrab_start, sgrab_end = self.create_grab_states()
-		sgrab_start.add_predecessor(s)
-
 		srescue_start, srescue_end = self.create_rescue_states()
 		srescue_start.add_predecessor(s)
+
+		sstranded_start, sstranded_end = self.create_stranded_states()
+		sstranded_start.add_predecessor(s)
+
+		sgrab_start, sgrab_end = self.create_grab_states()
+		sgrab_start.add_predecessor(s)
 
 		#
 		# Loop back to start.
@@ -383,6 +386,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = bat.story.State("Reset")
 		s.add_predecessor(sgrab_end)
 		s.add_predecessor(srescue_end)
+		s.add_predecessor(sstranded_end)
 		s.add_action(Scripts.story.ActResumeInput())
 		s.add_action(Scripts.story.ActRemoveCamera('WindowCam'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntGrabCam'))
@@ -392,9 +396,17 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_successor(self.rootState)
 
 	def create_grab_states(self):
+		#
+		# Non-interactive cut-scene: the camera dollys through a window to show
+		# the machine room. A bucket rises from the lower level. It is grabbed
+		# by the Ant, who pulls it away from the rubber band it is attached to.
+		# The force knocks the ant off the ledge and out of view.
+		#
 		s = s_start = bat.story.State("Grab")
+		s.add_condition(bat.story.CondStore('/game/level/AntStranded', False, False))
+
+		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("ApproachWindow", self))
-		s.add_condition(bat.story.CondStore('/game/level/AntGrabbed', False, False))
 		s.add_action(Scripts.story.ActSuspendInput())
 #		s.add_action(self.music1_action)
 		s.add_action(bat.story.ActAddObject('Thimble_ant'))
@@ -432,24 +444,33 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(Scripts.story.ActRemoveCamera('AntGrabCam'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
 
+		# Start the buckets again, and set saved game state. When story state
+		# loops, create_stranded_states will be executed instead.
 		s = s.create_successor()
 		s.add_event('StartBuckets')
+		s.add_action(bat.story.ActStoreSet('/game/level/AntStranded', True))
+
+		s_end = s.create_successor()
+
+		return s_start, s_end
+
+	def create_stranded_states(self):
+		s = s_start = bat.story.State("Stranded")
+		s.add_condition(bat.story.CondStore('/game/level/AntStranded', True, False))
+
+		s = s.create_successor('Strand ant')
+		s.add_action(bat.story.ActAttrSet('visible', True, target_descendant="Ant_Body"))
+		s.add_action(bat.story.ActAction('Ant_Stranded', 1, 1, Ant.L_ANIM))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("ApproachAnt", self))
 
 		s_end = s.create_successor()
 
 		return s_start, s_end
 
 	def create_rescue_states(self):
-		s = s_start = bat.story.State("Rescue")
-		s.add_condition(bat.story.CondStore('/game/level/AntGrabbed', True, False))
-		s.add_action(bat.story.ActAttrSet('visible', True, target_descendant="Ant_Body"))
-
-		s_end = s.create_successor()
-
-		return s_start, s_end
-
-	def create_post_rescue_states(self):
-		s = s_start = bat.story.State("Finished")
+		s = s_start = bat.story.State("Rescued")
 		s.add_condition(bat.story.CondStore('/game/level/AntRescued', True, False))
 		s.add_action(bat.story.ActDestroy())
 

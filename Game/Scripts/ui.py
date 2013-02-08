@@ -613,7 +613,6 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			goal_pos = None
 		self.centre_page(pos, goal_pos)
 		self.rotate_marker(orn)
-		self.orient_horizon(orn)
 
 	def init_uv(self):
 		canvas = self.children['MapPage']
@@ -639,6 +638,7 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if goal_pos:
 			uv_offset_goal = self.world_to_uv(goal_pos.xy) * zoom
 			uv_offset_goal -= uv_offset
+			uv_offset_goal *= 2.2
 			if uv_offset_goal.magnitude <= 1:
 				# Within map; show cross at exact location.
 				positionalMarker.localPosition.xy = uv_offset_goal
@@ -661,10 +661,6 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		marker = self.children['MapDirection']
 		marker.localOrientation = orn
 		marker.alignAxisToVect(bat.bmath.ZAXIS)
-
-	def orient_horizon(self, orn):
-		hball = self.childrenRecursive['HorizonBall']
-		hball.localOrientation = orn.inverted()
 
 	def world_to_uv(self, loc2D):
 		uvc = loc2D - self.offset
@@ -689,6 +685,48 @@ def set_map_goal(c):
 	bat.store.put('/game/level/mapGoal', o.name)
 	bat.event.Event('MapGoalChanged').send()
 
+
+class AttitudeMetre(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'At_'
+
+	S_INIT = 1
+	S_VISIBLE = 2
+	S_HIDING  = 3
+	S_HIDDEN  = 4
+
+	def __init__(self, old_owner):
+		self.set_state(self.S_HIDDEN)
+		self.force_hide = False
+
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'GameModeChanged')
+
+	def on_event(self, evt):
+		if evt.message == 'GameModeChanged':
+			if evt.body == 'Playing':
+				self.show()
+			else:
+				self.hide()
+
+	@bat.bats.expose
+	def update(self):
+		player = Scripts.director.Director().mainCharacter
+		if player is None:
+			return
+		self.orient_horizon(player.worldOrientation)
+
+	def orient_horizon(self, orn):
+		hball = self.childrenRecursive['HorizonBall']
+		hball.localOrientation = orn.inverted()
+
+	def show(self):
+		if not self.has_state(self.S_VISIBLE):
+			self.set_state(self.S_VISIBLE)
+			self.setVisible(True, True)
+
+	def hide(self):
+		if self.has_state(self.S_VISIBLE):
+			self.set_state(self.S_HIDING)
 
 class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''Displays the current shells in a scrolling view on the side of the

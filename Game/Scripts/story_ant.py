@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 import bge
 
 import bat.bats
@@ -26,13 +28,23 @@ import bat.utils
 import bat.story
 import Scripts.story
 
+log = logging.getLogger(__name__)
+
+def prepare():
+	scene = bge.logic.getCurrentScene()
+	if not "Ant" in scene.objectsInactive:
+		try:
+			bge.logic.LibLoad('//Ant_loader.blend', 'Scene', load_actions=True)
+		except ValueError:
+			log.warn('could not load ant', exc_info=1)
+
 def factory():
 	scene = bge.logic.getCurrentScene()
 	if not "Ant" in scene.objectsInactive:
 		try:
 			bge.logic.LibLoad('//Ant_loader.blend', 'Scene', load_actions=True)
-		except ValueError as e:
-			print('Warning: could not load ant:', e)
+		except ValueError:
+			log.error('could not load ant', exc_info=1)
 
 	return bat.bats.add_and_mutate_object(scene, "Ant", "Ant")
 
@@ -485,13 +497,17 @@ def oversee(c):
 		return
 
 	sce = bge.logic.getCurrentScene()
-	if c.sensors[0].positive:
+	if c.sensors['Once'].positive:
+		log.info("Loading ant")
+		prepare()
+
+	if c.sensors['Near'].positive:
 		if "Honeypot" not in sce.objects:
-			print("Creating honeypot")
+			log.info("Creating honeypot")
 			sce.addObject("Honeypot", c.owner)
 	else:
 		if "Honeypot" in sce.objects:
-			print("Destroying honeypot")
+			log.info("Destroying honeypot")
 			sce.objects["Honeypot"].endObject()
 
 def test_anim():

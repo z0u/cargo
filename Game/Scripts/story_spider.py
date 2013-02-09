@@ -306,6 +306,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActStoreSet('/game/level/spiderWelcome1', True))
+		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'spiderWelcome1'))
 
 		sconv_end = bat.story.State()
 		sconv_end.add_predecessor(s)
@@ -358,6 +359,7 @@ class Spider(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObj
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(Spider.L_ANIM, 130))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'gotWheel'))
 
 		s = s.create_successor("Clean up")
 		s.add_action(Scripts.story.ActResumeInput())

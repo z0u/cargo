@@ -339,5 +339,6 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActStoreSet('/game/level/lkMissionStarted', True))
+		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'lkMissionStarted'))
 
 		return smission_start, s

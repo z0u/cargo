@@ -267,13 +267,16 @@ class GameLevel(Level):
 			bat.event.Event('ShowDialogue', "You got the Bottle Cap! It looks like it can float. It tastes like hoisin sauce - not bad!").send(30)
 			bat.store.put('/game/level/mapGoal', None)
 			bat.event.Event('MapGoalChanged').send()
+			bat.store.put('/game/storySummary', 'gotBottleCap')
 		elif shell == 'Nut':
 			bat.event.Event('ShowDialogue', "You got the Nut! It's not shiny or red, but it's... heavy. Great!").send(30)
+			bat.store.put('/game/storySummary', 'gotNut')
 		elif shell == 'Wheel':
 			# Wheel is handled specially in story_spider.py
 			pass
 		elif shell == 'Thimble':
 			bat.event.Event('ShowDialogue', "You got the Thimble! It's impervious to sharp objects.").send(30)
+			bat.store.put('/game/storySummary', 'gotThimble')
 		else:
 			GameLevel.log.warn('Unrecognised shell %s', shell)
 

@@ -532,7 +532,8 @@ class Thimble(ShellBase):
 				bat.bats.mutate(self.children['ArcRay_Root.1']),
 				bat.bats.mutate(self.children['ArcRay_Root.2']),
 				bat.bats.mutate(self.children['ArcRay_Root.3']))
-		self.direction_mapper = bat.impulse.DirectionMapperViewLocal()
+		self.direction_mapper = bat.impulse.DirectionMapperLocal()
+		self.direction_mapper_joystick = bat.impulse.DirectionMapperViewLocal()
 		self.engine = Scripts.attitude.Engine(self)
 
 		self.damage_tracker = Scripts.director.DamageTracker()
@@ -587,8 +588,15 @@ class Thimble(ShellBase):
 			self.mesh.playAction('ThimbleWaddle', 9, 41)
 
 		speed *= Thimble.NORMAL_SPEED
-		self.direction_mapper.update(self, state.direction)
-		self.engine.apply(self.direction_mapper.direction, speed)
+
+		if state.source & bat.impulse.SRC_JOYSTICK_AXIS:
+			# Use special joystick mapper for view-based movement.
+			self.direction_mapper_joystick.update(self, state.direction)
+			self.engine.apply(self.direction_mapper_joystick.direction, speed)
+		else:
+			# Use snake-like movement controls.
+			self.direction_mapper.update(self, state.direction)
+			self.engine.apply(self.direction_mapper.direction, speed)
 
 
 def spawn_shell(c):

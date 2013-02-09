@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import time
+
 import bge
 import mathutils
 
@@ -34,8 +36,15 @@ class Clover(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	_prefix = 'CL_'
 
+	S_INIT = 1
+	S_IDLE = 2
+	S_RESPAWNING = 3
+
+	RESPAWN_TIME = 5 * 60
+
 	def __init__(self, old_owner):
-		pass
+		self.hit_time = time.time()
+		self.set_state(Clover.S_IDLE)
 
 	@bat.bats.expose
 	@bat.utils.controller_cls
@@ -43,8 +52,21 @@ class Clover(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		s = c.sensors[0]
 		if s.hitObject is not None and hasattr(s.hitObject, "heal"):
 			s.hitObject.heal()
-			self.scene.addObject("Clover_dynamic", self)
-			self.endObject()
+			head = self.children['CL_Head']
+			self.scene.addObject("Clover_dynamic", head)
+			head.visible = False
+			self.playAction('CL_stem_action.001', 1, 40)
+			self.hit_time = time.time()
+			self.set_state(Clover.S_RESPAWNING)
+
+	@bat.bats.expose
+	def respawn_pulse(self):
+		ctime = time.time()
+		if ctime - self.hit_time > Clover.RESPAWN_TIME:
+			head = self.children['CL_Head']
+			head.visible = True
+			self.playAction('CL_stem_action.001', 1, 1)
+			self.set_state(Clover.S_IDLE)
 
 class SBParticle:
 	'''A 2D softbody particle. Always tries to return to (0, 0). Set the Frame

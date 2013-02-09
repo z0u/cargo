@@ -215,6 +215,7 @@ class BottleDropZone(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_G
 		if mainChar in s.hitObjectList:
 			bat.impulse.Input().add_handler(self, 'STORY')
 		else:
+			self.shell_drop_initiated_at_door = False
 			bat.impulse.Input().remove_handler(self)
 
 	def can_handle_input(self, state):

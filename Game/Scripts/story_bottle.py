@@ -191,6 +191,9 @@ class BottleDropZone(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_G
 	bottle.
 	'''
 
+	S_INIT = 1
+	S_DROPPED = 2
+
 	_prefix = 'DZ_'
 
 	def __init__(self, old_owner):
@@ -198,6 +201,7 @@ class BottleDropZone(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_G
 		# Only handle overridden input events (see impulse.Handler).
 		self.default_handler_response = False
 		self.shell_drop_initiated_at_door = False
+		self.dropped_shell = None
 
 	def on_event(self, evt):
 		if evt.message == 'ShellDropped':
@@ -205,6 +209,8 @@ class BottleDropZone(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_G
 				cbEvent = bat.event.Event("EnterBottle")
 				bat.event.Event("ShowLoadingScreen", (True, cbEvent)).send()
 				self.shell_drop_initiated_at_door = False
+				self.dropped_shell = evt.body
+				self.add_state(BottleDropZone.S_DROPPED)
 
 	@bat.bats.expose
 	@bat.utils.controller_cls
@@ -215,7 +221,18 @@ class BottleDropZone(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_G
 		if mainChar in s.hitObjectList:
 			bat.impulse.Input().add_handler(self, 'STORY')
 		else:
+			self.shell_drop_initiated_at_door = False
 			bat.impulse.Input().remove_handler(self)
+
+	@bat.bats.expose
+	def park_shell(self):
+		if self.dropped_shell is None or self.dropped_shell.invalid:
+			return
+		park = self.children['B_ShellPark']
+		self.dropped_shell.worldPosition = park.worldPosition
+		self.dropped_shell.worldLinearVelocity = (0, 0, 0.0001)
+		self.dropped_shell = None
+		self.rem_state(BottleDropZone.S_DROPPED)
 
 	def can_handle_input(self, state):
 		'''Allow snail to drop shell.'''

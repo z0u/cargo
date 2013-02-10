@@ -16,6 +16,7 @@
 #
 
 import logging
+import time
 
 import mathutils
 import bge
@@ -74,6 +75,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	EYE_LOOK_FAC = 0.5
 	SHELL_POP_SPEED = 40.0
 	WATER_DAMPING = 0.5
+	SHELL_REGRAB_DELAY = 5
 
 	HEALTH_WARNING_DELAY = 180 # 3s
 	SHOCK_DURATION = 30 # 2s
@@ -98,7 +100,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.rem_state(Snail.S_INIT)
 
 		self.shell = None
-		self.recentlyDroppedItems = bat.containers.SafeSet()
 		# Not weak props, but it should be OK because they will die in the same
 		# frame as the snail (this object).
 		self.eyeRayL = self.childrenRecursive['EyeRay.L']
@@ -416,18 +417,16 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		'''Picks up and equips nearby shells that don't already have an
 		owner. Note: this must run with priority over functions that drop
 		items!'''
-		collectables = bat.containers.SafeSet(
-				controller.sensors['sPickup'].hitObjectList)
-		# Forget objects that are no longer in range.
-		self.recentlyDroppedItems.intersection_update(collectables)
-		# Ignore objects that were recently dropped.
-		collectables.difference_update(self.recentlyDroppedItems)
-
-		for ob in collectables:
+		for ob in controller.sensors['sPickup'].hitObjectList:
 			if isinstance(ob, Scripts.shells.ShellBase):
-				if not ob.is_carried and not ob.is_grasped:
-					self.equip_shell(ob, True)
-					bat.event.Event('ShellChanged', 'new').send()
+				if ob.is_carried or ob.is_grasped:
+					continue
+				if '_Sn_previous_owner' in ob:
+					prev_id, prev_time = ob['_Sn_previous_owner']
+					if prev_id == id(self) and prev_time + Snail.SHELL_REGRAB_DELAY > time.time():
+						continue
+				self.equip_shell(ob, True)
+				bat.event.Event('ShellChanged', 'new').send()
 
 	def switch_next(self):
 		'''Equip the next-higher shell that the snail has.'''
@@ -572,7 +571,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 		shell.setLinearVelocity(velocity)
 		shell.on_dropped()
-		self.recentlyDroppedItems.add(shell)
+		# Store ownership so the shell doesn't immediately get picked up again
+		shell['_Sn_previous_owner'] = (id(self), time.time())
 
 		bat.event.WeakEvent('ShellDropped', shell).send()
 

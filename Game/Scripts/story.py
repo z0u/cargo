@@ -259,8 +259,12 @@ class GameLevel(Level):
 			self.on_pickup(event.body)
 		elif event.message == "TeleportCheat":
 			self.on_teleport_cheat()
+		elif event.message == "PlayFanfare":
+			sample = bat.sound.Sample('//Sound/Fanfare1.ogg')
+			sample.play()
 
 	def on_shell_found(self, shell):
+		bat.event.Event('PlayFanfare').send(15)
 		if shell == 'Shell':
 			bat.event.Event('ShowDialogue', "You got the Shell! Your beautiful, dependable house and mail van.").send(30)
 		elif shell == 'BottleCap':

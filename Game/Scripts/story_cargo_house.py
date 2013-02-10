@@ -321,6 +321,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_action(Scripts.story.ActRemoveCamera('WormCamera_Converse'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('CargoHoldAuto'))
 		s.add_action(bat.story.ActStoreSet('/game/level/wormMissionStarted', True))
+		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'wormMissionStarted'))
 
 		#
 		# Clean up. At this point, the worm is completely hidden and the sods have faded.

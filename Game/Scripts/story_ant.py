@@ -461,6 +461,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = s.create_successor()
 		s.add_event('StartBuckets')
 		s.add_action(bat.story.ActStoreSet('/game/level/AntStranded', True))
+		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'AntStranded'))
 
 		s_end = s.create_successor()
 

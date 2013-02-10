@@ -587,6 +587,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(0, 605, targetDescendant='SlugArm_Min'))
 		s.add_action(bat.story.ActStoreSet('/game/level/slugBottleCapConv1', True))
+		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'slugBottleCapConv1'))
 
 		sconv_end = bat.story.State()
 		sconv_end.add_predecessor(s)

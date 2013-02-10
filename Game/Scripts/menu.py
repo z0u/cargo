@@ -39,6 +39,35 @@ CREDITS = [
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
 	("Made With", "Blender, Bullet, The GIMP and Inkscape")]
 
+STORY_SUMMARIES = {
+	# 95 characters is probably about as many as will currently fit on the save
+	# game page.
+	'newGame':
+			"Start a new game.",
+	'wormMissionStarted':
+			"I have a letter \[envelope] to deliver to the lighthouse keeper.",
+	'lkMissionStarted':
+			"The lighthouse keeper wants some black bean sauce from the Sauce Bar.",
+	'birdTookShell':
+			"A bird has taken my shell \[shell] and wants three shiny red things in exchange.",
+	'slugBottleCapConv1':
+			"I'm off to a small island in search of a bright red bottle cap \[bottlecap].",
+	'gotBottleCap':
+			"I found a bottle cap \[bottlecap], but still need two more shiny red things.",
+	'spiderWelcome1':
+			"The spider says I can have the wheel \[wheel], if only I can reach it.",
+	'gotNut':
+			"I found a heavy nut \[nut]. That must be useful for something...",
+	'gotWheel':
+			"The spider gave me the wheel \[wheel]. It's very strong and can break things.",
+	'treeDoorBroken':
+			"I've broken into the tree and am following the ant inside.",
+	'AntStranded':
+			"The ant needs my help to get out of the honey.",
+	'gotThimble':
+			"I found a third shiny thing! It's a thimble \[thimble] that's impervious to sharp objects.",
+	}
+
 class SessionManager(metaclass=bat.bats.Singleton):
 	'''Responds to some high-level messages.'''
 
@@ -268,9 +297,13 @@ class GameDetailsPage(Scripts.gui.Widget):
 
 		if visible:
 			name = bat.store.get('/game/name', '')
-			summary = bat.store.get('/game/storySummary', 'Start a new game.')
+			summary = bat.store.get('/game/storySummary', 'newGame')
 			self.childrenRecursive['GameName'].set_text(name)
-			self.children['StoryDetails'].set_text(summary)
+			try:
+					summary_text = STORY_SUMMARIES[summary]
+			except KeyError:
+					summary_text = ''
+			self.children['StoryDetails'].set_text(summary_text)
 
 class OptionsPage(Scripts.gui.Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to

@@ -181,6 +181,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActGeneric(steal_shell))
 		s.add_action(bat.story.ActStoreSet('/game/level/birdTookShell', True))
+		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'birdTookShell'))
 		s.add_action(bat.story.ActStoreSet('/game/canDropShell', True))
 
 		#

@@ -249,8 +249,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 
 		# Take foot off button; sit down to read letter
 		s = s.create_successor()
-		s.add_action(bat.story.ActSound('//Sound/ButtonUp1.ogg',
-				vol=2.0))
+		s.add_action(bat.story.ActSound('//Sound/ButtonToggleOn1.ogg', vol=1.0))
 		s.add_condition(bat.story.CondWait(1))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		self.anim_receive.play(s, 30, 45)
@@ -342,5 +341,6 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActStoreSet('/game/level/lkMissionStarted', True))
 		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'lkMissionStarted'))
+		s.add_action(bat.story.ActSound('//Sound/ButtonToggleOff1.ogg', vol=1.0))
 
 		return smission_start, s

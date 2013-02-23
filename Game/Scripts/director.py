@@ -188,9 +188,9 @@ class VulnerableActor(Actor):
 
 	log = logging.getLogger(__name__ + '.VulnerableActor')
 
-	def __init__(self, maxHealth = 1):
+	def __init__(self, immunity, maxHealth = 1):
 		Actor.__init__(self)
-		self.damage_tracker = DamageTracker()
+		self.damage_tracker = DamageTracker(immunity)
 		self.maxHealth = maxHealth
 		self.set_health(maxHealth)
 
@@ -256,10 +256,11 @@ class DamageTracker:
 	# The number of logic ticks between damages from a particular object
 	DAMAGE_FREQUENCY = 120 # 2 seconds
 
-	def __init__(self):
+	def __init__(self, immunity):
 		# A map of current passive attackers, so we can keep track of when we
 		# were last attacked. NOTE this keeps only the IDs of the objects as its
 		# keys to prevent invalid object access.
+		self.immunity = immunity
 		self.attacker_ids = {}
 
 	def attack(self, attackers):
@@ -271,6 +272,13 @@ class DamageTracker:
 			aid = id(ob)
 			if aid in self.attacker_ids:
 				# Wait before attacking again.
+				continue
+
+			if 'DamageType' not in ob:
+				damage_type = 'Untyped'
+			else:
+				damage_type = ob['DamageType']
+			if damage_type in self.immunity:
 				continue
 
 			if 'Shock' in ob and ob['Shock']:

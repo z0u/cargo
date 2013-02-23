@@ -67,7 +67,7 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 
 	snail = bat.containers.weakprop('snail')
 
-	def __init__(self, old_owner):
+	def __init__(self, old_owner, immunity):
 		Scripts.director.Actor.__init__(self)
 
 		self.snail = None
@@ -81,7 +81,7 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 		self.set_state(ShellBase.S_IDLE)
 		self.add_state(ShellBase.S_ALWAYS)
 
-		self.damage_tracker = Scripts.director.DamageTracker()
+		self.damage_tracker = Scripts.director.DamageTracker(immunity)
 
 		bat.event.EventBus().add_listener(self)
 
@@ -244,7 +244,7 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 class Shell(ShellBase):
 
 	def __init__(self, old_owner):
-		ShellBase.__init__(self, old_owner)
+		ShellBase.__init__(self, old_owner, {'Salt'})
 
 		self.direction_mapper = bat.impulse.DirectionMapperViewGlobal()
 
@@ -320,7 +320,7 @@ class Wheel(ShellBase):
 	FLY_POWER = 1.0 / 3.0
 
 	def __init__(self, old_owner):
-		ShellBase.__init__(self, old_owner)
+		ShellBase.__init__(self, old_owner, {'Salt'})
 		self._reset_speed()
 		self.fly_power = 0.0
 
@@ -420,6 +420,9 @@ class Wheel(ShellBase):
 
 class Nut(ShellBase):
 
+	def __init__(self, old_owner):
+		ShellBase.__init__(self, old_owner, {'Salt'})
+
 	def on_pre_enter(self):
 		ShellBase.on_pre_enter(self)
 		bat.event.Event('SetCameraType', 'PathCamera').send()
@@ -437,7 +440,7 @@ class BottleCap(ShellBase):
 	L_JUMP = 2   # Jumping
 
 	def __init__(self, old_owner):
-		ShellBase.__init__(self, old_owner)
+		ShellBase.__init__(self, old_owner, {'Salt'})
 
 		self.direction_mapper = bat.impulse.DirectionMapperViewGlobal()
 
@@ -544,7 +547,7 @@ class Thimble(ShellBase):
 	NORMAL_SPEED = 0.08
 
 	def __init__(self, old_owner):
-		ShellBase.__init__(self, old_owner)
+		ShellBase.__init__(self, old_owner, {'Salt', 'Piercing'})
 		self.mesh = self.children['Thimble_Mesh']
 
 		self.attitude = Scripts.attitude.SurfaceAttitude(self,

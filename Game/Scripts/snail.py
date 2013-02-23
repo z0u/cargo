@@ -87,7 +87,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	shell = bat.containers.weakprop('shell')
 
 	def __init__(self, old_owner):
-		Scripts.director.VulnerableActor.__init__(self, maxHealth=7)
+		Scripts.director.VulnerableActor.__init__(self, {}, maxHealth=7)
 		Snail.log.info("Creating Snail in %s", self.scene)
 
 		# Initialise state.

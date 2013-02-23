@@ -315,6 +315,20 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
 		self.hide()
 
+	def get_game_scene(self):
+		'''
+		Return the scene that conatins the main character, or any scene other
+		than this scene, or None if this is the only scene.
+		'''
+		main_char = Scripts.director.Director().mainCharacter
+		if main_char is not None:
+			return main_char.scene
+
+		own_scene = self.scene
+		for sce in bge.logic.getSceneList():
+			if sce is not own_scene:
+				return sce
+
 	def show(self):
 		# Frame is visible immediately; button is shown later.
 		self.set_selected_option(0)
@@ -333,6 +347,11 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		self.frame.setVisible(True, True)
 		self.accepting_input = True
 
+		# Pause game scene
+		other_scene = self.get_game_scene()
+		if other_scene is not None:
+			other_scene.suspend()
+
 	def hide(self):
 		self.set_selected_option(None)
 		self.canvas1['Content'] = ""
@@ -349,6 +368,11 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
 		self.accepting_input = False
 		self.set_state(QuitOptions.S_HIDE_UPDATE)
+
+		# Resume game scene
+		other_scene = self.get_game_scene()
+		if other_scene is not None:
+			other_scene.resume()
 
 	def set_selected_option(self, index):
 		self.selected_option = index

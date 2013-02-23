@@ -129,17 +129,25 @@ def init_conveyor(c):
 	crusher2rot.playAction('ConveyorCrusher_RotAction', 1, 91,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 
-def flower_head_init(c):
-	try:
-		evt = bat.event.EventBus().read_last('GravityChanged')
-	except KeyError:
-		log.warn("Gravity has not been set. Flower may fall at incorrect rate.")
+def spawn_flower_head(c):
+	if not c.sensors[0].positive:
 		return
-	act = c.actuators[0]
-	accel = evt.body.copy()
-	accel.negate()
-	accel *= 0.5
-	act.force = accel
+	sce = bge.logic.getCurrentScene()
+	rnd = mathutils.noise.random()
+	templates = ('FlowerDaisyHead', 'FlowerBellHead', 'FlowerPinkHead')
+	i = min(int(len(templates) * rnd), len(templates))
+	template = templates[i]
+	instance = sce.addObject(template, c.owner, 1000)
+	instance.worldLinearVelocity.z -= 10
+	orn = mathutils.Vector((0, 0, 1.0)) + mathutils.noise.random_unit_vector()
+	orn.normalize()
+	instance.alignAxisToVect(orn, 2)
+
+def flower_crush(c):
+	if not c.sensors[0].positive:
+		return
+	target = c.sensors[0].hitObject['CrushAmount']
+	c.owner.localScale.z = bat.bmath.lerp(c.owner.localScale.z, target, 0.1)
 
 
 def rubber_band_sound(c):

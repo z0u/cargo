@@ -547,9 +547,17 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	L_DISPLAY = 0
 
+	TRIVIA = [
+		"Did you know, snails have only one foot!",
+		"Did you know, snails have very wet skin. They don't like salt because it dries them out.",
+		"Did you know, most land snails are hermaphrodites - which means each one is male and female at the same time.",
+		]
+
 	def __init__(self, old_owner):
 		# Default state (frame 1) is for everything to be shown.
 		self.currently_shown = True
+
+		self.canvas = bat.bats.mutate(self.childrenRecursive['LS_TextCanvas'])
 
 		# Send an event to say that loading has finished. This will trigger the
 		# loading screen to hide itself, unless another object has already sent
@@ -566,6 +574,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	def show(self, visible, cbEvent):
 		icon = self.children["LS_Icon"]
 		blackout = self.children["LS_Blackout"]
+		loading_text = self.children["LS_LoadingText"]
 
 		if visible and not self.currently_shown:
 			# Show the frame immediately, but wait for the animation to finish
@@ -573,7 +582,9 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 			def cb():
 				if self.invalid or not self.currently_shown:
 					return
-				self.children["LS_Icon"].visible = True
+				icon.visible = True
+				loading_text.visible = True
+				self.canvas.set_text(self.get_random_trivia())
 				if cbEvent is not None:
 					print("Sending delayed event", cbEvent)
 					cbEvent.send(delay=2)
@@ -588,13 +599,21 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 			def cb():
 				if self.invalid or self.currently_shown:
 					return
-				self.children["LS_Blackout"].visible = False
+				blackout.visible = False
 				if cbEvent is not None:
 					cbEvent.send(delay=2)
 			icon.visible = False
+			loading_text.visible = False
+			self.canvas.set_text('')
 			self.playAction('LS_Hide_Arm', 1, 16, layer=LoadingScreen.L_DISPLAY)
 			bat.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)
 			self.currently_shown = False
+
+	def get_random_trivia(self):
+		rnd = bge.logic.getRandomFloat()
+		i = int(len(LoadingScreen.TRIVIA) / rnd)
+		i %= len(LoadingScreen.TRIVIA)
+		return LoadingScreen.TRIVIA[i]
 
 
 class Filter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
@@ -658,6 +677,18 @@ def test_game_mode():
 	else:
 		__mode = 'Playing'
 	bat.event.Event('GameModeChanged', __mode).send()
+
+__ls_visible = False
+@bat.utils.all_sensors_positive
+@bat.utils.controller
+def test_loading_screen(c):
+	global __ls_visible
+	if __ls_visible:
+		__ls_visible = False
+		bat.event.Event('FinishLoading', c.owner).send()
+	else:
+		__ls_visible = True
+		bat.event.Event('StartLoading', c.owner).send()
 
 class Gauge(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	S_INIT = 1

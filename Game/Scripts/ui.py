@@ -305,6 +305,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		self.frame = self.childrenRecursive['QOpt_Frame']
 		self.cursor = self.childrenRecursive['QOpt_OptionCursor']
 		self.cursor_mesh = self.childrenRecursive['QOpt_OptionCursorMesh']
+		self.filter = self.childrenRecursive['QOpt_Filter']
 
 		self.options = None
 		self.accepting_input = False
@@ -340,11 +341,14 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 				QuitOptions.ARM_SHOW_FRAME)
 		self.frame.playAction('DB_FrameVis', start,
 				QuitOptions.ARM_SHOW_FRAME)
+		self.filter.playAction('QOpt_FilterAction', start,
+				QuitOptions.ARM_SHOW_FRAME)
 		self.cursor_mesh.playAction('ButtonPulse', 1, 50,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 		self.cursor.setVisible(True, True)
 		# Frame is shown immediately.
 		self.frame.setVisible(True, True)
+		self.filter.setVisible(True, True)
 		self.accepting_input = True
 
 		# Pause game scene
@@ -361,6 +365,8 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		self.armature.playAction('DialogueBoxBoing', start,
 				QuitOptions.ARM_HIDE_FRAME)
 		self.frame.playAction('DB_FrameVis', start,
+				QuitOptions.ARM_HIDE_FRAME)
+		self.filter.playAction('QOpt_FilterAction', start,
 				QuitOptions.ARM_HIDE_FRAME)
 		self.cursor_mesh.stopAction(DialogueBox.L_DISPLAY)
 		self.cursor.setVisible(False, True)
@@ -460,6 +466,14 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 			opt = self.selected_option - 1
 		opt %= QuitOptions.NUM_OPTS
 		self.set_selected_option(opt)
+
+	@bat.bats.expose
+	def hide_update(self):
+		if self.armature.getActionFrame() < 2:
+			self.armature.setVisible(False, True)
+			self.frame.setVisible(False, True)
+			self.filter.setVisible(False, True)
+			self.set_state(QuitOptions.S_IDLE)
 
 
 class Marker(bat.bats.BX_GameObject, bge.types.KX_GameObject):

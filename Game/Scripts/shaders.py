@@ -27,7 +27,7 @@ import bat.store
 import bat.utils
 import bat.render
 
-DEBUG = False
+DEBUG = True
 DEBUG_LINE_NUMBERS = True
 
 LAMPDIR = (0.0, 0.0, 1.0)
@@ -657,7 +657,7 @@ def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 		// This is pretty close to Blender's "Inverse quadratic" mist.
 		float mist_fac = pow(clamp(position.z / mist_depth, 0.0, 1.0), 0.25);
 		vec3 misted = mix(gl_FragColor.xyz, mist_colour, mist_fac);
-		gl_FragColor.xyz = mix(gl_FragColor.rgb, misted, 1);
+		gl_FragColor.xyz = mix(gl_FragColor.rgb, misted, 1.0);
 	}
 	""")
 	return frag.substitute(model=model, light_header=light_header,

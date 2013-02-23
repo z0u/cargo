@@ -148,8 +148,7 @@ def rubber_band_sound(c):
 		sample = bat.sound.Sample(
 				'//Sound/cc-by/RubberBandRub1.ogg',
 				'//Sound/cc-by/RubberBandRub2.ogg',
-				'//Sound/cc-by/RubberBandRub3.ogg',
-				'//Sound/cc-by/RubberBandRub4.ogg')
+				'//Sound/cc-by/RubberBandRub3.ogg')
 		sample.volume = 0.7
 		sample.add_effect(bat.sound.Localise(c.owner, distmax=70))
 		sample.pitchmin = 0.9

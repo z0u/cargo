@@ -62,6 +62,9 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 	S_GRASPED  = 5 # Liked CARRIED, but not carried by a snail.
 	S_ALWAYS   = 16
 
+	S_MOBILE = 19
+	S_SHOCKED = 20
+
 	snail = bat.containers.weakprop('snail')
 
 	def __init__(self, old_owner):
@@ -77,6 +80,8 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 		self['_DefaultLookAt'] = self['LookAt']
 		self.set_state(ShellBase.S_IDLE)
 		self.add_state(ShellBase.S_ALWAYS)
+
+		self.damage_tracker = Scripts.director.DamageTracker()
 
 		bat.event.EventBus().add_listener(self)
 
@@ -125,6 +130,7 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 		'''Called when a snail enters this shell (just after
 		control is transferred).'''
 		self.set_state(ShellBase.S_OCCUPIED)
+		self.add_state(ShellBase.S_MOBILE)
 		self.add_state(ShellBase.S_ALWAYS)
 
 		bat.impulse.Input().add_handler(self)
@@ -176,6 +182,23 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
 			return
 		Scripts.director.Actor._save_location(self, pos, orn)
 		self.snail._save_location(pos, orn)
+
+	@bat.bats.expose
+	@bat.utils.controller_cls
+	def damage(self, c):
+		if not self.is_occupied:
+			return
+
+		damage, shock, respawn = self.damage_tracker.attack(c.sensors[0].hitObjectList)
+		if damage != 0:
+			self.snail.damage(damage)
+
+		if respawn:
+			self.snail.respawn()
+		elif shock:
+			self.add_state(ShellBase.S_SHOCKED)
+			self.rem_state(ShellBase.S_MOBILE)
+			self.localLinearVelocity.z += 20
 
 	def respawn(self):
 		if self.is_occupied:
@@ -518,9 +541,6 @@ class Thimble(ShellBase):
 
 	_prefix = 'Th_'
 
-	S_CRAWLING = 19
-	S_SHOCKED = 20
-
 	NORMAL_SPEED = 0.08
 
 	def __init__(self, old_owner):
@@ -536,19 +556,15 @@ class Thimble(ShellBase):
 		self.direction_mapper_joystick = bat.impulse.DirectionMapperViewLocal()
 		self.engine = Scripts.attitude.Engine(self)
 
-		self.damage_tracker = Scripts.director.DamageTracker()
-
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'GravityChanged')
 
 	def on_entered(self):
 		ShellBase.on_entered(self)
-		self.add_state(Thimble.S_CRAWLING)
 		self.disableRigidBody()
 
 	def on_exited(self):
 		self.enableRigidBody()
-		self.rem_state(Thimble.S_CRAWLING)
 		ShellBase.on_exited(self)
 
 	def on_event(self, evt):
@@ -559,23 +575,6 @@ class Thimble(ShellBase):
 			self.actuators['aAntiGravity'].force = antiG
 			# Artificial gravity is applied in local coordinates.
 			self.actuators['aArtificialGravity'].force = evt.body
-
-	@bat.bats.expose
-	@bat.utils.controller_cls
-	def damage(self, c):
-		if not self.is_occupied:
-			return
-
-		damage, shock, respawn = self.damage_tracker.attack(c.sensors[0].hitObjectList)
-		if damage != 0:
-			self.snail.damage(damage)
-
-		if respawn:
-			self.snail.respawn()
-		elif shock:
-			self.add_state(Thimble.S_SHOCKED)
-			self.rem_state(Thimble.S_CRAWLING)
-			self.localLinearVelocity.z += 20
 
 	@bat.bats.expose
 	def orient(self):

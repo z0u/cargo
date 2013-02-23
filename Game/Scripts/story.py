@@ -173,11 +173,8 @@ class Level(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		# Adjust gravity to be appropriate for the size of the scene..
 		g = mathutils.Vector((0.0, 0.0, 0 - GRAVITY))
 		bge.logic.setGravity(g)
-		evt = bat.event.Event('GravityChanged', g)
-		bat.event.EventBus().notify(evt)
-
-		evt = bat.event.Event('GameModeChanged', 'Playing')
-		bat.event.EventBus().notify(evt)
+		bat.event.Event('GravityChanged', g).send()
+		bat.event.Event('GameModeChanged', 'Playing').send()
 
 class GameLevel(Level):
 	'''A level that is part of the main game. Handles things such as spawn
@@ -203,6 +200,18 @@ class GameLevel(Level):
 		self.set_map()
 
 		bat.event.EventBus().add_listener(self)
+
+		if 'InitCamera' in self.scene.objects:
+			log.info('Setting initial camera location to cache shaders')
+			init_cam = self.scene.objects['InitCamera']
+			init_cam['InstantCut'] = 'BOTH'
+			init_cam['Priority'] = 2
+			# Make sure the loading screen stays until one frame has been
+			# rendered by the init camera.
+			bat.event.Event('StartLoading', self).send()
+			bat.event.Event('AddCameraGoal', 'InitCamera').send(2)
+			bat.event.Event('FinishLoading', self).send(3)
+			bat.event.Event('RemoveCameraGoal', 'InitCamera').send(4)
 
 	def spawn(self):
 		scene = bge.logic.getCurrentScene()

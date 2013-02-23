@@ -44,6 +44,7 @@ class ShaderCtrl(metaclass=bat.bats.Singleton):
 		self.shaders = set()
 #		self.set_mist_colour(mathutils.Vector((1.0, 1.0, 1.0)))
 #		self.set_mist_colour(mathutils.Vector((0.729, 0.729, 0.745)))
+#		self.set_mist_colour(mathutils.Vector((0.503, 0.503, 0.527)))
 		self.set_mist_colour(mathutils.Vector((0.485, 0.491, 0.515)))
 		self.set_mist_depth(5000)
 
@@ -654,8 +655,8 @@ def create_frag_shader(model='PHONG', alpha='CLIP', twosided=False):
 		//		position.z / mist_depth);
 
 		// This is pretty close to Blender's "Inverse quadratic" mist.
-		float mist_fac = sqrt(position.z / (mist_depth * 0.8));
-		vec3 misted = mix(gl_FragColor.xyz, mist_colour, clamp(mist_fac, 0.0, 1.0));
+		float mist_fac = pow(clamp(position.z / mist_depth, 0.0, 1.0), 0.25);
+		vec3 misted = mix(gl_FragColor.xyz, mist_colour, mist_fac);
 		gl_FragColor.xyz = mix(gl_FragColor.rgb, misted, 1);
 	}
 	""")

@@ -4,3 +4,8 @@
    tree in the level, it is essential that all leaf instances are controlled by
    that tree. If explicit instances are placed around the level, e.g. in
    SpiderIsle or CargoHouse, the shaders will not match the baked LoD tree.
+
+== Materials ==
+ - UV layers are determined by the texture slots. If you're using a nodal
+   material, the BASE material needs to have texture slots with UV layers
+   assigned if you want to use more than one layer!

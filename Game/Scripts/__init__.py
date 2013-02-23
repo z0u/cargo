@@ -85,9 +85,9 @@ def configure_controls():
 	btn_cam.sensors.append(bat.impulse.KeyboardSensor(bge.events.CKEY))
 	btn_cam.sensors.append(bat.impulse.JoystickButtonSensor(0))
 
-	btn_cam = bat.impulse.Button("Start", 's')
-	btn_cam.sensors.append(bat.impulse.KeyboardSensor(bge.events.ESCKEY))
-	btn_cam.sensors.append(bat.impulse.JoystickButtonSensor(9))
+	btn_start = bat.impulse.Button("Start", 's')
+	btn_start.sensors.append(bat.impulse.KeyboardSensor(bge.events.ESCKEY))
+	btn_start.sensors.append(bat.impulse.JoystickButtonSensor(9))
 
 	ip = bat.impulse.Input()
 	ip.clear_buttons()
@@ -97,6 +97,7 @@ def configure_controls():
 	ip.add_button(btn1)
 	ip.add_button(btn2)
 	ip.add_button(btn_cam)
+	ip.add_button(btn_start)
 
 	# Cheats!
 	bat.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))

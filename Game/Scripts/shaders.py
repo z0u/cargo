@@ -27,7 +27,7 @@ import bat.store
 import bat.utils
 import bat.render
 
-DEBUG = True
+DEBUG = False
 DEBUG_LINE_NUMBERS = True
 
 LAMPDIR = (0.0, 0.0, 1.0)

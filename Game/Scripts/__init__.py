@@ -85,6 +85,10 @@ def configure_controls():
 	btn_cam.sensors.append(bat.impulse.KeyboardSensor(bge.events.CKEY))
 	btn_cam.sensors.append(bat.impulse.JoystickButtonSensor(0))
 
+	btn_cam = bat.impulse.Button("Start", 's')
+	btn_cam.sensors.append(bat.impulse.KeyboardSensor(bge.events.ESCKEY))
+	btn_cam.sensors.append(bat.impulse.JoystickButtonSensor(9))
+
 	ip = bat.impulse.Input()
 	ip.clear_buttons()
 	ip.add_button(movement)

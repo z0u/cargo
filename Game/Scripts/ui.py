@@ -68,6 +68,7 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 	ARM_HIDE_FRAME = 1
 	ARM_SHOW_FRAME = 8
 
+	NUM_OPTS = 2
 	OPT_0_FRAME = 1
 	OPT_1_FRAME = 3
 
@@ -249,11 +250,12 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 	def switch_option(self, nxt):
 		if not self.options_visible or self.options is None:
 			return
-		# Only two options anyway.
 		if nxt:
-			self.set_selected_option(1)
+			opt = self.selected_option + 1
 		else:
-			self.set_selected_option(0)
+			opt = self.selected_option - 1
+		opt %= DialogueBox.NUM_OPTS
+		self.set_selected_option(opt)
 
 	@bat.bats.expose
 	def show_update(self):
@@ -267,6 +269,173 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 			self.response.setVisible(False, True)
 			self.armature.setVisible(False, True)
 			self.set_state(DialogueBox.S_IDLE)
+
+
+
+class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'QO_'
+
+	log = logging.getLogger(__name__ + 'QuitOptions')
+
+	# Animation layers
+	L_DISPLAY = 0
+
+	ARM_HIDE_FRAME = 1
+	ARM_SHOW_FRAME = 8
+
+	NUM_OPTS = 3
+	OPT_0_FRAME = 1
+	OPT_1_FRAME = 3
+	OPT_2_FRAME = 5
+
+	# States
+	S_INIT = 1
+	S_HIDE_UPDATE = 2
+	S_SHOW_UPDATE = 3
+	S_IDLE = 4
+
+	def __init__(self, old_owner):
+		self.canvas1 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.0'])
+		self.canvas2 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.1'])
+		self.canvas3 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.2'])
+		self.canvas1['colour'] = '#9999ff'
+		self.canvas2['colour'] = '#ffbb99'
+		self.canvas3['colour'] = '#ff9999'
+		self.armature = self.childrenRecursive['QOpt_FrameArmature']
+		self.frame = self.childrenRecursive['QOpt_Frame']
+		self.cursor = self.childrenRecursive['QOpt_OptionCursor']
+		self.cursor_mesh = self.childrenRecursive['QOpt_OptionCursorMesh']
+
+		self.options = None
+		self.accepting_input = False
+		self.set_selected_option(None)
+		self.set_state(QuitOptions.S_IDLE)
+
+		bat.impulse.Input().add_handler(self, 'MENU')
+
+		self.hide()
+
+	def show(self):
+		# Frame is visible immediately; button is shown later.
+		self.set_selected_option(0)
+		self.canvas1['Content'] = "Resume (cancel)"
+		self.canvas2['Content'] = "Quit to main menu"
+		self.canvas3['Content'] = "Quit game"
+		start = self.armature.getActionFrame()
+		self.armature.playAction('DialogueBoxBoing', start,
+				QuitOptions.ARM_SHOW_FRAME)
+		self.frame.playAction('DB_FrameVis', start,
+				QuitOptions.ARM_SHOW_FRAME)
+		self.cursor_mesh.playAction('ButtonPulse', 1, 50,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+		self.cursor.setVisible(True, True)
+		# Frame is shown immediately.
+		self.frame.setVisible(True, True)
+		self.accepting_input = True
+
+	def hide(self):
+		self.set_selected_option(None)
+		self.canvas1['Content'] = ""
+		self.canvas2['Content'] = ""
+		self.canvas3['Content'] = ""
+		start = self.armature.getActionFrame()
+		self.armature.playAction('DialogueBoxBoing', start,
+				QuitOptions.ARM_HIDE_FRAME)
+		self.frame.playAction('DB_FrameVis', start,
+				QuitOptions.ARM_HIDE_FRAME)
+		self.cursor_mesh.stopAction(DialogueBox.L_DISPLAY)
+		self.cursor.setVisible(False, True)
+		# Frame is hidden at end of animation in hide_update.
+
+		self.accepting_input = False
+		self.set_state(QuitOptions.S_HIDE_UPDATE)
+
+	def set_selected_option(self, index):
+		self.selected_option = index
+		start = self.cursor.getActionFrame()
+		if index == 2:
+			end = QuitOptions.OPT_2_FRAME
+		elif index == 1:
+			end = QuitOptions.OPT_1_FRAME
+		else:
+			end = QuitOptions.OPT_0_FRAME
+		self.cursor.playAction('QOpt_OptionCursorMove', start, end,
+				layer=QuitOptions.L_DISPLAY)
+
+	def can_handle_input(self, state):
+		# Stop player from doing anything else while dialogue is up.
+		if state.name == 'Start':
+			return True
+		else:
+			return self.accepting_input
+
+	def handle_input(self, state):
+		if state.name == 'Start':
+			self.handle_bt_start(state)
+		elif state.name == 'Movement':
+			self.handle_movement(state)
+		elif state.name == '1':
+			self.handle_bt_1(state)
+		elif state.name == '2':
+			self.handle_bt_2(state)
+		elif state.name == 'Switch':
+			self.handle_switch(state)
+
+	def handle_bt_start(self, state):
+		if not state.activated:
+			return
+		if not self.accepting_input:
+			self.show()
+		else:
+			self.hide()
+
+	def handle_bt_1(self, state):
+		'''Hide the dialogue, and inform listeners which option was chosen.'''
+		if not self.accepting_input:
+			return
+
+		if state.activated:
+			if self.selected_option == 2:
+				QuitOptions.log.info('Quitting immediately.')
+				bge.logic.endGame()
+			elif self.selected_option == 1:
+				QuitOptions.log.info('Returning to main menu.')
+				bge.logic.startGame('//Cargo.blend')
+			else:
+				QuitOptions.log.info('Resuming game.')
+				self.hide()
+
+	def handle_bt_2(self, state):
+		'''Hide the dialogue, and suggest that the dialogue be skipped.'''
+		if not self.accepting_input:
+			return
+
+		if state.activated:
+			self.hide()
+
+	def handle_switch(self, state):
+		if not state.triggered:
+			return
+		if state.direction > 0.1:
+			self.switch_option(True)
+		elif state.direction < -0.1:
+			self.switch_option(False)
+
+	def handle_movement(self, state):
+		if not state.triggered:
+			return
+		if state.direction.y > 0.1:
+			self.switch_option(False)
+		elif state.direction.y < -0.1:
+			self.switch_option(True)
+
+	def switch_option(self, nxt):
+		if nxt:
+			opt = self.selected_option + 1
+		else:
+			opt = self.selected_option - 1
+		opt %= QuitOptions.NUM_OPTS
+		self.set_selected_option(opt)
 
 
 class Marker(bat.bats.BX_GameObject, bge.types.KX_GameObject):

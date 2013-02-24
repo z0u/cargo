@@ -474,6 +474,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = s.create_successor('Strand ant')
 		s.add_action(bat.story.ActAttrSet('visible', True, target_descendant="Ant_Body"))
 		s.add_action(bat.story.ActAction('Ant_Stranded', 1, 1, Ant.L_ANIM))
+		s.add_event('SpawnShell', 'Thimble')
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("ApproachAnt", self))

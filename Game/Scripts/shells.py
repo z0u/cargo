@@ -26,10 +26,11 @@ import bat.containers
 import bat.event
 import bat.bmath
 import bat.sound
+import bat.impulse
 
 import Scripts.director
-import bat.impulse
 import Scripts.inventory
+import Scripts.attitude
 
 ZAXIS = mathutils.Vector((0.0, 0.0, 1.0))
 EPSILON = 0.001
@@ -611,4 +612,32 @@ def spawn_shell(c):
 
 	shell = factory(o["shell"])
 	bat.bmath.copy_transform(o, shell)
-	shell.anchor(c.owner)
+	shell.anchor(o)
+
+
+class DynamicSpawnPoint(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+	'''
+	Like spawn_shell(), but only spawns when the appropriate SpawnShell event is
+	received.
+	'''
+
+	log = logging.getLogger(__name__ + '.DynamicSpawnPoint')
+
+	def __init__(self, old_owner):
+		bat.event.EventBus().add_listener(self)
+		bat.event.EventBus().replay_last(self, 'SpawnShell')
+
+	def on_event(self, evt):
+		if evt.message == 'SpawnShell':
+			if evt.body != self['shell']:
+				return
+			self.try_spawn(evt.body)
+
+	def try_spawn(self, shell_type):
+		DynamicSpawnPoint.log.info('Spawning %s', shell_type)
+		if shell_type in Scripts.inventory.Shells().get_shells():
+			# Player has already picked up this shell.
+			return
+		shell = factory(shell_type)
+		bat.bmath.copy_transform(self, shell)
+		shell.anchor(self)

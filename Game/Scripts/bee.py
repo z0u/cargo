@@ -83,12 +83,19 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		# Approach target
 		cpos = self.worldPosition
-		accel = (next_point - cpos).normalized() * WorkerBee.ACCEL
-		accel += self.lift
+		base_accel = (next_point - cpos).normalized()
+		accel =  (base_accel * WorkerBee.ACCEL) + self.lift
 		pos, vel = bat.bmath.integrate(cpos, self.worldLinearVelocity,
 			accel, WorkerBee.DAMP)
+
+#		bge.render.drawLine(pos, pos + vel * 20, (0, 0, 1))
 		self.worldPosition = pos
 		self.worldLinearVelocity = vel
+
+		# Orientation: z-up, y-back
+		self.alignAxisToVect((0,0,1), 2)
+		vel.negate()
+		self.alignAxisToVect(vel, 1)
 
 	@bat.utils.controller_cls
 	def get_nearby_snail(self, c):

@@ -18,6 +18,7 @@
 
 import time
 import logging
+import random
 
 import bge
 import mathutils
@@ -565,6 +566,9 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 		"Did you know, snails have only one foot!",
 		"Did you know, snails have very wet skin. They don't like salt because it dries them out.",
 		"Did you know, most land snails are hermaphrodites - which means each one is male and female at the same time.",
+		"Did you know, snail shells are made of calcium carbonate, like egg shells and coral.",
+		"Did you know, snail shells provide protection against predators.",
+		"Did you know, snails can see, feel and smell - but they are deaf.",
 		]
 
 	def __init__(self, old_owner):
@@ -624,7 +628,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 			self.currently_shown = False
 
 	def get_random_trivia(self):
-		rnd = bge.logic.getRandomFloat()
+		rnd = random.random()
 		i = int(len(LoadingScreen.TRIVIA) / rnd)
 		i %= len(LoadingScreen.TRIVIA)
 		return LoadingScreen.TRIVIA[i]

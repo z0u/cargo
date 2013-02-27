@@ -140,5 +140,5 @@ RubberBandTwang.ogg
 RubberBandRub*.ogg
     - 41369 by UncleSigmund
 
-BeeBuzz*.ogg
+BeeBuzz.ogg
     - 120649 by dobroide

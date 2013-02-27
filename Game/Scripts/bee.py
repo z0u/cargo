@@ -59,12 +59,7 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.hint = 0
 		self.set_lift(mathutils.Vector((0.0, 0.0, -9.8)))
 
-		self.buzz_sound = bat.sound.Sample()
-		self.buzz_sound.source = bat.sound.PermuteMusicSource(
-				'//Sound/cc-by/BeeBuzz1.ogg',
-				'//Sound/cc-by/BeeBuzz2.ogg',
-				'//Sound/cc-by/BeeBuzz3.ogg',
-				'//Sound/cc-by/BeeBuzz4.ogg',)
+		self.buzz_sound = bat.sound.Sample('//Sound/cc-by/BeeBuzz.ogg')
 		self.buzz_sound.add_effect(bat.sound.Localise(self, distmax=100))
 
 		bat.event.EventBus().add_listener(self)

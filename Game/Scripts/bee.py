@@ -24,6 +24,8 @@ import bat.containers
 import bat.event
 import bat.utils
 
+DEBUG = True
+
 def spawn(c):
 	sce = bge.logic.getCurrentScene()
 	bee = factory(sce)
@@ -44,9 +46,11 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	_prefix = 'WB_'
 
 	LIFT_FAC = 1.0
-	ACCEL = 0.05
-	DAMP = 0.05
-	RELAX_DIST = 10.0
+	ACCEL = 0.1
+	DAMP = 0.1
+	RELAX_DIST = 5.0
+	NOISE_FAC = 0.05
+	NOISE_SCALE = 0.1
 
 	path = bat.containers.weakprop('path')
 
@@ -82,20 +86,28 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			next_point = self.get_next_waypoint()
 
 		# Approach target
-		cpos = self.worldPosition
+		cpos = self.worldPosition.copy()
 		base_accel = (next_point - cpos).normalized()
 		accel =  (base_accel * WorkerBee.ACCEL) + self.lift
+#		accel += mathutils.noise.random_unit_vector() * WorkerBee.RANDOM_FAC
+		noise_vec = mathutils.noise.noise_vector(cpos * WorkerBee.NOISE_SCALE)
+		accel += noise_vec * WorkerBee.NOISE_FAC
 		pos, vel = bat.bmath.integrate(cpos, self.worldLinearVelocity,
 			accel, WorkerBee.DAMP)
 
-#		bge.render.drawLine(pos, pos + vel * 20, (0, 0, 1))
+		if DEBUG:
+			bge.render.drawLine(pos, next_point, (0, 0, 1))
+			bge.render.drawLine(pos, pos + noise_vec * 20, (1, 0, 0))
+			bge.render.drawLine(pos, pos + vel * 20, (0, 1, 0))
+
 		self.worldPosition = pos
 		self.worldLinearVelocity = vel
 
 		# Orientation: z-up, y-back
-		self.alignAxisToVect((0,0,1), 2)
+		upvec = noise_vec * 0.5 + bat.bmath.ZAXIS
+		self.alignAxisToVect(upvec, 2)
 		vel.negate()
-		self.alignAxisToVect(vel, 1)
+		self.alignAxisToVect(vel, 1, 0.3)
 
 	@bat.utils.controller_cls
 	def get_nearby_snail(self, c):
@@ -117,14 +129,26 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 class DirectedPath(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
-	DEFAULT_STRIDE = 2
+	MIN_DIST = 2
 
 	def __init__(self, old_owner):
-		self.set_default_prop('stride', DirectedPath.DEFAULT_STRIDE)
+		pass
 
 	def init_path(self):
 		mat = self.worldTransform.copy()
-		self.path = [mat * v.XYZ for v in bat.utils.iterate_verts(self)]
+#		path = [mat * v.XYZ for v in bat.utils.iterate_all_verts_by_poly(self)]
+		path = [mat * v.XYZ for v in bat.utils.iterate_verts(self)]
+		self.path = []
+		for v1 in path:
+			dup = False
+			for v2 in self.path:
+				if (v1 - v2).magnitude < DirectedPath.MIN_DIST:
+					dup = True
+					break
+
+			if not dup:
+				self.path.append(v1)
+		self.path = self.path[1:]
 
 	def get_next(self, pos, relax_dist, hint=0):
 		try:
@@ -132,9 +156,12 @@ class DirectedPath(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		except AttributeError:
 			self.init_path()
 
+		if DEBUG:
+			bat.render.draw_polyline(self.path, (1,0,1), cyclic=True)
+
 		# Find the first node beyond the relax length
 		nnodes = len(self.path)
-		for i in range(0, nnodes, self['stride']):
+		for i in range(0, nnodes):
 			index = (i + hint) % nnodes
 			vert = self.path[index]
 			dist = (vert - pos).magnitude

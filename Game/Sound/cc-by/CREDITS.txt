@@ -70,6 +70,10 @@ substitute it into this URL:
         By UncleSigmund (http://www.freesound.org/people/UncleSigmund/)
             wetrubber.wav - 41369 - CC-0
 
+    Feb 27, 2013
+        By dobroide (http://www.freesound.org/people/dobroide/)
+            20110505_solitary.bee.flac - 120649 - CC-BY
+
 
 == Sample catalogue ==
 These are sounds created from various samples. The IDs link to the samples above. All were remixed by Alex Fraser.
@@ -135,3 +139,6 @@ RubberBandTwang.ogg
 
 RubberBandRub*.ogg
     - 41369 by UncleSigmund
+
+BeeBuzz*.ogg
+    - 120649 by dobroide

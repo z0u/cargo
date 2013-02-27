@@ -59,6 +59,14 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.hint = 0
 		self.set_lift(mathutils.Vector((0.0, 0.0, -9.8)))
 
+		self.buzz_sound = bat.sound.Sample()
+		self.buzz_sound.source = bat.sound.PermuteMusicSource(
+				'//Sound/cc-by/BeeBuzz1.ogg',
+				'//Sound/cc-by/BeeBuzz2.ogg',
+				'//Sound/cc-by/BeeBuzz3.ogg',
+				'//Sound/cc-by/BeeBuzz4.ogg',)
+		self.buzz_sound.add_effect(bat.sound.Localise(self, distmax=100))
+
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, 'GravityChanged')
 
@@ -74,6 +82,8 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	@bat.bats.expose
 	def fly(self):
+		self.sound_update()
+
 		if self.path is None:
 			print("Warning: bee has no path.")
 			return
@@ -126,6 +136,15 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		next_point, self.hint = self.path.get_next(cpos, WorkerBee.RELAX_DIST,
 				self.hint)
 		return next_point
+
+	def sound_update(self):
+		cam = self.scene.active_camera
+		if (cam.worldPosition - self.worldPosition).magnitude < 100:
+			if not self.buzz_sound.playing:
+				self.buzz_sound.play()
+		else:
+			if self.buzz_sound.playing:
+				self.buzz_sound.stop()
 
 class DirectedPath(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 

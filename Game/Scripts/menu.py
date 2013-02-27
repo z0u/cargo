@@ -35,7 +35,7 @@ CREDITS = [
 			"3bagbrew, FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, "
 			"qubodup, thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S, "
 			"batchku, satrebor, gherat, ZeSoundResearchInc., CGEffex, "
-			"UncleSigmund"),
+			"UncleSigmund, dobroide"),
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
 	("Made With", "Blender, Bullet, The GIMP and Inkscape")]
 

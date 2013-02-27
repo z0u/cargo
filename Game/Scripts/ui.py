@@ -658,7 +658,7 @@ class Filter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 class Indicator(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		self.fraction = 0.0
-		self.targetFraction = 1.0
+		self.targetFraction = 0.0
 		self.interpolator = bat.bmath.LinearInterpolatorAbsolute(1.0, self['Speed'])
 
 		bat.event.EventBus().add_listener(self)
@@ -680,12 +680,12 @@ class Indicator(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		frame = min(max(frame, 0), 100)
 		self['Frame'] = frame
 
-bat.event.Event("HealthSet", 0.0).send()
-bat.event.Event("HealthSet", 1.0).send(100)
-bat.event.Event("OxygenSet", 1.0).send()
-bat.event.Event("OxygenSet", 0.5).send(200)
+#bat.event.Event("HealthSet", 0.0).send()
+#bat.event.Event("HealthSet", 1.0).send(100)
+#bat.event.Event("OxygenSet", 1.0).send()
+#bat.event.Event("OxygenSet", 0.5).send(200)
 #bat.event.Event("TimeSet", 0.5).send()
-#bat.event.Event("TimeSet", 0.0).send(50)
+#bat.event.Event("TimeSet", 1.0).send(50)
 #bat.event.Event("TimeSet", 0.0).send(100)
 
 __mode = 'Playing'
@@ -972,11 +972,17 @@ class AttitudeMetre(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if self.has_state(self.S_VISIBLE):
 			self.set_state(self.S_HIDING)
 
+#bat.event.Event('ShellChanged', 'previous').send(100)
+#bat.event.Event('ShellChanged', 'previous').send(200)
+#bat.event.Event('ShellChanged', 'previous').send(300)
+
 class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	'''Displays the current shells in a scrolling view on the side of the
 	screen.'''
 
 	_prefix = 'Inv_'
+
+	log = logging.getLogger(__name__ + '.Inventory')
 
 	FRAME_STEP = 0.5
 	FRAME_EPSILON = 0.6
@@ -1004,11 +1010,9 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			if evt.body == 'new':
 				self.update_icons()
 			elif evt.body == 'next':
-				self['targetFrame'] = Inventory.FRAME_NEXT
-				self.set_state(Inventory.S_UPDATING)
+				self.next()
 			elif evt.body == 'previous':
-				self['targetFrame'] = Inventory.FRAME_PREVIOUS
-				self.set_state(Inventory.S_UPDATING)
+				self.previous()
 
 		elif evt.message == 'GameModeChanged':
 			if evt.body == 'Playing':
@@ -1016,8 +1020,16 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			else:
 				self.hide()
 
+	def next(self):
+		self.play_to(Inventory.FRAME_NEXT)
+		self.set_state(Inventory.S_UPDATING)
+
+	def previous(self):
+		self.play_to(Inventory.FRAME_PREVIOUS)
+		self.set_state(Inventory.S_UPDATING)
+
 	def show(self):
-		self['targetFrame'] = Inventory.FRAME_CENTRE
+		self.play_to(Inventory.FRAME_CENTRE)
 		self.set_state(Inventory.S_UPDATING)
 
 		background = self.scene.objects['I_Background']
@@ -1026,13 +1038,28 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 				Inventory.BG_FRAME_SHOW)
 
 	def hide(self):
-		self['targetFrame'] = Inventory.FRAME_HIDE
+		self.play_to(Inventory.FRAME_HIDE)
 		self.set_state(Inventory.S_UPDATING)
 
 		background = self.scene.objects['I_Background']
 		cfra = background.getActionFrame()
 		background.playAction('I_BackgroundAction', cfra,
 				Inventory.BG_FRAME_HIDE)
+
+	def play_to(self, target_frame):
+		cfra = self.getActionFrame()
+		Inventory.log.debug("Playing from %d to %d", cfra, target_frame)
+		self.playAction('InventoryItemAction', cfra, target_frame)
+		for i in range(-2, 3):
+			hook = self.children['I_IconHook_' + str(i)]
+			hook.playAction('I_IconHookAction_' + str(i), cfra, target_frame)
+
+	def jump_to(self, frame):
+		Inventory.log.debug("Jumping to %d", frame)
+		self.playAction('InventoryItemAction', frame, frame)
+		for i in range(-2, 3):
+			hook = self.children['I_IconHook_' + str(i)]
+			hook.playAction('I_IconHookAction_' + str(i), frame, frame)
 
 	def set_item(self, index, shellName):
 		hook = self.children['I_IconHook_' + str(index)]
@@ -1065,13 +1092,13 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	@bat.bats.expose
 	def update_frame(self):
-		if self['targetFrame'] > self['frame'] + Inventory.FRAME_EPSILON:
-			self['frame'] += Inventory.FRAME_STEP
-		elif self['targetFrame'] < self['frame'] - Inventory.FRAME_EPSILON:
-			self['frame'] -= Inventory.FRAME_STEP
-		elif not self['targetFrame'] == Inventory.FRAME_HIDE:
+		if self.isPlayingAction():
+			return
+		cfra = self.getActionFrame()
+		if not cfra == Inventory.FRAME_HIDE:
+			Inventory.log.debug("Finished")
+			self.jump_to(Inventory.FRAME_CENTRE)
 			self.update_icons()
-			self['frame'] = self['targetFrame'] = Inventory.FRAME_CENTRE
 			self.set_state(Inventory.S_IDLE)
 
 	def initialise_icon_pool(self):

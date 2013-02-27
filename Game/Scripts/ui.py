@@ -658,14 +658,15 @@ class Filter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 class Indicator(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	def __init__(self, old_owner):
 		self.fraction = 0.0
-		self.targetFraction = 0.0
+		self.targetFraction = 1.0
+		self.interpolator = bat.bmath.LinearInterpolatorAbsolute(1.0, self['Speed'])
 
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last(self, self['event'])
 
 	def on_event(self, evt):
 		if evt.message == self['event']:
-			self.targetFraction = evt.body
+			self.targetFraction = self.interpolator.target = evt.body
 			try:
 				self.parent.indicator_changed()
 			except AttributeError:
@@ -674,14 +675,15 @@ class Indicator(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	@bat.bats.expose
 	def update(self):
-		self.fraction = bat.bmath.lerp(self.fraction, self.targetFraction,
-			self['Speed'])
+		self.fraction = self.interpolator.interpolate(self.fraction)
 		frame = self.fraction * 100.0
 		frame = min(max(frame, 0), 100)
 		self['Frame'] = frame
 
-#bat.event.Event("HealthSet", 1.0).send()
-#bat.event.Event("OxygenSet", 1.0).send()
+bat.event.Event("HealthSet", 0.0).send()
+bat.event.Event("HealthSet", 1.0).send(100)
+bat.event.Event("OxygenSet", 1.0).send()
+bat.event.Event("OxygenSet", 0.5).send(200)
 #bat.event.Event("TimeSet", 0.5).send()
 #bat.event.Event("TimeSet", 0.0).send(50)
 #bat.event.Event("TimeSet", 0.0).send(100)

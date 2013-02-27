@@ -317,6 +317,14 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
 		self.hide()
 
+		bat.event.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'QuitGameFromQuitScreen':
+			bge.logic.endGame()
+		elif evt.message == 'ReturnToMenuFromQuitScreen':
+			bge.logic.startGame('//Cargo.blend')
+
 	def get_game_scene(self):
 		'''
 		Return the scene that conatins the main character, or any scene other
@@ -428,10 +436,14 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		if state.activated:
 			if self.selected_option == 2:
 				QuitOptions.log.info('Quitting immediately.')
-				bge.logic.endGame()
+				cb_event = bat.event.Event('QuitGameFromQuitScreen')
+				bat.event.Event('ShowLoadingScreen', (True, cb_event)).send()
+				self.hide()
 			elif self.selected_option == 1:
 				QuitOptions.log.info('Returning to main menu.')
-				bge.logic.startGame('//Cargo.blend')
+				cb_event = bat.event.Event('ReturnToMenuFromQuitScreen')
+				bat.event.Event('ShowLoadingScreen', (True, cb_event)).send()
+				self.hide()
 			else:
 				QuitOptions.log.info('Resuming game.')
 				self.hide()
@@ -560,6 +572,8 @@ class Marker(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	_prefix = 'LS_'
 
+	log = logging.getLogger(__name__ + '.LoadingScreen')
+
 	L_DISPLAY = 0
 
 	TRIVIA = [
@@ -586,10 +600,21 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 
 	def on_event(self, evt):
 		if evt.message == 'ShowLoadingScreen':
-			visible, cbEvent = evt.body
-			self.show(visible, cbEvent)
+			visible = False
+			cb_event = None
+			show_loading_text = False
+			if not hasattr(evt.body, '__getitem__') or len(evt.body) == 1:
+				visible = evt.body
+			elif len(evt.body) == 2:
+				visible, cb_event = evt.body
+			elif len(evt.body) == 3:
+				visible, cb_event, show_loading_text = evt.body
+			else:
+				LoadingScreen.log.error("Incorrect number of arguments attached to ShowLoadingScreen message.")
+				return
+			self.show(visible, cb_event, show_loading_text)
 
-	def show(self, visible, cbEvent):
+	def show(self, visible, cbEvent, show_loading_text):
 		icon = self.children["LS_Icon"]
 		blackout = self.children["LS_Blackout"]
 		loading_text = self.children["LS_LoadingText"]
@@ -601,8 +626,9 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 				if self.invalid or not self.currently_shown:
 					return
 				icon.visible = True
-				loading_text.visible = True
-				self.canvas.set_text(self.get_random_trivia())
+				if show_loading_text:
+					loading_text.visible = True
+					self.canvas.set_text(self.get_random_trivia())
 				if cbEvent is not None:
 					print("Sending delayed event", cbEvent)
 					cbEvent.send(delay=2)

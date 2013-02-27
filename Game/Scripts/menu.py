@@ -87,7 +87,7 @@ class SessionManager(metaclass=bat.bats.Singleton):
 			# Show the loading screen and send another message to start the game
 			# after the loading screen has shown.
 			cbEvent = bat.event.Event('LoadLevel')
-			bat.event.Event('ShowLoadingScreen', (True, cbEvent)).send()
+			bat.event.Event('ShowLoadingScreen', (True, cbEvent, True)).send()
 
 		elif event.message == 'LoadLevel':
 			# Load the level indicated in the save game. This is called after

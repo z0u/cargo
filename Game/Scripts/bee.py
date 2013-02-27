@@ -24,7 +24,7 @@ import bat.containers
 import bat.event
 import bat.utils
 
-DEBUG = True
+DEBUG = False
 
 def spawn(c):
 	sce = bge.logic.getCurrentScene()

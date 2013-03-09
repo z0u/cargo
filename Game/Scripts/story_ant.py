@@ -98,7 +98,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		self.pick.removeParent()
 
 	def get_focal_points(self):
-		return [self.children['Ant_Face'], self]
+		return [self.children['Ant_Face'], self.children['Ant_Centre']]
 
 	#########################
 	# Outdoors
@@ -478,8 +478,54 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("ApproachAnt", self))
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_event("StartLoading", self)
 
-		s_end = s.create_successor()
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
+		s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS_Front'))
+		s.add_event("TeleportSnail", "AntStranded_SnailTalkPos")
+		s.add_event("FinishLoading", self)
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_event("ShowDialogue", "Cargo! Am I glad to see you! I fell down, and now I'm stuck.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "I was obsessed by the honey. I drank it until I could drink no more.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Then I thought, I should take some home to my family, you know?")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "I took this thimble to use as a bucket...")
+	
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS'))
+		s.add_event("ShowDialogue", "... I feel like such a fool.")
+	
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "I can't walk through the honey: it's too sticky.")
+	
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS'))
+		s.add_event("ShowDialogue", "But I bet you could do it. Please, help me out!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_Front'))
+		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
+
+		s = s_end = s.create_successor()
+		s.add_action(Scripts.story.ActResumeInput())
 
 		return s_start, s_end
 

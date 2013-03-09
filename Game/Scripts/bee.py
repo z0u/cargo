@@ -52,6 +52,8 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	RELAX_DIST = 5.0
 	NOISE_FAC = 0.05
 	NOISE_SCALE = 0.1
+	ATTACK_DELAY = 120
+	MAX_SPEED = 0.75
 
 	path = bat.containers.weakprop('path')
 
@@ -60,6 +62,7 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.hint = 0
 		self.set_lift(mathutils.Vector((0.0, 0.0, -9.8)))
 		self.accel = mathutils.Vector((0, 0, 0))
+		self.attack_delay = 0
 
 		self.buzz_sound = bat.sound.Sample('//Sound/cc-by/BeeBuzz.ogg')
 		self.buzz_sound.add_effect(bat.sound.Localise(self, distmax=100))
@@ -86,9 +89,16 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			return
 
 		# Find target: either enemy or waypoint.
-		snail = self.get_nearby_snail()
-		if ATTACK and snail is not None:
-			next_point = snail.worldPosition
+		if self.attack_delay > 0:
+			self.attack_delay -= 1
+			enemy = None
+		elif ATTACK:
+			enemy = self.get_nearby_snail()
+		else:
+			enemy = None
+
+		if enemy is not None:
+			next_point = enemy.worldPosition
 		else:
 			next_point = self.get_next_waypoint()
 
@@ -99,7 +109,7 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		noise_vec = mathutils.noise.noise_vector(cpos * WorkerBee.NOISE_SCALE)
 		accel += noise_vec * WorkerBee.NOISE_FAC
 		pos, vel = bat.bmath.integrate(cpos, self.worldLinearVelocity,
-			accel, WorkerBee.DAMP)
+			accel, WorkerBee.DAMP, WorkerBee.MAX_SPEED)
 
 		if DEBUG:
 			bge.render.drawLine(pos, next_point, (0, 0, 1))
@@ -133,6 +143,10 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		next_point, self.hint = self.path.get_next(cpos, WorkerBee.RELAX_DIST,
 				self.hint)
 		return next_point
+
+	def on_attack(self):
+		'''Called by Scripts.director.DamageTracker on collision with snail.'''
+		self.attack_delay = WorkerBee.ATTACK_DELAY
 
 	def sound_update(self):
 		cam = self.scene.active_camera

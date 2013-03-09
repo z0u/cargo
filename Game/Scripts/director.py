@@ -285,6 +285,8 @@ class DamageTracker:
 				# This is shocking damage!
 				shock = True
 			damage += ob['Damage']
+			if hasattr(ob, 'on_attack'):
+				ob.on_attack()
 			self.attacker_ids[aid] = DamageTracker.DAMAGE_FREQUENCY
 			if 'Death' in ob:
 				force_respawn = True

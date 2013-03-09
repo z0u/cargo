@@ -351,6 +351,7 @@ def activate_portal(c):
 
 def set_spawn_point(c):
 	s = c.sensors[0]
+	log.debug("Spawn point %s", c.owner)
 	if not s.positive:
 		return
 	char = Scripts.director.Director().mainCharacter

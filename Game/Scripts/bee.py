@@ -25,6 +25,7 @@ import bat.event
 import bat.utils
 
 DEBUG = False
+ATTACK = True
 
 def spawn(c):
 	sce = bge.logic.getCurrentScene()
@@ -58,6 +59,7 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.path = None
 		self.hint = 0
 		self.set_lift(mathutils.Vector((0.0, 0.0, -9.8)))
+		self.accel = mathutils.Vector((0, 0, 0))
 
 		self.buzz_sound = bat.sound.Sample('//Sound/cc-by/BeeBuzz.ogg')
 		self.buzz_sound.add_effect(bat.sound.Localise(self, distmax=100))
@@ -85,7 +87,7 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		# Find target: either enemy or waypoint.
 		snail = self.get_nearby_snail()
-		if snail is not None:
+		if ATTACK and snail is not None:
 			next_point = snail.worldPosition
 		else:
 			next_point = self.get_next_waypoint()
@@ -94,7 +96,6 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		cpos = self.worldPosition.copy()
 		base_accel = (next_point - cpos).normalized()
 		accel =  (base_accel * WorkerBee.ACCEL) + self.lift
-#		accel += mathutils.noise.random_unit_vector() * WorkerBee.RANDOM_FAC
 		noise_vec = mathutils.noise.noise_vector(cpos * WorkerBee.NOISE_SCALE)
 		accel += noise_vec * WorkerBee.NOISE_FAC
 		pos, vel = bat.bmath.integrate(cpos, self.worldLinearVelocity,
@@ -107,6 +108,7 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 		self.worldPosition = pos
 		self.worldLinearVelocity = vel
+		self.accel = accel
 
 		# Orientation: z-up, y-back
 		upvec = noise_vec * 0.5 + bat.bmath.ZAXIS
@@ -140,6 +142,13 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		else:
 			if self.buzz_sound.playing:
 				self.buzz_sound.stop()
+
+		# Set sound pitch: increase pitch when flying up (working harder).
+		if self.buzz_sound.playing:
+			fac = bat.bmath.unlerp(1.1, 1.3, self.accel.z)
+			fac = bat.bmath.clamp(0, 1, fac)
+			self.buzz_sound.pitch = bat.bmath.lerp(0.9, 1.1, fac)
+
 
 class DirectedPath(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 

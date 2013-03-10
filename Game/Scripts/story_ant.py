@@ -492,22 +492,32 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_condition(bat.story.CondEvent("ApproachAnt", self))
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_event("StartLoading", self)
+		s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 1, 1, ob='AntStrandedCamLS_Front'))
+		# Music stops when Cargo moves away; see event handler for 'LeaveAnt'.
 		s.add_action(self.music2_action)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))
 		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
-		s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS_Front'))
 		s.add_event("TeleportSnail", "AntStranded_SnailTalkPos")
+		s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS_Front'))
 		s.add_event("FinishLoading", self)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))
-		s.add_event("ShowDialogue", "Cargo! Am I glad to see you! I fell down, and now I'm stuck.")
+		s.add_event("ShowDialogue", "Cargo! Am I glad to see you!")
+		s.add_action(bat.story.ActAction('Ant_Stranded', 1, 22, Ant.L_ANIM))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", "I was obsessed by the honey. I drank it until I could drink no more.")
+		s.add_event("ShowDialogue", "This is a bit embarrassing, but I fell down, and now I'm stuck.")
+		s.add_action(bat.story.ActAction('Ant_Stranded', 30, 70, Ant.L_ANIM))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "I was obsessed with the honey. I couldn't stop eating it.")
+		s.add_action(bat.story.ActAction('Ant_Stranded', 90, 100, Ant.L_ANIM))
+		s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 90, 140, ob='AntStrandedCamLS_Front'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
@@ -516,6 +526,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I took this thimble to use as a bucket...")
+		s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 200, 250, ob='AntStrandedCamLS_Front'))
 	
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
@@ -533,6 +544,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_lookleft'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_Front'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))

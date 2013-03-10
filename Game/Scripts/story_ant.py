@@ -521,11 +521,15 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(bat.story.ActAction('Ant_Stranded', 150, 165, Ant.L_ANIM))
 		s.add_event("ShowDialogue", "Then I thought, I should take some home to my family, you know?")
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActSetFocalPoint('Thimble'))
 		s.add_event("ShowDialogue", "I took this thimble to use as a bucket...")
+		s.add_action(bat.story.ActAction('Ant_Stranded', 200, 225, Ant.L_ANIM))
+		s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS_FrontZoom'))
 		s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 200, 250, ob='AntStrandedCamLS_Front'))
 	
 		s = s.create_successor()
@@ -535,7 +539,9 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 	
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Thimble'))
 		s.add_event("ShowDialogue", "I can't walk through the honey: it's too sticky.")
+		s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 90, 90, ob='AntStrandedCamLS_FrontZoom'))
 	
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
@@ -544,9 +550,10 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_lookleft'))
+		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_FrontZoom'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_Front'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Thimble'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
 
 		s = s_end = s.create_successor()

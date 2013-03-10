@@ -638,6 +638,9 @@ class DynamicSpawnPoint(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if shell_type in Scripts.inventory.Shells().get_shells():
 			# Player has already picked up this shell.
 			return
+		if shell_type in self.scene.objects:
+			# Object already exists.
+			return
 		shell = factory(shell_type)
 		bat.bmath.copy_transform(self, shell)
 		shell.anchor(self)

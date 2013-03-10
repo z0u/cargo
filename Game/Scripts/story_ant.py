@@ -75,7 +75,11 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		self.music1_action = bat.story.ActMusicPlay(
 				'//Sound/Music/08-TheAnt_loop.ogg',
 				introfile='//Sound/Music/08-TheAnt_intro.ogg', volume=0.7,
-				fade_in_rate=1)
+				fade_in_rate=1, name='ant_music')
+		self.music2_action = bat.story.ActMusicPlay(
+				'//Sound/Music/10-TheAntReturns_loop.ogg',
+				introfile='//Sound/Music/10-TheAntReturns_intro.ogg', volume=0.7,
+				fade_in_rate=1, name='ant_music')
 		self.knock_sound_action = bat.story.ActSound('//Sound/Knock.ogg',
 				vol=0.5, pitchmin=0.7, pitchmax=0.76, emitter=self,
 				maxdist=60.0)
@@ -83,10 +87,17 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 				'//Sound/AntStep2.ogg')
 		self.pick = self.childrenRecursive['Ant_Pick']
 
+		bat.event.EventBus().add_listener(self)
+
 		if 'Level_Dungeon' in self.scene.objects:
 			self.create_dungeon_state_graph()
 		else:
 			self.create_outdoors_state_graph()
+
+	def on_event(self, evt):
+		if evt.message == 'LeaveAnt':
+			bat.sound.Jukebox().stop('ant_music')
+			self.currentState = self.s_reset
 
 	def pick_up(self):
 		''';)'''
@@ -382,6 +393,8 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		# Hide ant first thing
 		s.add_action(bat.story.ActAttrSet('visible', False, target_descendant="Ant_Body"))
 		s.add_action(bat.story.ActAttrSet('visible', False, target_descendant="Ant_Pick"))
+		# Pick was left outside.
+		s.add_action(bat.story.ActConstraintSet("Hand.L", "Copy Transforms", 0))
 
 		srescue_start, srescue_end = self.create_rescue_states()
 		srescue_start.add_predecessor(s)
@@ -395,7 +408,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		#
 		# Loop back to start.
 		#
-		s = bat.story.State("Reset")
+		s = self.s_reset = bat.story.State("Reset")
 		s.add_predecessor(sgrab_end)
 		s.add_predecessor(srescue_end)
 		s.add_predecessor(sstranded_end)
@@ -403,7 +416,6 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(Scripts.story.ActRemoveCamera('WindowCam'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntGrabCam'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
-		s.add_action(bat.story.ActMusicStop())
 		s.add_action(bat.story.ActActionStop(Ant.L_IDLE))
 		s.add_successor(self.rootState)
 
@@ -480,6 +492,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_condition(bat.story.CondEvent("ApproachAnt", self))
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_event("StartLoading", self)
+		s.add_action(self.music2_action)
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))

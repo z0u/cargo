@@ -358,3 +358,81 @@ def bucket_location(c):
 		return
 	for ob in s.hitObjectList:
 		ob.set_location(c.owner['location'])
+
+class DefenceRoom(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'DR_'
+
+	S_INIT = 1
+	S_TIMER = 2
+
+	TIME = 10
+
+	def __init__(self, old_owner):
+		self.is_open = False
+		self.time_remaining = 0
+		self.total_time = DefenceRoom.TIME * bge.logic.getLogicTicRate()
+		bat.event.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'HitButton':
+			self.hit_button()
+		elif evt.message == 'LeftButton':
+			self.left_button()
+		elif evt.message == 'OpenTopDoor':
+			self.open_door()
+		elif evt.message == 'CloseTopDoor':
+			self.close_door()
+		elif evt.message == 'HoldTopDoor':
+			self.cancel_timer()
+
+	def hit_button(self):
+		player = Scripts.director.Director().mainCharacter
+		if player is None:
+			return
+		speed = player.lastLinV.magnitude
+		if speed > 30.0:
+			self.open_door()
+			self.time_remaining = self.total_time
+			bat.event.Event('TimeSet', 1).send()
+
+	def left_button(self):
+		if self.is_open:
+			self.add_state(DefenceRoom.S_TIMER)
+
+	@bat.bats.expose
+	def update(self):
+		self.time_remaining -= 1
+		if self.time_remaining <= 0:
+			self.rem_state(DefenceRoom.S_TIMER)
+			bat.event.Event('TimeSet', 0).send()
+			self.close_door()
+		else:
+			tfrac = self.time_remaining / self.total_time
+			bat.event.Event('TimeSet', tfrac).send()
+
+	def cancel_timer(self):
+		self.time_remaining = 0
+		bat.event.Event('TimeSet', 0).send()
+		self.rem_state(DefenceRoom.S_TIMER)
+
+	def open_door(self):
+		if self.is_open:
+			return
+		for bollard_base in self.children['Bollards'].children:
+			bollard = bollard_base.children[0]
+			bollard.playAction('Bollard', 1, 23)
+		for door_base in self.children['TopDoor'].children:
+			door = door_base.children[0]
+			door.playAction('DefenceDoor', 1, 23)
+		self.is_open = True
+
+	def close_door(self):
+		if not self.is_open:
+			return
+		for bollard_base in self.children['Bollards'].children:
+			bollard = bollard_base.children[0]
+			bollard.playAction('Bollard', 40, 62)
+		for door_base in self.children['TopDoor'].children:
+			door = door_base.children[0]
+			door.playAction('DefenceDoor', 40, 62)
+		self.is_open = False

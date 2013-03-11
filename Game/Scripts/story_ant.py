@@ -50,21 +50,11 @@ def factory():
 
 class Honeypot(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
-	_prefix = "HP_"
-
 	def __init__(self, old_owner):
 		#bat.event.WeakEvent("StartLoading", self).send()
 		ant1 = factory()
 		bat.bmath.copy_transform(self.children["Ant1SpawnPoint"], ant1)
 		ant1.setParent(self)
-
-	@bat.bats.expose
-	@bat.utils.controller_cls
-	def approach(self, c):
-		if c.sensors[0].positive:
-			player = c.sensors[0].hitObject
-			if not player.is_in_shell:
-				bat.event.Event("ApproachAnts").send()
 
 class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 	L_IDLE = 0
@@ -87,17 +77,10 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 				'//Sound/AntStep2.ogg')
 		self.pick = self.childrenRecursive['Ant_Pick']
 
-		bat.event.EventBus().add_listener(self)
-
 		if 'Level_Dungeon' in self.scene.objects:
 			self.create_dungeon_state_graph()
 		else:
 			self.create_outdoors_state_graph()
-
-	def on_event(self, evt):
-		if evt.message == 'LeaveAnt':
-			bat.sound.Jukebox().stop('ant_music')
-			self.currentState = self.s_reset
 
 	def pick_up(self):
 		''';)'''
@@ -124,24 +107,32 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sKnock.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 34.5, tap=True))
 		sKnock.add_action(self.knock_sound_action)
 
+		senter_start, _ = self.create_enter_states()
+		senter_start.add_predecessor(s)
+
 		sconv_start, sconv_end = self.create_conversation()
 		sconv_start.add_predecessor(s)
 
-		senter_start, _ = self.create_enter_states()
-		senter_start.add_predecessor(s)
+		# Create a super state to catch when the player leaves. Can't have one
+		# for canceling dialogue, because that would catch any dialogue
+		# elsewhere in the level.
+		self.super_state = bat.story.State('Super')
+		s_leave = self.super_state.create_successor('Leave')
+		s_leave.add_condition(bat.story.CondEvent('LeaveAnt', self))
+		s_leave.add_action(bat.story.ActMusicStop(name='ant_music'))
 
 		#
 		# Loop back to start.
 		#
 		s = bat.story.State("Reset")
 		s.add_predecessor(sconv_end)
+		s.add_predecessor(s_leave)
 		s.add_action(Scripts.story.ActResumeInput())
 		s.add_action(Scripts.story.ActRemoveCamera('AntCloseCam'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntCrackCam'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntCrackCamIn'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntMidCam'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
-		s.add_action(bat.story.ActMusicStop())
 		s.add_action(bat.story.ActActionStop(Ant.L_IDLE))
 		s.add_successor(self.rootState)
 
@@ -149,10 +140,11 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		'''
 		State graph that plays when Cargo approaches the ant at the tree door.
 		'''
-		sconv_start = bat.story.State("Talk")
-		sconv_start.add_condition(bat.story.CondEvent("ApproachAnts", self))
-		sconv_start.add_action(Scripts.story.ActSuspendInput())
-		sconv_start.add_event("StartLoading", self)
+		s = sconv_start = bat.story.State("Talk")
+		s.add_condition(Scripts.story.CondNotInShell())
+		s.add_condition(bat.story.CondEvent("ApproachAnt", self))
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_event("StartLoading", self)
 
 		# Catch-many state for when the user cancels a dialogue. Should only be
 		# allowed if the conversation has been played once already.
@@ -162,7 +154,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		# Start conversation
 
-		s = sconv_start.create_successor()
+		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))
 		s.add_event("FinishLoading", self)
 		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
@@ -313,29 +305,28 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 470))
 		s.add_action(bat.story.ActStoreSet('/game/level/antConversation1', True))
 
-		sconv_end = bat.story.State()
-		sconv_end.add_predecessor(s)
-		sconv_end.add_predecessor(scancel)
+		s = sconv_end = s.create_successor()
+		s.add_predecessor(scancel)
 
 		return sconv_start, sconv_end
 
 	def create_enter_states(self):
 		'''State graph that plays when the tree door is broken.'''
-		senter_start = bat.story.State("Enter start")
-		senter_start.add_condition(bat.story.CondEvent("treeDoorBroken", self))
-		senter_start.add_action(Scripts.story.ActSetCamera('AntMidCam'))
-		senter_start.add_action(Scripts.story.ActSetFocalPoint('Ant'))
-		senter_start.add_action(Scripts.story.ActSuspendInput())
+		s = senter_start = bat.story.State("Enter start")
+		s.add_condition(bat.story.CondEvent("treeDoorBroken", self))
+		s.add_action(Scripts.story.ActSetCamera('AntMidCam'))
+		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
+		s.add_action(Scripts.story.ActSuspendInput())
 		# No intro here - straight into main part of the song!
-		senter_start.add_action(bat.story.ActMusicPlay('//Sound/Music/10-TheAntReturns_loop.ogg', volume=0.7))
-		senter_start.add_action(bat.story.ActAction('HP_AntEnter', 1, 40,
+		s.add_action(self.music1_action)
+		s.add_action(bat.story.ActAction('HP_AntEnter', 1, 40,
 				Ant.L_ANIM, blendin=1.0))
-		senter_start.add_action(bat.story.ActDestroy(target_descendant='Ant_Pick'))
-		sdrop_pick = senter_start.create_sub_step("Adjust influence")
+		s.add_action(bat.story.ActDestroy(target_descendant='Ant_Pick'))
+		sdrop_pick = s.create_sub_step("Adjust influence")
 		sdrop_pick.add_action(bat.story.ActConstraintFade("Hand.L",
 				"Copy Transforms", 1.0, 0.0, 1.0, 4.0, Ant.L_ANIM))
 
-		s = senter_start.create_successor()
+		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 25))
 		s.add_action(Scripts.story.ActSetCamera('AntVictoryCam'))
 		s.add_event("ShowDialogue", "Amazing! You've done it!")
@@ -373,14 +364,14 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(bat.story.ActAction('HP_AntEnter', 188, 230, Ant.L_ANIM,
 				blendin=3.0))
 
-		senter_end = s.create_successor()
-		senter_end.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 230))
-		senter_end.add_action(Scripts.story.ActRemoveCamera('AntSniffCam'))
-		senter_end.add_action(Scripts.story.ActRemoveCamera('AntVictoryCam'))
-		senter_end.add_action(Scripts.story.ActRemoveCamera('AntMidCam'))
-		senter_end.add_action(Scripts.story.ActResumeInput())
-		senter_end.add_action(bat.story.ActDestroy(ob='Honeypot'))
-		senter_end.add_action(bat.story.ActDestroy())
+		s = senter_end = s.create_successor()
+		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 230))
+		s.add_action(Scripts.story.ActRemoveCamera('AntSniffCam'))
+		s.add_action(Scripts.story.ActRemoveCamera('AntVictoryCam'))
+		s.add_action(Scripts.story.ActRemoveCamera('AntMidCam'))
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(bat.story.ActDestroy(ob='Honeypot'))
+		s.add_action(bat.story.ActDestroy())
 
 		return senter_start, senter_end
 
@@ -470,12 +461,10 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		# Start the buckets again, and set saved game state. When story state
 		# loops, create_stranded_states will be executed instead.
-		s = s.create_successor()
+		s = s_end = s.create_successor()
 		s.add_event('StartBuckets')
 		s.add_action(bat.story.ActStoreSet('/game/level/AntStranded', True))
 		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'AntStranded'))
-
-		s_end = s.create_successor()
 
 		return s_start, s_end
 
@@ -566,7 +555,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_condition(bat.story.CondStore('/game/level/AntRescued', True, False))
 		s.add_action(bat.story.ActDestroy())
 
-		s_end = s.create_successor()
+		s = s_end = s.create_successor()
 
 		return s_start, s_end
 

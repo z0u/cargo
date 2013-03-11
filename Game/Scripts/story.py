@@ -42,6 +42,19 @@ class CondHasShell(bat.story.Condition):
 	def get_short_name(self):
 		return "HasShell(%s)" % self.name
 
+class CondNotInShell(bat.story.Condition):
+	def evaluate(self, c):
+		player = Scripts.director.Director().mainCharacter
+		if player is None:
+			return False
+		# If the player object has a shell attribute, it must be a snail. If the
+		# snail was in its shell, then Director.mainCharacter would be a shell
+		# instead.
+		return hasattr(player, 'shell')
+
+	def get_short_name(self):
+		return "NotInShell"
+
 class ActSuspendInput(bat.story.BaseAct):
 	'''Prevent the player from moving around.'''
 	def execute(self, c):

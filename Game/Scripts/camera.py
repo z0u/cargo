@@ -52,6 +52,12 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 	BLUR_MULT_ACCEL = 0.001
 	BLUR_MULT_MAX = 10.0
 	BLUR_MULT_DAMP = 0.1
+	# Blur settings vary based on camera type.
+	MAX_BLUR = {
+			'FIRST': 0,
+			'THIRD_SHOULDER': 0.02,
+			'THIRD_STATIC': 1
+			}
 
 	camera = bat.containers.weakprop('camera')
 	lastGoal = bat.containers.weakprop('lastGoal')
@@ -128,6 +134,8 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 				self.errorReported = True
 			return
 
+		max_blur = AutoCamera.MAX_BLUR[currentGoal['CameraType']]
+
 		# Keeping track of goals being added and removed it very
 		# difficult, so we just consider the last action when deciding
 		# whether or not to cut instantly.
@@ -146,7 +154,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 			self.camera.worldOrientation = currentGoal.worldOrientation
 			if hasattr(currentGoal, 'lens'):
 				self.camera.lens = currentGoal.lens
-			self._update_focal_depth(instant=True)
+			self._update_focal_depth(True, max_blur)
 			self.instantCut = False
 		else:
 			bat.bmath.slow_copy_loc(self.camera, currentGoal, currentGoal['LocFac'])
@@ -165,7 +173,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		self.lastGoal = currentGoal
 
 		# Update depth of field (blur).
-		self._update_focal_depth(instant=False)
+		self._update_focal_depth(False, max_blur)
 
 		try:
 			dev = aud.device()
@@ -179,7 +187,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		for ob in self.observers:
 			ob.on_camera_moved(self)
 
-	def _update_focal_depth(self, instant=False):
+	def _update_focal_depth(self, instant, max_blur):
 		focalPoint = None
 		try:
 			focalPoint = self.focusQueue.top()
@@ -212,9 +220,9 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 
 		# This bit doesn't need to be interpolated; the lens value is already
 		# interpolated in 'update'.
-		cam['blurRadius'] = cam['baseBlurRadius'] * \
-				pow((cam.lens / self.defaultLens), 2) * \
-				self.blurMultiplier
+		cam['blurRadius'] = min(max_blur,
+				cam['baseBlurRadius'] * pow((cam.lens / self.defaultLens), 2))
+		cam['blurRadius'] *= self.blurMultiplier
 
 		diff = 1.0 - self.blurMultiplier
 		accel = diff * AutoCamera.BLUR_MULT_ACCEL
@@ -244,6 +252,8 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 		bat.utils.set_default_prop(goal, 'RotFac', 0.1)
 		bat.utils.set_default_prop(goal, 'InstantCut', False)
 		bat.utils.set_default_prop(goal, 'Priority', 1)
+		# {'FIRST', 'THIRD_SHOULDER', 'THIRD_STATIC'}
+		bat.utils.set_default_prop(goal, 'CameraType', 'THIRD_STATIC')
 
 		# Add the goal to the queue.
 		self.queue.push(goal, goal['Priority'])

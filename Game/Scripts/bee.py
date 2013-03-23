@@ -135,8 +135,19 @@ class WorkerBee(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		snail = s.hitObject
 		if snail.is_in_shell:
 			return None
-		else:
+
+		# Don't chase snail if it can't be seen.
+		obstacle, _, _ = self.rayCast(
+				snail,
+				self,
+				0.0,
+				'Ground',
+				1
+			)
+		if obstacle is None:
 			return snail
+		else:
+			return None
 
 	def get_next_waypoint(self):
 		cpos = self.worldPosition

@@ -129,6 +129,14 @@ def init_conveyor(c):
 	crusher2rot.playAction('ConveyorCrusher_RotAction', 1, 91,
 			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
 
+	sce = bge.logic.getCurrentScene()
+	crusher3rot = sce.objects['FlowerCrusher']
+	crusher3rot.playAction('ConveyorCrusher_RotAction', 1, 91,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+	crusher4rot = sce.objects['FlowerCrusher.001']
+	crusher4rot.playAction('ConveyorCrusher_RotAction', 1, 91,
+			play_mode=bge.logic.KX_ACTION_MODE_LOOP)
+
 def spawn_flower_head(c):
 	if not c.sensors[0].positive:
 		return

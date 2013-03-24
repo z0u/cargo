@@ -21,9 +21,7 @@ import logging
 import bge
 
 import bat.bats
-import bat.event
 import bat.bmath
-import bat.utils
 
 import bat.story
 import Scripts.story
@@ -396,10 +394,19 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		sgrab_start, sgrab_end = self.create_grab_states()
 		sgrab_start.add_predecessor(s)
 
+		# Create a super state to catch when the player leaves. Can't have one
+		# for canceling dialogue, because that would catch any dialogue
+		# elsewhere in the level.
+		self.super_state = bat.story.State('Super')
+		s_leave = self.super_state.create_successor('Leave')
+		s_leave.add_condition(bat.story.CondEvent('LeaveAnt', self))
+		s_leave.add_action(bat.story.ActMusicStop(name='ant_music'))
+
 		#
 		# Loop back to start.
 		#
 		s = self.s_reset = bat.story.State("Reset")
+		s.add_predecessor(s_leave)
 		s.add_predecessor(sgrab_end)
 		s.add_predecessor(srescue_end)
 		s.add_predecessor(sstranded_end)
@@ -505,12 +512,12 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "I was obsessed with the honey. I couldn't stop eating it.")
-		s.add_action(bat.story.ActAction('Ant_Stranded', 90, 100, Ant.L_ANIM))
+		s.add_action(bat.story.ActAction('Ant_Stranded', 90, 120, Ant.L_ANIM))
 		s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 90, 140, ob='AntStrandedCamLS_Front'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_action(bat.story.ActAction('Ant_Stranded', 150, 165, Ant.L_ANIM))
+		s.add_action(bat.story.ActAction('Ant_Stranded', 150, 180, Ant.L_ANIM))
 		s.add_event("ShowDialogue", "Then I thought, I should take some home to my family, you know?")
 
 		s = s.create_successor()
@@ -536,6 +543,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS'))
 		s.add_event("ShowDialogue", "But I bet you could do it. Please, help me out!")
+		s.add_action(bat.story.ActAction('Ant_Stranded', 260, 300, Ant.L_ANIM))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))

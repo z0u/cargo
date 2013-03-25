@@ -210,7 +210,7 @@ class GameLevel(Level):
 		Level.__init__(self, old_owner)
 
 		self.spawn()
-		self.set_map()
+		set_map(self)
 
 		bat.event.EventBus().add_listener(self)
 
@@ -236,39 +236,6 @@ class GameLevel(Level):
 
 		bat.bats.add_and_mutate_object(scene, 'Snail', self)
 		bat.event.Event('TeleportSnail', spawn_point).send()
-
-	def set_map(self):
-		if 'Map' not in self:
-			return
-
-		map_file = self['Map']
-
-		if 'MapScaleX' in self:
-			scale_x = self['MapScaleX']
-		else:
-			scale_x = 1.0
-		if 'MapScaleY' in self:
-			scale_y = self['MapScaleY']
-		else:
-			scale_y = 1.0
-
-		if 'MapOffsetX' in self:
-			off_x = self['MapOffsetX']
-		else:
-			off_x = 0.0
-		if 'MapOffsetY' in self:
-			off_y = self['MapOffsetY']
-		else:
-			off_y = 0.0
-
-		if 'MapZoom' in self:
-			zoom = self['MapZoom']
-		else:
-			zoom = 1.0
-
-		scale = mathutils.Vector((scale_x, scale_y))
-		offset = mathutils.Vector((off_x, off_y))
-		bat.event.Event('SetMap', (map_file, scale, offset, zoom)).send()
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":
@@ -378,3 +345,38 @@ def set_spawn_point(c):
 				bat.store.put('/game/level/spawnPoint', sp.name)
 				return
 			ob = ob.parent
+
+@bat.utils.some_sensors_positive
+@bat.utils.owner
+def set_map(o):
+	if 'Map' not in o:
+		return
+
+	map_file = o['Map']
+
+	if 'MapScaleX' in o:
+		scale_x = o['MapScaleX']
+	else:
+		scale_x = 1.0
+	if 'MapScaleY' in o:
+		scale_y = o['MapScaleY']
+	else:
+		scale_y = 1.0
+
+	if 'MapOffsetX' in o:
+		off_x = o['MapOffsetX']
+	else:
+		off_x = 0.0
+	if 'MapOffsetY' in o:
+		off_y = o['MapOffsetY']
+	else:
+		off_y = 0.0
+
+	if 'MapZoom' in o:
+		zoom = o['MapZoom']
+	else:
+		zoom = 1.0
+
+	scale = mathutils.Vector((scale_x, scale_y))
+	offset = mathutils.Vector((off_x, off_y))
+	bat.event.Event('SetMap', (map_file, scale, offset, zoom)).send()

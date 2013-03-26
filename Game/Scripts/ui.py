@@ -797,6 +797,7 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		self.set_state(self.S_HIDDEN)
 		self.force_hide = False
 		self.init_uv()
+		self.file_name = None
 		self.scale = mathutils.Vector((100.0, 100.0))
 		self.offset = mathutils.Vector((0.0, 0.0))
 		self.zoom = 2.0
@@ -828,17 +829,33 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def set_map(self, file_name, scale, offset, zoom):
 		'''Load a texture from an image file and display it as the map.'''
-		canvas = self.children['MapPage']
 
 		MapWidget.log.info("Setting map to %s", file_name)
 		MapWidget.log.info("Scale: %s", scale)
 		MapWidget.log.info("Offset: %s", offset)
 		MapWidget.log.info("Zoom: %s", zoom)
 
+		self.load_image(file_name)
+
+		self.scale = scale
+		self.offset = offset
+		self.zoom = zoom
+
+	def load_image(self, file_name):
+		if file_name == self.file_name:
+			return
+
+		canvas = self.children['MapPage']
+
 		try:
 			matid = bge.texture.materialID(canvas, 'MAMapPage')
 			tex = bge.texture.Texture(canvas, matid)
 			source = bge.texture.ImageFFmpeg(bge.logic.expandPath(file_name))
+
+			# Texture must be freed now. The game engine seems to have a weakref
+			# hook for this. This is annoying, because it breaks exception handling.
+			bge.logic.maptex = None
+
 			tex.source = source
 			tex.refresh(False)
 		except:
@@ -848,9 +865,7 @@ class MapWidget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		# Must be stored, or it will be freed.
 		bge.logic.maptex = tex
 
-		self.scale = scale
-		self.offset = offset
-		self.zoom = zoom
+		self.file_name = file_name
 
 	def map_goal_changed(self, scene=None):
 		if scene is None:

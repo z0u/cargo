@@ -101,6 +101,7 @@ def configure_controls():
 
 	# Cheats!
 	bat.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
+	bat.impulse.Input().add_sequence("udlr21", bat.event.Event("LoseCurrentShell"))
 	bat.impulse.Input().add_sequence("uuddllrr", bat.event.Event("GiveFullHealth"))
 	bat.impulse.Input().add_sequence("udud22", bat.event.Event("TeleportCheat"))
 

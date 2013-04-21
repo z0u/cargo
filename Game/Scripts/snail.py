@@ -14,28 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
 import logging
 import time
 
-import mathutils
 import bge
+import mathutils
 
-import bat.bats
-import bat.containers
-import bat.event
-import bat.bmath
-import bat.utils
 import bat.anim
-import bat.sound
+import bat.bats
+import bat.bmath
+import bat.containers
 import bat.effectors
+import bat.event
+import bat.impulse
+import bat.sound
+import bat.utils
 
+import Scripts.attitude
+import Scripts.camera
 import Scripts.director
 import Scripts.inventory
 import Scripts.shells
-import Scripts.camera
-import Scripts.attitude
-import bat.impulse
 
 
 class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
@@ -261,6 +260,13 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			# Cheat ;)
 			for name in Scripts.inventory.Shells().get_all_shells():
 				Scripts.inventory.Shells().add(name)
+				bat.event.Event('ShellChanged', 'new').send()
+		elif evt.message == 'LoseCurrentShell':
+			# Cheat ;)
+			name = Scripts.inventory.Shells().get_equipped()
+			if name is not None:
+				self.unequip_shell()
+				Scripts.inventory.Shells().discard(name)
 				bat.event.Event('ShellChanged', 'new').send()
 		elif evt.message == 'GiveFullHealth':
 			# Cheat ;)

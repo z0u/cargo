@@ -601,9 +601,13 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(1))
-		s.add_action(Scripts.story.ActSetCamera('AntStrandedCam_RescueFront'))
+		s.add_action(bat.story.ActAction('AntStrandedCam_RescueTopAction', 1, 150, ob='AntStrandedCam_RescueTop'))
+		s.add_action(Scripts.story.ActSetCamera('AntStrandedCam_RescueTop'))
 		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
 		s.add_action(bat.story.ActParentRemove())
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(0))
 		s.add_action(bat.story.ActCopyTransform("AntSpawnPoint"))
 		s.add_event("TeleportSnail", "AntStranded_SnailTalkPos_rescue")
 		s.add_action(bat.story.ActAction('Ant_Rescued', 1, 1, Ant.L_ANIM))
@@ -611,11 +615,34 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = s.create_successor()
 		s.add_condition(bat.story.CondWait(0))
 		s.add_event("FinishLoading", self)
-		s.add_event("ShowDialogue", "Woohoo!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(0.5))
+		s.add_event("ShowDialogue", "All right - we made it!")
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event('ParkBuckets')
+		s.add_action(Scripts.story.ActSetCamera('AntStrandedCam_RescueFront'))
+		s.add_event("ShowDialogue", "I bet that was the strangest delivery you ever made, eh? He-he.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Hey, with that thimble you should be able to sneak past the bees if you want to.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "There must be another entrance to the hive further up the tree.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "Well, I'm going to head outside. I'm looking forward to some fresh air after being stranded!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event('StartBuckets')
 		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCam_RescueFront'))
+		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCam_RescueTop'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
 		s.add_action(Scripts.story.ActResumeInput())
 		s.add_action(bat.story.ActDestroy())

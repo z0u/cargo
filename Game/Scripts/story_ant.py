@@ -552,13 +552,80 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Thimble'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
-
-		s = s_end = s.create_successor()
 		s.add_action(Scripts.story.ActResumeInput())
+
+		# Player is free to move around now. If they go outside of the sensor,
+		# the global state will notice and reset.
+
+		s = s.create_successor("BeingRescued")
+		s.add_condition(bat.story.CondEventEq("ShellFound", "Thimble", self))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(0.5))
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_event("ShowDialogue", "You got the Thimble! It's impervious to sharp objects.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS_Front'))
+		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
+		s.add_event("ShowDialogue", "Hey, nice work! I'll jump on. Thanks a million!")
+
+		# No animation here; just show the loading screen and teleport ant on to
+		# thimble.
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("StartLoading", self)
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_action(bat.story.ActAction('Ant_SitOnThimble', 1, 1, Ant.L_ANIM))
+		s.add_action(bat.story.ActCopyTransform("Thimble"))
+		s.add_action(bat.story.ActParentSet("Thimble"))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(0))
+		s.add_event("FinishLoading", self)
+		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'gotThimble'))
+		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_Front'))
+		s.add_action(Scripts.story.ActResumeInput())
+
+		# Player is free to move around now. Here, we override the super state
+		# transition which watches for the LeaveAnt event.
+
+		s = s.create_successor('Carried ant over honey')
+		s.add_condition(bat.story.CondEvent('ReachShore', self))
+		s.add_action(Scripts.story.ActSuspendInput())
+		s.add_event("StartLoading", self)
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(1))
+		s.add_action(Scripts.story.ActSetCamera('AntStrandedCam_RescueFront'))
+		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
+		s.add_action(bat.story.ActParentRemove())
+		s.add_action(bat.story.ActCopyTransform("AntSpawnPoint"))
+		s.add_event("TeleportSnail", "AntStranded_SnailTalkPos_rescue")
+		s.add_action(bat.story.ActAction('Ant_Rescued', 1, 1, Ant.L_ANIM))
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondWait(0))
+		s.add_event("FinishLoading", self)
+		s.add_event("ShowDialogue", "Woohoo!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCam_RescueFront'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
+		s.add_action(Scripts.story.ActResumeInput())
+		s.add_action(bat.story.ActDestroy())
+
+		s_end = s
 
 		return s_start, s_end
 
 	def create_rescue_states(self):
+		# Just destroy the ant: already rescued!
 		s = s_start = bat.story.State("Rescued")
 		s.add_condition(bat.story.CondStore('/game/level/AntRescued', True, False))
 		s.add_action(bat.story.ActDestroy())
@@ -566,6 +633,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s = s_end = s.create_successor()
 
 		return s_start, s_end
+
 
 def oversee(c):
 	if bat.store.get('/game/level/treeDoorBroken', False):

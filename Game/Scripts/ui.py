@@ -299,9 +299,11 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		self.canvas1 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.0'])
 		self.canvas2 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.1'])
 		self.canvas3 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.2'])
+		self.canvas_tip = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas_tip'])
 		self.canvas1['colour'] = '#9999ff'
 		self.canvas2['colour'] = '#ffbb99'
 		self.canvas3['colour'] = '#ff9999'
+		self.canvas_tip['colour'] = '#000'
 		self.armature = self.childrenRecursive['QOpt_FrameArmature']
 		self.frame = self.childrenRecursive['QOpt_Frame']
 		self.cursor = self.childrenRecursive['QOpt_OptionCursor']
@@ -345,6 +347,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		self.canvas1['Content'] = "Resume (cancel)"
 		self.canvas2['Content'] = "Quit to main menu"
 		self.canvas3['Content'] = "Quit game"
+		self.canvas_tip['Content'] = "Tip: Press F11 to exit immediately."
 		start = self.armature.getActionFrame()
 		self.armature.playAction('DialogueBoxBoing', start,
 				QuitOptions.ARM_SHOW_FRAME)
@@ -370,6 +373,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		self.canvas1['Content'] = ""
 		self.canvas2['Content'] = ""
 		self.canvas3['Content'] = ""
+		self.canvas_tip['Content'] = ""
 		start = self.armature.getActionFrame()
 		self.armature.playAction('DialogueBoxBoing', start,
 				QuitOptions.ARM_HIDE_FRAME)

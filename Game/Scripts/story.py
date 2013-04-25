@@ -268,8 +268,8 @@ class GameLevel(Level):
 			# Wheel is handled specially in story_spider.py
 			pass
 		elif shell == 'Thimble':
-			bat.event.Event('ShowDialogue', "You got the Thimble! It's impervious to sharp objects.").send(30)
-			bat.store.put('/game/storySummary', 'gotThimble')
+			# Thimble is handled specially in story_ant.py
+			pass
 		else:
 			GameLevel.log.warn('Unrecognised shell %s', shell)
 

@@ -71,6 +71,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	MIN_SPEED = -3.0
 	CAMERA_SAFE_DIST = 10.0
 	SHELL_SCALE_FAC = 0.5
+	MAX_SHELL_SCALE = 0.75
 	EYE_LOOK_FAC = 0.5
 	SHELL_POP_SPEED = 40.0
 	WATER_DAMPING = 0.5
@@ -399,7 +400,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
 		offset = Scripts.camera.AutoCamera().camera.worldPosition - self.worldPosition
 		dist = offset.magnitude
-		targetScale = bat.bmath.clamp(0, 0.75, dist / Snail.CAMERA_SAFE_DIST)
+		targetScale = bat.bmath.clamp(0, Snail.MAX_SHELL_SCALE, dist / Snail.CAMERA_SAFE_DIST)
 		scale = self.cargoHold.localScale.x
 		scale = bat.bmath.lerp(scale, targetScale, Snail.SHELL_SCALE_FAC)
 		self.cargoHold.localScale = (scale, scale, scale)

@@ -220,8 +220,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			# doubling back on itself.
 			#
 			# Interpolate between normals for current and previous frames.
-			# Don't use a factor of 0.5: potential for normal to average out
-			# to be (0,0,0)
 			#
 			segment.alignAxisToVect(normal, 2, 0.4)
 
@@ -284,6 +282,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 				Snail.log.error("Can't find spawn point %s", spawn_point)
 				return
 		bat.bmath.copy_transform(spawn_point, self)
+		self.localLinearVelocity = (0, 0, 0)
+		self.localAngularVelocity = (0, 0, 0)
 		self.bend_angle_fore = 0.0
 		self.bend_angle_aft = 0.0
 

@@ -461,11 +461,13 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 	UP_DIST = 8.0
 	BACK_DIST = 25.0
 	DIST_BIAS = 0.5
-	EXPAND_FAC = 0.02
+	EXPAND_FAC = 0.01
 	ZALIGN_FAC = 0.025
 
 	HROT_STEP = math.radians(5)
 	VROT_MAX = math.radians(45)
+	VROT_SPEED = 0.2
+	VROT_RESET_RATE = 0.05
 
 	def __init__(self, old_owner):
 		self.reset = False
@@ -576,15 +578,17 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
 	def handle_input(self, state):
 		if state.name == 'CameraMovement':
-			self.handle_movement(state)
+			self.handle_cam_movement(state)
 		elif state.name == 'CameraReset':
 			self.handle_reset(state)
 
-	def handle_movement(self, state):
-		if not self.reset:
-			self.cam_shift.xy = state.direction.xy
-		else:
-			self.cam_shift.y = state.direction.y
+	def handle_cam_movement(self, state):
+		if self.reset:
+			# Don't allow shifting when position is being reset.
+			return
+		self.cam_shift.x = state.direction.x
+		yoffset = self.cam_shift.y + (state.direction.y * OrbitCamera.VROT_SPEED)
+		self.cam_shift.y = bat.bmath.clamp(-1, 1, yoffset)
 
 	def handle_reset(self, state):
 		if not state.positive:
@@ -614,6 +618,14 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 			yrot = -yrot
 
 		self.cam_shift.x = yrot
+
+		if self.cam_shift.y > OrbitCamera.VROT_RESET_RATE:
+			self.cam_shift.y -= OrbitCamera.VROT_RESET_RATE
+		elif self.cam_shift.y < -OrbitCamera.VROT_RESET_RATE:
+			self.cam_shift.y += OrbitCamera.VROT_RESET_RATE
+		else:
+			self.cam_shift.y = 0
+
 		self.reset = True
 
 	def on_event(self, evt):

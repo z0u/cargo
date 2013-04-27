@@ -77,6 +77,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	WATER_DAMPING = 0.5
 	SHELL_REGRAB_DELAY = 5
 
+	MIN_MOVEMENT = 0.01
+
 	HEALTH_WARNING_DELAY = 180 # 3s
 	SHOCK_DURATION = 30 # 2s
 
@@ -154,6 +156,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		bat.impulse.Input().add_handler(self)
 		bat.event.EventBus().replay_last(self, 'TeleportSnail')
 
+		self.last_pos = self.worldPosition.copy()
+
 		self.shell_change_sound = bat.sound.Sample(
 			'//Sound/cc-by/Swosh1.ogg',
 			'//Sound/cc-by/Swosh2.ogg')
@@ -178,6 +182,15 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.size_shell()
 		if self.intoxication_level > 0:
 			self.intoxication_level -= 1
+
+		# Workaround for bug in friction that allows snail to slowly slide when
+		# it should be still.
+		# http://projects.blender.org/tracker/?func=detail&atid=306&aid=35076&group_id=9
+		cpos = self.worldPosition.copy()
+		if (cpos - self.last_pos).magnitude < Snail.MIN_MOVEMENT:
+			self.worldPosition = self.last_pos
+		else:
+			self.last_pos = cpos
 
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''

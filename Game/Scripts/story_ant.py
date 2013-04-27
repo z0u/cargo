@@ -570,6 +570,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS_Front'))
 		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
 		s.add_event("ShowDialogue", "Hey, nice work! I'll jump on. Thanks a million!")
+		s.add_action(bat.story.ActAction('Ant_Stranded', 320, 340, Ant.L_ANIM))
 
 		# No animation here; just show the loading screen and teleport ant on to
 		# thimble.
@@ -617,7 +618,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_event("FinishLoading", self)
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(0.5))
+		s.add_condition(bat.story.CondWait(1))
 		s.add_event("ShowDialogue", "All right - we made it!")
 
 		s = s.create_successor()
@@ -628,7 +629,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_event("ShowDialogue", "Hey, with that thimble you should be able to sneak past the bees if you want to.")
+		s.add_event("ShowDialogue", "You know, with that thimble you should be able to sneak past the bees if you want to.")
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))

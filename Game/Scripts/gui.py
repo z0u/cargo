@@ -45,6 +45,7 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 	def __init__(self, old_owner):
 		self.screen_stack = []
 		bat.impulse.Input().add_handler(self, 'MENU')
+		bat.impulse.allow_mouse_capture = False
 
 		# Don't play the first focus sound.
 		self.sound_delay = UiController.SOUND_DELAY_TICS
@@ -99,7 +100,7 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 	def mouseMove(self, c):
 		if not c.sensors['sMouseMove'].positive:
 			return
-		bge.render.showMouse(True)
+		bge.logic.mouse.visible = True
 		mOver = c.sensors['sMouseOver']
 		mOver.usePulseFocus = True
 		self.mouseOver(mOver)
@@ -115,14 +116,6 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 			newFocus = newFocus.parent
 
 		self.focus(newFocus)
-
-	@bat.bats.expose
-	@bat.utils.controller_cls
-	def mouseButton(self, c):
-		if bat.utils.someSensorPositive():
-			self.press()
-		else:
-			self.release()
 
 	def focus(self, widget):
 		if widget is self.current:
@@ -185,7 +178,7 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 		if not state.triggered_repeat or state.bias.magnitude < 0.1:
 			return
 
-		bge.render.showMouse(False)
+		bge.logic.mouse.visible = False
 
 		widget = self.find_next_widget(state.bias)
 		if widget is not None:

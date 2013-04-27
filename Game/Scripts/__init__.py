@@ -62,28 +62,35 @@ def configure_controls():
 	camera.left.sensors.append(bat.impulse.KeyboardSensor(bge.events.JKEY))
 	camera.xaxes.append(bat.impulse.JoystickAxisSensor(2))
 	camera.yaxes.append(bat.impulse.JoystickAxisSensor(3))
+	camera.xaxes.append(bat.impulse.MouseLookSensor(0, 15))
+	camera.yaxes.append(bat.impulse.MouseLookSensor(1, 15))
 
 	# The switch command can be "next" or "previous"; use a 1D pad to filter
 	# out multiple conflicting button presses.
 	switch = bat.impulse.DPad1D("Switch", 'n', 'p')
 	switch.next.sensors.append(bat.impulse.KeyboardSensor(bge.events.EKEY))
 	switch.next.sensors.append(bat.impulse.JoystickButtonSensor(5))
+	switch.next.sensors.append(bat.impulse.MouseButtonSensor(bge.events.WHEELDOWNMOUSE))
 	switch.prev.sensors.append(bat.impulse.KeyboardSensor(bge.events.QKEY))
 	switch.prev.sensors.append(bat.impulse.JoystickButtonSensor(4))
+	switch.prev.sensors.append(bat.impulse.MouseButtonSensor(bge.events.WHEELUPMOUSE))
 	#switch.axes.append(JoystickAxisSensor(0))
 
 	btn1 = bat.impulse.Button("1", '1')
 	btn1.sensors.append(bat.impulse.KeyboardSensor(bge.events.SPACEKEY))
 	btn1.sensors.append(bat.impulse.KeyboardSensor(bge.events.ENTERKEY))
 	btn1.sensors.append(bat.impulse.JoystickButtonSensor(2))
+	btn1.sensors.append(bat.impulse.MouseButtonSensor(bge.events.LEFTMOUSE))
 
 	btn2 = bat.impulse.Button("2", '2')
 	btn2.sensors.append(bat.impulse.KeyboardSensor(bge.events.XKEY))
 	btn2.sensors.append(bat.impulse.JoystickButtonSensor(1))
+	btn2.sensors.append(bat.impulse.MouseButtonSensor(bge.events.RIGHTMOUSE))
 
 	btn_cam = bat.impulse.Button("CameraReset", 'c')
 	btn_cam.sensors.append(bat.impulse.KeyboardSensor(bge.events.CKEY))
 	btn_cam.sensors.append(bat.impulse.JoystickButtonSensor(0))
+	btn_cam.sensors.append(bat.impulse.MouseButtonSensor(bge.events.MIDDLEMOUSE))
 
 	btn_start = bat.impulse.Button("Start", 's')
 	btn_start.sensors.append(bat.impulse.KeyboardSensor(bge.events.ESCKEY))

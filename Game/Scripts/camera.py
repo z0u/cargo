@@ -461,7 +461,7 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 	UP_DIST = 8.0
 	BACK_DIST = 25.0
 	DIST_BIAS = 0.5
-	EXPAND_FAC = 0.005
+	EXPAND_FAC = 0.02
 	ZALIGN_FAC = 0.025
 
 	HROT_STEP = math.radians(5)

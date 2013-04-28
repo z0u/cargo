@@ -38,78 +38,100 @@ Scripts.ui.HUDState()
 def configure_controls():
 	'''Bind keys and buttons to the interfaces.'''
 
-	# Acquire movement from a 2D directional pad.
-	movement = bat.impulse.DPad2D("Movement", 'u', 'd', 'l', 'r')
-	movement.up.sensors.append(bat.impulse.KeyboardSensor(bge.events.UPARROWKEY))
-	movement.up.sensors.append(bat.impulse.KeyboardSensor(bge.events.WKEY))
-	movement.up.sensors.append(bat.impulse.JoystickDpadSensor(0, 1))
-	movement.right.sensors.append(bat.impulse.KeyboardSensor(bge.events.RIGHTARROWKEY))
-	movement.right.sensors.append(bat.impulse.KeyboardSensor(bge.events.DKEY))
-	movement.right.sensors.append(bat.impulse.JoystickDpadSensor(0, 2))
-	movement.down.sensors.append(bat.impulse.KeyboardSensor(bge.events.DOWNARROWKEY))
-	movement.down.sensors.append(bat.impulse.KeyboardSensor(bge.events.SKEY))
-	movement.down.sensors.append(bat.impulse.JoystickDpadSensor(0, 4))
-	movement.left.sensors.append(bat.impulse.KeyboardSensor(bge.events.LEFTARROWKEY))
-	movement.left.sensors.append(bat.impulse.KeyboardSensor(bge.events.AKEY))
-	movement.left.sensors.append(bat.impulse.JoystickDpadSensor(0, 8))
-	movement.xaxes.append(bat.impulse.JoystickAxisSensor(0))
-	movement.yaxes.append(bat.impulse.JoystickAxisSensor(1))
-
-	camera = bat.impulse.DPad2D("CameraMovement", '^', '_', '<', '>')
-	camera.up.sensors.append(bat.impulse.KeyboardSensor(bge.events.IKEY))
-	camera.right.sensors.append(bat.impulse.KeyboardSensor(bge.events.LKEY))
-	camera.down.sensors.append(bat.impulse.KeyboardSensor(bge.events.KKEY))
-	camera.left.sensors.append(bat.impulse.KeyboardSensor(bge.events.JKEY))
-	camera.xaxes.append(bat.impulse.JoystickAxisSensor(2))
-	camera.yaxes.append(bat.impulse.JoystickAxisSensor(3))
-	camera.xaxes.append(bat.impulse.MouseLookSensor(0, 15))
-	camera.yaxes.append(bat.impulse.MouseLookSensor(1, 15))
-
-	# The switch command can be "next" or "previous"; use a 1D pad to filter
-	# out multiple conflicting button presses.
-	switch = bat.impulse.DPad1D("Switch", 'n', 'p')
-	switch.next.sensors.append(bat.impulse.KeyboardSensor(bge.events.EKEY))
-	switch.next.sensors.append(bat.impulse.JoystickButtonSensor(5))
-	switch.next.sensors.append(bat.impulse.MouseButtonSensor(bge.events.WHEELDOWNMOUSE))
-	switch.prev.sensors.append(bat.impulse.KeyboardSensor(bge.events.QKEY))
-	switch.prev.sensors.append(bat.impulse.JoystickButtonSensor(4))
-	switch.prev.sensors.append(bat.impulse.MouseButtonSensor(bge.events.WHEELUPMOUSE))
-	#switch.axes.append(JoystickAxisSensor(0))
-
-	btn1 = bat.impulse.Button("1", '1')
-	btn1.sensors.append(bat.impulse.KeyboardSensor(bge.events.SPACEKEY))
-	btn1.sensors.append(bat.impulse.KeyboardSensor(bge.events.ENTERKEY))
-	btn1.sensors.append(bat.impulse.JoystickButtonSensor(2))
-	btn1.sensors.append(bat.impulse.MouseButtonSensor(bge.events.LEFTMOUSE))
-
-	btn2 = bat.impulse.Button("2", '2')
-	btn2.sensors.append(bat.impulse.KeyboardSensor(bge.events.XKEY))
-	btn2.sensors.append(bat.impulse.JoystickButtonSensor(1))
-	btn2.sensors.append(bat.impulse.MouseButtonSensor(bge.events.RIGHTMOUSE))
-
-	btn_cam = bat.impulse.Button("CameraReset", 'c')
-	btn_cam.sensors.append(bat.impulse.KeyboardSensor(bge.events.CKEY))
-	btn_cam.sensors.append(bat.impulse.JoystickButtonSensor(0))
-	btn_cam.sensors.append(bat.impulse.MouseButtonSensor(bge.events.MIDDLEMOUSE))
-
-	btn_start = bat.impulse.Button("Start", 's')
-	btn_start.sensors.append(bat.impulse.KeyboardSensor(bge.events.ESCKEY))
-	btn_start.sensors.append(bat.impulse.JoystickButtonSensor(9))
+	[
+		{
+			"name": "Movement",
+			"type": "DPad2D",
+			"sensors": [
+				{
+					"name": "up",
+					"char": "u",
+					"bindings": [
+						{
+							"cls": "KeyboardSensor",
+							"options": ['uparrowkey']
+						},
+						{
+							"cls": "KeyboardSensor",
+							"options": ['wkey']
+						},
+						{
+							"cls": "JoystickDpadSensor",
+							"options": [0, 1]
+						},
+						]
+				}
+				]
+		}
+	]
 
 	ip = bat.impulse.Input()
 	ip.clear_buttons()
-	ip.add_button(movement)
-	ip.add_button(camera)
-	ip.add_button(switch)
-	ip.add_button(btn1)
-	ip.add_button(btn2)
-	ip.add_button(btn_cam)
-	ip.add_button(btn_start)
+	bat.impulse.mouse_sensitivity = 15
 
+	# Acquire movement from a 2D directional pad.
+	ip.add_controller(bat.impulse.DPad2D("Movement", 'u', 'd', 'l', 'r'))
+	ip.add_controller(bat.impulse.DPad2D("CameraMovement", '^', '_', '<', '>'))
+	# The switch command can be "next" or "previous"; use a 1D pad to filter
+	# out multiple conflicting button presses.
+	ip.add_controller(bat.impulse.DPad1D("Switch", 'n', 'p'))
+	ip.add_controller(bat.impulse.Button("1", '1'))
+	ip.add_controller(bat.impulse.Button("2", '2'))
+	ip.add_controller(bat.impulse.Button("CameraReset", 'c'))
+	ip.add_controller(bat.impulse.Button("2", '2'))
+	ip.add_controller(bat.impulse.Button("Start", 's'))
 	# Cheats!
-	bat.impulse.Input().add_sequence("udlr12", bat.event.Event("GiveAllShells"))
-	bat.impulse.Input().add_sequence("udlr21", bat.event.Event("LoseCurrentShell"))
-	bat.impulse.Input().add_sequence("uuddllrr", bat.event.Event("GiveFullHealth"))
-	bat.impulse.Input().add_sequence("udud22", bat.event.Event("TeleportCheat"))
+	ip.add_sequence("udlr12", bat.event.Event("GiveAllShells"))
+	ip.add_sequence("udlr21", bat.event.Event("LoseCurrentShell"))
+	ip.add_sequence("uuddllrr", bat.event.Event("GiveFullHealth"))
+	ip.add_sequence("udud22", bat.event.Event("TeleportCheat"))
+
+	ip.bind('Movement/up', 'keyboard', 'uparrowkey')
+	ip.bind('Movement/up', 'keyboard', 'wkey')
+	ip.bind('Movement/up', 'joydpad', 0, 1)
+	ip.bind('Movement/right', 'keyboard', 'rightarrowkey')
+	ip.bind('Movement/right', 'keyboard', 'dkey')
+	ip.bind('Movement/right', 'joydpad', 0, 2)
+	ip.bind('Movement/down', 'keyboard', 'downarrowkey')
+	ip.bind('Movement/down', 'keyboard', 'skey')
+	ip.bind('Movement/down', 'joydpad', 0, 4)
+	ip.bind('Movement/left', 'keyboard', 'leftarrowkey')
+	ip.bind('Movement/left', 'keyboard', 'akey')
+	ip.bind('Movement/left', 'joydpad', 0, 8)
+	ip.bind('Movement/xaxis', 'joystick', 0)
+	ip.bind('Movement/yaxis', 'joystick', 1)
+
+	ip.bind('CameraMovement/up', 'keyboard', 'ikey')
+	ip.bind('CameraMovement/right', 'keyboard', 'rightarrowkey')
+	ip.bind('CameraMovement/down', 'keyboard', 'downarrowkey')
+	ip.bind('CameraMovement/left', 'keyboard', 'leftarrowkey')
+	ip.bind('CameraMovement/xaxis', 'joystick', 2)
+	ip.bind('CameraMovement/xaxis', 'mouselook', 0)
+	ip.bind('CameraMovement/yaxis', 'joystick', 3)
+	ip.bind('CameraMovement/yaxis', 'mouselook', 1)
+
+	ip.bind('Switch/next', 'keyboard', 'ekey')
+	ip.bind('Switch/next', 'joybutton', 5)
+	ip.bind('Switch/next', 'mousebutton', 'wheeldownmouse')
+	ip.bind('Switch/prev', 'keyboard', 'qkey')
+	ip.bind('Switch/prev', 'joybutton', 4)
+	ip.bind('Switch/prev', 'mousebutton', 'wheelupmouse')
+
+	ip.bind('1', 'keyboard', 'spacekey')
+	ip.bind('1', 'keyboard', 'enterkey')
+	ip.bind('1', 'joybutton', 2)
+	ip.bind('1', 'mousebutton', 'leftmouse')
+
+	ip.bind('2', 'keyboard', 'xkey')
+	ip.bind('2', 'joybutton', 1)
+	ip.bind('2', 'mousebutton', 'rightmouse')
+
+	ip.bind('CameraReset', 'keyboard', 'ckey')
+	ip.bind('CameraReset', 'joybutton', 0)
+	ip.bind('CameraReset', 'mousebutton', 'middlemouse')
+
+	ip.bind('Start', 'keyboard', 'esckey')
+	ip.bind('Start', 'joybutton', 9)
+
 
 configure_controls()

@@ -120,6 +120,7 @@ class MenuController(Scripts.gui.UiController):
 		# TODO: for some reason setScreen seems to interfere with the menu. If
 		# send delay is set to 2, it might not work... but 200 does! Weird.
 		bat.event.Event('setScreen', 'LoadingScreen').send(0)
+		#bat.event.Event('setScreen', 'Controls_Movement').send(0)
 		bat.event.Event('GameModeChanged', 'Menu').send()
 
 		# Menu music. Note that the fade rate is set higher than the default, so
@@ -312,10 +313,12 @@ class OptionsPage(Scripts.gui.Widget):
 		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
-class NamePage(Scripts.gui.Widget):
-	'''A dumb widget that can show and hide itself, but doesn't respond to
-	mouse events.'''
+class ControlsConfPage(Scripts.gui.Widget):
+	def __init__(self, old_owner):
+		Scripts.gui.Widget.__init__(self, old_owner)
+		self.setSensitive(False)
 
+class NamePage(Scripts.gui.Widget):
 	MODEMAP = {
 		'LOWERCASE':  "abcdefghij""klmnopqrs""tuvwxyz",
 		'UPPERCASE':  "ABCDEFGHIJ""KLMNOPQRS""TUVWXYZ",

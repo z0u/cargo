@@ -16,6 +16,7 @@
 #
 
 import math
+import re
 
 import bge
 import mathutils
@@ -254,7 +255,10 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 	ACTIVE_FRAME = 12.0
 
 	def __init__(self, old_owner):
-		self.sensitive = True
+		if 'sensitive' in self:
+			self.sensitive = self['sensitive']
+		else:
+			self.sensitive = True
 		self['Widget'] = True
 		self.original_position = self.localPosition.copy()
 		self.is_visible = False
@@ -306,10 +310,11 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		if evt.message == 'showScreen':
 			if not 'screenName' in self:
 				self.show()
-			elif evt.body == self['screenName']:
-				self.show()
 			else:
-				self.hide()
+				if re.match(self['screenName'], evt.body) is not None:
+					self.show()
+				else:
+					self.hide()
 
 		elif evt.message == 'FocusChanged':
 			if evt.body is not self:

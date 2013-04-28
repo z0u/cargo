@@ -57,13 +57,20 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 
 		bat.event.EventBus().add_listener(self)
 		bat.event.EventBus().replay_last('setScreen', self)
-		bat.event.EventBus().replay_last('pushScreen', self)
-		bat.event.EventBus().replay_last('popScreen', self)
+		#bat.event.EventBus().replay_last('pushScreen', self)
+		#bat.event.EventBus().replay_last('popScreen', self)
 
 	def on_event(self, evt):
 		if evt.message == 'setScreen':
 			self.screen_stack = [evt.body]
 			self.update_screen()
+		elif evt.message == 'switchScreen':
+			# Swap the requested screen for the one on top of the stack.
+			if len(self.screen_stack) == 0:
+				self.screen_stack.append(evt.body)
+			else:
+				self.screen_stack[-1] = evt.body
+				self.update_screen()
 		elif evt.message == 'pushScreen':
 			if evt.body in self.screen_stack:
 				self.screen_stack.remove(evt.body)

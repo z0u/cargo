@@ -119,8 +119,8 @@ class MenuController(Scripts.gui.UiController):
 
 		# TODO: for some reason setScreen seems to interfere with the menu. If
 		# send delay is set to 2, it might not work... but 200 does! Weird.
-		bat.event.Event('setScreen', 'LoadingScreen').send(0)
-		#bat.event.Event('setScreen', 'Controls_Movement').send(0)
+		#bat.event.Event('setScreen', 'LoadingScreen').send(0)
+		bat.event.Event('setScreen', 'Controls_Actions').send(0)
 		bat.event.Event('GameModeChanged', 'Menu').send()
 
 		# Menu music. Note that the fade rate is set higher than the default, so
@@ -317,6 +317,18 @@ class ControlsConfPage(Scripts.gui.Widget):
 	def __init__(self, old_owner):
 		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
+
+	def on_event(self, evt):
+		if evt.message == 'CaptureBinding':
+			bat.event.Event('pushScreen', 'Controls_Capture').send()
+			bat.event.Event('CaptureDelayStart', evt.body).send(60)
+		elif evt.message == 'CaptureDelayStart':
+			bat.impulse.Input().start_capturing_for(evt.body)
+		elif evt.message == 'InputCaptured':
+			print('Captured', evt.body)
+			bat.event.Event('popScreen').send()
+		else:
+			Scripts.gui.Widget.on_event(self, evt)
 
 class NamePage(Scripts.gui.Widget):
 	MODEMAP = {

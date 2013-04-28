@@ -38,33 +38,6 @@ Scripts.ui.HUDState()
 def configure_controls():
 	'''Bind keys and buttons to the interfaces.'''
 
-	[
-		{
-			"name": "Movement",
-			"type": "DPad2D",
-			"sensors": [
-				{
-					"name": "up",
-					"char": "u",
-					"bindings": [
-						{
-							"cls": "KeyboardSensor",
-							"options": ['uparrowkey']
-						},
-						{
-							"cls": "KeyboardSensor",
-							"options": ['wkey']
-						},
-						{
-							"cls": "JoystickDpadSensor",
-							"options": [0, 1]
-						},
-						]
-				}
-				]
-		}
-	]
-
 	ip = bat.impulse.Input()
 	ip.clear_buttons()
 	bat.impulse.mouse_sensitivity = 15

@@ -44,7 +44,7 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 
 	def __init__(self, old_owner):
 		self.screen_stack = []
-		bat.impulse.Input().add_handler(self, 'MENU')
+		bat.impulse.Input().add_handler(self, 'MAINMENU')
 		bat.impulse.allow_mouse_capture = False
 
 		# Don't play the first focus sound.
@@ -69,9 +69,12 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 			self.screen_stack.append(evt.body)
 			self.update_screen()
 		elif evt.message == 'popScreen':
-			if len(self.screen_stack) > 0:
+			print(self.screen_stack)
+			if len(self.screen_stack) == 0 or len(self.screen_stack) == 1 and self.screen_stack[0] == 'LoadingScreen':
+				bat.event.Event('confirmation', 'Do you really want to quit?::quit::').send(1)
+			else:
 				self.screen_stack.pop()
-			self.update_screen()
+				self.update_screen()
 
 	@bat.bats.expose
 	def pulse(self):
@@ -150,13 +153,15 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 		self.downCurrent = None
 
 	def can_handle_input(self, state):
-		return state.name in ('1', '2', 'Movement')
+		return state.name in ('1', '2', 'Movement', 'Start')
 
 	def handle_input(self, state):
 		if state.name == '1':
 			self.handle_bt_1(state)
 		elif state.name == '2':
 			self.handle_bt_2(state)
+		elif state.name == 'Start':
+			self.handle_bt_start(state)
 		elif state.name == 'Movement':
 			self.handle_movement(state)
 
@@ -169,6 +174,11 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 				self.release()
 
 	def handle_bt_2(self, state):
+		'''Escape from current screen (keyboard/joypad).'''
+		if state.activated:
+			bat.event.Event('popScreen').send()
+
+	def handle_bt_start(self, state):
 		'''Escape from current screen (keyboard/joypad).'''
 		if state.activated:
 			bat.event.Event('popScreen').send()

@@ -335,8 +335,7 @@ class ControlsConfPage(Scripts.gui.Widget):
 
 	def on_event(self, evt):
 		if evt.message == 'CaptureBinding':
-			bat.event.Event('pushScreen', 'Controls_Capture').send()
-			bat.event.Event('CaptureDelayStart', evt.body).send(60)
+			self.initiate_capture(evt.body)
 		elif evt.message == 'CaptureDelayStart':
 			self.start_capture(evt.body)
 		elif evt.message == 'InputCaptured':
@@ -348,6 +347,18 @@ class ControlsConfPage(Scripts.gui.Widget):
 			self.save_bindings()
 		else:
 			Scripts.gui.Widget.on_event(self, evt)
+
+	def initiate_capture(self, path):
+		if 'xaxis' in path:
+			desc = 'Move the joystick or mouse left or right'
+		elif 'yaxis' in path:
+			desc = 'Move the joystick or mouse up or down'
+		else:
+			desc = 'Push a button'
+		desc += ', or press Escape to cancel.'
+		self.children['CC_Instructions'].children[0].set_text(desc)
+		bat.event.Event('pushScreen', 'Controls_Capture').send()
+		bat.event.Event('CaptureDelayStart', path).send(30)
 
 	def start_capture(self, path):
 		self.active_binding = path

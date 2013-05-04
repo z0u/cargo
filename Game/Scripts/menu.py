@@ -15,13 +15,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
+
 import bge
 
 import bat.bats
 import bat.event
+import bat.store
+import bat.impulse
 
 import Scripts.gui
-import bat.store
+import Scripts.input
 
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
@@ -314,9 +318,13 @@ class OptionsPage(Scripts.gui.Widget):
 		self.setSensitive(False)
 
 class ControlsConfPage(Scripts.gui.Widget):
+	log = logging.getLogger(__name__ + '.ControlsConfPage')
+
 	def __init__(self, old_owner):
 		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
+		self.bindings_map = Scripts.input.get_bindings()
+		self.redraw_bindings()
 
 	def on_event(self, evt):
 		if evt.message == 'CaptureBinding':
@@ -329,6 +337,23 @@ class ControlsConfPage(Scripts.gui.Widget):
 			bat.event.Event('popScreen').send()
 		else:
 			Scripts.gui.Widget.on_event(self, evt)
+
+	def redraw_bindings(self):
+		ip = bat.impulse.Input()
+		for label in self.children['CC_BindingsGrp'].children:
+			label = bat.bats.mutate(label)
+			canvas = bat.bats.mutate(label.children[0])
+			path = label['BindingPath']
+			try:
+				bindings = self.bindings_map[path]
+			except KeyError:
+				ControlsConfPage.log.error('No binding %s', path)
+				canvas.set_text('??')
+				continue
+			human_bindings = map(
+				lambda x: ip.sensor_def_to_human_string(*x),
+				bindings)
+			canvas.set_text(', '.join(human_bindings))
 
 class NamePage(Scripts.gui.Widget):
 	MODEMAP = {

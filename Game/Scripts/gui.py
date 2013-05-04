@@ -161,7 +161,7 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 		self.downCurrent = None
 
 	def can_handle_input(self, state):
-		return state.name in ('1', '2', 'Movement', 'Start')
+		return state.name in ('1', '2', 'Movement', 'Start', 'CameraMovement')
 
 	def handle_input(self, state):
 		if state.name == '1':
@@ -170,7 +170,7 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 			self.handle_bt_2(state)
 		elif state.name == 'Start':
 			self.handle_bt_start(state)
-		elif state.name == 'Movement':
+		elif state.name in {'Movement', 'CameraMovement'}:
 			self.handle_movement(state)
 
 	def handle_bt_1(self, state):

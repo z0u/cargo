@@ -77,7 +77,6 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
 			self.screen_stack.append(evt.body)
 			self.update_screen()
 		elif evt.message == 'popScreen':
-			print(self.screen_stack)
 			if len(self.screen_stack) == 0 or len(self.screen_stack) == 1 and self.screen_stack[0] == 'LoadingScreen':
 				bat.event.Event('confirmation', 'Do you really want to quit?::quit::').send(1)
 			else:

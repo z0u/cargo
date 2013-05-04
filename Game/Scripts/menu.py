@@ -320,23 +320,69 @@ class OptionsPage(Scripts.gui.Widget):
 class ControlsConfPage(Scripts.gui.Widget):
 	log = logging.getLogger(__name__ + '.ControlsConfPage')
 
+	PROTECTED_BINDINGS = {
+		('keyboard', 'esckey'),
+		('keyboard', 'enterkey'),
+		('mousebutton', 'leftmouse'),
+		('mousebutton', 'rightmouse')}
+
 	def __init__(self, old_owner):
 		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 		self.bindings_map = Scripts.input.get_bindings()
 		self.redraw_bindings()
+		self.active_binding = None
 
 	def on_event(self, evt):
 		if evt.message == 'CaptureBinding':
 			bat.event.Event('pushScreen', 'Controls_Capture').send()
 			bat.event.Event('CaptureDelayStart', evt.body).send(60)
 		elif evt.message == 'CaptureDelayStart':
-			bat.impulse.Input().start_capturing_for(evt.body)
+			self.start_capture(evt.body)
 		elif evt.message == 'InputCaptured':
-			print('Captured', evt.body)
+			self.record_capture(evt.body)
 			bat.event.Event('popScreen').send()
+		elif evt.message == 'ResetBindings':
+			self.reset_bindings()
+		elif evt.message == 'SaveBindings':
+			self.save_bindings()
 		else:
 			Scripts.gui.Widget.on_event(self, evt)
+
+	def start_capture(self, path):
+		self.active_binding = path
+		bat.impulse.Input().start_capturing_for(path)
+
+	def record_capture(self, sensor_def):
+		ControlsConfPage.log.info('Captured %s', sensor_def)
+		if self.active_binding is None:
+			return
+
+		if sensor_def in ControlsConfPage.PROTECTED_BINDINGS:
+			ControlsConfPage.log.warn('Can not change binding for %s', sensor_def)
+			return
+
+		if self.active_binding not in self.bindings_map:
+			ControlsConfPage.log.error('No binding %s', self.active_binding)
+			return
+
+		for bindings in self.bindings_map.values():
+			if sensor_def not in bindings:
+				continue
+			bindings.remove(sensor_def)
+		self.bindings_map[self.active_binding].append(sensor_def)
+
+		self.redraw_bindings()
+
+	def save_bindings(self):
+		Scripts.input.set_bindings(self.bindings_map)
+		Scripts.input.apply_bindings()
+		bat.event.Event('popScreen').send(1)
+
+	def reset_bindings(self):
+		Scripts.input.reset_bindings()
+		self.bindings_map = Scripts.input.get_bindings()
+		self.redraw_bindings()
 
 	def redraw_bindings(self):
 		ip = bat.impulse.Input()
@@ -354,6 +400,7 @@ class ControlsConfPage(Scripts.gui.Widget):
 				lambda x: ip.sensor_def_to_human_string(*x),
 				bindings)
 			canvas.set_text(', '.join(human_bindings))
+
 
 class NamePage(Scripts.gui.Widget):
 	MODEMAP = {

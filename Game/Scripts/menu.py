@@ -317,14 +317,11 @@ class OptionsPage(Scripts.gui.Widget):
 		Scripts.gui.Widget.__init__(self, old_owner)
 		self.setSensitive(False)
 
-class ControlsConfPage(Scripts.gui.Widget):
+class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 	log = logging.getLogger(__name__ + '.ControlsConfPage')
 
 	PROTECTED_BINDINGS = {
-		('keyboard', 'esckey'),
-		('keyboard', 'enterkey'),
-		('mousebutton', 'leftmouse'),
-		('mousebutton', 'rightmouse')}
+		('keyboard', 'esckey')}
 
 	def __init__(self, old_owner):
 		Scripts.gui.Widget.__init__(self, old_owner)
@@ -340,7 +337,6 @@ class ControlsConfPage(Scripts.gui.Widget):
 			self.start_capture(evt.body)
 		elif evt.message == 'InputCaptured':
 			self.record_capture(evt.body)
-			bat.event.Event('popScreen').send()
 		elif evt.message == 'ResetBindings':
 			self.reset_bindings()
 		elif evt.message == 'SaveBindings':
@@ -348,7 +344,11 @@ class ControlsConfPage(Scripts.gui.Widget):
 		else:
 			Scripts.gui.Widget.on_event(self, evt)
 
+	def can_handle_input(self, state):
+		return True
+
 	def initiate_capture(self, path):
+		bat.impulse.Input().add_handler(self, 'MAINMENU')
 		if 'xaxis' in path:
 			desc = 'Move the joystick or mouse left or right'
 		elif 'yaxis' in path:
@@ -369,21 +369,25 @@ class ControlsConfPage(Scripts.gui.Widget):
 		if self.active_binding is None:
 			return
 
-		if sensor_def in ControlsConfPage.PROTECTED_BINDINGS:
-			ControlsConfPage.log.warn('Can not change binding for %s', sensor_def)
-			return
+		try:
+			if sensor_def in ControlsConfPage.PROTECTED_BINDINGS:
+				ControlsConfPage.log.warn('Can not change binding for %s', sensor_def)
+				return
 
-		if self.active_binding not in self.bindings_map:
-			ControlsConfPage.log.error('No binding %s', self.active_binding)
-			return
+			if self.active_binding not in self.bindings_map:
+				ControlsConfPage.log.error('No binding %s', self.active_binding)
+				return
 
-		for bindings in self.bindings_map.values():
-			if sensor_def not in bindings:
-				continue
-			bindings.remove(sensor_def)
-		self.bindings_map[self.active_binding].append(sensor_def)
-
-		self.redraw_bindings()
+			for bindings in self.bindings_map.values():
+				if sensor_def not in bindings:
+					continue
+				bindings.remove(sensor_def)
+			self.bindings_map[self.active_binding].append(sensor_def)
+			self.redraw_bindings()
+		finally:
+			bat.impulse.Input().stop_capturing()
+			bat.impulse.Input().remove_handler(self)
+			bat.event.Event('popScreen').send()
 
 	def save_bindings(self):
 		Scripts.input.set_bindings(self.bindings_map)

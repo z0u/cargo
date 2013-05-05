@@ -53,7 +53,7 @@ DEFAULT_BINDINGS = {
 
 	'1': [
 		('keyboard', 'spacekey'),
-		('keyboard', 'enterkey'),
+		('keyboard', 'retkey'),
 		('joybutton', 2),
 		('mousebutton', 'leftmouse')],
 

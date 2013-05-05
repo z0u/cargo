@@ -75,8 +75,30 @@ STORY_SUMMARIES = {
 class SessionManager(metaclass=bat.bats.Singleton):
 	'''Responds to some high-level messages.'''
 
+	MENU_KEY_BINDINGS = {
+		'Movement/up': [
+			('keyboard', 'uparrowkey')],
+		'Movement/right': [
+			('keyboard', 'rightarrowkey')],
+		'Movement/down': [
+			('keyboard', 'downarrowkey')],
+		'Movement/left': [
+			('keyboard', 'leftarrowkey')],
+
+		'1': [
+			('keyboard', 'retkey'),
+			('mousebutton', 'leftmouse')],
+
+		'2': [
+			('mousebutton', 'rightmouse')],
+
+		'Start': [
+			('keyboard', 'esckey')]
+		}
+
 	def __init__(self):
 		bat.event.EventBus().add_listener(self)
+		bat.event.Event('KeyBindingsChanged').send(1)
 
 	def on_event(self, event):
 		if event.message == 'showSavedGameDetails':
@@ -113,6 +135,16 @@ class SessionManager(metaclass=bat.bats.Singleton):
 		elif event.message == 'reallyQuit':
 			bge.logic.endGame()
 
+		elif event.message == 'KeyBindingsChanged':
+			self.set_up_key_bindings()
+
+	def set_up_key_bindings(self):
+		# Apply user-defined keybindings
+		Scripts.input.apply_bindings()
+		# Override key bindings for this level: the prevents the menu from
+		# becoming unusable due to a broken key map.
+		Scripts.input.add_bindings(SessionManager.MENU_KEY_BINDINGS)
+
 
 class MenuController(Scripts.gui.UiController):
 
@@ -123,8 +155,8 @@ class MenuController(Scripts.gui.UiController):
 
 		# TODO: for some reason setScreen seems to interfere with the menu. If
 		# send delay is set to 2, it might not work... but 200 does! Weird.
-		#bat.event.Event('setScreen', 'LoadingScreen').send(0)
-		bat.event.Event('setScreen', 'Controls_Actions').send(0)
+		bat.event.Event('setScreen', 'LoadingScreen').send(0)
+		#bat.event.Event('setScreen', 'Controls_Actions').send(0)
 		bat.event.Event('GameModeChanged', 'Menu').send()
 
 		# Menu music. Note that the fade rate is set higher than the default, so
@@ -149,7 +181,13 @@ class MenuController(Scripts.gui.UiController):
 		elif screen_name == 'CreditsScreen':
 			return self.scene.objects['Btn_Crd_Load']
 		elif screen_name == 'OptionsScreen':
-			return self.scene.objects['Btn_Opt_Load']
+			return self.scene.objects['Btn_ControlConfig']
+#		elif screen_name == 'Controls_Actions':
+#			return self.scene.objects['Btn_CC_ActionsTab']
+#		elif screen_name == 'Controls_Movement':
+#			return self.scene.objects['Btn_CC_MovementTab']
+#		elif screen_name == 'Controls_Camera':
+#			return self.scene.objects['Btn_CC_CameraTab']
 		elif screen_name == 'LoadDetailsScreen':
 			return self.scene.objects['Btn_StartGame']
 		elif screen_name == 'ConfirmationDialogue':
@@ -318,6 +356,8 @@ class OptionsPage(Scripts.gui.Widget):
 		self.setSensitive(False)
 
 class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
+	_prefix = 'CC_'
+
 	log = logging.getLogger(__name__ + '.ControlsConfPage')
 
 	PROTECTED_BINDINGS = {
@@ -329,6 +369,14 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 		self.bindings_map = Scripts.input.get_bindings()
 		self.redraw_bindings()
 		self.active_binding = None
+
+	def show(self):
+		Scripts.gui.Widget.show(self)
+		self.children['CC_Note'].setVisible(True, True)
+
+	def hide(self):
+		Scripts.gui.Widget.hide(self)
+		self.children['CC_Note'].setVisible(False, True)
 
 	def on_event(self, evt):
 		if evt.message == 'CaptureBinding':
@@ -350,13 +398,13 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 	def initiate_capture(self, path):
 		bat.impulse.Input().add_handler(self, 'MAINMENU')
 		if 'xaxis' in path:
-			desc = 'Move the joystick or mouse left or right'
+			desc = 'Move the joystick or mouse left or right.'
 		elif 'yaxis' in path:
-			desc = 'Move the joystick or mouse up or down'
+			desc = 'Move the joystick or mouse up or down.'
 		else:
-			desc = 'Push a button'
-		desc += ', or press Escape to cancel.'
-		self.children['CC_Instructions'].children[0].set_text(desc)
+			desc = 'Push a button.'
+		canvas =  self.children['CC_Instructions'].children['CC_Instructions_Label']
+		canvas.set_text(desc)
 		bat.event.Event('pushScreen', 'Controls_Capture').send()
 		bat.event.Event('CaptureDelayStart', path).send(30)
 
@@ -364,7 +412,38 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 		self.active_binding = path
 		bat.impulse.Input().start_capturing_for(path)
 
+	@bat.bats.expose
+	def update(self):
+		'''
+		While capturing, poll keyboard events directly to allow the user to
+		cancel capturing. This can't be left to the impulse module, because
+		capturing is filtered by button type (i.e. while capturing mouse and
+		joystick axes, button presses will be ignored).
+		'''
+		if self.active_binding is None:
+			return
+
+		active_events = bge.logic.keyboard.active_events
+		if bge.events.ESCKEY in active_events:
+			# Escape cancels
+			self.stop_capture()
+		if bge.events.DELKEY in active_events or bge.events.BACKSPACEKEY in active_events:
+			# Del or Backspace clears bindings.
+			bindings = self.bindings_map[self.active_binding]
+			for binding in bindings[:]:
+				if binding not in ControlsConfPage.PROTECTED_BINDINGS:
+					bindings.remove(binding)
+			self.redraw_bindings()
+			self.stop_capture()
+
+	def stop_capture(self):
+		self.active_binding = None
+		bat.impulse.Input().stop_capturing()
+		bat.impulse.Input().remove_handler(self)
+		bat.event.Event('popScreen').send()
+
 	def record_capture(self, sensor_def):
+		'''Called in response to event from bat.impulse.Input.'''
 		ControlsConfPage.log.info('Captured %s', sensor_def)
 		if self.active_binding is None:
 			return
@@ -385,19 +464,18 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 			self.bindings_map[self.active_binding].append(sensor_def)
 			self.redraw_bindings()
 		finally:
-			bat.impulse.Input().stop_capturing()
-			bat.impulse.Input().remove_handler(self)
-			bat.event.Event('popScreen').send()
+			self.stop_capture()
 
 	def save_bindings(self):
 		Scripts.input.set_bindings(self.bindings_map)
-		Scripts.input.apply_bindings()
+		bat.event.Event('KeyBindingsChanged').send(1)
 		bat.event.Event('popScreen').send(1)
 
 	def reset_bindings(self):
 		Scripts.input.reset_bindings()
 		self.bindings_map = Scripts.input.get_bindings()
 		self.redraw_bindings()
+		bat.event.Event('KeyBindingsChanged').send(1)
 
 	def redraw_bindings(self):
 		ip = bat.impulse.Input()

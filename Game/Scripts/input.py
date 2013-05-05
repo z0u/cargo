@@ -109,11 +109,20 @@ def reset_bindings():
 
 def apply_bindings():
 	'''Bind keys and buttons to the interfaces.'''
-	bindings_map = get_bindings()
+	log.info('Applying user key bindings')
 	ip = bat.impulse.Input()
 	ip.unbind_all()
+	add_bindings(get_bindings())
+
+def add_bindings(bindings_map):
+	log.info('Adding key bindings')
+	ip = bat.impulse.Input()
 	for path, sensors in bindings_map.items():
 		for sensor_def in sensors:
+			try:
+				ip.unbind(*sensor_def)
+			except:
+				log.error('Failed to unbind input for %s', path, exc_info=1)
 			try:
 				ip.bind(path, *sensor_def)
 			except:

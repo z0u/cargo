@@ -361,7 +361,9 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 	log = logging.getLogger(__name__ + '.ControlsConfPage')
 
 	PROTECTED_BINDINGS = {
-		('keyboard', 'esckey')}
+		('keyboard', 'esckey'),
+		('keyboard', 'delkey'),
+		('keyboard', 'backspacekey')}
 
 	def __init__(self, old_owner):
 		Scripts.gui.Widget.__init__(self, old_owner)
@@ -385,6 +387,8 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 			self.start_capture(evt.body)
 		elif evt.message == 'InputCaptured':
 			self.record_capture(evt.body)
+		elif evt.message == 'StopCapture':
+			self.stop_capture()
 		elif evt.message == 'ResetBindings':
 			self.reset_bindings()
 		elif evt.message == 'SaveBindings':
@@ -396,6 +400,7 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 		return True
 
 	def initiate_capture(self, path):
+		ControlsConfPage.log.info('Initating capture')
 		bat.impulse.Input().add_handler(self, 'MAINMENU')
 		if 'xaxis' in path:
 			desc = 'Move the joystick or mouse left or right.'
@@ -409,24 +414,28 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 		bat.event.Event('CaptureDelayStart', path).send(30)
 
 	def start_capture(self, path):
+		ControlsConfPage.log.info('Capturing')
 		self.active_binding = path
 		bat.impulse.Input().start_capturing_for(path)
 
 	@bat.bats.expose
-	def update(self):
+	def poll(self):
 		'''
 		While capturing, poll keyboard events directly to allow the user to
 		cancel capturing. This can't be left to the impulse module, because
 		capturing is filtered by button type (i.e. while capturing mouse and
 		joystick axes, button presses will be ignored).
 		'''
+		ControlsConfPage.log.debug('Capturing for %s', self.active_binding)
 		if self.active_binding is None:
 			return
 
 		active_events = bge.logic.keyboard.active_events
+		ControlsConfPage.log.debug('Events: %s', active_events)
+		ControlsConfPage.log.debug('%d, %d', bge.events.DELKEY, bge.events.BACKSPACEKEY)
 		if bge.events.ESCKEY in active_events:
 			# Escape cancels
-			self.stop_capture()
+			bat.event.Event('StopCapture').send(1)
 		if bge.events.DELKEY in active_events or bge.events.BACKSPACEKEY in active_events:
 			# Del or Backspace clears bindings.
 			bindings = self.bindings_map[self.active_binding]
@@ -434,9 +443,12 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 				if binding not in ControlsConfPage.PROTECTED_BINDINGS:
 					bindings.remove(binding)
 			self.redraw_bindings()
-			self.stop_capture()
+			bat.event.Event('StopCapture').send(1)
 
 	def stop_capture(self):
+		ControlsConfPage.log.info('Stopping capture')
+		if self.active_binding is None:
+			return
 		self.active_binding = None
 		bat.impulse.Input().stop_capturing()
 		bat.impulse.Input().remove_handler(self)
@@ -464,20 +476,23 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 			self.bindings_map[self.active_binding].append(sensor_def)
 			self.redraw_bindings()
 		finally:
-			self.stop_capture()
+			bat.event.Event('StopCapture').send(1)
 
 	def save_bindings(self):
+		ControlsConfPage.log.info('Saving bindings')
 		Scripts.input.set_bindings(self.bindings_map)
 		bat.event.Event('KeyBindingsChanged').send(1)
 		bat.event.Event('popScreen').send(1)
 
 	def reset_bindings(self):
+		ControlsConfPage.log.info('Resetting bindings')
 		Scripts.input.reset_bindings()
 		self.bindings_map = Scripts.input.get_bindings()
 		self.redraw_bindings()
 		bat.event.Event('KeyBindingsChanged').send(1)
 
 	def redraw_bindings(self):
+		ControlsConfPage.log.info('Redrawing')
 		ip = bat.impulse.Input()
 		for label in self.children['CC_BindingsGrp'].children:
 			label = bat.bats.mutate(label)

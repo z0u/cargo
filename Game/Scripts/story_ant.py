@@ -384,6 +384,8 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(bat.story.ActAttrSet('visible', False, target_descendant="Ant_Pick"))
 		# Pick was left outside.
 		s.add_action(bat.story.ActConstraintSet("Hand.L", "Copy Transforms", 0))
+		s.add_action(bat.story.ActAction('Ant_Idle', 1, 80, Ant.L_IDLE,
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 
 		srescue_start, srescue_end = self.create_rescue_states()
 		srescue_start.add_predecessor(s)

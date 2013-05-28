@@ -79,7 +79,8 @@ def create_controls():
 	ip.clear_buttons()
 	ip.clear_sequences()
 
-	bat.impulse.mouse_sensitivity = 15
+	# Mouse sensitivity
+	bat.impulse.MouseLookSensor.multiplier = 15
 
 	# Acquire movement from a 2D directional pad.
 	ip.add_controller(bat.impulse.DPad2D("Movement", 'u', 'd', 'l', 'r'))

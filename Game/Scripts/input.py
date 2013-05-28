@@ -93,8 +93,8 @@ def create_controls():
 	ip.add_controller(bat.impulse.Button("2", '2'))
 	ip.add_controller(bat.impulse.Button("Start", 's'))
 	# Cheats!
-	ip.add_sequence("udlr12", bat.event.Event("GiveAllShells"))
-	ip.add_sequence("udlr21", bat.event.Event("LoseCurrentShell"))
+	ip.add_sequence("udlr11", bat.event.Event("GiveAllShells"))
+	ip.add_sequence("udlr22", bat.event.Event("LoseCurrentShell"))
 	ip.add_sequence("uuddllrr", bat.event.Event("GiveFullHealth"))
 	ip.add_sequence("udud22", bat.event.Event("TeleportCheat"))
 

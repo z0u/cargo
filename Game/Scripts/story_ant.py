@@ -653,6 +653,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 540))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(bat.story.ActAction('Ant_Rescued', 593, 660, Ant.L_ANIM))
+		s.add_action(bat.story.ActStoreSet('/game/level/AntRescued', True))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 660))

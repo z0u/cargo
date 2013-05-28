@@ -231,8 +231,17 @@ class GameLevel(Level):
 		spawn_point = bat.store.get('/game/level/spawnPoint',
 				self['defaultSpawnPoint'])
 		if not spawn_point in scene.objects:
-			print("Error: spawn point %s not found." % spawn_point)
-			spawn_point = self['defaultSpawnPoint']
+			GameLevel.log.error("Spawn point %s not found.", spawn_point)
+			sps = [self['defaultSpawnPoint']]
+			sps.extend(self.spawn_points)
+			for sp in sps:
+				if sp in scene.objects:
+					spawn_point = sp
+					break
+				else:
+					GameLevel.log.warn("Spawn point %s not found.", sp)
+			if not spawn_point in scene.objects:
+				raise KeyError('No spawn point found!')
 
 		bat.bats.add_and_mutate_object(scene, 'Snail', self)
 		bat.event.Event('TeleportSnail', spawn_point).send()

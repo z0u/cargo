@@ -557,6 +557,7 @@ class Thimble(ShellBase):
 				bat.bats.mutate(self.children['ArcRay_Root.2']),
 				bat.bats.mutate(self.children['ArcRay_Root.3']))
 		self.direction_mapper = bat.impulse.DirectionMapperLocal()
+		self.direction_mapper.car_mode = True
 		self.direction_mapper_joystick = bat.impulse.DirectionMapperViewLocal()
 		self.engine = Scripts.attitude.Engine(self)
 

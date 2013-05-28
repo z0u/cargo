@@ -124,6 +124,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.bend_angle_fore = 0.0
 		self.bend_angle_aft = 0.0
 		self.direction_mapper = bat.impulse.DirectionMapperLocal()
+		self.direction_mapper.car_mode = True
 		self.direction_mapper_joystick = bat.impulse.DirectionMapperViewLocal()
 		self.engine = Scripts.attitude.Engine(self)
 
@@ -276,8 +277,9 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		elif evt.message == 'LoseCurrentShell':
 			# Cheat ;)
 			name = Scripts.inventory.Shells().get_equipped()
-			if name is not None:
-				self.unequip_shell()
+			if name is not None and not self.is_in_shell:
+				shell = self.unequip_shell()
+				shell.on_dropped()
 				Scripts.inventory.Shells().discard(name)
 				bat.event.Event('ShellChanged', 'new').send()
 		elif evt.message == 'GiveFullHealth':
@@ -478,7 +480,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		if name in scene.objects:
 			shell = scene.objects[name]
 		else:
-			shell = bat.bats.add_and_mutate_object(scene, name, self)
+			shell = Scripts.shells.factory(name)
 		self.equip_shell(shell, True)
 		self.shell_change_sound.play()
 
@@ -544,6 +546,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 	def unequip_shell(self):
 		self.add_state(Snail.S_NOSHELL)
 		self.rem_state(Snail.S_HASSHELL)
+		self.rem_state(Snail.S_INSHELL)
 		shell = self.shell
 		shell.removeParent()
 		self.shell = None
@@ -579,6 +582,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		'''Unhooks the current shell by un-setting its parent.'''
 		if self.shell is None:
 			return
+
 		velocity = bat.bmath.ZAXIS.copy()
 		velocity.x += 0.5 - bge.logic.getRandomFloat()
 		velocity = self.getAxisVect(velocity)
@@ -693,7 +697,6 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		'''Called when the snail has finished its exit shell
 		animation (several frames after control has been
 		transferred).'''
-
 		self.add_state(Snail.S_HASSHELL)
 		self.shell.on_post_exit()
 
@@ -909,11 +912,11 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.decay_speed()
 
 		if state.source & bat.impulse.SRC_JOYSTICK_AXIS:
-			# Use special joystick mapper for view-based movement.
+			# Use viewcentric joystick mapper movement.
 			self.direction_mapper_joystick.update(self, state.direction)
 			self.engine.apply(self.direction_mapper_joystick.direction, speed)
 		else:
-			# Use snake-like movement controls.
+			# Use egocentric (snake-like) movement controls.
 			self.direction_mapper.update(self, state.direction)
 			self.engine.apply(self.direction_mapper.direction, speed)
 

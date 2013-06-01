@@ -121,23 +121,23 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 20, tap=True))
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "Couldn't be; it was just lying here! Finders keepers, I always say.")
-		s.add_action(bat.story.ActAction('Bi_Discuss', 1, 6, Bird.L_ANIM,
+		s.add_action(bat.story.ActAction('Bi_Discuss', 1, 10, Bird.L_ANIM,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=2.0))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 5, tap=True)) # One less than max for tolerance
+		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 9, tap=True)) # One less than max for tolerance
 		s.add_event("ShowDialogue", "Tell you what, I'll make you a deal.")
-		s.add_action(bat.story.ActAction('Bi_Discuss', 6, 17, Bird.L_ANIM))
+		s.add_action(bat.story.ActAction('Bi_Discuss', 10, 21, Bird.L_ANIM))
 		s.add_action(bat.story.ActAction('Bi_Discuss_Idle', 100, 149, Bird.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 17, tap=True))
+		sKnock.add_condition(bat.story.CondActionGE(Bird.L_ANIM, 21, tap=True))
 		s.add_event("ShowDialogue", ("If you can bring me 3 other shiny red things, I'll give this one to you.",
 				("That's not fair!", "I need it to do my job!")))
-		s.add_action(bat.story.ActAction('Bi_Discuss', 17, 36, Bird.L_ANIM))
+		s.add_action(bat.story.ActAction('Bi_Discuss', 21, 40, Bird.L_ANIM))
 		s.add_action(bat.story.ActAction('Bi_Discuss_Idle', 1, 49, Bird.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 
@@ -145,7 +145,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_event("ShowDialogue", "Now now, you can't just go taking things from other people.")
 		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdStatement1.ogg'))
-		s.add_action(bat.story.ActAction('Bi_Discuss', 36, 47, Bird.L_ANIM))
+		s.add_action(bat.story.ActAction('Bi_Discuss', 40, 51, Bird.L_ANIM))
 		s.add_action(bat.story.ActAction('Bi_Discuss_Idle', 200, 249, Bird.L_IDLE,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP, blendin=5.0))
 

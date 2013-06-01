@@ -79,6 +79,62 @@ class Sign(bat.story.Chapter, bge.types.KX_GameObject):
 		s.add_action(bat.story.ActStateChange('REM', Sign.S_ACTIVE))
 
 
+class SignMainCargoHouse(Sign):
+	def create_sign_conversation(self):
+		s = s_start = bat.story.State()
+		s.add_event("ShowDialogue", "Cargo's House")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+
+		s_end = s.create_successor()
+		return s_start, s_end
+
+
+class SignMainCargoNotes(Sign):
+	def create_sign_conversation(self):
+		s = s_start = bat.story.State()
+		s.add_event("ShowDialogue", "Cargo's notes!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "1/5: Use the mouse or second joystick to look around.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "2/5: Press the camera button \[btncam] to reset the camera.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "3/5: Press button 1 \[btn1] to go into your shell and roll around.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "4/5: Don't touch the salt.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+		s.add_event("ShowDialogue", "5/5: Eat clovers if you get sick, or have a bath at home.")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+
+		s_end = s.create_successor()
+		return s_start, s_end
+
+
+class SignMainLighthouse(Sign):
+	def create_sign_conversation(self):
+		s = s_start = bat.story.State()
+		s.add_event("ShowDialogue", "Welcome to the Lighthouse!")
+
+		s = s.create_successor()
+		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+
+		s_end = s.create_successor()
+		return s_start, s_end
+
+
 class SignMainSpider(Sign):
 	def create_sign_conversation(self):
 		s = s_start = bat.story.State()
@@ -96,7 +152,7 @@ class SignMainSpider(Sign):
 		s.add_action(Scripts.story.ActSetFocalPoint("Beach"))
 		s.add_action(Scripts.story.ActSetCamera('Sign_MainSpider_Cam2'))
 
-		s = s.create_successor("Conversation over")
+		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
 		s.add_action(Scripts.story.ActRemoveFocalPoint("LaunchRamp"))
 		s.add_action(Scripts.story.ActRemoveFocalPoint("Beach"))

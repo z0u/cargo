@@ -35,7 +35,7 @@ CREDITS = [
 	("Textures", "Alex Fraser, Junki Wano"),
 	("Music", "Robert Leigh"),
 	("Programming", "Alex Fraser, Mark Triggs, Campbell Barton, Ben Sturmfels"),
-	("Sound Effects", "Alex Fraser, Ben Sturmfels, freesound.org users: "
+	("Sound Effects", "Alex Fraser, Ben Sturmfels, Ben Finney, freesound.org users: "
 			"3bagbrew, FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, "
 			"qubodup, thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S, "
 			"batchku, satrebor, gherat, ZeSoundResearchInc., CGEffex, "

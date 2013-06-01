@@ -56,7 +56,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
 	MAX_BLUR = {
 			'FIRST': 0,
 			'THIRD_SHOULDER': 0.02,
-			'THIRD_STATIC': 1
+			'THIRD_STATIC': 0.1
 			}
 
 	camera = bat.containers.weakprop('camera')

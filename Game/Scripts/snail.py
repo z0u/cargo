@@ -37,6 +37,17 @@ import Scripts.inventory
 import Scripts.shells
 
 
+def factory():
+	scene = bge.logic.getCurrentScene()
+	if not "Snail" in scene.objectsInactive:
+		try:
+			bge.logic.LibLoad('//Snail_loader.blend', 'Scene', load_actions=True)
+		except ValueError as e:
+			print('Warning: could not load snail:', e)
+
+	return bat.bats.add_and_mutate_object(scene, "Snail", "Snail")
+
+
 class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_GameObject):
 	_prefix = ''
 
@@ -260,6 +271,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 			self.drop_shell(evt.body)
 		elif evt.message == 'ForceReclaimShell':
 			self.reclaim_shell()
+		elif evt.message == 'ForceEquipShell':
+			self._switch(evt.body)
 		elif evt.message == 'GravityChanged':
 			antiG = evt.body.copy()
 			antiG.negate()

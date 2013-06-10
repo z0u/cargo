@@ -22,10 +22,11 @@ import logging
 import bat.bats
 import bat.event
 import bat.story
+import bat.store
 
+import Scripts.snail
 import Scripts.camera
 import Scripts.director
-import bat.store
 import Scripts.inventory
 
 GRAVITY = 75.0
@@ -188,6 +189,13 @@ class Level(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		bge.logic.setGravity(g)
 		bat.event.Event('GravityChanged', g).send()
 		bat.event.Event('GameModeChanged', 'Playing').send()
+		if 'BasicKit' not in self.scene.objects or 'BasicKit_hidden' not in self.scene.objectsInactive:
+			try:
+				bge.logic.LibLoad('//Utilities_loader.blend', 'Scene', load_actions=True)
+			except ValueError as e:
+				print('Warning: could not load utilities:', e)
+			if 'BasicKit' not in self.scene.objects:
+				self.scene.addObject('BasicKit', 'BasicKit')
 
 class GameLevel(Level):
 	'''A level that is part of the main game. Handles things such as spawn
@@ -243,8 +251,9 @@ class GameLevel(Level):
 			if not spawn_point in scene.objects:
 				raise KeyError('No spawn point found!')
 
-		bat.bats.add_and_mutate_object(scene, 'Snail', self)
+		Scripts.snail.factory()
 		bat.event.Event('TeleportSnail', spawn_point).send()
+		bat.event.Event('TeleportSnail', spawn_point).send(1)
 
 	def on_event(self, event):
 		if event.message == "LoadLevel":

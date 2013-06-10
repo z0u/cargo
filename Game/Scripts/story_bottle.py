@@ -134,6 +134,7 @@ class Bottle(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObjec
 			# Then spawn the bird.
 			spawn_point = self.scene.objects["Bird_SauceBar_Spawn"]
 			bird = Scripts.story_bird.factory()
+			bird.create_bottle_state_graph()
 			bat.bmath.copy_transform(spawn_point, bird)
 			self.bird_arrived = False
 

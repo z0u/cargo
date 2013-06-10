@@ -42,18 +42,16 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 	def __init__(self, old_owner):
 		bat.story.Chapter.__init__(self, old_owner)
-		# if at bottle...
-		if True:
-			bat.event.WeakEvent("StartLoading", self).send()
-			self.pick_up_shell()
-			self.create_bottle_state_graph()
 
 	def create_bottle_state_graph(self):
+		bat.event.WeakEvent("StartLoading", self).send()
+		self.pick_up_shell()
+
 		def steal_shell():
 			Scripts.inventory.Shells().discard("Shell")
 			bat.event.Event('ShellChanged', 'new').send()
 
-		s = self.rootState.create_successor("Init")
+		s = self.rootState.create_successor("Init bottle")
 		s.add_action(Scripts.story.ActSuspendInput())
 		s.add_action(Scripts.story.ActSetCamera('B_BirdIntroCam'))
 		s.add_action(Scripts.story.ActSetFocalPoint('Bi_FootHook.L'))
@@ -196,6 +194,148 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s.add_action(Scripts.story.ActRemoveCamera('BirdCamera_BottleToNest'))
 		s.add_action(bat.story.ActDestroy())
 
+	def create_nest_state_graph(self):
+		s = (self.rootState.create_successor("Init nest")
+			(bat.story.CondEvent('ApproachBird', self))
+			(Scripts.story.ActSuspendInput())
+			(Scripts.story.ActSetCamera('B_BirdIntroCam'))
+			(Scripts.story.ActSetFocalPoint('Bi_FootHook.L'))
+			(bat.story.ActMusicPlay(
+				'//Sound/Music/06-TheBird_loop.ogg',
+				introfile='//Sound/Music/06-TheBird_intro.ogg',
+				fade_in_rate=1))
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
+			("FinishLoading", self)
+			(bat.story.ActAction("B_BirdCloseCamAction", 1, 96, 0, ob="B_BirdIntroCam"))
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
+			("ShowDialogue", "Hi there, little snail! It's nice of you to come "
+				"to visit.")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "Hey! That's a nice shiny red thing you have "
+				"there. Are you here to talk business?")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "I haven't forgotten our deal: if you give me "
+				"three shiny red things, I'll give you this one in return.")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", ("So, will you give me that \[thimble]?",
+				("Actually I think I'll keep it.", "I guess so.")))
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", ("Thanks! And, ooh, what a lovely \[wheel]!",
+				("Here you go.", "Let's get this over with.")))
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", ("And a \[bottlecap]! That's for me too, right?",
+				("Of course.", "Sure, why not :(")))
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "Wonderful! What an excellent collection.")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "But you know what would make it even better? "
+				"That \[nut]! I know it wasn't part of the deal...")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", ("... but now that I have seen it, I know I can't "
+				"part with the \[shell] for anything less.",
+				("Whatever!", "Take it; it's slowing me down.")))
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "Whoa, whoa! It's too heavy. Look out!")
+		)
+
+		# Nest falls down.
+
+		# Cut to being at base of tree with contents of nest scattered around.
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "Oh my beautiful egg! What luck that it is not broken.")
+		)
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "Hmm...")
+		)
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", ("You know, it strikes me that I may have been a "
+				"little greedy.",
+				("Well, maybe a little.", "You were so greedy!")))
+		)
+
+		# Bird is told that it was greedy, so it gives back the loot.
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "Oh you're right! I was greedy, and a fool.")
+		)
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ShowDialogue", "Please, take back the things you brought me.")
+		)
+
+		s = s.create_successor()(bat.story.CondEvent("DialogueDismissed", self))
+
+		s = (s.create_successor()
+			(bat.story.CondWait(1))
+			("ForceEquipShell", "Thimble")
+		)
+		s = (s.create_successor()
+			(bat.story.CondWait(1))
+			("ForceEquipShell", "Wheel")
+		)
+		s = (s.create_successor()
+			(bat.story.CondWait(1))
+			("ForceEquipShell", "BottleCap")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
+			("ShowDialogue", "You can even take my shell. I can't bear to look "
+				"at it! Besides, my nest was becoming a bit cluttered.")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			("ForceEquipShell", "Shell")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
+			("ShowDialogue", "Ah, I feel better already!")
+		)
+
+		s = (s.create_successor("Return to game")
+			(Scripts.story.ActResumeInput())
+			(Scripts.story.ActRemoveCamera('B_BirdIntroCam'))
+			(bat.story.ActMusicStop())
+		)
+
 	def pick_up(self, ob, left=True):
 		attach_point = self.children["Bi_FootHook.L"]
 
@@ -221,3 +361,13 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			shell.on_grasped()
 		except AttributeError as e:
 			print("Warning:", e)
+
+def spawn_nest(c):
+	required_shells = set()
+	required_shells.update(Scripts.inventory.Shells().get_all_shells())
+	if not required_shells.issubset(Scripts.inventory.Shells().get_shells()):
+		# Player still needs to collect more shells.
+		return
+	bird = factory()
+	bird.create_nest_state_graph()
+	bat.bmath.copy_transform(c.owner, bird)

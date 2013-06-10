@@ -16,6 +16,8 @@
 #
 
 import mathutils
+import mathutils.geometry
+
 import bat.bmath
 import bat.bats
 
@@ -25,6 +27,7 @@ class SurfaceAttitude:
 		self.counter = bat.bats.Counter()
 		self.target = target
 
+	@bat.bats.profile("Scripts.attitude.SurfaceAttitude.apply")
 	def apply(self):
 		self.counter.__init__()
 		counter = self.counter
@@ -45,10 +48,10 @@ class SurfaceAttitude:
 		#
 		touched_object = counter.mode
 		if touched_object is not None:
-			angV = touched_object.getAngularVelocity()
-			if angV.magnitude < bat.bmath.EPSILON:
+			angV = touched_object.worldAngularVelocity
+			if angV.length_squared < bat.bmath.EPSILON:
 				angV = bat.bmath.MINVECTOR
-			self.target.setAngularVelocity(angV)
+			self.target.worldAngularVelocity = angV
 
 		if counter.n > 0:
 			avNormal /= counter.n
@@ -63,7 +66,7 @@ class SurfaceAttitude:
 			# smoother transition than just averaging the normals returned by the
 			# rays. Rays that didn't hit will use their last known value.
 			#
-			normal = bat.bmath.quadNormal(*hit_points)
+			normal = mathutils.geometry.normal(*hit_points)
 			if normal.dot(avNormal) < 0.0:
 				normal.negate()
 			self.target.alignAxisToVect(normal, 2)
@@ -81,6 +84,7 @@ class Engine:
 		self.turn_factor = 0.0
 		self.rot_speed = 0.0
 
+	@bat.bats.profile("Scripts.attitude.Engine.apply")
 	def apply(self, world_direction, speed):
 		turn_factor = world_direction.dot(self.target.getAxisVect(bat.bmath.XAXIS))
 		agreement = world_direction.dot(self.target.getAxisVect(bat.bmath.YAXIS))

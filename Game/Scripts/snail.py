@@ -16,9 +16,11 @@
 #
 import logging
 import time
+from collections import namedtuple
 
 import bge
 import mathutils
+import mathutils.geometry
 
 import bat.anim
 import bat.bats
@@ -124,6 +126,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.shockwave = self.childrenRecursive['Shockwave']
 		self.cameraTrack = self.childrenRecursive['Head.2']
 		self.focal_points = [self.eyeLocL, self.eyeLocR, self]
+		self.head_segments = self.gather_segments(self.children['Head.0'])
+		self.tail_segments = self.gather_segments(self.children['Tail.0'])
 
 		self.attitude = Scripts.attitude.SurfaceAttitude(self,
 				bat.bats.mutate(self.children['ArcRay_Root.0']),
@@ -204,6 +208,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		else:
 			self.last_pos = cpos
 
+	@bat.bats.profile()
 	def orient(self):
 		'''Adjust the orientation of the snail to match the nearest surface.'''
 		# Use attitude object to apply root orientation.
@@ -212,55 +217,62 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		self.touchedObject, self['nHit'] = self.attitude.apply()
 
 		mat_rot = mathutils.Matrix.Rotation(self.bend_angle_fore, 3, 'Z')
-		self.orient_segment(self.children['Head.0'], mat_rot)
+		self.orient_segments(self.head_segments, mat_rot)
 		mat_rot = mathutils.Matrix.Rotation(self.bend_angle_aft, 3, 'Z')
-		self.orient_segment(self.children['Tail.0'], mat_rot)
-		self.armature.update()
+		self.orient_segments(self.tail_segments, mat_rot)
+		#self.armature.update()
 
-	def orient_segment(self, parentSegment, mat_rot):
-		name = parentSegment.name[:-2]
-		i = int(parentSegment.name[-1:]) + 1
+	Segment = namedtuple('Segment', ['parent', 'pivot', 'segment', 'ray_l', 'ray_r',
+		'fulcrum', 'channel'])
 
-		pivotName = 'ChildPivot_%s.%d' % (name, i)
-		if not pivotName in parentSegment.children:
-			return
+	@bat.bats.profile()
+	def gather_segments(self, root):
+		segs = []
+		parent_segment = root
+		while True:
+			name = parent_segment.name[:-2]
+			i = int(parent_segment.name[-1:]) + 1
 
-		pivot = parentSegment.children[pivotName]
-		pivot.localOrientation = mat_rot
-		rayL = pivot.children['ArcRay_%s.%d.L' % (name, i)]
-		rayR = pivot.children['ArcRay_%s.%d.R' % (name, i)]
-		fulcrum = pivot.children['Fulcrum_%s.%d' % (name, i)]
-		segment = pivot.children['%s.%d' % (name, i)]
+			pivotName = 'ChildPivot_%s.%d' % (name, i)
+			if not pivotName in parent_segment.children:
+				break
 
-		segment.alignAxisToVect(pivot.getAxisVect(bat.bmath.XAXIS), 0)
+			pivot = parent_segment.children[pivotName]
+			ray_l = bat.bats.mutate(pivot.children['ArcRay_%s.%d.L' % (name, i)])
+			ray_r = bat.bats.mutate(pivot.children['ArcRay_%s.%d.R' % (name, i)])
+			fulcrum = pivot.children['Fulcrum_%s.%d' % (name, i)]
+			segment = pivot.children['%s.%d' % (name, i)]
+			channel = self.armature.channels[segment['Channel']]
 
-		_, p1, _ = rayR.getHitPosition()
-		_, p2, _ = rayL.getHitPosition()
-		p3 = fulcrum.worldPosition
-		normal = bat.bmath.triangleNormal(p1, p2, p3)
+			segs.append(Snail.Segment(parent_segment, pivot, segment, ray_l, ray_r, fulcrum, channel))
+			parent_segment = segment
 
-		if normal.dot(pivot.getAxisVect(bat.bmath.ZAXIS)) > 0.0:
-			#
-			# Normal is within 90 degrees of parent's normal -> segment not
-			# doubling back on itself.
-			#
-			# Interpolate between normals for current and previous frames.
-			#
-			segment.alignAxisToVect(normal, 2, 0.4)
+		return segs
 
-		#
-		# Make orientation available to armature. Use the inverse of the
-		# parent's orientation to find the local orientation.
-		#
-		parentInverse = parentSegment.worldOrientation.copy()
-		parentInverse.invert()
-		localOrnMat = parentInverse * segment.worldOrientation
-		channel = self.armature.channels[segment['Channel']]
-		channel.rotation_quaternion = localOrnMat.to_quaternion()
+	@bat.bats.profile()
+	def orient_segments(self, segs, mat_rot):
+		for parent, pivot, segment, ray_l, ray_r, fulcrum, channel in segs:
+			pivot.localOrientation = mat_rot
+			segment.alignAxisToVect(pivot.getAxisVect(bat.bmath.XAXIS), 0)
 
-		# Recurse
-		if len(segment.children) > 0:
-			self.orient_segment(segment, mat_rot)
+			_, p1, _ = ray_r.getHitPosition()
+			_, p2, _ = ray_l.getHitPosition()
+			p3 = fulcrum.worldPosition
+			normal = mathutils.geometry.normal(p1, p2, p3)
+
+			if normal.dot(pivot.getAxisVect(bat.bmath.ZAXIS)) > 0.0:
+				# Normal is within 90 degrees of parent's normal -> segment not
+				# doubling back on itself.
+				#
+				# Interpolate between normals for current and previous frames.
+				segment.alignAxisToVect(normal, 2, 0.4)
+
+			# Make orientation available to armature. Use the inverse of the
+			# parent's orientation to find the local orientation.
+			parentInverse = parent.worldOrientation.copy()
+			parentInverse.invert()
+			localOrnMat = parentInverse * segment.worldOrientation
+			channel.rotation_quaternion = localOrnMat.to_quaternion()
 
 	def on_event(self, evt):
 		if evt.message == 'ForceExitShell':

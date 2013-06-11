@@ -195,11 +195,18 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s.add_action(bat.story.ActDestroy())
 
 	def create_nest_state_graph(self):
-		s = (self.rootState.create_successor("Init nest")
+		s = (self.rootState.create_successor('Init nest')
+			(bat.story.ActAction('B_Nest', 1, 1, ob='B_Nest'))
+			(bat.story.ActAction('B_Egg', 1, 1, ob='B_Egg'))
+			(bat.story.ActAction('B_Final', 1, 1))
+			(bat.story.ActCopyTransform('B_NestSpawn'))
+		)
+
+		s = (s.create_successor()
 			(bat.story.CondEvent('ApproachBird', self))
 			(Scripts.story.ActSuspendInput())
-			(Scripts.story.ActSetCamera('B_BirdIntroCam'))
-			(Scripts.story.ActSetFocalPoint('Bi_FootHook.L'))
+			(Scripts.story.ActSetCamera('B_nest_cam'))
+			(Scripts.story.ActSetFocalPoint('Bi_Face'))
 			(bat.story.ActMusicPlay(
 				'//Sound/Music/06-TheBird_loop.ogg',
 				introfile='//Sound/Music/06-TheBird_intro.ogg',
@@ -209,7 +216,6 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
 			("FinishLoading", self)
-			(bat.story.ActAction("B_BirdCloseCamAction", 1, 96, 0, ob="B_BirdIntroCam"))
 		)
 
 		s = (s.create_successor()
@@ -271,11 +277,23 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ShowDialogue", "Whoa, whoa! It's too heavy. Look out!")
 		)
 
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+		)
+
 		# Nest falls down.
+		s = (s.create_successor()
+			(bat.story.ActAction("B_Nest", 1000, 1000, ob="B_Nest"))
+			(bat.story.ActAction("B_Egg", 1000, 1000, ob="B_Egg"))
+			(bat.story.ActAction("B_Final", 1000, 1000))
+			(bat.story.ActCopyTransform('B_TreeBaseSpawn'))
+			(Scripts.story.ActSetCamera('B_base_cam_above'))
+			(Scripts.story.ActRemoveCamera('B_nest_cam'))
+		)
 
 		# Cut to being at base of tree with contents of nest scattered around.
 		s = (s.create_successor()
-			(bat.story.CondEvent("DialogueDismissed", self))
+			(bat.story.CondWait(1))
 			("ShowDialogue", "Oh my beautiful egg! What luck that it is not broken.")
 		)
 		s = (s.create_successor()
@@ -332,7 +350,9 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor("Return to game")
 			(Scripts.story.ActResumeInput())
-			(Scripts.story.ActRemoveCamera('B_BirdIntroCam'))
+			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
+			(Scripts.story.ActRemoveCamera('B_nest_cam'))
+			(Scripts.story.ActRemoveFocalPoint('Bi_Face'))
 			(bat.story.ActMusicStop())
 		)
 

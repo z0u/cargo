@@ -289,6 +289,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActCopyTransform('B_TreeBaseSpawn'))
 			(Scripts.story.ActSetCamera('B_base_cam_above'))
 			(Scripts.story.ActRemoveCamera('B_nest_cam'))
+			('SpawnShell', 'Shell')
 		)
 
 		# Cut to being at base of tree with contents of nest scattered around.
@@ -385,6 +386,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 def spawn_nest(c):
 	required_shells = set()
 	required_shells.update(Scripts.inventory.Shells().get_all_shells())
+	required_shells.discard('Shell')
 	if not required_shells.issubset(Scripts.inventory.Shells().get_shells()):
 		# Player still needs to collect more shells.
 		return

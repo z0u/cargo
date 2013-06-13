@@ -636,6 +636,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 				if cbEvent is not None:
 					print("Sending delayed event", cbEvent)
 					cbEvent.send(delay=2)
+				bat.event.Event("LoadingScreenShown").send(1)
 			blackout.visible = True
 			self.playAction('LS_Hide_Arm', 16, 1, layer=LoadingScreen.L_DISPLAY)
 			bat.anim.add_trigger_lt(self, LoadingScreen.L_DISPLAY, 2, cb)
@@ -650,6 +651,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
 				blackout.visible = False
 				if cbEvent is not None:
 					cbEvent.send(delay=2)
+				bat.event.Event("LoadingScreenHidden").send(1)
 			icon.visible = False
 			loading_text.visible = False
 			self.canvas.set_text('')

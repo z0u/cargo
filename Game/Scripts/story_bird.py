@@ -204,13 +204,20 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor()
 			(bat.story.CondEvent('ApproachBird', self))
+			("StartLoading", self)
 			(Scripts.story.ActSuspendInput())
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("LoadingScreenShown", self))
 			(Scripts.story.ActSetCamera('B_nest_cam'))
 			(Scripts.story.ActSetFocalPoint('Bi_Face'))
 			(bat.story.ActMusicPlay(
 				'//Sound/Music/06-TheBird_loop.ogg',
 				introfile='//Sound/Music/06-TheBird_intro.ogg',
 				fade_in_rate=1))
+			("TeleportSnail", "B_nest_snail_talk_pos")
+			("ForceEquipShell", "Thimble")
 		)
 
 		s = (s.create_successor()
@@ -244,18 +251,48 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
+			("ForceDropShell", True)
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("ShellDropped", self))
+			("ForceEquipShell", "Wheel")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
 			("ShowDialogue", ("Thanks! And, ooh, what a lovely \[wheel]!",
 				("Here you go.", "Let's get this over with.")))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
+			("ForceDropShell", True)
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("ShellDropped", self))
+			("ForceEquipShell", "BottleCap")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
 			("ShowDialogue", ("And a \[bottlecap]! That's for me too, right?",
 				("Of course.", "Sure, why not :(")))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
+			("ForceDropShell", True)
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("ShellDropped", self))
+			("ForceEquipShell", "Nut")
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
 			("ShowDialogue", "Wonderful! What an excellent collection.")
 		)
 
@@ -274,21 +311,38 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
+			("ForceDropShell", True)
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("ShellDropped", self))
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
 			("ShowDialogue", "Whoa, whoa! It's too heavy. Look out!")
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
+			("StartLoading", self)
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondEvent("LoadingScreenShown", self))
 		)
 
 		# Nest falls down.
 		s = (s.create_successor()
+			(bat.story.CondWait(0.5))
+			("FinishLoading", self)
 			(bat.story.ActAction("B_Nest", 1000, 1000, ob="B_Nest"))
 			(bat.story.ActAction("B_Egg", 1000, 1000, ob="B_Egg"))
 			(bat.story.ActAction("B_Final", 1000, 1000))
 			(bat.story.ActCopyTransform('B_TreeBaseSpawn'))
 			(Scripts.story.ActSetCamera('B_base_cam_above'))
 			(Scripts.story.ActRemoveCamera('B_nest_cam'))
+			("TeleportSnail", "B_ground_snail_talk_pos")
 			('SpawnShell', 'Shell')
 		)
 
@@ -341,7 +395,8 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
-			("ForceEquipShell", "Shell")
+			# Don't equip shell - let the player pick it up.
+# 			("ForceEquipShell", "Shell")
 		)
 
 		s = (s.create_successor()

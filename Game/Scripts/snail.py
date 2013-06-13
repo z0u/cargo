@@ -497,9 +497,13 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		if name is None:
 			return
 
-		if self.shell and self.shell.name != name:
-			oldShell = self.unequip_shell()
-			oldShell.endObject()
+		if self.shell:
+			if self.shell.name == name:
+				Snail.log.info("Shell %s is already equipped.", self.shell.name)
+				return
+			else:
+				Snail.log.info("Un-equipping old shell %s.", self.shell.name)
+				self.unequip_shell().endObject()
 
 		scene = bge.logic.getCurrentScene()
 		if name in scene.objects:
@@ -525,8 +529,12 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 		and destroyed; but it will be kept in the snail's inventory.
 		'''
 		if self.shell:
-			shell = self.unequip_shell()
-			shell.endObject()
+			if self.shell is shell:
+				Snail.log.info("Shell %s is already equipped.", self.shell.name)
+				return
+			else:
+				Snail.log.info("Un-equipping old shell %s.", self.shell.name)
+				self.unequip_shell().endObject()
 
 		self.rem_state(Snail.S_NOSHELL)
 		self.add_state(Snail.S_HASSHELL)

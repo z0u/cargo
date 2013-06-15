@@ -16,6 +16,7 @@
 #
 
 import bge
+import logging
 
 import bat.bats
 import bat.event
@@ -40,8 +41,15 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 	L_IDLE = 0
 	L_ANIM = 1
 
+	log = logging.getLogger(__name__ + '.Bird')
+
 	def __init__(self, old_owner):
 		bat.story.Chapter.__init__(self, old_owner)
+		bat.event.EventBus().add_listener(self)
+
+	def on_event(self, evt):
+		if evt.message == 'ShellDropped':
+			self.shoot_shell(evt.body)
 
 	def create_bottle_state_graph(self):
 		bat.event.WeakEvent("StartLoading", self).send()
@@ -437,6 +445,15 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			shell.on_grasped()
 		except AttributeError as e:
 			print("Warning:", e)
+
+	def shoot_shell(self, shell):
+		if shell is None:
+			Bird.log.warn('Could not shoot shell: does not exist!')
+		print("Shooting shell")
+		shooter = self.scene.objects['B_shell_launcher']
+		vec = shooter.getAxisVect(bat.bmath.ZAXIS)
+		bat.bmath.copy_transform(shooter, shell)
+		shell.worldLinearVelocity = vec * 32.0
 
 def spawn_nest(c):
 	required_shells = set()

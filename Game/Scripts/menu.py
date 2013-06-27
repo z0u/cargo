@@ -676,7 +676,7 @@ class MenuSnail(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 				self.children["SlugSpawnPos"])
 		arm.setParent(self)
 		arm.look_at("Camera")
-		arm.playAction("MenuSnail_Rest", 1, 1)
+		arm.playAction("MenuSnail_Rest", 1, 120, play_mode=bge.logic.KX_ACTION_MODE_LOOP, speed=0.3)
 		self.arm = arm
 
 		bat.event.EventBus().add_listener(self)

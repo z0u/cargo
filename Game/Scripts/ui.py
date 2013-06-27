@@ -1325,6 +1325,25 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		else:
 			return False
 
+	def align_left(self, glyph_line, width):
+		return glyph_line
+
+	def align_centre(self, glyph_line, width):
+		line = []
+		offset = width * 0.5
+		for glyph, width, (gx, gy) in glyph_line:
+			gx -= offset
+			line.append((glyph, width, (gx, gy)))
+		return line
+
+	def align_right(self, glyph_line, width):
+		line = []
+		offset = width
+		for glyph, width, (gx, gy) in glyph_line:
+			gx -= offset
+			line.append((glyph, width, (gx, gy)))
+		return line
+
 	def lay_out_text(self, glyphString):
 		newLine = True
 		softBreakPoint = self.find_next_breakable_char(glyphString, 0)
@@ -1334,6 +1353,16 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		y = 0.0
 		font = self.get_font()
 		totalwidth = 0.0
+		current_line = []
+
+		if 'align' not in self:
+			align = self.align_left
+		elif self['align'] == 'left':
+			align = self.align_left
+		elif self['align'] in {'centre', 'center'}:
+			align = self.align_centre
+		elif self['align'] == 'right':
+			align = self.align_right
 
 		for i, glyph in enumerate(glyphString):
 			width = glyph['Width']
@@ -1356,6 +1385,8 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 			if newLine:
 				# New line; carriage return.
+				self.glyphString.extend(align(current_line, x))
+				current_line = []
 				x = 0.0
 				y = y - font['lineHeight']
 				if self.is_whitespace(glyph['char']):
@@ -1369,14 +1400,25 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			else:
 				gy += font['bottomOffset']
 			pos = (gx, gy)
-			self.glyphString.append((glyph, width, pos))
+			current_line.append((glyph, width, pos))
 			x += width
 			if x > totalwidth:
 				totalwidth = x
 
+		self.glyphString.extend(align(current_line, x))
+
 		totalheight = -y + font['lineHeight']
 		self.textwidth = totalwidth
 		self.textheight = totalheight
+
+	OUTLINE_WIDTH = 0.01
+	OUTLINE_ZOFF = 0.001
+	OUTLINE_OFFSETS = [
+		mathutils.Vector((+OUTLINE_WIDTH, 0.0, -OUTLINE_ZOFF)),
+		mathutils.Vector((0.0, +OUTLINE_WIDTH, -OUTLINE_ZOFF)),
+		mathutils.Vector((-OUTLINE_WIDTH, 0.0, -OUTLINE_ZOFF)),
+		mathutils.Vector((0.0, -OUTLINE_WIDTH, -OUTLINE_ZOFF))
+		]
 
 	def _render_next_char(self):
 		if not self['Rendering']:
@@ -1389,20 +1431,36 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 		font = self.get_font()
 
 		glyph, width, pos = self.glyphString[self.currentChar]
-
-		glyphInstance = bge.logic.getCurrentScene().addObject(glyph,
-			self, 0)
-		glyphInstance.setParent(self)
-		glyphInstance['StartVisible'] = self.visible
-		glyphInstance.color = bat.render.parse_colour(self['colour'])
-		glyphInstance.localPosition = [pos[0], pos[1], 0.0]
+		pos = mathutils.Vector((pos[0], pos[1], 0.0))
 
 		if self['Instant']:
-			bat.utils.set_state(glyphInstance, 4)
+			state = 4
 		else:
-			self.delay = (font['typingSpeed'] * width *
-				glyph['DelayMultiplier'])
-			bat.utils.set_state(glyphInstance, 3)
+			state = 3
+			self.delay = (font['typingSpeed'] * width * glyph['DelayMultiplier'])
+
+		colour = bat.render.parse_colour(self['colour'])
+		if 'outline' not in self:
+			self._instanitate_glyph(glyph, pos, colour, state)
+		else:
+			if 'outline_width' in self:
+				width = self['outline_width']
+			else:
+				width = 1.0
+			outline = bat.render.parse_colour(self['outline'])
+			cps = [(colour, pos)]
+			for offset in Text.OUTLINE_OFFSETS:
+				cps.append((outline, pos + offset * width))
+			for col, pos2 in cps:
+				self._instanitate_glyph(glyph, pos2, col, state)
+
+	def _instanitate_glyph(self, glyph, pos, colour, state):
+		glyphInstance = bge.logic.getCurrentScene().addObject(glyph, self, 0)
+		glyphInstance.setParent(self)
+		glyphInstance['StartVisible'] = self.visible
+		glyphInstance.color = colour
+		glyphInstance.localPosition = pos
+		bat.utils.set_state(glyphInstance, state)
 
 	def set_text(self, text):
 		self['Content'] = text

@@ -314,9 +314,7 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 	def on_event(self, evt):
 		if evt.message == 'showScreen':
-			if not 'screenName' in self:
-				self.show()
-			else:
+			if 'screenName' in self:
 				if re.match(self['screenName'], evt.body) is not None:
 					self.show()
 				else:

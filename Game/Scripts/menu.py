@@ -16,6 +16,7 @@
 #
 
 import logging
+import webbrowser
 
 import bge
 
@@ -30,7 +31,7 @@ import Scripts.input
 CREDITS = [
 	("Director/Producer", "Alex Fraser"),
 	("Story", "Alex Fraser, Lev Lafayette, Lara Micocki, Jodie Fraser"),
-	("Modelling", "Alex Fraser, Junki Wano"),
+	("Modelling", "Alex Fraser, Junki Wano, Blender Foundation"),
 	("Animation", "Alex Fraser"),
 	("Textures", "Alex Fraser, Junki Wano"),
 	("Music", "Robert Leigh"),
@@ -41,7 +42,21 @@ CREDITS = [
 			"batchku, satrebor, gherat, ZeSoundResearchInc., CGEffex, "
 			"UncleSigmund, dobroide"),
 	("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
-	("Made With", "Blender, Bullet, The GIMP and Inkscape")]
+	("Made With", "Blender, Bullet, The GIMP, Inkscape, Audacity, Eclipse, Git"),
+	("Licence", "Cargo is free software: you can redistribute it and/or modify "
+			"it under the terms of the GNU General Public License as published by "
+			"the Free Software Foundation, either version 3 of the License, or "
+			"(at your option) any later version."),
+	("Licence (cont.)", "Cargo is distributed in the hope that it will be useful, "
+			"but WITHOUT ANY WARRANTY; without even the implied warranty of "
+			"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
+			"GNU General Public License for more details. "),
+	("Licence (cont.)", "You should have received a copy of the GNU General Public License "
+			"along with Cargo.  If not, see http://www.gnu.org/licenses/."),
+	("Licence (cont.)", "In addition, the artwork (models, animations, textures, "
+			"music and sound effects) is licensed under the Creative Commons "
+			"Attribution-ShareAlike 3.0 Australia License. To view a copy of "
+			"this license, visit http://creativecommons.org/licenses/by-sa/3.0/au/"),]
 
 STORY_SUMMARIES = {
 	# 95 characters is probably about as many as will currently fit on the save
@@ -135,6 +150,17 @@ class SessionManager(metaclass=bat.bats.Singleton):
 		elif event.message == 'reallyQuit':
 			bge.logic.endGame()
 
+		elif event.message == 'OpenWeb':
+			if event.body == 'home':
+				webbrowser.open('http://cargo.lille.sturm.com.au', autoraise=True)
+			elif event.body == 'gpl':
+				webbrowser.open('http://www.gnu.org/licenses/gpl.html', autoraise=True)
+			elif event.body == 'cc':
+				webbrowser.open('http://creativecommons.org/licenses/by-sa/3.0/au/', autoraise=True)
+			else:
+				return
+			bat.event.Event('confirmation', "The web page has been opened in your browser.::::").send()
+
 		elif event.message == 'KeyBindingsChanged':
 			self.set_up_key_bindings()
 
@@ -179,7 +205,7 @@ class MenuController(Scripts.gui.UiController):
 				if ob.name == 'SaveButton_T' and ob['onClickBody'] == gamenum:
 					return ob
 		elif screen_name == 'CreditsScreen':
-			return self.scene.objects['Btn_Crd_Load']
+			return self.scene.objects['HomePageButton']
 		elif screen_name == 'OptionsScreen':
 			return self.scene.objects['Btn_ControlConfig']
 #		elif screen_name == 'Controls_Actions':
@@ -298,6 +324,8 @@ class Checkbox(Scripts.gui.Button):
 
 class ConfirmationPage(Scripts.gui.Widget):
 	def __init__(self, old_owner):
+		self.cancelbtn = bat.bats.mutate(self.children['Btn_Cancel'])
+		self.confirmbtn = bat.bats.mutate(self.children['Btn_Confirm'])
 		self.lastScreen = ''
 		self.currentScreen = ''
 		self.onConfirm = ''
@@ -323,6 +351,21 @@ class ConfirmationPage(Scripts.gui.Widget):
 				bat.event.Event('popScreen').send()
 				bat.event.Event(self.onConfirm, self.onConfirmBody).send()
 				self.children['ConfirmText']['Content'] = ""
+
+	def hide(self):
+		super(ConfirmationPage, self).hide()
+		self.cancelbtn.hide()
+		self.confirmbtn.hide()
+
+	def show(self):
+		super(ConfirmationPage, self).show()
+		if self.onConfirm == "":
+			self.cancelbtn.hide()
+			self.confirmbtn.children[0].set_text('OK')
+		else:
+			self.cancelbtn.show()
+			self.confirmbtn.children[0].set_text('Yes')
+		self.confirmbtn.show()
 
 class GameDetailsPage(Scripts.gui.Widget):
 	'''A dumb widget that can show and hide itself, but doesn't respond to

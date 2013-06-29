@@ -1252,6 +1252,10 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			# Escaped newline.
 			key = 'newline'
 			seqLen = 2
+		elif text[start + 1] == 't':
+			# Escaped newline.
+			key = 'tab'
+			seqLen = 2
 		elif text[start + 1] == '[':
 			try:
 				end = text.index(']', start + 2)
@@ -1291,13 +1295,18 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			glyphDict[child['char']] = child
 		font['_glyphDict'] = glyphDict
 
+	WHITESPACE = {'newline', ' ', 'tab'}
+	BREAKAFTER = {'-', '+', '.', ',', '!', ':', ';', ')', ']', '>', '*', '_', '?', '/', '=', '@'}
+
 	def find_next_breakable_char(self, glyphString, start):
+		'''Find soft break'''
 		for i in range(start, len(glyphString)):
-			if self.is_whitespace(glyphString[i]['char']):
+			if glyphString[i]['char'] in Text.WHITESPACE:
 				return i
-		#
+			elif glyphString[i]['char'] in Text.BREAKAFTER:
+				return i + 1
+
 		# No more breakable characters.
-		#
 		return len(glyphString)
 
 	def find_next_break_point(self, lineWidth, glyphString, start):
@@ -1310,20 +1319,9 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 			totalWidth = totalWidth + glyph['Width']
 			if totalWidth > lineWidth or glyph['char'] == 'newline':
 				return i
-		#
-		# No break required: string is not long enough.
-		#
-		return len(glyphString)
 
-	def is_whitespace(self, char):
-		"""Check whether a character is whitespace. Special characters
-		(like icons) are not considered to be whitespace."""
-		if char == 'newline':
-			return True
-		elif char == ' ':
-			return True
-		else:
-			return False
+		# No break required: string is not long enough.
+		return len(glyphString) + 1
 
 	def align_left(self, glyph_line, width):
 		return glyph_line
@@ -1377,7 +1375,7 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 				# such character is beyond the end of the line, break now.
 				softBreakPoint = self.find_next_breakable_char(glyphString,
 					i + 1)
-				if softBreakPoint > hardBreakPoint:
+				if softBreakPoint >= hardBreakPoint:
 					newLine = True
 			elif i == hardBreakPoint:
 				# This glyph is beyond the end of the line. Break now.
@@ -1389,7 +1387,7 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 				current_line = []
 				x = 0.0
 				y = y - font['lineHeight']
-				if self.is_whitespace(glyph['char']):
+				if glyph['char'] in Text.WHITESPACE:
 					# Advance to next character.
 					continue
 

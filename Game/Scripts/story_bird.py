@@ -327,12 +327,23 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		)
 
 		s = (s.create_successor()
-			(bat.story.CondWait(0.5))
+			(bat.story.CondWait(1))
 			("ShowDialogue", "Whoa, whoa! It's too heavy. Look out!")
+			(bat.story.ActAction("B_Nest", 800, 808, ob="B_Nest",
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 		)
 
+		# Nest falls down.
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
+			(Scripts.story.ActSetCamera('B_nest_fall_cam'))
+			(Scripts.story.ActRemoveCamera('B_nest_cam'))
+			(bat.story.ActAction("B_Nest", 820, 890, ob="B_Nest"))
+		)
+
+		# Nest has fallen; initialise next shot
+		s = (s.create_successor()
+			(bat.story.CondActionGE(0, 870, ob="B_Nest"))
 			("StartLoading", self)
 		)
 
@@ -340,7 +351,6 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondEvent("LoadingScreenShown", self))
 		)
 
-		# Nest falls down.
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
 			("FinishLoading", self)
@@ -349,7 +359,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActAction("B_Final", 1000, 1000))
 			(bat.story.ActCopyTransform('B_TreeBaseSpawn'))
 			(Scripts.story.ActSetCamera('B_base_cam_above'))
-			(Scripts.story.ActRemoveCamera('B_nest_cam'))
+			(Scripts.story.ActRemoveCamera('B_nest_fall_cam'))
 			("TeleportSnail", "B_ground_snail_talk_pos")
 			('SpawnShell', 'Shell')
 		)
@@ -416,6 +426,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(Scripts.story.ActResumeInput())
 			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
 			(Scripts.story.ActRemoveCamera('B_nest_cam'))
+			(Scripts.story.ActRemoveCamera('B_nest_fall_cam'))
 			(Scripts.story.ActRemoveFocalPoint('Bi_Face'))
 			(bat.story.ActMusicStop())
 		)

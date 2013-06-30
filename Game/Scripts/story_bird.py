@@ -347,6 +347,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActAction("B_Nest", 820, 890, ob="B_Nest"))
 			(bat.story.ActAction("B_Nest_Shell", 820, 890, ob="B_Nest_Shell"))
 			(bat.story.ActAction("B_Egg", 820, 890, ob="B_Egg"))
+			# Destroy the funnel; things are *supposed* to fall out of the nest
+			# now.
+			(bat.story.ActDestroy(ob="B_Nest_funnel"))
+			(bat.story.ActMusicStop())
 		)
 
 		# Nest has fallen; initialise next shot

@@ -1,1 +1,6 @@
-All files in this directory were recorded by Alex Fraser, and Ben Sturmfels and Ben Finney.
+Samples in this directory were recorded by:
+
+ - Alex Fraser
+ - Ben Sturmfels
+ - Ben Finney
+ - Leigh Raymond

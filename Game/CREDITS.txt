@@ -1,6 +1,7 @@
 = Contributors =
 Story:            Alex Fraser[1], Lara Mikocki, Lev Lafayette, Jodie Fraser
-Sound effects:    Alex Fraser, Ben Sturmfels, Ben Finney, Freesound[2] users: 3bagbrew,
+Sound effects:    Alex Fraser, Ben Sturmfels, Ben Finney, Leigh Raymond,
+                  Freesound[2] users: 3bagbrew,
                   FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, qubodup,
                   thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S, batchku,
                   satrebor, gherat, ZeSoundResearchInc., CGEffex, UncleSigmund,

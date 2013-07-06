@@ -375,13 +375,13 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor()
 			(bat.story.CondActionGE(0, 870, ob="B_Nest"))
 			("StartLoading", self)
-		)
-		(s.create_sub_step()
-			(bat.story.CondActionGE(0, 880, ob="B_Nest", tap=True))
-			(bat.story.ActCopyTransform('B_shell_spawn_1', ob='BottleCap'))
-			(bat.story.ActCopyTransform('B_shell_spawn_2', ob='Nut'))
-			(bat.story.ActCopyTransform('B_shell_spawn_3', ob='Wheel'))
-			(bat.story.ActCopyTransform('B_shell_spawn_4', ob='Thimble'))
+			(bat.story.State() # sub-step
+				(bat.story.CondActionGE(0, 880, ob="B_Nest", tap=True))
+				(bat.story.ActCopyTransform('B_shell_spawn_1', ob='BottleCap'))
+				(bat.story.ActCopyTransform('B_shell_spawn_2', ob='Nut'))
+				(bat.story.ActCopyTransform('B_shell_spawn_3', ob='Wheel'))
+				(bat.story.ActCopyTransform('B_shell_spawn_4', ob='Thimble'))
+			)
 		)
 
 		s = (s.create_successor()
@@ -391,6 +391,15 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActCopyTransform('B_shell_spawn_3', ob='Wheel'))
 			(bat.story.ActCopyTransform('B_shell_spawn_4', ob='Thimble'))
 		)
+
+		# For testing - can jump here by pressing a button.
+		self.super_state = bat.story.State('Super')
+		sjump = (self.super_state.create_successor()
+			(bat.story.CondEvent("TESTNestBottom", self))
+			("StartLoading", self)
+			(Scripts.story.ActSuspendInput())
+		)
+		sjump.add_successor(s)
 
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
@@ -407,6 +416,13 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			('SpawnShell', 'Shell')
 		)
 
+		s = (s.create_successor()
+			(bat.story.CondActionGE(0, 1140, ob="B_base_cam_above"))
+			(Scripts.story.ActSetCamera('B_base_cam'))
+			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
+			(bat.story.ActAction("B_base_cam", 1100, 1300, ob="B_base_cam"))
+		)
+
 		# Cut to being at base of tree with contents of nest scattered around.
 		s = (s.create_successor()
 			(bat.story.CondWait(1))
@@ -418,8 +434,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		)
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
-			("ShowDialogue", ("You know, it strikes me that I may have been a "
-				"little greedy.",
+			("ShowDialogue", ("You know, I think I may have been a little greedy.",
 				("Well, maybe a little.", "You were so greedy!")))
 		)
 
@@ -433,7 +448,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ShowDialogue", "Please, take back the things you brought me.")
 		)
 
-		s = s.create_successor()(bat.story.CondEvent("DialogueDismissed", self))
+		s = (s.create_successor()
+			(bat.story.CondEvent("DialogueDismissed", self))
+			(Scripts.story.ActSetCamera('B_base_cam_above'))
+		)
 
 		s = (s.create_successor()
 			(bat.story.CondWait(1))
@@ -454,6 +472,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
+			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
 			("ShowDialogue", "You can even take my shell. I can't bear to look "
 				"at it! Besides, my nest was becoming a bit cluttered.")
 		)
@@ -471,6 +490,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor("Return to game")
 			(Scripts.story.ActResumeInput())
+			(Scripts.story.ActRemoveCamera('B_base_cam'))
 			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
 			(Scripts.story.ActRemoveCamera('B_nest_cam'))
 			(Scripts.story.ActRemoveCamera('B_nest_fall_cam'))

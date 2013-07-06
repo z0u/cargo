@@ -397,6 +397,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		sjump = (self.super_state.create_successor()
 			(bat.story.CondEvent("TESTNestBottom", self))
 			("StartLoading", self)
+			(Scripts.story.ActSetFocalPoint('Bi_Face'))
 			(Scripts.story.ActSuspendInput())
 		)
 		sjump.add_successor(s)
@@ -436,21 +437,25 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", ("You know, I think I may have been a little greedy.",
 				("Well, maybe a little.", "You were so greedy!")))
+			(bat.story.ActAction("B_Final", 1100, 1100))
 		)
 
 		# Bird is told that it was greedy, so it gives back the loot.
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "Oh you're right! I was greedy, and a fool.")
+			(bat.story.ActAction("B_Final", 1200, 1200))
 		)
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "Please, take back the things you brought me.")
+			(bat.story.ActAction("B_Final", 1300, 1300))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			(Scripts.story.ActSetCamera('B_base_cam_above'))
+			(bat.story.ActAction("B_Final", 1350, 1350))
 		)
 
 		s = (s.create_successor()
@@ -475,6 +480,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
 			("ShowDialogue", "You can even take my shell. I can't bear to look "
 				"at it! Besides, my nest was becoming a bit cluttered.")
+			(bat.story.ActAction("B_Final", 1400, 1400))
 		)
 
 		s = (s.create_successor()
@@ -486,9 +492,11 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
 			("ShowDialogue", "Ah, I feel better already!")
+			(bat.story.ActAction("B_Final", 1500, 1500))
 		)
 
 		s = (s.create_successor("Return to game")
+			(bat.story.CondEvent("DialogueDismissed", self))
 			(Scripts.story.ActResumeInput())
 			(Scripts.story.ActRemoveCamera('B_base_cam'))
 			(Scripts.story.ActRemoveCamera('B_base_cam_above'))

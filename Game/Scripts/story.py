@@ -176,6 +176,51 @@ class ActRemoveFocalPoint(bat.story.BaseAct):
 	def __str__(self):
 		return "ActRemoveFocalPoint(%s)" % self.targetName
 
+class ActSleepParticles(bat.story.TargetedAct, bat.story.BaseAct):
+
+	log = logging.getLogger(__name__ + '.ActSleepParticles')
+
+	def factory(self):
+		scene = bge.logic.getCurrentScene()
+		if "G_Items" not in scene.objectsInactive or "G_ItemsHidden" not in scene.objectsInactive:
+			try:
+				bge.logic.LibLoad('//Item_loader.blend', 'Scene', load_actions=True)
+			except ValueError:
+				ActSleepParticles.log.error('could not load sleep char', exc_info=1)
+
+		return bat.bats.add_and_mutate_object(scene, 'SleepEmitter', 'SleepEmitter')
+
+	def __init__(self, start=True, scale=1, ob=None, target_descendant=None):
+		bat.story.TargetedAct.__init__(self, ob, target_descendant)
+		self.start = start
+		self.scale = scale
+
+	def execute(self, c):
+		if self.start:
+			self.begin_emission()
+		else:
+			self.end_emission()
+
+	def begin_emission(self):
+		t = self.target
+		if 'SleepEmitter' in t.children:
+			return
+		emitter = self.factory()
+		bat.bmath.copy_transform(t, emitter)
+		emitter.localScale = (self.scale, self.scale, self.scale)
+		emitter.setParent(t)
+		ActSleepParticles.log.info('Created sleep particle emitter %s, %s', emitter, emitter.localScale)
+
+	def end_emission(self):
+		t = self.target
+		if 'SleepEmitter' not in t.children:
+			return
+		emitter = t.children['SleepEmitter']
+		emitter.endObject()
+		ActSleepParticles.log.info('Destroyed sleep particle emitter %s', emitter)
+
+	def __str__(self):
+		return "ActSleepParticles(%s, %g)" % (self.start, self.scale)
 
 
 class Level(bat.bats.BX_GameObject, bge.types.KX_GameObject):

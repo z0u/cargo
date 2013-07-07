@@ -209,6 +209,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActAction("B_Nest_Shell", 1, 1, ob="B_Nest_Shell"))
 			(bat.story.ActAction('B_Final', 1, 1))
 			(bat.story.ActCopyTransform('B_NestSpawn'))
+			(Scripts.story.ActSleepParticles(start=True, scale=2, target_descendant='Bi_Head'))
 		)
 
 		s = (s.create_successor()
@@ -235,9 +236,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		)
 
 		s = (s.create_successor()
-			(bat.story.CondWait(0.5))
+			(bat.story.CondWait(5))
 			("ShowDialogue", "Hi there, little snail! It's nice of you to come "
 				"to visit.")
+			(Scripts.story.ActSleepParticles(start=False, target_descendant='Bi_Head'))
 			(bat.story.ActAction("B_Final", 50, 50))
 		)
 

@@ -21,10 +21,13 @@
 # own module.
 #
 
+import bge
 
 import bat.sound
+import bat.bats
+import bat.bmath
 
-def dry_leaf(c):
+def dry_leaf_touched(c):
 	sample = bat.sound.Sample(
 			'//Sound/cc-by/Crunch1.ogg',
 			'//Sound/cc-by/Crunch2.ogg',
@@ -32,7 +35,7 @@ def dry_leaf(c):
 	sample.add_effect(bat.sound.Localise(c.owner))
 	sample.play()
 
-def dandelion(c):
+def dandelion_touched(c):
 	sample = bat.sound.Sample(
 			'//Sound/cc-by/Swosh1.ogg',
 			'//Sound/cc-by/Swosh2.ogg')
@@ -49,3 +52,23 @@ def ripple(c):
 	sample.volume = 0.5
 	sample.add_effect(bat.sound.Localise(c.owner))
 	sample.play()
+
+
+class SleepEmitter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+	_prefix = 'S_'
+
+	DELAY = 60
+	LIFETIME = 240
+
+	def __init__(self, old_owner):
+		self.countdown = 0
+
+	@bat.bats.expose
+	def pulse(self):
+		self.countdown -= 1
+		if self.countdown <= 0:
+			self.countdown = SleepEmitter.DELAY
+			instance = self.scene.addObject('SleepCharBase', 'SleepCharBase', SleepEmitter.LIFETIME)
+			bat.bmath.copy_transform(self, instance)
+			instance.localScale = self.worldScale
+

@@ -116,6 +116,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_action(bat.story.ActGenericContext(spray_dirt, 10, 15.0))
 		s.add_action(bat.story.ActAction('BurstOut', 1, 75, Worm.L_ANIM))
 		s.add_action(bat.story.ActAction('BurstOut_S', 1, 75, Worm.L_ANIM, 'WormBody'))
+		s.add_action(Scripts.story.ActSleepParticles(start=True, scale=1, ob='Shell'))
 
 		s = s.create_successor("Greet")
 		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 74.0))
@@ -178,6 +179,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s = s.create_successor("Wake")
 		s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 205.0))
 		s.add_event("ForceExitShell", True)
+		s.add_action(Scripts.story.ActSleepParticles(start=False, ob='Shell'))
 
 		s = s.create_successor("Chastise")
 		s.add_condition(bat.story.CondEvent('ShellExited', self))

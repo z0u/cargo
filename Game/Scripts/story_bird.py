@@ -257,14 +257,14 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "Are you here to talk business?")
-			(bat.story.ActAction("B_Final", 170, 170))
+			(bat.story.ActAction("B_Final", 105, 130))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "I haven't forgotten our deal: if you give me "
 				"three shiny red things, I'll give you this one in return.")
-			(bat.story.ActAction("B_Final", 220, 220))
+			(bat.story.ActAction("B_Final", 150, 180))
 		)
 
 		s = (s.create_successor()

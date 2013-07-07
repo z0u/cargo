@@ -238,40 +238,40 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondWait(0.5))
 			("ShowDialogue", "Hi there, little snail! It's nice of you to come "
 				"to visit.")
-			(bat.story.ActAction("B_Final", 10, 10))
+			(bat.story.ActAction("B_Final", 50, 50))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "Hey! That's a nice shiny red thing you have "
 				"there.")
-			(bat.story.ActAction("B_Final", 20, 20))
+			(bat.story.ActAction("B_Final", 100, 100))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "Are you here to talk business?")
-			(bat.story.ActAction("B_Final", 30, 30))
+			(bat.story.ActAction("B_Final", 150, 150))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "I haven't forgotten our deal: if you give me "
 				"three shiny red things, I'll give you this one in return.")
-			(bat.story.ActAction("B_Final", 40, 40))
+			(bat.story.ActAction("B_Final", 200, 200))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", ("So, will you give me that \[thimble]?",
 				("Actually I think I'll keep it.", "I guess so.")))
-			(bat.story.ActAction("B_Final", 45, 45))
+			(bat.story.ActAction("B_Final", 225, 225))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ForceDropShell", True)
-			(bat.story.ActAction("B_Final", 50, 50))
+			(bat.story.ActAction("B_Final", 250, 250))
 		)
 
 		s = (s.create_successor()
@@ -283,7 +283,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondWait(0.5))
 			("ShowDialogue", ("Thanks! And, ooh, what a lovely \[wheel]!",
 				("Here you go.", "Let's get this over with.")))
-			(bat.story.ActAction("B_Final", 60, 60))
+			(bat.story.ActAction("B_Final", 300, 300))
 		)
 
 		s = (s.create_successor()
@@ -300,7 +300,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondWait(0.5))
 			("ShowDialogue", ("And a \[bottlecap]! That's for me too, right?",
 				("Of course.", "Sure, why not :(")))
-			(bat.story.ActAction("B_Final", 70, 70))
+			(bat.story.ActAction("B_Final", 350, 350))
 		)
 
 		s = (s.create_successor()
@@ -316,14 +316,14 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
 			("ShowDialogue", "Wonderful! What an excellent collection.")
-			(bat.story.ActAction("B_Final", 80, 80))
+			(bat.story.ActAction("B_Final", 400, 400))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "But you know what would make it even better? "
 				"That \[nut]! I know it wasn't part of the deal...")
-			(bat.story.ActAction("B_Final", 90, 100))
+			(bat.story.ActAction("B_Final", 450, 500))
 		)
 
 		s = (s.create_successor()
@@ -331,7 +331,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ShowDialogue", ("... but now that I have seen it, I know I can't "
 				"part with the \[shell] for anything less.",
 				("Whatever!", "Take it; it's slowing me down.")))
-			(bat.story.ActAction("B_Final", 110, 110))
+			(bat.story.ActAction("B_Final", 550, 550))
 		)
 
 		s = (s.create_successor()

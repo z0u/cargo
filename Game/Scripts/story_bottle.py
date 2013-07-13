@@ -318,17 +318,14 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
 		sfirsttimeonly.add_action(bat.story.ActAttrSet('first', False))
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(0))
+		s.add_condition(bat.story.CondNextFrame())
 		self.anim_idle.recall(s, 'loop')
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondSensor('Near'))
 		s.add_action(Scripts.story.ActSuspendInput())
-		#s.add_event("StartLoading", self)
 
 		s = s.create_successor()
-		#s.add_condition(bat.story.CondWait(1))
-		#s.add_event("FinishLoading", self)
 		s.add_action(Scripts.story.ActSetCamera('BottleCamera_Close'))
 		s.add_action(Scripts.story.ActSetFocalPoint("SlugArm_Min"))
 		s.add_action(bat.story.ActGeneric(self.arm.look_at, None))

@@ -73,6 +73,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			ob="B_BirdIntroCam"))
 
 		s = s.create_successor()
+		s.add_condition(bat.story.CondNextFrame())
 		s.add_condition(bat.story.CondWait(0.5))
 		s.add_event("FinishLoading", self)
 		s.add_action(bat.story.ActAction("B_BirdCloseCamAction", 1, 96, 0,
@@ -449,6 +450,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		sjump.add_successor(s)
 
 		s = (s.create_successor()
+			(bat.story.CondNextFrame())
 			(bat.story.CondWait(0.5))
 			("FinishLoading", self)
 			(bat.story.ActAction("B_Nest", 1000, 1000, ob="B_Nest"))

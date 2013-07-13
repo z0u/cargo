@@ -424,11 +424,9 @@ class FlyingCutscene(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.KX_Gam
 		s.add_action(Scripts.story.ActSetFocalPoint("FC_SnailFlyFocus"))
 		s.add_sub_step(snail_holder)
 
-		# Flying through the air. This is a separate state with a CondWait
-		# condition to ensure that the GLSL materials have all been compiled
-		# before starting the animation.
+		# Flying through the air.
 		s = s.create_successor("Warp speed")
-		s.add_condition(bat.story.CondWait(0.01))
+		s.add_condition(bat.story.CondNextFrame())
 		s.add_action(bat.story.ActAction("FC_AirstreamAction", 1, 51, 0, ob="FC_Airstream"))
 		s.add_action(bat.story.ActAction("FC_CameraAction", 1, 51, 0, ob="FC_Camera"))
 		s.add_action(bat.story.ActAction("FC_SnailFlyAction", 1, 100, 0, ob="FC_SnailFly"))
@@ -443,6 +441,7 @@ class FlyingCutscene(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.KX_Gam
 		s.add_action(bat.story.ActGeneric(self.shoot_snail))
 
 		s = s.create_successor("Clean up")
+		s.add_condition(bat.story.CondNextFrame())
 		s.add_condition(bat.story.CondWait(1))
 		s.add_action(Scripts.story.ActRemoveCamera("FC_SideCamera"))
 		s.add_action(Scripts.story.ActResumeInput())

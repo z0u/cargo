@@ -322,7 +322,7 @@ class Wheel(ShellBase):
 	FLY_POWER = 1.0 / 3.0
 
 	def __init__(self, old_owner):
-		ShellBase.__init__(self, old_owner, {'Salt'})
+		ShellBase.__init__(self, old_owner, {'Salt', 'Piercing'})
 		self._reset_speed()
 		self.fly_power = 0.0
 

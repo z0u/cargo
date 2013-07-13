@@ -154,7 +154,8 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		# Start conversation
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(1))
+		s.add_condition(bat.story.CondNextFrame())
+		s.add_condition(bat.story.CondWait(0.5))
 		s.add_event("FinishLoading", self)
 		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
 		s.add_action(Scripts.story.ActSetCamera('AntCloseCam'))
@@ -644,7 +645,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Ant'))
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(0))
+		s.add_condition(bat.story.CondNextFrame())
 		s.add_event("FinishLoading", self)
 		s.add_action(bat.story.ActStoreSet('/game/storySummary', 'gotThimble'))
 		s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_Front'))
@@ -659,20 +660,21 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 		s.add_event("StartLoading", self)
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(1))
+		s.add_condition(bat.story.CondNextFrame())
+		s.add_condition(bat.story.CondEvent("LoadingScreenShown", self))
 		s.add_action(bat.story.ActAction('AntStrandedCam_RescueTopAction', 1, 150, ob='AntStrandedCam_RescueTop'))
 		s.add_action(Scripts.story.ActSetCamera('AntStrandedCam_RescueTop'))
 		s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
 		s.add_action(bat.story.ActParentRemove())
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(0))
+		s.add_condition(bat.story.CondNextFrame())
 		s.add_action(bat.story.ActCopyTransform("AntSpawnPoint"))
 		s.add_event("TeleportSnail", "AntStranded_SnailTalkPos_rescue")
 		s.add_action(bat.story.ActAction('Ant_Rescued', 1, 1, Ant.L_ANIM))
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondWait(0))
+		s.add_condition(bat.story.CondNextFrame())
 		s.add_event("FinishLoading", self)
 
 		s = s.create_successor()

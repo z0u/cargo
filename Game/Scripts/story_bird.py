@@ -230,7 +230,47 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ForceEquipShell", "Thimble")
 		)
 
+		def matshell_spawn(name):
+			shell = Scripts.shells.factory(name)
+			anchor = self.scene.objects['B_matspawn']
+			bat.bmath.copy_transform(anchor, shell)
+			shell.setParent(self)
+			self.shell = shell
+		def destroy_matshell():
+			self.shell.endObject()
+
+		# Cache shell materials to prevent frame dropping
 		s = (s.create_successor()
+			(bat.story.ActGeneric(matshell_spawn, 'BottleCap'))
+		)
+		s = (s.create_successor()
+			(bat.story.CondNextFrame()) # Ensure redraw
+			(bat.story.ActGeneric(destroy_matshell))
+		)
+		s = (s.create_successor()
+			(bat.story.ActGeneric(matshell_spawn, 'Nut'))
+		)
+		s = (s.create_successor()
+			(bat.story.CondNextFrame()) # Ensure redraw
+			(bat.story.ActGeneric(destroy_matshell))
+		)
+		s = (s.create_successor()
+			(bat.story.ActGeneric(matshell_spawn, 'Wheel'))
+		)
+		s = (s.create_successor()
+			(bat.story.CondNextFrame()) # Ensure redraw
+			(bat.story.ActGeneric(destroy_matshell))
+		)
+		s = (s.create_successor()
+			(bat.story.ActGeneric(matshell_spawn, 'Thimble'))
+		)
+		s = (s.create_successor()
+			(bat.story.CondNextFrame()) # Ensure redraw
+			(bat.story.ActGeneric(destroy_matshell))
+		)
+
+		s = (s.create_successor()
+			(bat.story.CondNextFrame()) # Ensure redraw
 			(bat.story.CondWait(0.5))
 			("FinishLoading", self)
 		)
@@ -271,13 +311,13 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", ("So, will you give me that \[thimble]?",
 				("Actually I think I'll keep it.", "I guess so.")))
-			(bat.story.ActAction("B_Final", 245, 245))
+			(bat.story.ActAction("B_Final", 190, 225))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ForceDropShell", True)
-			(bat.story.ActAction("B_Final", 270, 270))
+			(bat.story.ActAction("B_Final", 230, 275))
 		)
 
 		s = (s.create_successor()

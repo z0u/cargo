@@ -39,6 +39,7 @@ log = logging.getLogger(__name__)
 
 def factory(name):
 	scene = bge.logic.getCurrentScene()
+	log.debug("Spawning shell %s", name)
 
 	if not name in scene.objectsInactive:
 		log.info("Loading shells")

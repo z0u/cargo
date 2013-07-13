@@ -209,6 +209,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActAction('B_Egg', 1, 1, ob='B_Egg'))
 			(bat.story.ActAction("B_Nest_Shell", 1, 1, ob="B_Nest_Shell"))
 			(bat.story.ActAction('B_Final', 1, 1))
+			(bat.story.ActAction("B_nest_cam", 1, 1, ob="B_nest_cam"))
 			(bat.story.ActCopyTransform('B_NestSpawn'))
 			(Scripts.story.ActSleepParticles(start=True, scale=2, target_descendant='Bi_Head'))
 		)
@@ -231,6 +232,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ForceEquipShell", "Thimble")
 		)
 
+		# Cache shell materials to prevent frame dropping
 		def matshell_spawn(name):
 			shell = Scripts.shells.factory(name)
 			anchor = self.scene.objects['B_matspawn']
@@ -239,8 +241,6 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			self.shell = shell
 		def destroy_matshell():
 			self.shell.endObject()
-
-		# Cache shell materials to prevent frame dropping
 		s = (s.create_successor()
 			(bat.story.ActGeneric(matshell_spawn, 'BottleCap'))
 		)
@@ -270,16 +270,29 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActGeneric(destroy_matshell))
 		)
 
-		s = (s.create_successor()
+		s = sready = (s.create_successor()
 			(bat.story.CondNextFrame()) # Ensure redraw
 			(bat.story.CondWait(0.5))
 			("FinishLoading", self)
 		)
 
+		snd_alarm1 = bat.story.ActSound('//Sound/cc-by/BirdAlarm1.ogg', pitchmin=0.9, pitchmax=1.1)
+		snd_alarm2 = bat.story.ActSound('//Sound/cc-by/BirdAlarm2.ogg', pitchmin=0.9, pitchmax=1.1)
+		snd_squark_small = bat.story.ActSound('//Sound/cc-by/BirdSquarkSmall.ogg', pitchmin=0.9, pitchmax=1.1)
+		snd_squark_large = bat.story.ActSound('//Sound/cc-by/BirdSquarkLarge.ogg', pitchmin=0.9, pitchmax=1.1)
+		snd_question = bat.story.ActSound('//Sound/cc-by/BirdQuestion1.ogg', pitchmin=0.9, pitchmax=1.1)
+		snd_statement = bat.story.ActSound('//Sound/cc-by/BirdStatement.ogg', pitchmin=0.9, pitchmax=1.1)
+		snd_tweet1 = bat.story.ActSound('//Sound/cc-by/BirdTweet1.ogg', pitchmin=0.9, pitchmax=1.1)
+		snd_tweet2 = bat.story.ActSound('//Sound/cc-by/BirdTweet2.ogg', pitchmin=0.9, pitchmax=1.1)
+
 		s = (s.create_successor()
 			(bat.story.CondWait(3))
 			(bat.story.ActAction("B_Final", 1, 60))
 			(Scripts.story.ActSleepParticles(start=False, target_descendant='Bi_Head'))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 14, tap=True))
+				(snd_squark_small)
+			)
 		)
 
 		s = (s.create_successor()
@@ -293,12 +306,20 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ShowDialogue", "Hey! That's a nice shiny red thing you have "
 				"there.")
 			(bat.story.ActAction("B_Final", 65, 100))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 69, tap=True))
+				(snd_question)
+			)
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "Are you here to talk business?")
 			(bat.story.ActAction("B_Final", 105, 130))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 111, tap=True))
+				(snd_alarm2)
+			)
 		)
 
 		s = (s.create_successor()
@@ -306,6 +327,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ShowDialogue", "I haven't forgotten our deal: if you give me "
 				"three shiny red things, I'll give you this one in return.")
 			(bat.story.ActAction("B_Final", 150, 180))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 157, tap=True))
+				(snd_alarm1)
+			)
 		)
 
 		s = (s.create_successor()
@@ -313,12 +338,21 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ShowDialogue", ("So, will you give me that \[thimble]?",
 				("Actually I think I'll keep it.", "I guess so.")))
 			(bat.story.ActAction("B_Final", 190, 225))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 198, tap=True))
+				(snd_tweet2)
+			)
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ForceDropShell", True)
 			(bat.story.ActAction("B_Final", 230, 275))
+			(bat.story.ActAction("B_nest_cam", 230, 275, ob="B_nest_cam"))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 235, tap=True))
+				(snd_squark_large)
+			)
 		)
 
 		s = (s.create_successor()
@@ -327,10 +361,14 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		)
 
 		s = (s.create_successor()
-			(bat.story.CondWait(0.5))
+			(bat.story.CondActionGE(0, 275))
 			("ShowDialogue", ("Thanks! And, ooh, what a lovely \[wheel]!",
 				("Here you go.", "Let's get this over with.")))
-			(bat.story.ActAction("B_Final", 320, 320))
+			(bat.story.ActAction("B_Final", 290, 310))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 290, tap=True))
+				(snd_tweet2)
+			)
 		)
 
 		s = (s.create_successor()
@@ -344,10 +382,14 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		)
 
 		s = (s.create_successor()
-			(bat.story.CondWait(0.5))
+			(bat.story.CondWait(2))
 			("ShowDialogue", ("And a \[bottlecap]! That's for me too, right?",
 				("Of course.", "Sure, why not :(")))
-			(bat.story.ActAction("B_Final", 370, 370))
+			(bat.story.ActAction("B_Final", 320, 340))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 324, tap=True))
+				(snd_tweet1)
+			)
 		)
 
 		s = (s.create_successor()
@@ -360,11 +402,32 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("ForceEquipShell", "Nut")
 		)
 
+		tweets = bat.story.ActSound('//Sound/cc-by/BirdTweet1.ogg',
+			pitchmin=0.9, pitchmax=1.1)
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
 			("ShowDialogue", "Wonderful! What an excellent collection.")
-			(bat.story.ActAction("B_Final", 420, 420))
+			(bat.story.ActAction("B_Final", 360, 450))
+			(bat.story.ActAction("B_nest_cam", 360, 450, ob="B_nest_cam"))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 386, tap=True))
+				(tweets)
+			)
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 394, tap=True))
+				(tweets)
+			)
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 406, tap=True))
+				(tweets)
+			)
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 416, tap=True))
+				(bat.story.ActSound('//Sound/cc-by/BirdTweet2.ogg'))
+			)
 		)
+		# TEST
+		#s.add_predecessor(sready)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
@@ -583,7 +646,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 	def shoot_shell(self, shell):
 		if shell is None:
 			Bird.log.warn('Could not shoot shell: does not exist!')
-		print("Shooting shell")
+		Bird.log.info("Shooting shell %s", shell)
 		shooter = self.scene.objects['B_shell_launcher']
 		vec = shooter.getAxisVect(bat.bmath.ZAXIS)
 		bat.bmath.copy_transform(shooter, shell)

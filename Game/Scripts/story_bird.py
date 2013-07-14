@@ -500,10 +500,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondEvent("DialogueDismissed", self))
 			(Scripts.story.ActSetCamera('B_nest_fall_cam'))
 			(Scripts.story.ActRemoveCamera('B_nest_cam'))
-			#(bat.story.ActAction("B_Final", 900, 980))
-			(bat.story.ActAction("B_Nest", 900, 980, ob="B_Nest"))
-			(bat.story.ActAction("B_Nest_Shell", 900, 980, ob="B_Nest_Shell"))
-			(bat.story.ActAction("B_Egg", 900, 980, ob="B_Egg"))
+			(bat.story.ActAction("B_Final", 850, 980))
+			(bat.story.ActAction("B_Nest", 850, 980, ob="B_Nest"))
+			(bat.story.ActAction("B_Nest_Shell", 850, 980, ob="B_Nest_Shell"))
+			(bat.story.ActAction("B_Egg", 850, 980, ob="B_Egg"))
 			# Destroy the funnel; things are *supposed* to fall out of the nest
 			# now.
 			(bat.story.ActDestroy(ob="B_Nest_funnel"))
@@ -512,10 +512,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		# Nest has fallen; initialise next shot
 		s = (s.create_successor()
-			(bat.story.CondActionGE(0, 950, ob="B_Nest"))
+			(bat.story.CondActionGE(0, 900, ob="B_Nest"))
 			("StartLoading", self)
 			(bat.story.State() # sub-step
-				(bat.story.CondActionGE(0, 960, ob="B_Nest", tap=True))
+				(bat.story.CondActionGE(0, 910, ob="B_Nest", tap=True))
 				(bat.story.ActCopyTransform('B_shell_spawn_1', ob='BottleCap'))
 				(bat.story.ActCopyTransform('B_shell_spawn_2', ob='Nut'))
 				(bat.story.ActCopyTransform('B_shell_spawn_3', ob='Wheel'))

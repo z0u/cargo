@@ -207,6 +207,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (self.rootState.create_successor('Init nest')
 			(bat.story.ActAction('B_Nest', 1, 1, ob='B_Nest'))
 			(bat.story.ActAction('B_Egg', 1, 1, ob='B_Egg'))
+			(bat.story.ActAction("B_TorchButton", 1, 1, ob="B_TorchButton"))
 			(bat.story.ActAction("B_Nest_Shell", 1, 1, ob="B_Nest_Shell"))
 			(bat.story.ActAction('B_Final', 1, 1))
 			(bat.story.ActAction("B_nest_cam", 1, 1, ob="B_nest_cam"))
@@ -410,6 +411,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActAction("B_Nest", 360, 450, ob="B_Nest"))
 			(bat.story.ActAction("B_Nest_Shell", 360, 450, ob="B_Nest_Shell"))
 			(bat.story.ActAction("B_Egg", 360, 450, ob="B_Egg"))
+			(bat.story.ActAction("B_TorchButton", 360, 450, ob="B_TorchButton"))
 			(bat.story.ActAction("B_nest_cam", 360, 470, ob="B_nest_cam")) # note different end time
 			(bat.story.State()
 				(bat.story.CondActionGE(0, 386, tap=True))
@@ -469,6 +471,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActAction("B_Nest", 680, 735, ob="B_Nest"))
 			(bat.story.ActAction("B_Nest_Shell", 680, 735, ob="B_Nest_Shell"))
 			(bat.story.ActAction("B_Egg", 680, 735, ob="B_Egg"))
+			(bat.story.ActAction("B_TorchButton", 680, 735, ob="B_TorchButton"))
 			(bat.story.State()
 				(bat.story.CondActionGE(0, 703, tap=True))
 				("ShowDialogue", "Whoa, whoa! It's too heavy. Look out!")
@@ -484,6 +487,8 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActAction("B_Nest_Shell", 735, 771, ob="B_Nest_Shell",
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 			(bat.story.ActAction("B_Egg", 735, 771, ob="B_Egg",
+				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
+			(bat.story.ActAction("B_TorchButton", 735, 771, ob="B_TorchButton",
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
 # 			(bat.story.State()
 # 				(bat.story.CondActionGE(0, 744, tap=True))
@@ -504,6 +509,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.ActAction("B_Nest", 850, 980, ob="B_Nest"))
 			(bat.story.ActAction("B_Nest_Shell", 850, 980, ob="B_Nest_Shell"))
 			(bat.story.ActAction("B_Egg", 850, 980, ob="B_Egg"))
+			(bat.story.ActAction("B_TorchButton", 850, 980, ob="B_TorchButton"))
 			# Destroy the funnel; things are *supposed* to fall out of the nest
 			# now.
 			(bat.story.ActDestroy(ob="B_Nest_funnel"))
@@ -547,6 +553,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			("FinishLoading", self)
 			(bat.story.ActAction("B_Nest", 1000, 1000, ob="B_Nest"))
 			(bat.story.ActAction("B_Egg", 1000, 1000, ob="B_Egg"))
+			(bat.story.ActAction("B_TorchButton", 1000, 1000, ob="B_TorchButton"))
 			(bat.story.ActAction("B_Final", 1000, 1000))
 			(bat.story.ActAction("B_base_cam_above", 1000, 1150, ob="B_base_cam_above"))
 			(bat.story.ActDestroy(ob="B_Nest_Shell"))

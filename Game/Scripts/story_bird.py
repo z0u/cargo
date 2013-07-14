@@ -383,7 +383,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		)
 
 		s = (s.create_successor()
-			(bat.story.CondWait(1))
+			(bat.story.CondWait(0.5))
 			("ShowDialogue", ("And a \[bottlecap]! That's for me too, right?",
 				("Of course.", "Sure, why not :(")))
 			(bat.story.ActAction("B_Final", 320, 340))
@@ -405,7 +405,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
-			("ShowDialogue", "Wonderful! What an excellent collection.")
+			("ShowDialogue", "Hooray! What an excellent collection.")
 			(bat.story.ActAction("B_Final", 360, 450))
 			(bat.story.ActAction("B_Nest", 360, 450, ob="B_Nest"))
 			(bat.story.ActAction("B_Nest_Shell", 360, 450, ob="B_Nest_Shell"))
@@ -464,16 +464,35 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		)
 
 		s = (s.create_successor()
-			(bat.story.CondWait(1))
-			("ShowDialogue", "Whoa, whoa! It's too heavy. Look out!")
-			(bat.story.ActAction("B_Final", 800, 808,
+# 			(bat.story.CondWait(0.5))
+			(bat.story.ActAction("B_Final", 680, 735))
+			(bat.story.ActAction("B_Nest", 680, 735, ob="B_Nest"))
+			(bat.story.ActAction("B_Nest_Shell", 680, 735, ob="B_Nest_Shell"))
+			(bat.story.ActAction("B_Egg", 680, 735, ob="B_Egg"))
+			(bat.story.State()
+				(bat.story.CondActionGE(0, 703, tap=True))
+				("ShowDialogue", "Whoa, whoa! It's too heavy. Look out!")
+				(snd_squark_large)
+			)
+		)
+		s = (s.create_successor()
+				(bat.story.CondActionGE(0, 734.5))
+			(bat.story.ActAction("B_Final", 735, 771,
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-			(bat.story.ActAction("B_Nest", 800, 808, ob="B_Nest",
+			(bat.story.ActAction("B_Nest", 735, 771, ob="B_Nest",
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-			(bat.story.ActAction("B_Nest_Shell", 800, 808, ob="B_Nest_Shell",
+			(bat.story.ActAction("B_Nest_Shell", 735, 771, ob="B_Nest_Shell",
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-			(bat.story.ActAction("B_Egg", 800, 808, ob="B_Egg",
+			(bat.story.ActAction("B_Egg", 735, 771, ob="B_Egg",
 				play_mode=bge.logic.KX_ACTION_MODE_LOOP))
+# 			(bat.story.State()
+# 				(bat.story.CondActionGE(0, 744, tap=True))
+# 				(snd_squark_small)
+# 			)
+# 			(bat.story.State()
+# 				(bat.story.CondActionGE(0, 762, tap=True))
+# 				(snd_squark_small)
+# 			)
 		)
 
 		# Nest falls down.
@@ -481,10 +500,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondEvent("DialogueDismissed", self))
 			(Scripts.story.ActSetCamera('B_nest_fall_cam'))
 			(Scripts.story.ActRemoveCamera('B_nest_cam'))
-			(bat.story.ActAction("B_Final", 820, 890))
-			(bat.story.ActAction("B_Nest", 820, 890, ob="B_Nest"))
-			(bat.story.ActAction("B_Nest_Shell", 820, 890, ob="B_Nest_Shell"))
-			(bat.story.ActAction("B_Egg", 820, 890, ob="B_Egg"))
+			#(bat.story.ActAction("B_Final", 900, 980))
+			(bat.story.ActAction("B_Nest", 900, 980, ob="B_Nest"))
+			(bat.story.ActAction("B_Nest_Shell", 900, 980, ob="B_Nest_Shell"))
+			(bat.story.ActAction("B_Egg", 900, 980, ob="B_Egg"))
 			# Destroy the funnel; things are *supposed* to fall out of the nest
 			# now.
 			(bat.story.ActDestroy(ob="B_Nest_funnel"))
@@ -493,10 +512,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		# Nest has fallen; initialise next shot
 		s = (s.create_successor()
-			(bat.story.CondActionGE(0, 870, ob="B_Nest"))
+			(bat.story.CondActionGE(0, 950, ob="B_Nest"))
 			("StartLoading", self)
 			(bat.story.State() # sub-step
-				(bat.story.CondActionGE(0, 880, ob="B_Nest", tap=True))
+				(bat.story.CondActionGE(0, 960, ob="B_Nest", tap=True))
 				(bat.story.ActCopyTransform('B_shell_spawn_1', ob='BottleCap'))
 				(bat.story.ActCopyTransform('B_shell_spawn_2', ob='Nut'))
 				(bat.story.ActCopyTransform('B_shell_spawn_3', ob='Wheel'))

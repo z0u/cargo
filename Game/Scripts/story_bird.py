@@ -575,6 +575,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor()
 			(bat.story.CondWait(1))
 			("ShowDialogue", "Oh my beautiful egg! What luck that it is not broken.")
+			(bat.story.ActAction("B_Final", 1005, 1040))
 		)
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))

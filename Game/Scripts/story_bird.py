@@ -579,20 +579,16 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		)
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
-			("ShowDialogue", "Hmm...")
-		)
-		s = (s.create_successor()
-			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", ("You know, I think I may have been a little greedy.",
 				("Well, maybe a little.", "You were so greedy!")))
-			(bat.story.ActAction("B_Final", 1100, 1100))
+			(bat.story.ActAction("B_Final", 1050, 1090))
 		)
 
 		# Bird is told that it was greedy, so it gives back the loot.
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "Oh you're right! I was greedy, and a fool.")
-			(bat.story.ActAction("B_Final", 1200, 1200))
+			(bat.story.ActAction("B_Final", 1100, 1150))
 		)
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))

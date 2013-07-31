@@ -621,6 +621,8 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
+			(Scripts.story.ActSetCamera('B_base_cam2'))
+			(Scripts.story.ActRemoveCamera('B_base_cam'))
 			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
 			("ShowDialogue", "You can even take my shell. I can't bear to look "
 				"at it! Besides, my nest was becoming a bit cluttered.")
@@ -644,6 +646,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(bat.story.CondEvent("DialogueDismissed", self))
 			(Scripts.story.ActResumeInput())
 			(Scripts.story.ActRemoveCamera('B_base_cam'))
+			(Scripts.story.ActRemoveCamera('B_base_cam2'))
 			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
 			(Scripts.story.ActRemoveCamera('B_nest_cam'))
 			(Scripts.story.ActRemoveCamera('B_nest_fall_cam'))

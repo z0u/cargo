@@ -593,13 +593,13 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", "Please, take back the things you brought me.")
-			(bat.story.ActAction("B_Final", 1300, 1300))
+			(bat.story.ActAction("B_Final", 1200, 1280))
 		)
 
 		s = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			(Scripts.story.ActSetCamera('B_base_cam_above'))
-			(bat.story.ActAction("B_Final", 1350, 1350))
+			(bat.story.ActAction("B_Final", 1300, 1360))
 		)
 
 		s = (s.create_successor()
@@ -624,7 +624,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			(Scripts.story.ActRemoveCamera('B_base_cam_above'))
 			("ShowDialogue", "You can even take my shell. I can't bear to look "
 				"at it! Besides, my nest was becoming a bit cluttered.")
-			(bat.story.ActAction("B_Final", 1400, 1400))
+			(bat.story.ActAction("B_Final", 1400, 1450))
 		)
 
 		s = (s.create_successor()
@@ -636,10 +636,11 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor()
 			(bat.story.CondWait(0.5))
 			("ShowDialogue", "Ah, I feel better already!")
-			(bat.story.ActAction("B_Final", 1500, 1500))
+			(bat.story.ActAction("B_Final", 1500, 1570))
 		)
 
 		s = (s.create_successor("Return to game")
+			(bat.story.CondActionGE(0, 1570))
 			(bat.story.CondEvent("DialogueDismissed", self))
 			(Scripts.story.ActResumeInput())
 			(Scripts.story.ActRemoveCamera('B_base_cam'))

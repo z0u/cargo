@@ -150,7 +150,8 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
 		s.add_action(bat.story.ActAttrSet('energy', 5.0, ob='UserLight1'))
 
 		s = s.create_successor()
-		s.add_condition(bat.story.CondEvent("LoadingScreenShown", self))
+		# Can't wait on loading screen event here, because this object (self) is
+		# sometimes created after the loading screen is shown.
 		s.add_condition(bat.story.CondWait(1))
 		s.add_event("FinishLoading", self)
 		s.add_action(Scripts.story.ActSetCamera('LK_Cam_Long'))

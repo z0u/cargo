@@ -162,14 +162,14 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 		s = s.create_successor()
 		s.add_action(Scripts.story.ActSetCamera('BirdCamera_BottleToNest_zoom'))
-		s.add_action(Scripts.story.ActSetFocalPoint('Nest'))
-		s.add_action(Scripts.story.ActShowMarker('Nest'))
+		s.add_action(Scripts.story.ActSetFocalPoint('B_Nest'))
+		s.add_action(Scripts.story.ActShowMarker('B_Nest'))
 		s.add_event("ShowDialogue", "If you want this \[shell], bring 3 red things to my nest at the top of the tree.")
 		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdMutter.ogg'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-		s.add_action(Scripts.story.ActRemoveFocalPoint('Nest'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('B_Nest'))
 		s.add_action(Scripts.story.ActShowMarker(None))
 		s.add_action(Scripts.story.ActRemoveCamera('B_BirdConverseCam'))
 		s.add_action(Scripts.story.ActRemoveCamera('BirdCamera_BottleToNest_zoom'))
@@ -182,7 +182,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s.add_action(bat.story.ActSound('//Sound/cc-by/BirdTweet2.ogg'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Bi_Face'))
 		s.add_action(Scripts.story.ActRemoveFocalPoint('Bi_FootHook.L'))
-		s.add_action(Scripts.story.ActRemoveFocalPoint('Nest'))
+		s.add_action(Scripts.story.ActRemoveFocalPoint('B_Nest'))
 
 		s = s.create_successor()
 		s.add_condition(bat.story.CondEvent("DialogueDismissed", self))

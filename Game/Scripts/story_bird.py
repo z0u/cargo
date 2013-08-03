@@ -205,6 +205,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
 	def create_nest_state_graph(self):
 		s = (self.rootState.create_successor('Init nest')
+			# Need to set Tree as parent so that animations play in the right
+			# coordinate system. All other objects (nest, etc) are already
+			# parented.
+			(bat.story.ActParentSet('T_Tree'))
 			(bat.story.ActAction('B_Nest', 1, 1, ob='B_Nest'))
 			(bat.story.ActAction('B_Egg', 1, 1, ob='B_Egg'))
 			(bat.story.ActAction("B_TorchButton", 1, 1, ob="B_TorchButton"))

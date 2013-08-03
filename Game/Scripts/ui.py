@@ -237,15 +237,19 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 			self.hide()
 
 	def handle_switch(self, state):
-		if state.direction > 0.1:
+		if not state.triggered or abs(state.bias) < 0.1:
+			return
+		if state.bias > 0.1:
 			self.switch_option(True)
-		elif state.direction < -0.1:
+		elif state.bias < -0.1:
 			self.switch_option(False)
 
 	def handle_movement(self, state):
-		if state.direction.y > 0.1:
+		if not state.triggered_repeat or state.bias.magnitude < 0.1:
+			return
+		if state.bias.y > 0.1:
 			self.switch_option(False)
-		elif state.direction.y < -0.1:
+		elif state.bias.y < -0.1:
 			self.switch_option(True)
 
 	def switch_option(self, nxt):
@@ -407,7 +411,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
 	def can_handle_input(self, state):
 		# Stop player from doing anything else while dialogue is up.
-		if state.name == 'Start':
+		if state.name in {'Start'}:
 			return True
 		else:
 			return self.accepting_input

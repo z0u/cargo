@@ -20,6 +20,20 @@ SCRIPT_CACHE=bxt/*.pyc\
 	*.pyc\
 	*~
 
+# Updates the files to the current Blender version. If this is not done, Blender
+# may crash when loading linked assets, because the linked files are not
+# converted automatically when being opened.
+updateversion:
+	@echo Updating files.
+	@for f in *.blend; \
+	do \
+	    echo -n "$$f ... "; \
+	    blender -b "$$f" -P BScripts/update_version.py; \
+	    echo done; \
+	done
+	@echo Storing current version in BLENDER_VERSION.txt
+	@blender -v > BLENDER_VERSION.txt
+
 clean:
 	rm -rf $(SCRIPT_CACHE)
 	rm -f *.blend?

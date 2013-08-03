@@ -354,6 +354,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s_no = (s_choice.create_successor()
 			(bat.story.CondEventEq("DialogueDismissed", 0, self))
 			("ShowDialogue", "Oh OK! Then excuse me, I think I'll get back to my nap.")
+			(bat.story.ActAction("B_BackToSleep", 1, 50))
 			(bat.story.ActMusicStop(fade_rate=0.002))
 		)
 		s_no = (s_no.create_successor()

@@ -339,7 +339,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			)
 		)
 
-		s = (s.create_successor()
+		s = s_choice = (s.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
 			("ShowDialogue", ("So, will you give me that \[thimble]?",
 				("Actually I think I'll keep it.", "I guess so.")))
@@ -350,8 +350,32 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 			)
 		)
 
-		s = (s.create_successor()
+		# NO: Abort!
+		s_no = (s_choice.create_successor()
+			(bat.story.CondEventEq("DialogueDismissed", 0, self))
+			("ShowDialogue", "Oh OK! Then excuse me, I think I'll get back to my nap.")
+			(bat.story.ActMusicStop(fade_rate=0.002))
+		)
+		s_no = (s_no.create_successor()
 			(bat.story.CondEvent("DialogueDismissed", self))
+			("StartLoading", self)
+		)
+		s_no = (s_no.create_successor()
+			(bat.story.CondEvent("LoadingScreenShown", self))
+			(Scripts.story.ActRemoveCamera('B_nest_cam'))
+			(Scripts.story.ActRemoveFocalPoint('Bi_Face'))
+		)
+		s_no = (s_no.create_successor()
+			(bat.story.CondWait(1))
+			("FinishLoading", self)
+			(Scripts.story.ActResumeInput())
+		)
+		# Loop back to start.
+		s_no.add_successor(self.rootState)
+
+		# YES
+		s = (s_choice.create_successor()
+			(bat.story.CondEventEq("DialogueDismissed", 1, self))
 			("ForceDropShell", True)
 			(bat.story.ActAction("B_Final", 230, 275))
 			(bat.story.ActAction("B_nest_cam", 230, 275, ob="B_nest_cam"))
@@ -648,6 +672,9 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 		s = (s.create_successor("Return to game")
 			(bat.story.CondActionGE(0, 1570))
 			(bat.story.CondEvent("DialogueDismissed", self))
+		)
+
+		s = (s.create_successor()
 			(Scripts.story.ActResumeInput())
 			(Scripts.story.ActRemoveCamera('B_base_cam'))
 			(Scripts.story.ActRemoveCamera('B_base_cam2'))

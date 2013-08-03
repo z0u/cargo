@@ -1,4 +1,4 @@
-all: foliage
+all: updateversion foliage
 
 # Foliage is compiled: particle system object instances are made real, then
 # organised as a KD-tree. See BScripts/BlendKDTree.py
@@ -25,7 +25,7 @@ SCRIPT_CACHE=bxt/*.pyc\
 # converted automatically when being opened.
 updateversion:
 	@echo Updating files.
-	@for f in *.blend; \
+	@for f in *.blend bat/*.blend; \
 	do \
 	    echo -n "$$f ... "; \
 	    blender -b "$$f" -P BScripts/update_version.py; \

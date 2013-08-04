@@ -113,7 +113,66 @@ def package_for_osx(game_meta, exclude, blend_dist):
 
 def package_for_win(game_meta, exclude, blend_dist):
 	# Work directly with the zip file, because we can.
-	pass
+
+	PATTERN = re.compile('^[^/]+(.*)$')
+	EXCLUDE_PATTERNS = re.compile('^/blender\\.exe|^/BlendThumb.*\\.dll$|'
+		'^/[0-9]\\.[0-9][0-9]/scripts/(?!modules)')
+
+	def get_target_path(src_path):
+		match = PATTERN.match(src_path)
+		if match is None:
+			return None
+		sub_path = match.group(1)
+		if EXCLUDE_PATTERNS.match(sub_path) is not None:
+			path = None
+		elif sub_path == '/blenderplayer.exe':
+			path = '{0}/{1}.exe'.format(game_meta.runtime_root, game_meta.name)
+		elif sub_path == '/copyright.txt':
+			path = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
+		else:
+			path = '{0}{1}'.format(game_meta.runtime_root, sub_path)
+		return sub_path, path
+
+	target_path = game_meta.archive_root + '-win.zip'
+	with zipfile.ZipFile(blend_dist, 'r') as blender, \
+			zipfile.ZipFile(target_path, 'w') as game:
+
+		# First, copy over blenderplayer contents, but rename to game name
+		for zi in blender.infolist():
+			# Rename file.
+			sub_path, name = get_target_path(zi.filename)
+			if name is None:
+				continue
+
+			# For some entries buf will be None, but that's OK
+			data = blender.read(zi)
+			if sub_path == '/blenderplayer':
+				print('old size', zi.file_size)
+				with open(game_meta.mainfile, 'rb') as mf:
+					data, zi.file_size = concat_game(data, mf)
+				print('new size', zi.file_size)
+
+			zi.filename = name
+			print(zi.filename)
+			game.writestr(zi, data)
+
+		# Now copy other resources.
+		for dirpath, _, filenames in os.walk(game_meta.assets):
+			if exclude(os.path.basename(dirpath)):
+				continue
+			path = dirpath
+			arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
+			print(arcname)
+			game.write(path, arcname=arcname)
+			for f in filenames:
+				if exclude(f):
+					continue
+				path = os.path.join(dirpath, f)
+				arcname = '{}/{}'.format(game_meta.archive_root, path)
+				print(arcname)
+				game.write(path, arcname=arcname)
+
+	print('Game packaged as %s' % target_path)
 
 
 def package_for_lin(game_meta, exclude, blend_dist):
@@ -122,7 +181,7 @@ def package_for_lin(game_meta, exclude, blend_dist):
 	PATTERN = re.compile('^[^/]+(.*)$')
 	EXCLUDE_PATTERNS = re.compile('^/blender$|^/blender-softwaregl$|^/blender-thumbnailer.py$|'
 		'^/icons|'
-		'^/[0-9].[0-9][0-9]/scripts/(?!modules)')
+		'^/[0-9]\\.[0-9][0-9]/scripts/(?!modules)')
 
 	def get_target_path(src_path):
 		match = PATTERN.match(src_path)
@@ -158,16 +217,16 @@ def package_for_lin(game_meta, exclude, blend_dist):
 
 			else:
 				# For some entries buf will be None, but that's OK
-				buf = blender.extractfile(ti)
+				data = blender.extractfile(ti)
 				if sub_path == '/blenderplayer':
 					print('old size', ti.size)
 					with open(game_meta.mainfile, 'rb') as mf:
-						buf, ti.size = concat_game(buf, mf)
+						data, ti.size = concat_game(data, mf)
 					print('new size', ti.size)
 	
 				ti.name = name
 				print(ti.name)
-				game.addfile(ti, fileobj=buf)
+				game.addfile(ti, fileobj=data)
 
 		# Now copy other resources.
 		for dirpath, _, filenames in os.walk(game_meta.assets):
@@ -184,6 +243,7 @@ def package_for_lin(game_meta, exclude, blend_dist):
 				arcname = '{}/{}'.format(game_meta.archive_root, path)
 				print(arcname)
 				game.add(path, arcname=arcname, recursive=False)
+
 	print('Game packaged as %s' % target_path)
 
 

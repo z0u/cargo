@@ -68,6 +68,9 @@ class GameMeta:
 
 
 class OsxMapper:
+	'''
+	Re-maps Blender's Mac OSX file paths to suit the target package name.
+	'''
 
 	PLAYER_PATTERN = re.compile('^Blender/blenderplayer.app(.*)$')
 	ROOT_PATTERN = re.compile('^Blender(/[^/]*)$')
@@ -96,14 +99,21 @@ class OsxMapper:
 		return name
 
 	def patch(self, name, data):
+		'''Modify data before writing.'''
+		# No files need patching on Mac; the resource is included as a separate
+		# file.
 		return data
 
 	@property
 	def primary_resource(self):
+		'''@return the name of the primary resource.'''
 		return '{0}/{1}.app/Contents/Resources/game.blend'.format(game_meta.runtime_root, game_meta.name)
 
 
 class WinMapper:
+	'''
+	Re-maps Blender's Windows file paths to suit the target package name.
+	'''
 
 	PATTERN = re.compile('^[^/]+(.*)$')
 	EXCLUDE_PATTERNS = re.compile('^/blender\\.exe|^/BlendThumb.*\\.dll$|'
@@ -130,6 +140,7 @@ class WinMapper:
 		return name
 
 	def patch(self, name, data):
+		'''Modify data before writing.'''
 		if name == self.executable:
 			print('\tPatching...')
 			with open(game_meta.mainfile, 'rb') as mf:
@@ -138,10 +149,16 @@ class WinMapper:
 
 	@property
 	def primary_resource(self):
+		'''@return the name of the primary resource.'''
+		# No primary resource on Windows; it is patched into the player
+		# executable instead.
 		return None
 
 
 class LinMapper:
+	'''
+	Re-maps Blender's Linux file paths to suit the target package name.
+	'''
 
 	PATTERN = re.compile('^[^/]+(.*)$')
 	EXCLUDE_PATTERNS = re.compile('^/blender$|^/blender-softwaregl$|^/blender-thumbnailer.py$|'
@@ -169,6 +186,7 @@ class LinMapper:
 		return name
 
 	def patch(self, name, data):
+		'''Modify data before writing.'''
 		if name == self.executable:
 			print('\tPatching...')
 			with open(game_meta.mainfile, 'rb') as mf:
@@ -177,217 +195,16 @@ class LinMapper:
 
 	@property
 	def primary_resource(self):
+		'''@return the name of the primary resource.'''
+		# No primary resource on Linux; it is patched into the player executable
+		# instead.
 		return None
 
 
-class ZipTranslator:
-	def __init__(self, mapper):
-		self.mapper = mapper
-
-	def translate(self, game_meta, exclude, blend_dist):
-		target_path = game_meta.archive_root + '.zip'
-		with zipfile.ZipFile(blend_dist, 'r') as blender, \
-				zipfile.ZipFile(target_path, 'w') as game:
-
-			# First, copy over blenderplayer contents, but rename to game name
-			for zi in blender.infolist():
-				name = self.mapper.apply(zi.filename)
-				if name is None:
-					continue
-
-				print(name)
-				data = self.mapper.patch(name, blender.read(zi.filename))
-				zi.filename = name
-				game.writestr(zi, data)
-
-			if self.mapper.executable is None:
-				raise TranslationError('blenderplayer not present in archive')
-
-			# On OSX (for example), the primary resource is not concatenated with
-			# the executable; instead, it's included in a subdirectory.
-			if self.mapper.primary_resource is not None:
-				print(self.mapper.primary_resource)
-				game.write(game_meta.mainfile, arcname=self.mapper.primary_resource)
-
-			# Now copy other resources.
-			for dirpath, _, filenames in os.walk(game_meta.assets):
-				if exclude(os.path.basename(dirpath)):
-					continue
-				path = dirpath
-				arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
-				print(arcname)
-				game.write(path, arcname=arcname)
-				for f in filenames:
-					if exclude(f):
-						continue
-					path = os.path.join(dirpath, f)
-					arcname = '{}/{}'.format(game_meta.archive_root, path)
-					print(arcname)
-					game.write(path, arcname=arcname)
-
-		return target_path, self.mapper.executable
-
-
-class TarTranslator:
-	def __init__(self, mapper):
-		self.mapper = mapper
-
-	def translate(self, game_meta, exclude, blend_dist):
-		target_path = game_meta.archive_root + '.tar.bz2'
-		with tarfile.open(blend_dist, 'r') as blender, \
-				tarfile.open(target_path, 'w:bz2') as game:
-
-			# First, copy over blenderplayer contents, but rename to game name.
-			for ti in blender:
-				name = self.mapper.apply(ti.name)
-				if name is None:
-					continue
-
-				print(name)
-				# Special handling for links
-				if ti.type in {tarfile.LNKTYPE, tarfile.SYMTYPE}:
-					ti.name = name
-					game.addfile(ti)
-				elif ti.type in {tarfile.DIRTYPE}:
-					ti.name = name
-					game.addfile(ti)
-				else:
-					data = blender.extractfile(ti).read()
-					data = self.mapper.patch(name, data)
-					ti.name = name
-					ti.size = len(data)
-					game.addfile(ti, fileobj=io.BytesIO(data))
-
-			if self.mapper.executable is None:
-				raise TranslationError('blenderplayer not present in archive')
-
-			# On OSX (for example), the primary resource is not concatenated with
-			# the executable; instead, it's included in a subdirectory.
-			if self.mapper.primary_resource is not None:
-				print(self.mapper.primary_resource)
-				game.add(game_meta.mainfile, arcname=self.mapper.primary_resource)
-
-			# Now copy other resources.
-			for dirpath, _, filenames in os.walk(game_meta.assets):
-				if exclude(os.path.basename(dirpath)):
-					continue
-				path = dirpath
-				arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
-				print(arcname)
-				game.add(path, arcname=arcname, recursive=False)
-				for f in filenames:
-					if exclude(f):
-						continue
-					path = os.path.join(dirpath, f)
-					arcname = '{}/{}'.format(game_meta.archive_root, path)
-					print(arcname)
-					game.add(path, arcname=arcname, recursive=False)
-
-		return target_path, self.mapper.executable
-
-
-def package_for_osx(game_meta, exclude, blend_dist):
-	# Work directly with zip file contents to avoid changing OSX file metadata.
-
-	mapper = OsxMapper(game_meta)
-
-	target_path = game_meta.archive_root + '.zip'
-	with zipfile.ZipFile(blend_dist, 'r') as blender, \
-			zipfile.ZipFile(target_path, 'w') as game:
-
-		# First, copy over blenderplayer contents, but rename to game name
-		for zi in blender.infolist():
-			name = mapper.apply(zi.filename)
-			if name is None:
-				continue
-			data = mapper.patch(zi.filename, blender.read(zi.filename))
-			zi.filename = name
-			print(zi.filename)
-			game.writestr(zi, data)
-
-		if mapper.executable is None:
-			raise TranslationError('blenderplayer not present in archive')
-
-		# On OSX (for example), the primary resource is not concatenated with
-		# the executable; instead, it's included in a subdirectory.
-		if mapper.primary_resource is not None:
-			print(mapper.primary_resource)
-			game.write(game_meta.mainfile, arcname=mapper.primary_resource)
-
-		# Now copy other resources.
-		for dirpath, _, filenames in os.walk(game_meta.assets):
-			if exclude(os.path.basename(dirpath)):
-				continue
-			path = dirpath
-			arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
-			print(arcname)
-			game.write(path, arcname=arcname)
-			for f in filenames:
-				if exclude(f):
-					continue
-				path = os.path.join(dirpath, f)
-				arcname = '{}/{}'.format(game_meta.archive_root, path)
-				print(arcname)
-				game.write(path, arcname=arcname)
-
-	return target_path, mapper.executable
-
-
-def package_for_win(game_meta, exclude, blend_dist):
-	# Work directly with the zip file, because we can.
-
-	mapper = WinMapper(game_meta)
-
-	target_path = game_meta.archive_root + '.zip'
-	with zipfile.ZipFile(blend_dist, 'r') as blender, \
-			zipfile.ZipFile(target_path, 'w') as game:
-
-		# First, copy over blenderplayer contents, but rename to game name.
-		for zi in blender.infolist():
-			name = mapper.apply(zi.filename)
-			if name is None:
-				continue
-			data = mapper.patch(name, blender.read(zi.filename))
-			zi.filename = name
-			print(zi.filename)
-			game.writestr(zi, data)
-
-		if mapper.executable is None:
-			raise TranslationError('blenderplayer not present in archive')
-
-		# On OSX (for example), the primary resource is not concatenated with
-		# the executable; instead, it's included in a subdirectory.
-		if mapper.primary_resource is not None:
-			print(mapper.primary_resource)
-			game.write(game_meta.mainfile, arcname=mapper.primary_resource)
-
-		# Now copy other resources.
-		for dirpath, _, filenames in os.walk(game_meta.assets):
-			if exclude(os.path.basename(dirpath)):
-				continue
-			path = dirpath
-			arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
-			print(arcname)
-			game.write(path, arcname=arcname)
-			for f in filenames:
-				if exclude(f):
-					continue
-				path = os.path.join(dirpath, f)
-				arcname = '{}/{}'.format(game_meta.archive_root, path)
-				print(arcname)
-				game.write(path, arcname=arcname)
-
-	return target_path, mapper.executable
-
-
-def package_for_lin(game_meta, exclude, blend_dist):
-	# Copy from tar to zip.
-
-	mapper = LinMapper(game_meta)
-
-	target_path = game_meta.archive_root + '.tar.bz2'
-	with tarfile.open(blend_dist, 'r') as blender, \
-			tarfile.open(target_path, 'w:bz2') as game:
+def translate(game_meta, exclude, blend_dist, mapper, arcadapter):
+	target_path = game_meta.archive_root + arcadapter.EXTENSION
+	with arcadapter.open(blend_dist, 'r') as blender, \
+			arcadapter.open(target_path, 'w') as game:
 
 		# First, copy over blenderplayer contents, but rename to game name.
 		for ti in blender:
@@ -397,27 +214,26 @@ def package_for_lin(game_meta, exclude, blend_dist):
 
 			print(name)
 			# Special handling for links
-			if ti.type in {tarfile.LNKTYPE, tarfile.SYMTYPE}:
+			if ti.is_link():
 				ti.name = name
-				game.addfile(ti)
-			elif ti.type in {tarfile.DIRTYPE}:
-				ti.name = name
-				game.addfile(ti)
+				game.writestr(ti)
 			else:
-				data = blender.extractfile(ti).read()
-				data = mapper.patch(name, data)
+				data = blender.read(ti)
 				ti.name = name
-				ti.size = len(data)
-				game.addfile(ti, fileobj=io.BytesIO(data))
+				if data != None:
+					data = mapper.patch(name, data)
+					ti.size = len(data)
+				game.writestr(ti, data=data)
 
 		if mapper.executable is None:
 			raise TranslationError('blenderplayer not present in archive')
 
 		# On OSX (for example), the primary resource is not concatenated with
-		# the executable; instead, it's included in a subdirectory.
+		# the executable; instead, it's included in a subdirectory. The
+		# behaviour here will be determined by the mapper.
 		if mapper.primary_resource is not None:
 			print(mapper.primary_resource)
-			game.add(game_meta.mainfile, arcname=mapper.primary_resource)
+			game.write(game_meta.mainfile, arcname=mapper.primary_resource)
 
 		# Now copy other resources.
 		for dirpath, _, filenames in os.walk(game_meta.assets):
@@ -426,14 +242,14 @@ def package_for_lin(game_meta, exclude, blend_dist):
 			path = dirpath
 			arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
 			print(arcname)
-			game.add(path, arcname=arcname, recursive=False)
+			game.write(path, arcname=arcname)
 			for f in filenames:
 				if exclude(f):
 					continue
 				path = os.path.join(dirpath, f)
 				arcname = '{}/{}'.format(game_meta.archive_root, path)
 				print(arcname)
-				game.add(path, arcname=arcname, recursive=False)
+				game.write(path, arcname=arcname)
 
 	return target_path, mapper.executable
 
@@ -515,13 +331,147 @@ def guess_platform(blender_dist):
 		raise ValueError("Can't determine target platform from archive name.")
 
 
-def guess_translator(blender_dist):
+class ZipAdapter:
+	'''
+	Provides limited support for zip files with an interface that is shared with
+	TarAdapter.
+	'''
+
+	EXTENSION = '.zip'
+
+	@classmethod
+	def open(cls, path, mode):
+		instance = cls()
+		instance.tf = zipfile.ZipFile(path, mode)
+		return instance
+
+	def close(self):
+		self.tf.close()
+
+	# to support with statement
+	def __enter__(self):
+		self.tf.__enter__()
+		return self
+	def __exit__(self, *exc_info):
+		self.tf.__exit__(*exc_info)
+
+	def __iter__(self):
+		for ti in self.tf.infolist():
+			yield ZipInfoAdapter(ti)
+
+	def read(self, info):
+		return self.tf.read(info.name)
+
+	def write(self, name, arcname=None):
+		self.tf.write(name, arcname=arcname)
+
+	def writestr(self, info, data=None):
+		if data is None:
+			self.tf.writestr(info.ti)
+		else:
+			self.tf.writestr(info.ti, data)
+
+class ZipInfoAdapter:
+	def __init__(self, ti):
+		self.ti = ti
+
+	@property
+	def name(self):
+		return self.ti.filename
+	@name.setter
+	def name(self, value):
+		self.ti.filename = value
+
+	@property
+	def size(self):
+		return self.ti.file_size
+	@size.setter
+	def size(self, value):
+		self.ti.file_size = value
+
+	def is_link(self):
+		return False
+
+
+class TarAdapter:
+	'''
+	Provides limited support for zip files with an interface that is shared with
+	ZipAdapter.
+	'''
+
+	EXTENSION = '.tar.bz2'
+
+	@classmethod
+	def open(cls, path, mode):
+		if mode == 'w':
+			mode = 'w:bz2'
+		instance = cls()
+		instance.tf = tarfile.open(path, mode)
+		return instance
+
+	def close(self):
+		self.tf.close()
+
+	# to support with statement
+	def __enter__(self):
+		self.tf.__enter__()
+		return self
+	def __exit__(self, *exc_info):
+		self.tf.__exit__(*exc_info)
+
+	def __iter__(self):
+		for ti in self.tf:
+			yield TarInfoAdapter(ti)
+
+	def read(self, info):
+		data = self.tf.extractfile(info.ti)
+		if data is None:
+			return None
+		else:
+			return data.read()
+
+	def write(self, name, arcname=None):
+		self.tf.add(name, arcname=arcname)
+
+	def writestr(self, info, data=None):
+		if data is None:
+			self.tf.addfile(info.ti)
+		else:
+			self.tf.addfile(info.ti, fileobj=io.BytesIO(data))
+
+class TarInfoAdapter:
+	def __init__(self, ti):
+		self.ti = ti
+
+	@property
+	def name(self):
+		return self.ti.name
+	@name.setter
+	def name(self, value):
+		self.ti.name = value
+
+	@property
+	def size(self):
+		return self.ti.size
+	@size.setter
+	def size(self, value):
+		self.ti.size = value
+
+	def is_link(self):
+		return self.ti.type in {tarfile.LNKTYPE, tarfile.SYMTYPE}
+
+
+def get_adapter(blender_dist):
+	'''
+	Get an adapter that can read and write the format of the archive pointed to
+	by `blender_dist`.
+	'''
 	# If need be, this could peek inside the files to be sure. But for now, just
 	# check file name.
 	if re.search('\\.tar(.bz2|.gz)$', blender_dist) is not None:
-		return TarTranslator
+		return TarAdapter
 	elif re.search('\\.zip$', blender_dist) is not None:
-		return ZipTranslator
+		return ZipAdapter
 	else:
 		raise ValueError("Can't determine file type.")
 
@@ -556,12 +506,11 @@ if __name__ == '__main__':
 		globber = ExGlobber.from_file(args.exclude)
 
 	platform = guess_platform(args.blender_dist)
-	translator_cls = guess_translator(args.blender_dist)
+	arcadapter = get_adapter(args.blender_dist)
 	game_meta.suffix += '-{}-{}'.format(*platform)
 	mapper = MAPPERS[platform](game_meta)
-	translator = translator_cls(mapper)
-	print(mapper, translator)
-	archive, executable = translator.translate(game_meta, globber, args.blender_dist)
+
+	archive, executable = translate(game_meta, globber, args.blender_dist, mapper, arcadapter)
 
 	print('Game packaged as {}'.format(archive))
 	print('To play the game, extract the archive and run `{}`'.format(executable))

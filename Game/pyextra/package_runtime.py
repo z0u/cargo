@@ -67,41 +67,127 @@ class GameMeta:
 		return '{}/{}'.format(self.archive_root, os.path.dirname(self.mainfile))
 
 
-def package_for_osx(game_meta, exclude, blend_dist):
-	# Work directly with zip file contents to avoid changing OSX file metadata.
+class OsxMapper:
 
 	PLAYER_PATTERN = re.compile('^Blender/blenderplayer.app(.*)$')
 	ROOT_PATTERN = re.compile('^Blender(/[^/]*)$')
 
-	executable = None
+	def __init__(self, game_meta):
+		self.game_meta = game_meta
+		self.executable = None
+
+	def apply(self, name):
+		original_filename = name
+		if original_filename == 'Blender/copyright.txt':
+			name = '{0}/Blender-copyright.txt'.format(self.game_meta.runtime_root)
+		elif OsxMapper.PLAYER_PATTERN.search(original_filename) is not None:
+			match = OsxMapper.PLAYER_PATTERN.search(original_filename)
+			if match.group(1) == '/Contents/MacOS/blenderplayer':
+				name = '{0}/{1}.app/Contents/MacOS/{1}'.format(self.game_meta.runtime_root, self.game_meta.name)
+				self.executable = '{0}/{1}.app'.format(self.game_meta.runtime_root, self.game_meta.name)
+			else:
+				name = '{0}/{1}.app{2}'.format(self.game_meta.runtime_root, self.game_meta.name, match.group(1))
+		elif OsxMapper.ROOT_PATTERN.search(original_filename) is not None:
+			match = OsxMapper.ROOT_PATTERN.search(original_filename)
+			name = '{0}{1}'.format(self.game_meta.runtime_root, match.group(1))
+		else:
+			# Don't copy main blender app directory.
+			name = None
+		return name
+
+	def patch(self, name, data):
+		return data
+
+
+class WinMapper:
+
+	PATTERN = re.compile('^[^/]+(.*)$')
+	EXCLUDE_PATTERNS = re.compile('^/blender\\.exe|^/BlendThumb.*\\.dll$|'
+		'^/[0-9]\\.[0-9][0-9]/scripts/(?!modules)')
+
+	def __init__(self, game_meta):
+		self.game_meta = game_meta
+		self.executable = None
+
+	def apply(self, name):
+		match = WinMapper.PATTERN.match(name)
+		if match is None:
+			return None
+		sub_path = match.group(1)
+		if WinMapper.EXCLUDE_PATTERNS.search(sub_path) is not None:
+			name = None
+		elif sub_path == '/blenderplayer.exe':
+			name = '{0}/{1}.exe'.format(game_meta.runtime_root, game_meta.name)
+			self.executable = name
+		elif sub_path == '/copyright.txt':
+			name = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
+		else:
+			name = '{0}{1}'.format(game_meta.runtime_root, sub_path)
+		return name
+
+	def patch(self, name, data):
+		if name == self.executable:
+			print('\tPatching...')
+			with open(game_meta.mainfile, 'rb') as mf:
+				data = concat_game(data, mf.read())
+		return data
+
+
+class LinMapper:
+
+	PATTERN = re.compile('^[^/]+(.*)$')
+	EXCLUDE_PATTERNS = re.compile('^/blender$|^/blender-softwaregl$|^/blender-thumbnailer.py$|'
+		'^/icons|'
+		'^/[0-9]\\.[0-9][0-9]/scripts/(?!modules)')
+
+	def __init__(self, game_meta):
+		self.game_meta = game_meta
+		self.executable = None
+
+	def apply(self, name):
+		match = LinMapper.PATTERN.match(name)
+		if match is None:
+			return None
+		sub_path = match.group(1)
+		if LinMapper.EXCLUDE_PATTERNS.search(sub_path) is not None:
+			name = None
+		elif sub_path == '/blenderplayer':
+			name = '{0}/{1}'.format(game_meta.runtime_root, game_meta.name)
+			self.executable = name
+		elif sub_path == '/copyright.txt':
+			name = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
+		else:
+			name = '{0}{1}'.format(game_meta.runtime_root, sub_path)
+		return name
+
+	def patch(self, name, data):
+		if name == self.executable:
+			print('\tPatching...')
+			with open(game_meta.mainfile, 'rb') as mf:
+				data = concat_game(data, mf.read())
+		return data
+
+
+def package_for_osx(game_meta, exclude, blend_dist):
+	# Work directly with zip file contents to avoid changing OSX file metadata.
+
+	mapper = OsxMapper(game_meta)
+
 	target_path = game_meta.archive_root + '.zip'
 	with zipfile.ZipFile(blend_dist, 'r') as blender, \
 			zipfile.ZipFile(target_path, 'w') as game:
 
 		# First, copy over blenderplayer contents, but rename to game name
 		for zi in blender.infolist():
-			original_filename = zi.filename
-			if original_filename == 'Blender/copyright.txt':
-				zi.filename = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
-			elif PLAYER_PATTERN.search(original_filename) is not None:
-				match = PLAYER_PATTERN.search(original_filename)
-				if match.group(1) == '/Contents/MacOS/blenderplayer':
-					zi.filename = '{0}/{1}.app/Contents/MacOS/{1}'.format(game_meta.runtime_root, game_meta.name)
-					executable = '{0}/{1}.app'.format(game_meta.runtime_root, game_meta.name)
-				else:
-					zi.filename = '{0}/{1}.app{2}'.format(game_meta.runtime_root, game_meta.name, match.group(1))
-			elif ROOT_PATTERN.search(original_filename) is not None:
-				match = ROOT_PATTERN.search(original_filename)
-				zi.filename = '{0}{1}'.format(game_meta.runtime_root, match.group(1))
-			else:
-				# Don't copy main blender app directory.
+			name = mapper.apply(zi.filename)
+			if name is None:
 				continue
-
+			data = mapper.patch(zi.filename, blender.read(zi.filename))
+			zi.filename = name
 			print(zi.filename)
-			data = blender.read(original_filename)
 			game.writestr(zi, data)
 
-		if executable is None:
+		if mapper.executable is None:
 			raise TranslationError('blenderplayer not present in archive')
 
 		# No need to patch the player on OSX - just copy the data in as a
@@ -126,58 +212,29 @@ def package_for_osx(game_meta, exclude, blend_dist):
 				print(arcname)
 				game.write(path, arcname=arcname)
 
-	return target_path, executable
+	return target_path, mapper.executable
 
 
 def package_for_win(game_meta, exclude, blend_dist):
 	# Work directly with the zip file, because we can.
 
-	PATTERN = re.compile('^[^/]+(.*)$')
-	EXCLUDE_PATTERNS = re.compile('^/blender\\.exe|^/BlendThumb.*\\.dll$|'
-		'^/[0-9]\\.[0-9][0-9]/scripts/(?!modules)')
+	mapper = WinMapper(game_meta)
 
-	def get_target_path(src_path):
-		match = PATTERN.match(src_path)
-		if match is None:
-			return None
-		sub_path = match.group(1)
-		if EXCLUDE_PATTERNS.search(sub_path) is not None:
-			path = None
-		elif sub_path == '/blenderplayer.exe':
-			path = '{0}/{1}.exe'.format(game_meta.runtime_root, game_meta.name)
-		elif sub_path == '/copyright.txt':
-			path = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
-		else:
-			path = '{0}{1}'.format(game_meta.runtime_root, sub_path)
-		return sub_path, path
-
-	executable = None
 	target_path = game_meta.archive_root + '.zip'
 	with zipfile.ZipFile(blend_dist, 'r') as blender, \
 			zipfile.ZipFile(target_path, 'w') as game:
 
 		# First, copy over blenderplayer contents, but rename to game name.
 		for zi in blender.infolist():
-			# Rename file.
-			sub_path, name = get_target_path(zi.filename)
+			name = mapper.apply(zi.filename)
 			if name is None:
 				continue
-
-			# For some entries buf will be None, but that's OK.
-			data = blender.read(zi)
-
-			# Patch player executable to include game startup file.
-			if sub_path == '/blenderplayer.exe':
-				with open(game_meta.mainfile, 'rb') as mf:
-					data, zi.file_size = concat_game(io.BytesIO(data), mf)
-				data = data.read()
-				executable = name
-
+			data = mapper.patch(name, blender.read(zi.filename))
 			zi.filename = name
 			print(zi.filename)
 			game.writestr(zi, data)
 
-		if executable is None:
+		if mapper.executable is None:
 			raise TranslationError('blenderplayer not present in archive')
 
 		# Now copy other resources.
@@ -196,65 +253,40 @@ def package_for_win(game_meta, exclude, blend_dist):
 				print(arcname)
 				game.write(path, arcname=arcname)
 
-	return target_path, executable
+	return target_path, mapper.executable
 
 
 def package_for_lin(game_meta, exclude, blend_dist):
 	# Copy from tar to zip.
 
-	PATTERN = re.compile('^[^/]+(.*)$')
-	EXCLUDE_PATTERNS = re.compile('^/blender$|^/blender-softwaregl$|^/blender-thumbnailer.py$|'
-		'^/icons|'
-		'^/[0-9]\\.[0-9][0-9]/scripts/(?!modules)')
+	mapper = LinMapper(game_meta)
 
-	def get_target_path(src_path):
-		match = PATTERN.match(src_path)
-		if match is None:
-			return None
-		sub_path = match.group(1)
-		if EXCLUDE_PATTERNS.search(sub_path) is not None:
-			path = None
-		elif sub_path == '/blenderplayer':
-			path = '{0}/{1}'.format(game_meta.runtime_root, game_meta.name)
-		elif sub_path == '/copyright.txt':
-			path = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
-		else:
-			path = '{0}{1}'.format(game_meta.runtime_root, sub_path)
-		return sub_path, path
-
-	executable = None
 	target_path = game_meta.archive_root + '.tar.bz2'
 	with tarfile.open(blend_dist, 'r') as blender, \
 			tarfile.open(target_path, 'w:bz2') as game:
 
 		# First, copy over blenderplayer contents, but rename to game name.
 		for ti in blender:
-			# Rename file.
-			sub_path, name = get_target_path(ti.name)
+			name = mapper.apply(ti.name)
 			if name is None:
 				continue
 
+			print(name)
 			# Special handling for links
 			if ti.type in {tarfile.LNKTYPE, tarfile.SYMTYPE}:
 				ti.name = name
-				print('%s -> %s' % (ti.name, ti.linkname))
 				game.addfile(ti)
-
-			else:
-				# For some entries buf will be None, but that's OK.
-				data = blender.extractfile(ti)
-
-				# Patch player executable to include game startup file.
-				if sub_path == '/blenderplayer':
-					with open(game_meta.mainfile, 'rb') as mf:
-						data, ti.size = concat_game(data, mf)
-					executable = name
-	
+			elif ti.type in {tarfile.DIRTYPE}:
 				ti.name = name
-				print(ti.name)
-				game.addfile(ti, fileobj=data)
+				game.addfile(ti)
+			else:
+				data = blender.extractfile(ti).read()
+				data = mapper.patch(name, data)
+				ti.name = name
+				ti.size = len(data)
+				game.addfile(ti, fileobj=io.BytesIO(data))
 
-		if executable is None:
+		if mapper.executable is None:
 			raise TranslationError('blenderplayer not present in archive')
 
 		# Now copy other resources.
@@ -273,7 +305,7 @@ def package_for_lin(game_meta, exclude, blend_dist):
 				print(arcname)
 				game.add(path, arcname=arcname, recursive=False)
 
-	return target_path, executable
+	return target_path, mapper.executable
 
 
 def concat_game(playerfile, mainfile):
@@ -281,17 +313,17 @@ def concat_game(playerfile, mainfile):
 	Concatenate the primary game data file onto the blenderplayer executable.
 	'''
 	buf = io.BytesIO()
-	size = offset = buf.write(playerfile.read())
-	size += buf.write(mainfile.read())
+	offset = buf.write(playerfile)
+	buf.write(mainfile)
 
 	# Store the offset (an int is 4 bytes, so we split it up into 4 bytes and save it)
-	size += buf.write(struct.pack('B', (offset>>24)&0xFF))
-	size += buf.write(struct.pack('B', (offset>>16)&0xFF))
-	size += buf.write(struct.pack('B', (offset>>8)&0xFF))
-	size += buf.write(struct.pack('B', (offset>>0)&0xFF))
-	size += buf.write(b'BRUNTIME')
+	buf.write(struct.pack('B', (offset>>24)&0xFF))
+	buf.write(struct.pack('B', (offset>>16)&0xFF))
+	buf.write(struct.pack('B', (offset>>8)&0xFF))
+	buf.write(struct.pack('B', (offset>>0)&0xFF))
+	buf.write(b'BRUNTIME')
 	buf.seek(0)
-	return buf, size
+	return buf.read()
 
 
 class ExGlobber:
@@ -357,8 +389,8 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Package game for publishing')
 	parser.add_argument('mainfile',
 		help="The file to embed in the executable (startup .blend file). This will also be used to name the package.")
-	parser.add_argument('assets',
-		help="The directory to package.")
+	parser.add_argument('asset_dir',
+		help="The directory to package. The main file can be in this directory, or not.")
 	parser.add_argument('blender_dist',
 		help="The location of the Blender distributable archive.")
 	parser.add_argument('-v', '--version', dest='version',
@@ -373,7 +405,7 @@ if __name__ == '__main__':
 	if not name.endswith('.blend'):
 		raise ValueError('mainfile must be a .blend file')
 	name = name[:-6]
-	game_meta = GameMeta(name, args.mainfile, args.assets)
+	game_meta = GameMeta(name, args.mainfile, args.asset_dir)
 	if 'version' in args:
 		game_meta.suffix = args.version
 

@@ -22,7 +22,14 @@
 # Copyright 2013 Alex Fraser
 #
 
+'''
+Creates an executable game by combining a Blender file with the blenderplayer.
+Asset files can be included. The blenderplayer is sourced from a Blender release
+archive.
+'''
+
 import argparse
+import fnmatch
 import io
 import os
 import re
@@ -50,7 +57,7 @@ class GameMeta:
 		return '{}/{}'.format(self.archive_root, os.path.dirname(self.mainfile))
 
 
-def package_for_osx(game_meta, blend_dist):
+def package_for_osx(game_meta, exclude, blend_dist):
 	# Work directly with zip file contents to avoid changing OSX file metadata.
 
 	PLAYER_PATTERN = re.compile('^Blender/blenderplayer.app(.*)$')
@@ -82,26 +89,47 @@ def package_for_osx(game_meta, blend_dist):
 		# No need to patch the player on OSX - just copy the data in as a
 		# resource.
 		arcname = '{0}/{1}.app/Contents/Resources/game.blend'.format(game_meta.runtime_root, game_meta.name)
+		print(arcname)
 		game.write(game_meta.mainfile, arcname=arcname)
+
+		# Now copy other resources.
+		for dirpath, _, filenames in os.walk(game_meta.assets):
+			if exclude(os.path.basename(dirpath)):
+				continue
+			path = dirpath
+			arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
+			print(arcname)
+			game.write(path, arcname=arcname)
+			for f in filenames:
+				if exclude(f):
+					continue
+				path = os.path.join(dirpath, f)
+				arcname = '{}/{}'.format(game_meta.archive_root, path)
+				print(arcname)
+				game.write(path, arcname=arcname)
+
 	print('Game packaged as %s' % target_path)
 
 
-def package_for_win(game_meta, blend_dist):
+def package_for_win(game_meta, exclude, blend_dist):
 	# Work directly with the zip file, because we can.
 	pass
 
 
-def package_for_lin(game_meta, blend_dist):
+def package_for_lin(game_meta, exclude, blend_dist):
 	# Copy from tar to zip.
 
 	PATTERN = re.compile('^[^/]+(.*)$')
+	EXCLUDE_PATTERNS = re.compile('^/blender$|^/blender-softwaregl$|^/blender-thumbnailer.py$|'
+		'^/icons|'
+		'^/[0-9].[0-9][0-9]/scripts/(?!modules)')
+
 	def get_target_path(src_path):
 		match = PATTERN.match(src_path)
 		if match is None:
 			return None
 		sub_path = match.group(1)
-		if sub_path in {'/blender', '/blender-softwaregl', '/blender-thumbnailer.py'}:
-			# Don't copy main blender app
+		if EXCLUDE_PATTERNS.match(sub_path) is not None:
 			path = None
 		elif sub_path == '/blenderplayer':
 			path = '{0}/{1}'.format(game_meta.runtime_root, game_meta.name)
@@ -143,11 +171,15 @@ def package_for_lin(game_meta, blend_dist):
 
 		# Now copy other resources.
 		for dirpath, _, filenames in os.walk(game_meta.assets):
+			if exclude(os.path.basename(dirpath)):
+				continue
 			path = dirpath
 			arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
 			print(arcname)
 			game.add(path, arcname=arcname, recursive=False)
 			for f in filenames:
+				if exclude(f):
+					continue
 				path = os.path.join(dirpath, f)
 				arcname = '{}/{}'.format(game_meta.archive_root, path)
 				print(arcname)
@@ -173,6 +205,35 @@ def concat_game(playerfile, mainfile):
 	return buf, size
 
 
+class ExGlobber:
+	'''Filter used to include or exclude files.'''
+	def __init__(self):
+		self.patterns = []
+
+	@staticmethod
+	def from_file(file_name):
+		globber = ExGlobber()
+		with open(args.exclude) as f:
+			for line in f:
+				if line.startswith('#'):
+					continue
+				if line.endswith('\n'):
+					line = line[:-1]
+				globber.add(line)
+		return globber
+
+	def add(self, pattern):
+		regex = fnmatch.translate(pattern)
+		self.patterns.append(re.compile(regex))
+
+	def __call__(self, filename):
+		'''Returns False iff the file should be included.'''
+		for p in self.patterns:
+			if p.match(filename) is not None:
+				return True
+		return False
+
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Package game for publishing')
 	parser.add_argument('target', choices={'lin', 'osx', 'win'},
@@ -183,17 +244,26 @@ if __name__ == '__main__':
 		help="The directory to package.")
 	parser.add_argument('blender_dist',
 		help="The location of the Blender distributable archive.")
-	parser.add_argument('--version', dest='version', help="Option release version string.")
+	parser.add_argument('-v', '--version', dest='version',
+		help="Optional release version string.")
+	parser.add_argument('-x', '--exclude', dest='exclude',
+		help="File that contains exclusion rules as file glob strings (e.g. "
+			"*.blend1), one per line. Any asset files that match will be "
+			"excluded from the package.")
 	args = parser.parse_args()
 
 	name = os.path.basename(args.mainfile)
 	if not name.endswith('.blend'):
 		raise ValueError('mainfile must be a .blend file')
-
 	name = name[:-6]
 	game_meta = GameMeta(name, args.mainfile, args.assets)
 	if 'version' in args:
 		game_meta.suffix = args.version
+
+	if 'exclude' not in args:
+		globber = ExGlobber()
+	else:
+		globber = ExGlobber.from_file(args.exclude)
 
 	if args.target == 'lin':
 		fn = package_for_lin
@@ -201,4 +271,4 @@ if __name__ == '__main__':
 		fn = package_for_win
 	elif args.target == 'osx':
 		fn = package_for_osx
-	fn(game_meta, args.blender_dist)
+	fn(game_meta, globber, args.blender_dist)

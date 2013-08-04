@@ -18,39 +18,59 @@
 # Data concatenation
 # Copyright Mitchell Stokes
 #
-# Zip file manipulation
+# Zip and tar file manipulation
 # Copyright 2013 Alex Fraser
 #
 
 import argparse
 import io
+import os
 import re
 import struct
 import tarfile
 import zipfile
 
 
+class GameMeta:
+	def __init__(self, game_name, mainfile, assets):
+		self.name = game_name
+		self.mainfile = mainfile
+		self.assets = assets
+		self.suffix = None
 
-def package_for_osx(game_name, blend_dist, mainfile):
+	@property
+	def archive_root(self):
+		if self.suffix is None:
+			return self.name
+		else:
+			return '{0}-{1}'.format(self.name, self.suffix)
+
+	@property
+	def runtime_root(self):
+		return '{}/{}'.format(self.archive_root, os.path.dirname(self.mainfile))
+
+
+def package_for_osx(game_meta, blend_dist):
 	# Work directly with zip file contents to avoid changing OSX file metadata.
 
 	PLAYER_PATTERN = re.compile('^Blender/blenderplayer.app(.*)$')
 	ROOT_PATTERN = re.compile('^Blender(/[^/]*)$')
 
+	target_path = game_meta.archive_root + '-osx.zip'
 	with zipfile.ZipFile(blend_dist, 'r') as blender, \
-			zipfile.ZipFile(game_name + '.zip', 'w') as game:
+			zipfile.ZipFile(target_path, 'w') as game:
 
 		# First, copy over blenderplayer contents, but rename to game name
 		for zi in blender.infolist():
 			original_filename = zi.filename
 			if original_filename == 'Blender/copyright.txt':
-				zi.filename = '{0}/Blender-copyright.txt'.format(game_name)
+				zi.filename = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
 			elif PLAYER_PATTERN.match(original_filename) is not None:
 				match = PLAYER_PATTERN.match(original_filename)
-				zi.filename = '{0}/{0}.app{1}'.format(game_name, match.group(1))
+				zi.filename = '{0}/{1}.app{2}'.format(game_meta.runtime_root, game_meta.name, match.group(1))
 			elif ROOT_PATTERN.match(original_filename) is not None:
 				match = ROOT_PATTERN.match(original_filename)
-				zi.filename = '{0}{1}'.format(game_name, match.group(1))
+				zi.filename = '{0}{1}'.format(game_meta.runtime_root, match.group(1))
 			else:
 				# Don't copy main blender app directory.
 				continue
@@ -59,20 +79,22 @@ def package_for_osx(game_name, blend_dist, mainfile):
 			data = blender.read(original_filename)
 			game.writestr(zi, data)
 
-		arcname = '{0}/{0}.app/Contents/Resources/game.blend'.format(game_name)
-		game.write(mainfile, arcname=arcname)
+		# No need to patch the player on OSX - just copy the data in as a
+		# resource.
+		arcname = '{0}/{1}.app/Contents/Resources/game.blend'.format(game_meta.runtime_root, game_meta.name)
+		game.write(game_meta.mainfile, arcname=arcname)
+	print('Game packaged as %s' % target_path)
 
 
-def package_for_win(game_name, blend_dist, mainfile):
+def package_for_win(game_meta, blend_dist):
 	# Work directly with the zip file, because we can.
 	pass
 
 
-def package_for_lin(game_name, blend_dist, mainfile):
+def package_for_lin(game_meta, blend_dist):
 	# Copy from tar to zip.
 
 	PATTERN = re.compile('^[^/]+(.*)$')
-
 	def get_target_path(src_path):
 		match = PATTERN.match(src_path)
 		if match is None:
@@ -82,15 +104,16 @@ def package_for_lin(game_name, blend_dist, mainfile):
 			# Don't copy main blender app
 			path = None
 		elif sub_path == '/blenderplayer':
-			path = '{0}/{0}'.format(game_name)
+			path = '{0}/{1}'.format(game_meta.runtime_root, game_meta.name)
 		elif sub_path == '/copyright.txt':
-			path = '{0}/Blender-copyright.txt'.format(game_name)
+			path = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
 		else:
-			path = '{0}{1}'.format(game_name, sub_path)
+			path = '{0}{1}'.format(game_meta.runtime_root, sub_path)
 		return sub_path, path
 
+	target_path = game_meta.archive_root + '-linux.tar.bz2'
 	with tarfile.open(blend_dist, 'r') as blender, \
-			tarfile.open(game_name + '.tar.bz2', 'w:bz2') as game:
+			tarfile.open(target_path, 'w:bz2') as game:
 
 		# First, copy over blenderplayer contents, but rename to game name
 		for ti in blender:
@@ -110,13 +133,26 @@ def package_for_lin(game_name, blend_dist, mainfile):
 				buf = blender.extractfile(ti)
 				if sub_path == '/blenderplayer':
 					print('old size', ti.size)
-					with open(mainfile, 'rb') as mf:
+					with open(game_meta.mainfile, 'rb') as mf:
 						buf, ti.size = concat_game(buf, mf)
 					print('new size', ti.size)
 	
 				ti.name = name
 				print(ti.name)
 				game.addfile(ti, fileobj=buf)
+
+		# Now copy other resources.
+		for dirpath, _, filenames in os.walk(game_meta.assets):
+			path = dirpath
+			arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
+			print(arcname)
+			game.add(path, arcname=arcname, recursive=False)
+			for f in filenames:
+				path = os.path.join(dirpath, f)
+				arcname = '{}/{}'.format(game_meta.archive_root, path)
+				print(arcname)
+				game.add(path, arcname=arcname, recursive=False)
+	print('Game packaged as %s' % target_path)
 
 
 def concat_game(playerfile, mainfile):
@@ -139,11 +175,25 @@ def concat_game(playerfile, mainfile):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Package game for publishing')
-	parser.add_argument('target', choices={'lin', 'osx', 'win'})
-	parser.add_argument('game_name')
-	parser.add_argument('blender_dist')
-	parser.add_argument('mainfile')
+	parser.add_argument('target', choices={'lin', 'osx', 'win'},
+		help="Package for Windows (win), Mac (osx) or GNU/Linux (lin)")
+	parser.add_argument('mainfile',
+		help="The file to embed in the executable (startup .blend file). This will also be used to name the package.")
+	parser.add_argument('assets',
+		help="The directory to package.")
+	parser.add_argument('blender_dist',
+		help="The location of the Blender distributable archive.")
+	parser.add_argument('--version', dest='version', help="Option release version string.")
 	args = parser.parse_args()
+
+	name = os.path.basename(args.mainfile)
+	if not name.endswith('.blend'):
+		raise ValueError('mainfile must be a .blend file')
+
+	name = name[:-6]
+	game_meta = GameMeta(name, args.mainfile, args.assets)
+	if 'version' in args:
+		game_meta.suffix = args.version
 
 	if args.target == 'lin':
 		fn = package_for_lin
@@ -151,4 +201,4 @@ if __name__ == '__main__':
 		fn = package_for_win
 	elif args.target == 'osx':
 		fn = package_for_osx
-	fn(args.game_name, args.blender_dist, args.mainfile)
+	fn(game_meta, args.blender_dist)

@@ -93,7 +93,7 @@ class OsxMapper:
 		self.exclude = exclude
 		self.executable = None
 
-	def apply(self, name):
+	def map_blender_file(self, name):
 		original_filename = name
 		if original_filename == 'Blender/copyright.txt':
 			name = '{0}/Blender-copyright.txt'.format(self.game_meta.archive_root)
@@ -112,7 +112,7 @@ class OsxMapper:
 			name = None
 		return name
 
-	def apply_resource(self, name):
+	def map_asset_file(self, name):
 		if self.exclude(os.path.basename(name)):
 			return None
 		rel = os.path.relpath(name, start=self.game_meta.base_directory)
@@ -154,7 +154,7 @@ class WinMapper:
 		self.exclude = exclude
 		self.executable = None
 
-	def apply(self, name):
+	def map_blender_file(self, name):
 		match = WinMapper.PATTERN.match(name)
 		if match is None:
 			return None
@@ -170,7 +170,7 @@ class WinMapper:
 			name = '{0}/{1}{2}'.format(game_meta.archive_root, game_meta.name, sub_path)
 		return name
 
-	def apply_resource(self, name):
+	def map_asset_file(self, name):
 		if self.exclude(os.path.basename(name)):
 			return None
 		rel = os.path.relpath(name, start=self.game_meta.base_directory)
@@ -217,7 +217,7 @@ class LinMapper:
 		self.exclude = exclude
 		self.executable = None
 
-	def apply(self, name):
+	def map_blender_file(self, name):
 		match = LinMapper.PATTERN.match(name)
 		if match is None:
 			return None
@@ -233,7 +233,7 @@ class LinMapper:
 			name = '{0}/{1}{2}'.format(game_meta.archive_root, game_meta.name, sub_path)
 		return name
 
-	def apply_resource(self, name):
+	def map_asset_file(self, name):
 		if self.exclude(os.path.basename(name)):
 			return None
 		rel = os.path.relpath(name, start=self.game_meta.base_directory)
@@ -262,7 +262,7 @@ def translate(game_meta, blend_dist, mapper, arcadapter):
 
 		# First, copy over blenderplayer contents, but rename to game name.
 		for ti in blender:
-			name = mapper.apply(ti.name)
+			name = mapper.map_blender_file(ti.name)
 			if name is None:
 				continue
 
@@ -293,7 +293,7 @@ def translate(game_meta, blend_dist, mapper, arcadapter):
 		for asset in game_meta.assets:
 			if os.path.isfile(asset):
 				path = asset
-				arcname = mapper.apply_resource(path)
+				arcname = mapper.map_asset_file(path)
 				if arcname is None:
 					continue
 				print(arcname)
@@ -301,14 +301,14 @@ def translate(game_meta, blend_dist, mapper, arcadapter):
 			else:
 				for dirpath, _, filenames in os.walk(asset):
 					path = dirpath
-					arcname = mapper.apply_resource(path)
+					arcname = mapper.map_asset_file(path)
 					if arcname is None:
 						continue
 					print(arcname)
 					game.write(path, arcname=arcname)
 					for f in filenames:
 						path = os.path.join(dirpath, f)
-						arcname = mapper.apply_resource(path)
+						arcname = mapper.map_asset_file(path)
 						if arcname is None:
 							continue
 						print(arcname)

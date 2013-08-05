@@ -49,54 +49,74 @@ class TranslationError(Error):
 
 
 class GameMeta:
-	def __init__(self, game_name, mainfile, assets):
+	def __init__(self, game_name, suffix, mainfile, assets):
 		self.name = game_name
 		self.mainfile = mainfile
 		self.assets = assets
-		self.suffix = None
 
-	@property
-	def archive_root(self):
-		if self.suffix is None:
-			return self.name
+		self.suffix = suffix
+		if suffix == '':
+			self.archive_root = self.name
 		else:
-			return '{0}-{1}'.format(self.name, self.suffix)
+			self.archive_root = '{0}-{1}'.format(self.name, self.suffix)
 
-	@property
-	def runtime_root(self):
-		return '{}/{}'.format(self.archive_root, os.path.dirname(self.mainfile))
+		self.base_directory = os.path.dirname(self.mainfile)
+		for asset in assets:
+			rel = os.path.relpath(asset, start=self.base_directory)
+			if '..' in rel:
+				raise TranslationError('Mainfile must not be in an asset '
+					'directory (but it may have assets as siblings).')
 
 
 class OsxMapper:
 	'''
 	Re-maps Blender's Mac OSX file paths to suit the target package name.
+
+		name-ver-osx-arch/
+			name.app/
+				Contents/
+					_CodeSignature/
+					MacOS/
+						2.XX/
+						lib/
+						blenderplayer <- executable
+					Resources/
+						game.blend <- mainfile
+						*assets
 	'''
 
 	PLAYER_PATTERN = re.compile('^Blender/blenderplayer.app(.*)$')
 	ROOT_PATTERN = re.compile('^Blender(/[^/]*)$')
 
-	def __init__(self, game_meta):
+	def __init__(self, game_meta, exclude):
 		self.game_meta = game_meta
+		self.exclude = exclude
 		self.executable = None
 
 	def apply(self, name):
 		original_filename = name
 		if original_filename == 'Blender/copyright.txt':
-			name = '{0}/Blender-copyright.txt'.format(self.game_meta.runtime_root)
+			name = '{0}/Blender-copyright.txt'.format(self.game_meta.archive_root)
 		elif OsxMapper.PLAYER_PATTERN.search(original_filename) is not None:
 			match = OsxMapper.PLAYER_PATTERN.search(original_filename)
 			if match.group(1) == '/Contents/MacOS/blenderplayer':
-				name = '{0}/{1}.app/Contents/MacOS/{1}'.format(self.game_meta.runtime_root, self.game_meta.name)
-				self.executable = '{0}/{1}.app'.format(self.game_meta.runtime_root, self.game_meta.name)
+				name = '{0}/{1}.app/Contents/MacOS/{1}'.format(self.game_meta.archive_root, self.game_meta.name)
+				self.executable = '{0}/{1}.app'.format(self.game_meta.archive_root, self.game_meta.name)
 			else:
-				name = '{0}/{1}.app{2}'.format(self.game_meta.runtime_root, self.game_meta.name, match.group(1))
+				name = '{0}/{1}.app{2}'.format(self.game_meta.archive_root, self.game_meta.name, match.group(1))
 		elif OsxMapper.ROOT_PATTERN.search(original_filename) is not None:
 			match = OsxMapper.ROOT_PATTERN.search(original_filename)
-			name = '{0}{1}'.format(self.game_meta.runtime_root, match.group(1))
+			name = '{0}{1}'.format(self.game_meta.archive_root, match.group(1))
 		else:
 			# Don't copy main blender app directory.
 			name = None
 		return name
+
+	def apply_resource(self, name):
+		if self.exclude(os.path.basename(name)):
+			return None
+		rel = os.path.relpath(name, start=self.game_meta.base_directory)
+		return '{0}/{1}.app/Contents/Resources/{2}'.format(game_meta.archive_root, game_meta.name, rel)
 
 	def patch(self, name, data):
 		'''Modify data before writing.'''
@@ -107,20 +127,31 @@ class OsxMapper:
 	@property
 	def primary_resource(self):
 		'''@return the name of the primary resource.'''
-		return '{0}/{1}.app/Contents/Resources/game.blend'.format(game_meta.runtime_root, game_meta.name)
+		return '{0}/{1}.app/Contents/Resources/game.blend'.format(game_meta.archive_root, game_meta.name)
 
 
 class WinMapper:
 	'''
 	Re-maps Blender's Windows file paths to suit the target package name.
+
+		name-ver-win-arch/
+			name/
+				2.68/
+					datafiles/
+					python/lib
+					scripts/modules/
+				name.exe <- executable (blenderplayer + mainfile)
+				*blender DLLs etc.
+				*assets
 	'''
 
 	PATTERN = re.compile('^[^/]+(.*)$')
 	EXCLUDE_PATTERNS = re.compile('^/blender\\.exe|^/BlendThumb.*\\.dll$|'
 		'^/[0-9]\\.[0-9][0-9]/scripts/(?!modules)')
 
-	def __init__(self, game_meta):
+	def __init__(self, game_meta, exclude):
 		self.game_meta = game_meta
+		self.exclude = exclude
 		self.executable = None
 
 	def apply(self, name):
@@ -131,13 +162,19 @@ class WinMapper:
 		if WinMapper.EXCLUDE_PATTERNS.search(sub_path) is not None:
 			name = None
 		elif sub_path == '/blenderplayer.exe':
-			name = '{0}/{1}.exe'.format(game_meta.runtime_root, game_meta.name)
+			name = '{0}/{1}/{1}.exe'.format(game_meta.archive_root, game_meta.name)
 			self.executable = name
 		elif sub_path == '/copyright.txt':
-			name = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
+			name = '{0}/{1}/Blender-copyright.txt'.format(game_meta.archive_root, game_meta.name)
 		else:
-			name = '{0}{1}'.format(game_meta.runtime_root, sub_path)
+			name = '{0}/{1}{2}'.format(game_meta.archive_root, game_meta.name, sub_path)
 		return name
+
+	def apply_resource(self, name):
+		if self.exclude(os.path.basename(name)):
+			return None
+		rel = os.path.relpath(name, start=self.game_meta.base_directory)
+		return '{0}/{1}/{2}'.format(game_meta.archive_root, game_meta.name, rel)
 
 	def patch(self, name, data):
 		'''Modify data before writing.'''
@@ -158,6 +195,16 @@ class WinMapper:
 class LinMapper:
 	'''
 	Re-maps Blender's Linux file paths to suit the target package name.
+
+		name-ver-gnu+linux-arch/
+			name/
+				2.68/
+					datafiles/
+					python/lib
+					scripts/modules/
+				name <- executable (blenderplayer + mainfile)
+				*blender libs etc.
+				*assets
 	'''
 
 	PATTERN = re.compile('^[^/]+(.*)$')
@@ -165,8 +212,9 @@ class LinMapper:
 		'^/icons|'
 		'^/[0-9]\\.[0-9][0-9]/scripts/(?!modules)')
 
-	def __init__(self, game_meta):
+	def __init__(self, game_meta, exclude):
 		self.game_meta = game_meta
+		self.exclude = exclude
 		self.executable = None
 
 	def apply(self, name):
@@ -177,13 +225,19 @@ class LinMapper:
 		if LinMapper.EXCLUDE_PATTERNS.search(sub_path) is not None:
 			name = None
 		elif sub_path == '/blenderplayer':
-			name = '{0}/{1}'.format(game_meta.runtime_root, game_meta.name)
+			name = '{0}/{1}/{1}'.format(game_meta.archive_root, game_meta.name)
 			self.executable = name
 		elif sub_path == '/copyright.txt':
-			name = '{0}/Blender-copyright.txt'.format(game_meta.runtime_root)
+			name = '{0}/{1}/Blender-copyright.txt'.format(game_meta.archive_root, game_meta.name)
 		else:
-			name = '{0}{1}'.format(game_meta.runtime_root, sub_path)
+			name = '{0}/{1}{2}'.format(game_meta.archive_root, game_meta.name, sub_path)
 		return name
+
+	def apply_resource(self, name):
+		if self.exclude(os.path.basename(name)):
+			return None
+		rel = os.path.relpath(name, start=self.game_meta.base_directory)
+		return '{0}/{1}/{2}'.format(game_meta.archive_root, game_meta.name, rel)
 
 	def patch(self, name, data):
 		'''Modify data before writing.'''
@@ -201,7 +255,7 @@ class LinMapper:
 		return None
 
 
-def translate(game_meta, exclude, blend_dist, mapper, arcadapter):
+def translate(game_meta, blend_dist, mapper, arcadapter):
 	target_path = game_meta.archive_root + arcadapter.EXTENSION
 	with arcadapter.open(blend_dist, 'r') as blender, \
 			arcadapter.open(target_path, 'w') as game:
@@ -236,20 +290,29 @@ def translate(game_meta, exclude, blend_dist, mapper, arcadapter):
 			game.write(game_meta.mainfile, arcname=mapper.primary_resource)
 
 		# Now copy other resources.
-		for dirpath, _, filenames in os.walk(game_meta.assets):
-			if exclude(os.path.basename(dirpath)):
-				continue
-			path = dirpath
-			arcname = '{}/{}'.format(game_meta.archive_root, dirpath)
-			print(arcname)
-			game.write(path, arcname=arcname)
-			for f in filenames:
-				if exclude(f):
+		for asset in game_meta.assets:
+			if os.path.isfile(asset):
+				path = asset
+				arcname = mapper.apply_resource(path)
+				if arcname is None:
 					continue
-				path = os.path.join(dirpath, f)
-				arcname = '{}/{}'.format(game_meta.archive_root, path)
 				print(arcname)
 				game.write(path, arcname=arcname)
+			else:
+				for dirpath, _, filenames in os.walk(asset):
+					path = dirpath
+					arcname = mapper.apply_resource(path)
+					if arcname is None:
+						continue
+					print(arcname)
+					game.write(path, arcname=arcname)
+					for f in filenames:
+						path = os.path.join(dirpath, f)
+						arcname = mapper.apply_resource(path)
+						if arcname is None:
+							continue
+						print(arcname)
+						game.write(path, arcname=arcname)
 
 	return target_path, mapper.executable
 
@@ -339,6 +402,10 @@ class ZipAdapter:
 
 	EXTENSION = '.zip'
 
+	def __init__(self):
+		self.tf = None
+		self.contents = set()
+
 	@classmethod
 	def open(cls, path, mode):
 		instance = cls()
@@ -363,13 +430,24 @@ class ZipAdapter:
 		return self.tf.read(info.name)
 
 	def write(self, name, arcname=None):
+		if arcname is None:
+			arcname = name
+		if arcname in self.contents:
+			if not os.path.isdir(name):
+				print('WARNING: Not adding duplicate file %s' % arcname)
+			return
 		self.tf.write(name, arcname=arcname)
+		self.contents.add(arcname)
 
 	def writestr(self, info, data=None):
+		if info.name in self.contents:
+			print('WARNING: Not adding duplicate file %s' % info.name)
+			return
 		if data is None:
 			self.tf.writestr(info.ti)
 		else:
 			self.tf.writestr(info.ti, data)
+		self.contents.add(info.name)
 
 class ZipInfoAdapter:
 	def __init__(self, ti):
@@ -401,6 +479,10 @@ class TarAdapter:
 
 	EXTENSION = '.tar.bz2'
 
+	def __init__(self):
+		self.tf = None
+		self.contents = set()
+
 	@classmethod
 	def open(cls, path, mode):
 		if mode == 'w':
@@ -431,13 +513,24 @@ class TarAdapter:
 			return data.read()
 
 	def write(self, name, arcname=None):
+		if arcname is None:
+			arcname = name
+		if arcname in self.contents:
+			if not os.path.isdir(name):
+				print('WARNING: Not adding duplicate file %s' % arcname)
+			return
 		self.tf.add(name, arcname=arcname)
+		self.contents.add(arcname)
 
 	def writestr(self, info, data=None):
+		if info.name in self.contents:
+			print('WARNING: Not adding duplicate file %s' % info.name)
+			return
 		if data is None:
 			self.tf.addfile(info.ti)
 		else:
 			self.tf.addfile(info.ti, fileobj=io.BytesIO(data))
+		self.contents.add(info.name)
 
 class TarInfoAdapter:
 	def __init__(self, ti):
@@ -477,13 +570,19 @@ def get_adapter(blender_dist):
 
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='Package game for publishing')
-	parser.add_argument('mainfile',
-		help="The file to embed in the executable (startup .blend file). This will also be used to name the package.")
-	parser.add_argument('asset_dir',
-		help="The directory to package. The main file can be in this directory, or not.")
+	parser = argparse.ArgumentParser(
+		description="Package a Blender Game Engine game for publishing.",
+		epilog="The name of the mainfile is used to name the package. The "
+			"mainfile must not be in an asset directory, however it may have "
+			"other assets as siblings. The Blender archive dictates the "
+			"architecture that is being targeted and the format of the "
+			"resulting package.")
 	parser.add_argument('blender_dist',
-		help="The location of the Blender distributable archive.")
+		help="Blender distributable archive.")
+	parser.add_argument('mainfile',
+		help=".blend file that runs when the game starts.")
+	parser.add_argument('assets', nargs='*',
+		help="Data files or directories to be used by the game.")
 	parser.add_argument('-v', '--version', dest='version',
 		help="Optional release version string.")
 	parser.add_argument('-x', '--exclude', dest='exclude',
@@ -492,25 +591,30 @@ if __name__ == '__main__':
 			"excluded from the package.")
 	args = parser.parse_args()
 
+	platform = guess_platform(args.blender_dist)
+
 	name = os.path.basename(args.mainfile)
 	if not name.endswith('.blend'):
 		raise ValueError('mainfile must be a .blend file')
 	name = name[:-6]
-	game_meta = GameMeta(name, args.mainfile, args.asset_dir)
+
+	suffix_list = []
 	if 'version' in args:
-		game_meta.suffix = args.version
+		suffix_list = [args.version]
+	suffix_list.extend(platform)
+	suffix = '-'.join(suffix_list)
+
+	game_meta = GameMeta(name, suffix, args.mainfile, args.assets)
 
 	if 'exclude' not in args:
-		globber = ExGlobber()
+		exclude = ExGlobber()
 	else:
-		globber = ExGlobber.from_file(args.exclude)
+		exclude = ExGlobber.from_file(args.exclude)
 
-	platform = guess_platform(args.blender_dist)
 	arcadapter = get_adapter(args.blender_dist)
-	game_meta.suffix += '-{}-{}'.format(*platform)
-	mapper = MAPPERS[platform](game_meta)
+	mapper = MAPPERS[platform](game_meta, exclude)
 
-	archive, executable = translate(game_meta, globber, args.blender_dist, mapper, arcadapter)
+	archive, executable = translate(game_meta, args.blender_dist, mapper, arcadapter)
 
 	print('Game packaged as {}'.format(archive))
 	print('To play the game, extract the archive and run `{}`'.format(executable))

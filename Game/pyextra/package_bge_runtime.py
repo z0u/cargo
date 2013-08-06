@@ -26,6 +26,10 @@
 Creates an executable game by combining a Blender file with the blenderplayer.
 Asset files can be included. The blenderplayer is sourced from a Blender release
 archive.
+
+This script can be run from the command line. For detailed instructions, run
+
+    package_bge_runtime.py -h
 '''
 
 import argparse
@@ -73,13 +77,13 @@ class OsxMapper:
 	Re-maps Blender's Mac OSX file paths to suit the target package name.
 
 		name-ver-osx-arch/
-			name.app/
+			name.app/ <- executable
 				Contents/
 					_CodeSignature/
 					MacOS/
 						2.XX/
 						lib/
-						blenderplayer <- executable
+						blenderplayer <- actual executable
 					Resources/
 						game.blend <- mainfile
 						*assets
@@ -100,7 +104,7 @@ class OsxMapper:
 		elif OsxMapper.PLAYER_PATTERN.search(original_filename) is not None:
 			match = OsxMapper.PLAYER_PATTERN.search(original_filename)
 			if match.group(1) == '/Contents/MacOS/blenderplayer':
-				name = '{0}/{1}.app/Contents/MacOS/{1}'.format(self.game_meta.archive_root, self.game_meta.name)
+				name = '{0}/{1}.app{2}'.format(self.game_meta.archive_root, self.game_meta.name, match.group(1))
 				self.executable = '{0}/{1}.app'.format(self.game_meta.archive_root, self.game_meta.name)
 			else:
 				name = '{0}/{1}.app{2}'.format(self.game_meta.archive_root, self.game_meta.name, match.group(1))

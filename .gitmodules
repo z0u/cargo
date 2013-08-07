@@ -1,6 +1,6 @@
-[submodule "Game/bat"]
-	path = Game/bat
-	url = git@github.com:oasakfu/bat.git
 [submodule "package_bge_runtime"]
 	path = package_bge_runtime
 	url = git@gist.github.com:6150482
+[submodule "game/assets/bat"]
+	path = game/assets/bat
+	url = git@github.com:oasakfu/bat.git

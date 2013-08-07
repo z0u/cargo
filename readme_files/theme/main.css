@@ -1,0 +1,128 @@
+@import url("http://fonts.googleapis.com/css?family=Source+Sans+Pro");
+@import url("http://fonts.googleapis.com/css?family=Gochi+Hand");
+
+body {
+  color: #333;
+  font-family: Source Sans Pro, sans-serif;
+}
+
+h1 {
+  font-family: Gochi Hand, sans-serif;
+  font-weight: normal;
+}
+
+
+/* Layout */
+body > header {
+  background: #bbb;
+  padding: 1em 2.5em;
+  border-bottom: 1px solid #999;
+  margin-bottom: 2.5em;
+}
+
+body > header h1 a {
+  color: #333;
+  text-decoration: none;
+}
+
+body > footer {
+  padding: 1em 2.5em;
+  border-top: 1px dotted #999;
+  margin-top: 2.5em;
+}
+
+body > footer nav ul {
+  list-style: none;
+}
+
+/* Home page */
+#feature {
+  color: black;
+  text-shadow: rgba(255, 255, 255, 1.0) 1px 1px 4px;
+  background: #ccc url('../images/Lighthouse_ept_blur.jpg') top right no-repeat;
+  overflow: auto;
+}
+
+.hero-unit {
+  overflow: auto;
+  padding: 2em 3em;
+}
+
+.hero-unit .btn {
+  font-size: 1.2em;
+  line-height: 1.4;
+}
+
+.container {
+  max-width: 940px;
+}
+
+@media (max-width: 979px) {
+  .hero-unit h1 {
+    font-size: 2.5em;
+  }
+}
+
+#home-screenshots img,
+#home-screenshots iframe {
+  display: block;
+  margin: 0 auto 1em;
+}
+
+/* Alex's changes. */
+body {
+    background-image: url('../images/Lighthouse_ept_blur.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-color: #b4b6a9;
+    background-attachment: fixed;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+header {
+    display: none;
+}
+
+#feature, #feature .row-fluid {
+    background: transparent;
+}
+
+.row-fluid .span6 {
+    margin-left: 0;
+}
+
+.row-fluid, #contentinfo {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.row-fluid {
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 2.5em;
+    margin-bottom: 7.5em;
+}
+#feature .row-fluid {
+    margin-bottom: 0;
+}
+
+#feature .img-rounded, .row-fluid {
+    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
+}
+#feature .row-fluid {
+    box-shadow: none;
+}
+
+#contentinfo {
+    margin-top: -5em;
+    height: 3em;
+    border: none;
+}
+
+.container {
+    min-height: 100%;
+    margin-bottom: 0;
+}

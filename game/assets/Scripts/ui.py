@@ -329,7 +329,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 		if evt.message == 'QuitGameFromQuitScreen':
 			bge.logic.endGame()
 		elif evt.message == 'ReturnToMenuFromQuitScreen':
-			bge.logic.startGame('//Cargo.blend')
+			bge.logic.startGame('//Menu.blend')
 
 	def get_game_scene(self):
 		'''

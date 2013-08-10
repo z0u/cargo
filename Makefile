@@ -1,19 +1,41 @@
 LOCATION=${HOME}/Dropbox/cargo
 RSYNC_OPTS=-rtuvh --exclude-from=rsync-exclude.txt
 LOCAL_FILES=\
-	Game\
+	game\
 	Source\
 	ConceptArt\
 	Tasks*
 REMOTE_FILES=\
-	"${LOCATION}/Game"\
+	"${LOCATION}/game"\
 	"${LOCATION}/Source"\
 	"${LOCATION}/ConceptArt"\
 	"${LOCATION}/Tasks"*
 
+SHELL=/bin/bash
+VERSION := $(shell cat VERSION.txt)
+ARCHIVES := $(wildcard blender/*.zip blender/*.tar.bz2)
+
+
 # Compile any generated game files.
 compile:
-	$(MAKE) -C Game
+	$(MAKE) -C game/assets
+
+# Package distribution files.
+package:
+	@mkdir -p build
+	@test -n "$(ARCHIVES)" || { echo "Error: no archive files. Download Blender archives and put them in the blender/ directory. See http://www.blender.org/download/get-blender/"; false; }
+	@cd build;\
+		for archive in $(ARCHIVES); do\
+			echo Building from $$archive;\
+			../package_bge_runtime/package_bge_runtime.py \
+				-v $(VERSION) -x ../.gitignore -q \
+				../$$archive ../game/cargo.blend; \
+		done
+
+.PHONY : clean
+
+clean:
+	rm -r build
 
 # Publish files to team.
 export:

@@ -1,5 +1,9 @@
+## This file is used to ignore some files while developing.
+## See also exclude.txt.
+
 # Compiled scripts
 *.pyc
+__pycache__
 
 # Compiled assets
 OutdoorsBase_flowers.blend

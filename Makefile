@@ -32,12 +32,12 @@ compile:
 package:
 	@mkdir -p build
 	@test -n "$(ARCHIVES)" || { echo "Error: no archive files. Download Blender archives and put them in the blender/ directory. See http://www.blender.org/download/get-blender/"; false; }
-	cd build;\
+	@cd build;\
 		for archive in $(ARCHIVES); do\
 			echo Building from $$archive;\
 			../package_bge_runtime/package_bge_runtime.py \
-				-v $(VERSION) -x ../.gitignore \
-				../$$archive ../game/cargo.blend; \
+				-v $(VERSION) --exclude=../exclude.txt \
+				../$$archive ../game/cargo.blend ../game/assets; \
 		done
 
 .PHONY : clean

@@ -1,0 +1,21 @@
+## This file is used to ignore some files when building a release.
+## See also .gitignore.
+
+# Compiled scripts
+*.pyc
+__pycache__
+
+# IDE metadata
+.metadata
+.project
+.pydevproject
+
+# Blender backups
+*.blend?
+
+# Game data
+*.bgeconf
+
+*~
+*.bgeconf_*
+.git

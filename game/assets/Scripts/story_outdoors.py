@@ -24,36 +24,35 @@ import Scripts.shaders
 import Scripts.story
 
 class LevelOut(Scripts.story.GameLevel):
-	default_spawn_point = ''
+    default_spawn_point = ''
 
-	def __init__(self, oldOwner):
-		Scripts.story.GameLevel.__init__(self, oldOwner)
+    def __init__(self, oldOwner):
+        Scripts.story.GameLevel.__init__(self, oldOwner)
 
-		bat.sound.Jukebox().play_permutation('pond', self, 0,
-				"//Sound/cc-by/PondAmbience1.ogg",
-				"//Sound/cc-by/PondAmbience2.ogg",
-				"//Sound/cc-by/PondAmbience3.ogg",
-				volume=1.5)
+        bat.sound.Jukebox().play_permutation('pond', self, 0,
+                "//Sound/cc-by/PondAmbience1.ogg",
+                "//Sound/cc-by/PondAmbience2.ogg",
+                "//Sound/cc-by/PondAmbience3.ogg",
+                volume=1.5)
 
-		# Load additional files
-		self.load_foaliage()
+        # Load additional files
+        self.load_foaliage()
 
-		Scripts.shaders.ShaderCtrl().set_mist_colour(
-				mathutils.Vector((0.485, 0.491, 0.515)))
-		Scripts.shaders.ShaderCtrl().set_mist_depth(5000)
+        Scripts.shaders.ShaderCtrl().set_mist_colour(
+                mathutils.Vector((0.485, 0.491, 0.515)))
+        Scripts.shaders.ShaderCtrl().set_mist_depth(5000)
 
-	def load_foaliage(self):
-		'''Load extra files'''
-		try:
-			bge.logic.LibLoad('//OutdoorsBase_flowers.blend', 'Scene',
-					load_actions=True)
-		except ValueError:
-			print('Warning: could not load foliage.')
+    def load_foaliage(self):
+        '''Load extra files'''
+        try:
+            bge.logic.LibLoad('//OutdoorsBase_flowers.blend', 'Scene',
+                    load_actions=True)
+        except ValueError:
+            print('Warning: could not load foliage.')
 
-		if bat.store.get('/opt/foliage', True):
-			try:
-				bge.logic.LibLoad('//OutdoorsBase_grass.blend', 'Scene',
-						load_actions=True)
-			except ValueError:
-				print('Warning: could not load foliage.')
-
+        if bat.store.get('/opt/foliage', True):
+            try:
+                bge.logic.LibLoad('//OutdoorsBase_grass.blend', 'Scene',
+                        load_actions=True)
+            except ValueError:
+                print('Warning: could not load foliage.')

@@ -22,60 +22,60 @@ import bat.utils
 import bat.bmath
 
 class BendyLeaf(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
-	_prefix = ""
+    _prefix = ""
 
-	S_SENSING = 1
-	S_UPDATING = 2
+    S_SENSING = 1
+    S_UPDATING = 2
 
-	def __init__(self, old_owner):
-		self.skin = self.find_descendant([('Type', 'Skin')])
-		self.bend_angle = self['MinAngle']
-		self.target_influence = 0.0
-		self.influence = 0.0
-		self.velocity = 0.0
-		self.add_state(BendyLeaf.S_UPDATING)
+    def __init__(self, old_owner):
+        self.skin = self.find_descendant([('Type', 'Skin')])
+        self.bend_angle = self['MinAngle']
+        self.target_influence = 0.0
+        self.influence = 0.0
+        self.velocity = 0.0
+        self.add_state(BendyLeaf.S_UPDATING)
 
-	@bat.bats.expose
-	@bat.utils.controller_cls
-	def on_hit(self, c):
-		sensors = c.sensors
+    @bat.bats.expose
+    @bat.utils.controller_cls
+    def on_hit(self, c):
+        sensors = c.sensors
 
-		#
-		# Pass one: Find out which objects are touching the leaf.
-		#
-		hit_obs = set()
-		for s in sensors:
-			if not s.positive:
-				continue
-			for ob in s.hitObjectList:
-				hit_obs.add(ob)
+        #
+        # Pass one: Find out which objects are touching the leaf.
+        #
+        hit_obs = set()
+        for s in sensors:
+            if not s.positive:
+                continue
+            for ob in s.hitObjectList:
+                hit_obs.add(ob)
 
-		#
-		# Pass two: add up the effect of all touching objects.
-		#
-		total_influence = 0.0
-		for ob in hit_obs:
-			distance = (ob.worldPosition - self.worldPosition).magnitude
-			influence = bat.bmath.unlerp(self['MinDist'], self['MaxDist'], distance)
-			influence = influence * ob['DynamicMass']
-			total_influence = total_influence + influence
-		total_influence = total_influence * self['InfluenceMultiplier']
-		self.target_influence = total_influence
+        #
+        # Pass two: add up the effect of all touching objects.
+        #
+        total_influence = 0.0
+        for ob in hit_obs:
+            distance = (ob.worldPosition - self.worldPosition).magnitude
+            influence = bat.bmath.unlerp(self['MinDist'], self['MaxDist'], distance)
+            influence = influence * ob['DynamicMass']
+            total_influence = total_influence + influence
+        total_influence = total_influence * self['InfluenceMultiplier']
+        self.target_influence = total_influence
 
-		self.add_state(BendyLeaf.S_UPDATING)
+        self.add_state(BendyLeaf.S_UPDATING)
 
-	@bat.bats.expose
-	def update(self):
-		self.influence = bat.bmath.lerp(self.influence, self.target_influence, 0.5)
-		target_bend_angle = bat.bmath.lerp(self['MinAngle'], self['MaxAngle'], self.influence)
+    @bat.bats.expose
+    def update(self):
+        self.influence = bat.bmath.lerp(self.influence, self.target_influence, 0.5)
+        target_bend_angle = bat.bmath.lerp(self['MinAngle'], self['MaxAngle'], self.influence)
 
-		difference = target_bend_angle - self.bend_angle
-		self.bend_angle, self.velocity = bat.bmath.integrate(
-				self.bend_angle, self.velocity,
-				difference * self['acceleration'], self['damping'])
+        difference = target_bend_angle - self.bend_angle
+        self.bend_angle, self.velocity = bat.bmath.integrate(
+                self.bend_angle, self.velocity,
+                difference * self['acceleration'], self['damping'])
 
-		self.playAction('LeafBend', self.bend_angle, self.bend_angle)
+        self.playAction('LeafBend', self.bend_angle, self.bend_angle)
 
-		if abs(self.velocity) < 0.0001 and abs(difference) < 0.0001:
-			# At rest
-			self.rem_state(BendyLeaf.S_UPDATING)
+        if abs(self.velocity) < 0.0001 and abs(difference) < 0.0001:
+            # At rest
+            self.rem_state(BendyLeaf.S_UPDATING)

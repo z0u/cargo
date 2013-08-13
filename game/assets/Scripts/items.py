@@ -28,47 +28,46 @@ import bat.bats
 import bat.bmath
 
 def dry_leaf_touched(c):
-	sample = bat.sound.Sample(
-			'//Sound/cc-by/Crunch1.ogg',
-			'//Sound/cc-by/Crunch2.ogg',
-			'//Sound/cc-by/Crunch3.ogg')
-	sample.add_effect(bat.sound.Localise(c.owner))
-	sample.play()
+    sample = bat.sound.Sample(
+            '//Sound/cc-by/Crunch1.ogg',
+            '//Sound/cc-by/Crunch2.ogg',
+            '//Sound/cc-by/Crunch3.ogg')
+    sample.add_effect(bat.sound.Localise(c.owner))
+    sample.play()
 
 def dandelion_touched(c):
-	sample = bat.sound.Sample(
-			'//Sound/cc-by/Swosh1.ogg',
-			'//Sound/cc-by/Swosh2.ogg')
-	sample.volume = 0.5
-	sample.add_effect(bat.sound.Localise(c.owner))
-	sample.play()
+    sample = bat.sound.Sample(
+            '//Sound/cc-by/Swosh1.ogg',
+            '//Sound/cc-by/Swosh2.ogg')
+    sample.volume = 0.5
+    sample.add_effect(bat.sound.Localise(c.owner))
+    sample.play()
 
 def ripple(c):
-	sample = bat.sound.Sample(
-			'//Sound/Puddle1.ogg',
-			'//Sound/Puddle2.ogg',
-			'//Sound/Puddle3.ogg',
-			'//Sound/Puddle4.ogg')
-	sample.volume = 0.5
-	sample.add_effect(bat.sound.Localise(c.owner))
-	sample.play()
+    sample = bat.sound.Sample(
+            '//Sound/Puddle1.ogg',
+            '//Sound/Puddle2.ogg',
+            '//Sound/Puddle3.ogg',
+            '//Sound/Puddle4.ogg')
+    sample.volume = 0.5
+    sample.add_effect(bat.sound.Localise(c.owner))
+    sample.play()
 
 
 class SleepEmitter(bat.bats.BX_GameObject, bge.types.KX_GameObject):
-	_prefix = 'S_'
+    _prefix = 'S_'
 
-	DELAY = 60
-	LIFETIME = 240
+    DELAY = 60
+    LIFETIME = 240
 
-	def __init__(self, old_owner):
-		self.countdown = 0
+    def __init__(self, old_owner):
+        self.countdown = 0
 
-	@bat.bats.expose
-	def pulse(self):
-		self.countdown -= 1
-		if self.countdown <= 0:
-			self.countdown = SleepEmitter.DELAY
-			instance = self.scene.addObject('SleepCharBase', 'SleepCharBase', SleepEmitter.LIFETIME)
-			bat.bmath.copy_transform(self, instance)
-			instance.localScale = self.worldScale
-
+    @bat.bats.expose
+    def pulse(self):
+        self.countdown -= 1
+        if self.countdown <= 0:
+            self.countdown = SleepEmitter.DELAY
+            instance = self.scene.addObject('SleepCharBase', 'SleepCharBase', SleepEmitter.LIFETIME)
+            bat.bmath.copy_transform(self, instance)
+            instance.localScale = self.worldScale

@@ -24,48 +24,48 @@ import bat.store
 import bat.sound
 
 class Tree(bat.bats.BX_GameObject, bge.types.KX_GameObject):
-	def __init__(self, oldOwner):
-		if not bat.store.get('/game/level/treeDoorBroken', False):
-			self.create_door()
+    def __init__(self, oldOwner):
+        if not bat.store.get('/game/level/treeDoorBroken', False):
+            self.create_door()
 
-	def create_door(self):
-		hook = self.children['T_Door_Hook']
-		scene = bge.logic.getCurrentScene()
-		door = scene.addObject('T_Door', hook)
-		door.worldPosition = hook.worldPosition
-		door.worldOrientation = hook.worldOrientation
+    def create_door(self):
+        hook = self.children['T_Door_Hook']
+        scene = bge.logic.getCurrentScene()
+        door = scene.addObject('T_Door', hook)
+        door.worldPosition = hook.worldPosition
+        door.worldOrientation = hook.worldOrientation
 
 class TreeDoor(bat.bats.BX_GameObject, bge.types.KX_GameObject):
-	_prefix = 'TD_'
+    _prefix = 'TD_'
 
-	def __init__(self, oldOnwer):
-		pass
+    def __init__(self, oldOnwer):
+        pass
 
-	def destruct(self):
-		scene = bge.logic.getCurrentScene()
-		for hook in self.children:
-			i = hook.name[-3:]
-			pieceName = 'T_Door_Broken.%s' % i
-			try:
-				scene.addObject(pieceName, hook)
-			except ValueError:
-				print('Failed to add object %s' % pieceName)
-		self.endObject()
-		bat.event.Event('treeDoorBroken').send()
-		bat.store.put('/game/level/treeDoorBroken', True)
-		bat.store.put('/game/storySummary', 'treeDoorBroken')
-		sample = bat.sound.Sample('//Sound/cc-by/CrashBoom1.ogg')
-		sample.volume = 0.7
-		sample.play()
+    def destruct(self):
+        scene = bge.logic.getCurrentScene()
+        for hook in self.children:
+            i = hook.name[-3:]
+            pieceName = 'T_Door_Broken.%s' % i
+            try:
+                scene.addObject(pieceName, hook)
+            except ValueError:
+                print('Failed to add object %s' % pieceName)
+        self.endObject()
+        bat.event.Event('treeDoorBroken').send()
+        bat.store.put('/game/level/treeDoorBroken', True)
+        bat.store.put('/game/storySummary', 'treeDoorBroken')
+        sample = bat.sound.Sample('//Sound/cc-by/CrashBoom1.ogg')
+        sample.volume = 0.7
+        sample.play()
 
-	@bat.bats.expose
-	@bat.utils.controller_cls
-	def collide(self, c):
-		for shell in c.sensors[0].hitObjectList:
-			if shell.name != 'Wheel':
-				continue
-			if not shell.can_destroy_stuff():
-				continue
-			evt = bat.event.Event('ForceExitShell', True)
-			bat.event.EventBus().notify(evt)
-			self.destruct()
+    @bat.bats.expose
+    @bat.utils.controller_cls
+    def collide(self, c):
+        for shell in c.sensors[0].hitObjectList:
+            if shell.name != 'Wheel':
+                continue
+            if not shell.can_destroy_stuff():
+                continue
+            evt = bat.event.Event('ForceExitShell', True)
+            bat.event.EventBus().notify(evt)
+            self.destruct()

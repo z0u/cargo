@@ -27,6 +27,8 @@ import bat.store
 import bat.utils
 import bat.render
 
+import Scripts.webgl_noise
+
 DEBUG = False
 DEBUG_LINE_NUMBERS = True
 
@@ -355,12 +357,12 @@ def set_windy(ob):
 
 	# Use the regular shaders, but replace the position function.
 
-	POSITION_FN = Template("""
+	POSITION_FN = Template(Scripts.webgl_noise.NOISE_FN + """
+
 	const float PI2 = 2.0 * 3.14159;
-	const float FREQ = ${frequency};
+	const float FREQ = ${frequency} * 0.001;
 	const float AMPLITUDE = ${amplitude};
 
-	uniform sampler2D tDisp;
 	uniform mat4 worldViewMatrix;
 	uniform mat4 worldViewMatrixInverse;
 
@@ -372,9 +374,9 @@ def set_windy(ob):
 		// time (e.g. in response to camera movement or object replacement).
 		position = gl_ModelViewMatrix * gl_Vertex;
 		vec4 worldpos = worldViewMatrixInverse * position;
-		vec2 texcoords = worldpos.xy * 0.0005 * FREQ + phase;
-		vec3 disp = texture2D(tDisp, texcoords).xyz;
-		disp = (disp - 0.5) * 2.0 * AMPLITUDE;
+		vec2 texcoords = worldpos.xy * FREQ + phase;
+		vec3 disp = vec3(snoise(texcoords), snoise(texcoords + 17.0), snoise(texcoords - 43.0));
+		disp *= AMPLITUDE;
 
 		// Limit displacement by vertex colour (black = stationary).
 		disp *= gl_Color.xyz;
@@ -383,6 +385,7 @@ def set_windy(ob):
 		position = worldViewMatrix * worldpos;
 		return gl_ProjectionMatrix * position;
 	}
+
 	""")
 	position_fn = POSITION_FN.substitute(frequency=ob["SH_freq"],
 			amplitude=ob["SH_amp"])
@@ -391,9 +394,6 @@ def set_windy(ob):
 	frags = create_frag_shader(model=model, alpha=alpha, twosided=twosided)
 	cb = WindCallback(ob["SH_speed"])
 	shader = _set_shader(ob, verts, frags, cb)
-	if shader is not None:
-		# Third texture slot is for displacement.
-		shader.setSampler("tDisp", 2)
 
 
 class WindCallback:
@@ -401,19 +401,23 @@ class WindCallback:
 	Makes the leaves move. Called once per frame per instance of the shader.
 	'''
 
-	PHASE_STEPX = (1.0/3.0) * 0.001
-	PHASE_STEPY = (1.0/4.5) * 0.001
+	# PHASE_STEPX = (1.0/3.0) * 0.0001
+	# PHASE_STEPY = (1.0/4.5) * 0.00001
+	PHASE_STEP = 0.00001
 
 	def __init__(self, speed):
-		self.speedx = WindCallback.PHASE_STEPX * speed
-		self.speedy = WindCallback.PHASE_STEPY * speed
-		self.phasex = self.phasey = 0.0
+		self.speed = WindCallback.PHASE_STEP * speed
+		self.phase = 1.999 * math.pi
 
 	def __call__(self, shader, world_to_cam, world_to_cam_vec):
 		# Set displacement texture lookup offset
-		self.phasex = (self.phasex + self.speedx) % 1.0
-		self.phasey = (self.phasey + self.speedy) % 1.0
-		shader.setUniform2f("phase", self.phasex, self.phasey)
+		# self.phasex = (self.phasex + self.speedx) % 289
+		# self.phasey = (self.phasey + self.speedy) % 289
+		self.phase = (self.phase + self.speed) % (2 * math.pi)
+		phasex = math.sin(self.phase) * 1000
+		phasey = math.cos(self.phase) * 1000
+		# print(self.phase, phasex, phasey)
+		shader.setUniform2f("phase", phasex, phasey)
 
 
 calc_light = """
@@ -515,7 +519,7 @@ calc_light = """
 				cust_light2_spotexponent,
 				cust_light2_dist);
 
-        return lightCol;
+		return lightCol;
 	}
 """
 
@@ -562,15 +566,15 @@ def create_vert_shader(model='PHONG', position_fn=None):
 	${varying}
 	${position_fn}
  
- 	void main() {
+	void main() {
 		gl_Position = getPosition();
  
- 		// Transfer tex coords.
- 		gl_TexCoord[0] = gl_MultiTexCoord0;
+		// Transfer tex coords.
+		gl_TexCoord[0] = gl_MultiTexCoord0;
  
- 		// Lighting (note: no perspective transform)
+		// Lighting (note: no perspective transform)
 		${lighting}
- 	}
+	}
 	""")
 	return verts.substitute(light_header=light_header, model=model,
 			varying=varying, position_fn=position_fn, lighting=lighting)

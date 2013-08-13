@@ -13,7 +13,7 @@ Storyboards:      Alex Fraser
 Rigging:          Alex Fraser
 Animation:        Alex Fraser
 Textures:         Alex Fraser, Junki Wano
-Code:             Alex Fraser, Mark Triggs, Campbell Barton, Ben Sturmfels
+Code:             Alex Fraser, Mark Triggs, Campbell Barton, Ben Sturmfels, Ashima Arts
 Engines:          The Blender Foundation (Blender)[3], Game Physics Simulation
                   (Bullet)[4]
 Testing:          Jodie Fraser, Lachlan Kanaley, Damien Elmes

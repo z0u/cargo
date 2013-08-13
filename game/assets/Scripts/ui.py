@@ -585,7 +585,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
     L_DISPLAY = 0
 
     TRIVIA = [
-        "Did you know, snails have only one foot!",
+        "Did you know, a snail only has one foot! But two snails have two feet, so that's OK.",
         "Did you know, snails have very wet skin. They don't like salt because it dries them out.",
         "Did you know, most land snails are hermaphrodites - which means each one is male and female at the same time.",
         "Did you know, snail shells are made of calcium carbonate, like egg shells and coral.",

@@ -206,7 +206,7 @@ class MenuController(Scripts.gui.UiController):
                 if ob.name == 'SaveButton_T' and ob['onClickBody'] == gamenum:
                     return ob
         elif screen_name == 'CreditsScreen':
-            return self.scene.objects['HomePageButton']
+            return self.scene.objects['Btn_Crd_Load']
         elif screen_name == 'OptionsScreen':
             return self.scene.objects['Btn_ControlConfig']
 #        elif screen_name == 'Controls_Actions':
@@ -215,6 +215,8 @@ class MenuController(Scripts.gui.UiController):
 #            return self.scene.objects['Btn_CC_MovementTab']
 #        elif screen_name == 'Controls_Camera':
 #            return self.scene.objects['Btn_CC_CameraTab']
+        elif screen_name == 'Video':
+            return self.scene.objects['Btn_ReturnVC']
         elif screen_name == 'LoadDetailsScreen':
             return self.scene.objects['Btn_StartGame']
         elif screen_name == 'ConfirmationDialogue':
@@ -589,10 +591,7 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
             Scripts.gui.Widget.on_event(self, evt)
 
     def update_res_labels(self):
-        for child in self.children:
-            if not child.name.startswith('Btn_VC'):
-                continue
-            btn = child
+        for btn in self.resolution_buttons:
             res = btn['onClickBody']
             if res in VideoConfPage.NAMED_RESOLUTIONS:
                 text = VideoConfPage.NAMED_RESOLUTIONS[res]
@@ -624,6 +623,14 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         #bge.render.setFullScreen(self.bfull.checked)
 
     @property
+    def resolution_buttons(self):
+        def _res_generator():
+            for child in self.children:
+                if child.name.startswith('Btn_VC'):
+                    yield child
+        return _res_generator()
+
+    @property
     def res(self):
         return self._res
     @res.setter
@@ -632,11 +639,9 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         VideoConfPage.log.info('window shape: %s', resolution)
         highlight = self.children['VC_res_highlight']
         selected_button = None
-        for child in self.children:
-            if not child.name.startswith('Btn_VC'):
-                continue
-            if child['onClickBody'] == resolution:
-                selected_button = child
+        for btn in self.resolution_buttons:
+            if btn['onClickBody'] == resolution:
+                selected_button = btn
                 break
         if selected_button is not None:
             highlight.visible = True

@@ -221,13 +221,14 @@ class UiController(bat.impulse.Handler, bat.bats.BX_GameObject,
             dist = ob_dir.magnitude
             if dist == 0.0:
                 continue
-            score_dist = 1.0 / (dist * dist)
+            score_dist = 1.0 / dist
+            score_dist = math.pow(score_dist, 2)
 
             ob_dir.normalize()
             score_dir = ob_dir.dot(world_direction)
             if score_dir < UiController.DIRECTION_TOLERANCE:
                 continue
-            score_dir = math.pow(score_dir, 0.5)
+            score_dir = math.pow(score_dir, 2)
 
             score = score_dir * score_dist
             if score > best_score:

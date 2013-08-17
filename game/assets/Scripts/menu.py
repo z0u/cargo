@@ -16,6 +16,7 @@
 #
 
 import logging
+import time
 import webbrowser
 
 import bge
@@ -215,8 +216,10 @@ class MenuController(Scripts.gui.UiController):
 #            return self.scene.objects['Btn_CC_MovementTab']
 #        elif screen_name == 'Controls_Camera':
 #            return self.scene.objects['Btn_CC_CameraTab']
-        elif screen_name == 'Video':
+        elif screen_name == 'VideoOptions':
             return self.scene.objects['Btn_ReturnVC']
+        elif screen_name == 'VideoConfirm':
+            return self.scene.objects['Btn_VC_No']
         elif screen_name == 'LoadDetailsScreen':
             return self.scene.objects['Btn_StartGame']
         elif screen_name == 'ConfirmationDialogue':
@@ -570,23 +573,37 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
             '1280x720': 'HD 720p',
             '1920x1080': 'HD 1080p'
         }
+    CONFIRM_TIMEOUT = 20
 
     def __init__(self, old_owner):
         Scripts.gui.Widget.__init__(self, old_owner)
         self.setSensitive(False)
+        self.confirm_deadline = None
         self.bfoliage = bat.bats.mutate(self.children['Btn_Foliage'])
         self.bdof = bat.bats.mutate(self.children['Btn_DoF'])
         #self.bfull = bat.bats.mutate(self.children['Btn_Fullscreen'])
         self.update_res_labels()
         self.revert()
+        # This sets the resolution for the rest of the game!
+        self.apply_resolution()
 
     def on_event(self, evt):
         if evt.message == 'RevertVideo':
             self.revert()
         elif evt.message == 'SaveVideo':
-            self.apply()
+            self.confirm_deadline = time.time() + VideoConfPage.CONFIRM_TIMEOUT
+            self.apply_resolution()
+            bat.event.Event('pushScreen', 'VideoConfirm').send()
         elif evt.message == 'VideoResolutionClick':
             self.res = evt.body
+        elif evt.message == 'VideoConfirm':
+            bat.event.Event('popScreen').send()
+            self.confirm_deadline = None
+            if evt.body == 'yes':
+                self.save()
+                bat.event.Event('popScreen').send()
+            else:
+                self.revert()
         else:
             Scripts.gui.Widget.on_event(self, evt)
 
@@ -606,7 +623,14 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         #self.bfull.checked = bat.store.get('/opt/fullscreen', True)
         self.res = bat.store.get('/opt/resolution', '800x600')
 
-    def apply(self):
+    def apply_resolution(self):
+        width, height = self.res.split('x')
+        width = int(width)
+        height = int(height)
+        bge.render.setWindowSize(width, height)
+        #bge.render.setFullScreen(self.bfull.checked)
+
+    def save(self):
         VideoConfPage.log.info('Saving video settings.')
         VideoConfPage.log.info('foliage: %s', self.bfoliage.checked)
         bat.store.put('/opt/foliage', self.bfoliage.checked)
@@ -614,13 +638,20 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         bat.store.put('/opt/depthOfField', self.bdof.checked)
         #VideoConfPage.log.info('fullscreen: %s', self.bfull.checked)
         #bat.store.put('/opt/fullscreen', self.bfull.checked)
+        VideoConfPage.log.info('resolution: %s', self.res)
         bat.store.put('/opt/resolution', self.res)
 
-        width, height = self.res.split('x')
-        width = int(width)
-        height = int(height)
-        bge.render.setWindowSize(width, height)
-        #bge.render.setFullScreen(self.bfull.checked)
+    @bat.bats.expose
+    def update_confirm(self):
+        if self.confirm_deadline is None:
+            return
+        remaining_time = self.confirm_deadline - time.time()
+        if remaining_time < 0:
+            bat.event.Event('VideoConfirm', 'no').send()
+            self.confirm_deadline = None
+        else:
+            time_text = self.childrenRecursive['VC_Instructions_Timer']
+            time_text.set_text('Aborting in %ds' % int(remaining_time))
 
     @property
     def resolution_buttons(self):

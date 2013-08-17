@@ -286,7 +286,6 @@ class Checkbox(Scripts.gui.Button):
         Scripts.gui.Button.__init__(self, old_owner)
         if 'dataBinding' in self:
             self.checked = bat.store.get(self['dataBinding'], self['dataDefault'])
-        self.updateCheckFace()
 
         # Create a clickable box around the text.
         canvas = self.children['CheckBoxCanvas']
@@ -298,9 +297,16 @@ class Checkbox(Scripts.gui.Button):
         hitbox.localScale.x = canvas.textwidth * canvas.localScale.x
         hitbox.localScale.y = canvas.textheight * canvas.localScale.y
 
+    @property
+    def checked(self):
+        return self._checked
+    @checked.setter
+    def checked(self, value):
+        self._checked = value
+        self.updateCheckFace()
+
     def click(self):
         self.checked = not self.checked
-        self.updateCheckFace()
         if 'dataBinding' in self:
             bat.store.put(self['dataBinding'], self.checked)
         super(Checkbox, self).click()
@@ -552,6 +558,91 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
                 lambda x: ip.sensor_def_to_human_string(*x),
                 bindings)
             canvas.set_text(', '.join(human_bindings))
+
+class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
+    _prefix = 'VC_'
+
+    log = logging.getLogger(__name__ + '.VideoConfPage')
+
+    NAMED_RESOLUTIONS = {
+            '1280x720': 'HD 720p',
+            '1920x1080': 'HD 1080p'
+        }
+
+    def __init__(self, old_owner):
+        Scripts.gui.Widget.__init__(self, old_owner)
+        self.setSensitive(False)
+        self.bfoliage = bat.bats.mutate(self.children['Btn_Foliage'])
+        self.bdof = bat.bats.mutate(self.children['Btn_DoF'])
+        #self.bfull = bat.bats.mutate(self.children['Btn_Fullscreen'])
+        self.update_res_labels()
+        self.revert()
+
+    def on_event(self, evt):
+        if evt.message == 'RevertVideo':
+            self.revert()
+        elif evt.message == 'SaveVideo':
+            self.apply()
+        elif evt.message == 'VideoResolutionClick':
+            self.res = evt.body
+        else:
+            Scripts.gui.Widget.on_event(self, evt)
+
+    def update_res_labels(self):
+        for child in self.children:
+            if not child.name.startswith('Btn_VC'):
+                continue
+            btn = child
+            res = btn['onClickBody']
+            if res in VideoConfPage.NAMED_RESOLUTIONS:
+                text = VideoConfPage.NAMED_RESOLUTIONS[res]
+            else:
+                text = res
+            btn.children[0]['Content'] = text
+
+    def revert(self):
+        VideoConfPage.log.info('Reverting video settings')
+        self.bfoliage.checked = bat.store.get('/opt/foliage', True)
+        self.bdof.checked = bat.store.get('/opt/depthOfField', True)
+        #self.bfull.checked = bat.store.get('/opt/fullscreen', True)
+        self.res = bat.store.get('/opt/resolution', '800x600')
+
+    def apply(self):
+        VideoConfPage.log.info('Saving video settings.')
+        VideoConfPage.log.info('foliage: %s', self.bfoliage.checked)
+        bat.store.put('/opt/foliage', self.bfoliage.checked)
+        VideoConfPage.log.info('dof: %s', self.bdof.checked)
+        bat.store.put('/opt/depthOfField', self.bdof.checked)
+        #VideoConfPage.log.info('fullscreen: %s', self.bfull.checked)
+        #bat.store.put('/opt/fullscreen', self.bfull.checked)
+        bat.store.put('/opt/resolution', self.res)
+
+        width, height = self.res.split('x')
+        width = int(width)
+        height = int(height)
+        bge.render.setWindowSize(width, height)
+        #bge.render.setFullScreen(self.bfull.checked)
+
+    @property
+    def res(self):
+        return self._res
+    @res.setter
+    def res(self, resolution):
+        self._res = resolution
+        VideoConfPage.log.info('window shape: %s', resolution)
+        highlight = self.children['VC_res_highlight']
+        selected_button = None
+        for child in self.children:
+            if not child.name.startswith('Btn_VC'):
+                continue
+            if child['onClickBody'] == resolution:
+                selected_button = child
+                break
+        if selected_button is not None:
+            highlight.visible = True
+            highlight.localPosition = selected_button.localPosition
+        else:
+            highlight.visible = False
 
 
 class NamePage(Scripts.gui.Widget):

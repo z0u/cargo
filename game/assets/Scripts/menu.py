@@ -627,9 +627,9 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         VideoConfPage.log.info('Reverting video settings')
         self.bfoliage.checked = bat.store.get('/opt/foliage', True)
         self.bdof.checked = bat.store.get('/opt/depthOfField', True)
-        self.revert_video()
+        self.revert_resolution()
 
-    def revert_video(self):
+    def revert_resolution(self):
         #self.bfull.checked = bat.store.get('/opt/fullscreen', True)
         self.res = bat.store.get('/opt/resolution', '800x600')
 
@@ -661,11 +661,19 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
             self.save()
             bat.event.Event('popScreen').send()
         else:
-            self.revert_video()
+            self.revert_resolution()
             self.apply_resolution()
 
     @bat.bats.expose
-    def update_confirm(self):
+    def update(self):
+        highlight = self.children['VC_res_highlight']
+        if self.selected_button is not None:
+            selected_button = self.children[self.selected_button]
+            highlight.visible = True
+            highlight.localPosition = selected_button.localPosition
+        else:
+            highlight.visible = False
+
         if self.confirm_deadline is None:
             return
         remaining_time = self.confirm_deadline - time.time()
@@ -691,17 +699,11 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
     def res(self, resolution):
         self._res = resolution
         VideoConfPage.log.info('window shape: %s', resolution)
-        highlight = self.children['VC_res_highlight']
-        selected_button = None
+        self.selected_button = None
         for btn in self.resolution_buttons:
             if btn['onClickBody'] == resolution:
-                selected_button = btn
+                self.selected_button = btn.name
                 break
-        if selected_button is not None:
-            highlight.visible = True
-            highlight.localPosition = selected_button.localPosition
-        else:
-            highlight.visible = False
 
 
 class NamePage(Scripts.gui.Widget):

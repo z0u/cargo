@@ -591,21 +591,28 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         if evt.message == 'RevertVideo':
             self.revert()
         elif evt.message == 'SaveVideo':
-            self.confirm_deadline = time.time() + VideoConfPage.CONFIRM_TIMEOUT
-            self.apply_resolution()
-            bat.event.Event('pushScreen', 'VideoConfirm').send()
+            if self.res_is_different(self.res):
+                bat.event.Event('pushScreen', 'VideoConfirm').send()
+                self.begin_confirmation()
+            else:
+                self.save()
+                bat.event.Event('popScreen').send(1)
         elif evt.message == 'VideoResolutionClick':
             self.res = evt.body
         elif evt.message == 'VideoConfirm':
-            bat.event.Event('popScreen').send()
-            self.confirm_deadline = None
-            if evt.body == 'yes':
-                self.save()
-                bat.event.Event('popScreen').send()
-            else:
-                self.revert()
+            self.end_confirmation(evt.body == 'yes')
+            bat.event.Event('popScreen').send(1)
+        elif evt.message == 'popScreen':
+            if self.confirm_deadline is not None:
+                self.end_confirmation(False)
         else:
             Scripts.gui.Widget.on_event(self, evt)
+
+    def res_is_different(self, res):
+        own_dims = res.split('x')
+        own_dims = int(own_dims[0]), int(own_dims[1])
+        current_dims = bge.render.getWindowWidth(), bge.render.getWindowHeight()
+        return own_dims != current_dims
 
     def update_res_labels(self):
         for btn in self.resolution_buttons:
@@ -620,6 +627,9 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         VideoConfPage.log.info('Reverting video settings')
         self.bfoliage.checked = bat.store.get('/opt/foliage', True)
         self.bdof.checked = bat.store.get('/opt/depthOfField', True)
+        self.revert_video()
+
+    def revert_video(self):
         #self.bfull.checked = bat.store.get('/opt/fullscreen', True)
         self.res = bat.store.get('/opt/resolution', '800x600')
 
@@ -640,6 +650,19 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         #bat.store.put('/opt/fullscreen', self.bfull.checked)
         VideoConfPage.log.info('resolution: %s', self.res)
         bat.store.put('/opt/resolution', self.res)
+
+    def begin_confirmation(self):
+        self.confirm_deadline = time.time() + VideoConfPage.CONFIRM_TIMEOUT
+        self.apply_resolution()
+
+    def end_confirmation(self, confirmed):
+        self.confirm_deadline = None
+        if confirmed:
+            self.save()
+            bat.event.Event('popScreen').send()
+        else:
+            self.revert_video()
+            self.apply_resolution()
 
     @bat.bats.expose
     def update_confirm(self):

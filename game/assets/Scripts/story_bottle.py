@@ -95,7 +95,7 @@ class Bottle(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObjec
         elif not self.snailInside and mainChar['HasShell']:
             # Touched by a snail who is wearing a shell.
             bat.event.Event('ShowDialogue',
-                    "You can't fit! Press X to drop your shell.").send()
+                    "You can't fit! Press \[btn2] to drop your shell.").send()
             self.eject(mainChar)
         elif self.snailInside:
             #print("Exiting because snail touched door.")

@@ -1,7 +1,9 @@
 SHELL=/bin/bash
+
 VERSION := $(shell cat VERSION.txt)
-ASSETS := ../game/assets
 GAME_NAME := cargo
+ASSETS := ../game/assets
+DOCS := ../readme.html ../readme_files
 
 # Compile any generated game files.
 compile:
@@ -16,7 +18,7 @@ package = \
 		echo Building from $$archive; \
 		../package_bge_runtime/package_bge_runtime.py \
 			-v $(VERSION) --exclude=../exclude.txt --name=$(GAME_NAME) \
-			../$$archive $(MAINFILE) $(ASSETS); \
+			../$$archive $(MAINFILE) $(ASSETS) --docs $(DOCS) -p1; \
 		if [ $$? -ne 0 ]; then exit $$?; fi \
 	done
 

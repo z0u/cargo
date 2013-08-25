@@ -1,5 +1,16 @@
-@import url("http://fonts.googleapis.com/css?family=Source+Sans+Pro");
-@import url("http://fonts.googleapis.com/css?family=Gochi+Hand");
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Source Sans Pro'), local('SourceSansPro-Regular'), url('../fonts/source-sans-pro.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Gochi Hand';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Gochi Hand'), local('GochiHand-Regular'), url('../fonts/gochi-hand.ttf') format('truetype');
+}
 
 body {
   color: #333;
@@ -35,11 +46,15 @@ body > footer nav ul {
   list-style: none;
 }
 
+th {
+    text-align: left;
+}
+
 /* Home page */
 #feature {
   color: black;
   text-shadow: rgba(255, 255, 255, 1.0) 1px 1px 4px;
-  background: #ccc url('themes/images/Lighthouse_ept_blur.jpg') top right no-repeat;
+  background: #ccc url('../images/Lighthouse_ept_blur.jpg') top right no-repeat;
   overflow: auto;
 }
 

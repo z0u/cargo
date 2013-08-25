@@ -616,8 +616,16 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
         "Did you know, snails have very wet skin. They don't like salt because it dries them out.",
         "Did you know, most land snails are hermaphrodites - which means each one is male and female at the same time.",
         "Did you know, snail shells are made of calcium carbonate, like egg shells and coral.",
-        "Did you know, snail shells provide protection against predators.",
+        "Did you know, snail shells provide protection against predators. But who would want to eat a snail!?",
         "Did you know, snails can see, feel and smell - but they are deaf.",
+        "Did you know, most snails only eat plants, not meat. Plants can't run away very fast, you see.",
+        "Did you know, the largest snail is the Australian Trumpet sea snail. It can grow up to 91cm long. That's really big!",
+        "Did you know, a snail's trial is made of slime. Slime protects a snail from sharp things that it crawls over.",
+        "Did you know, there are over 60,000 species (types) of snails and slugs!",
+        "Did you know, garden snails move at about 1 centimetre per second - that's 3.6 metres per hour!",
+        "Did you know, snails do not chew. But they do have teeth, which they use to grate their food.",
+        "Did you know, snails dig holes to sleep in and to look for food.",
+        "Did you know, in the garden, snails live for 2-3 years. In captivity they can live for much longer.",
         ]
 
     def __init__(self, old_owner):

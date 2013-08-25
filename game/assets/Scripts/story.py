@@ -379,6 +379,7 @@ def load_level(caller, level, spawnPoint):
     # Start showing the loading screen. When it has finished, the LoadLevel
     # event defined above will be sent, and received by GameLevel.
     bat.event.Event('ShowLoadingScreen', (True, callback, True)).send()
+    bat.sound.Jukebox().stop_all(fade_rate=0.05)
 
 def activate_portal(c):
     '''Loads the next level, based on the properties of the owner.

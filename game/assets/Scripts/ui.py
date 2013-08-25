@@ -468,19 +468,25 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         if state.activated:
             if self.selected_option == 2:
                 QuitOptions.log.info('Quitting immediately.')
+                show_trivia = False
                 cb_event = bat.event.Event('QuitGameFromQuitScreen')
-                bat.event.Event('ShowLoadingScreen', (True, cb_event)).send()
             elif self.selected_option == 1:
                 QuitOptions.log.info('Returning to main menu.')
+                show_trivia = False
                 cb_event = bat.event.Event('ReturnToMenuFromQuitScreen')
-                bat.event.Event('ShowLoadingScreen', (True, cb_event)).send()
             else:
                 if self.game_over:
                     QuitOptions.log.info('Reloading current level.')
+                    show_trivia = True
                     cb_event = bat.event.Event('ReloadLevel')
-                    bat.event.Event('ShowLoadingScreen', (True, cb_event, True)).send()
                 else:
                     QuitOptions.log.info('Resuming game.')
+                    cb_event = None
+
+            if cb_event is not None:
+                bat.event.Event('ShowLoadingScreen', (True, cb_event, show_trivia)).send()
+                bat.sound.Jukebox().stop_all(fade_rate=0.05)
+
             self.hide()
 
     def handle_bt_2(self, state):

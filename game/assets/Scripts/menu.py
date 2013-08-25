@@ -193,12 +193,12 @@ class MenuController(Scripts.gui.UiController):
                 '//Sound/Music/01-TheStart_loop1.ogg',
                 '//Sound/Music/01-TheStart_loop2.ogg',
                 introfile='//Sound/Music/01-TheStart_intro.ogg',
-                fade_in_rate=1, fade_out_rate=0.05, volume=0.6)
+                fade_in_rate=1, volume=0.6)
 
     def on_event(self, evt):
         Scripts.gui.UiController.on_event(self, evt)
         if evt.message in {'startGame', 'quit'}:
-            bat.sound.Jukebox().stop('menu')
+            bat.sound.Jukebox().stop_all(fade_rate=0.05)
 
     def get_default_widget(self, screen_name):
         if screen_name == 'LoadingScreen':

@@ -633,7 +633,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
         "Did you know, garden snails move at about 1 centimetre per second - that's 3.6 metres per hour!",
         "Did you know, snails do not chew. But they do have teeth, which they use to grate their food.",
         "Did you know, snails dig holes to sleep in and to look for food.",
-        "Did you know, in the garden, snails live for 2-3 years. In captivity they can live for much longer.",
+        "Did you know, in the garden, snails live for 2-3 years. In captivity they can live for even longer.",
         ]
 
     def __init__(self, old_owner):

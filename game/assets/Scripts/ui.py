@@ -26,10 +26,10 @@ import mathutils
 import bat.bats
 import bat.containers
 import bat.event
+import bat.impulse
 import bat.render
 
 import Scripts.inventory
-import bat.impulse
 import Scripts.director
 
 
@@ -300,6 +300,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
     S_IDLE = 4
 
     def __init__(self, old_owner):
+        self.canvas_title = bat.bats.mutate(self.scene.objects['QOpt_TextCanvas.title'])
         self.canvas1 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.0'])
         self.canvas2 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.1'])
         self.canvas3 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.2'])
@@ -316,6 +317,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
         self.options = None
         self.accepting_input = False
+        self.game_over = False
         self.set_selected_option(None)
         self.set_state(QuitOptions.S_IDLE)
 
@@ -330,6 +332,10 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
             bge.logic.endGame()
         elif evt.message == 'ReturnToMenuFromQuitScreen':
             bge.logic.startGame('//Menu.blend')
+        elif evt.message == 'GameOver':
+            self.show(True)
+        elif evt.message == 'ReloadLevel':
+            self.reload_level()
 
     def get_game_scene(self):
         '''
@@ -345,10 +351,15 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
             if sce is not own_scene:
                 return sce
 
-    def show(self):
+    def show(self, game_over):
         # Frame is visible immediately; button is shown later.
         self.set_selected_option(0)
-        self.canvas1['Content'] = "Resume (cancel)"
+        if game_over:
+            self.canvas_title['Content'] = "Game Over"
+            self.canvas1['Content'] = "Reload current game"
+        else:
+            self.canvas_title['Content'] = ""
+            self.canvas1['Content'] = "Resume (cancel)"
         self.canvas2['Content'] = "Quit to main menu"
         self.canvas3['Content'] = "Quit game"
         self.canvas_tip['Content'] = "Tip: Press F11 to exit immediately."
@@ -366,6 +377,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         self.frame.setVisible(True, True)
         self.filter.setVisible(True, True)
         self.accepting_input = True
+        self.game_over = game_over
 
         # Pause game scene
         other_scene = self.get_game_scene()
@@ -374,6 +386,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
     def hide(self):
         self.set_selected_option(None)
+        self.canvas_title['Content'] = ""
         self.canvas1['Content'] = ""
         self.canvas2['Content'] = ""
         self.canvas3['Content'] = ""
@@ -390,12 +403,18 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         # Frame is hidden at end of animation in hide_update.
 
         self.accepting_input = False
+        self.game_over = False
         self.set_state(QuitOptions.S_HIDE_UPDATE)
 
         # Resume game scene
         other_scene = self.get_game_scene()
         if other_scene is not None:
             other_scene.resume()
+
+    def reload_level(self):
+        level = bat.store.get('/game/levelFile', '//Outdoors.blend')
+        bat.store.save()
+        bge.logic.startGame(level)
 
     def set_selected_option(self, index):
         self.selected_option = index
@@ -431,8 +450,11 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
     def handle_bt_start(self, state):
         if not state.activated:
             return
+        if self.game_over:
+            # Don't allow dismissal when dead.
+            return
         if not self.accepting_input:
-            self.show()
+            self.show(game_over=False)
         else:
             self.hide()
 
@@ -446,21 +468,26 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
                 QuitOptions.log.info('Quitting immediately.')
                 cb_event = bat.event.Event('QuitGameFromQuitScreen')
                 bat.event.Event('ShowLoadingScreen', (True, cb_event)).send()
-                self.hide()
             elif self.selected_option == 1:
                 QuitOptions.log.info('Returning to main menu.')
                 cb_event = bat.event.Event('ReturnToMenuFromQuitScreen')
                 bat.event.Event('ShowLoadingScreen', (True, cb_event)).send()
-                self.hide()
             else:
-                QuitOptions.log.info('Resuming game.')
-                self.hide()
+                if self.game_over:
+                    QuitOptions.log.info('Reloading current level.')
+                    cb_event = bat.event.Event('ReloadLevel')
+                    bat.event.Event('ShowLoadingScreen', (True, cb_event)).send()
+                else:
+                    QuitOptions.log.info('Resuming game.')
+            self.hide()
 
     def handle_bt_2(self, state):
         '''Hide the dialogue, and suggest that the dialogue be skipped.'''
         if not self.accepting_input:
             return
-
+        if self.game_over:
+            # Don't allow dismissal when dead.
+            return
         if state.activated:
             self.hide()
 
@@ -745,6 +772,10 @@ def test_loading_screen(c):
     else:
         __ls_visible = True
         bat.event.Event('StartLoading', c.owner).send()
+
+@bat.utils.all_sensors_positive
+def test_game_over():
+    bat.event.Event('GameOver').send()
 
 class Gauge(bat.bats.BX_GameObject, bge.types.KX_GameObject):
     S_INIT = 1

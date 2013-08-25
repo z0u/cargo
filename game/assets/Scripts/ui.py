@@ -357,6 +357,8 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         if game_over:
             self.canvas_title['Content'] = "Game Over"
             self.canvas1['Content'] = "Reload current game"
+            bat.sound.Jukebox().play_files('worm', self, 9,
+                '//Sound/Music/99-GameOver_loop.ogg', volume=1)
         else:
             self.canvas_title['Content'] = ""
             self.canvas1['Content'] = "Resume (cancel)"

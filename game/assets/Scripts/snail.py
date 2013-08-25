@@ -823,6 +823,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
         if self.has_state(Snail.S_HASSHELL):
             self.drop_shell(False)
         Scripts.director.VulnerableActor.die(self)
+        bat.event.Event('GameOver').send()
 
     def on_oxygen_set(self):
         if not self.has_state(Snail.S_INSHELL):

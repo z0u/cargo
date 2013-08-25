@@ -476,7 +476,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
                 if self.game_over:
                     QuitOptions.log.info('Reloading current level.')
                     cb_event = bat.event.Event('ReloadLevel')
-                    bat.event.Event('ShowLoadingScreen', (True, cb_event)).send()
+                    bat.event.Event('ShowLoadingScreen', (True, cb_event, True)).send()
                 else:
                     QuitOptions.log.info('Resuming game.')
             self.hide()

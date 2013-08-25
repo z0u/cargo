@@ -673,7 +673,7 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
                 icon.visible = True
                 if show_loading_text:
                     loading_text.visible = True
-                    self.canvas.set_text(self.get_random_trivia())
+                    self.canvas.set_text(self.get_trivia())
                 if cbEvent is not None:
                     print("Sending delayed event", cbEvent)
                     cbEvent.send(delay=2)
@@ -700,10 +700,14 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
             bat.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)
             self.currently_shown = False
 
-    def get_random_trivia(self):
-        rnd = random.random()
-        i = int(len(LoadingScreen.TRIVIA) / rnd)
+    def get_trivia(self):
+        i = bat.store.get('/game/trivia_index', None)
+        if i is None:
+            rnd = random.random()
+            i = int(len(LoadingScreen.TRIVIA) / rnd)
+        i += 1
         i %= len(LoadingScreen.TRIVIA)
+        bat.store.put('/game/trivia_index', i)
         return LoadingScreen.TRIVIA[i]
 
 

@@ -1254,6 +1254,7 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         self.lastHash = None
         self.textwidth = 0.0
         self.textheight = 0.0
+        self.textbottom = 0.0
         self.clear()
 
     def clear(self):
@@ -1463,6 +1464,10 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         totalheight = -y + font['lineHeight']
         self.textwidth = totalwidth
         self.textheight = totalheight
+        if self['valign'] == 'baseline':
+            self.textbottom = y + font['baselineOffset']
+        else:
+            self.textbottom = y + font['bottomOffset']
 
     OUTLINE_WIDTH = 0.01
     OUTLINE_ZOFF = 0.001

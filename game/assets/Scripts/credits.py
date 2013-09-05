@@ -39,12 +39,16 @@ def name_plate_generator():
 
 current_plates = bat.containers.SafeList()
 def update(c):
+    sce= bge.logic.getCurrentScene()
     for plate in current_plates:
         plate.worldPosition.y += 0.01
     if len(current_plates) <= 0:
         spawn_next_plate()
-    elif current_plates[-1].basepos > 0:
-        spawn_next_plate()
+    else:
+        if current_plates[-1].basepos > 0:
+            spawn_next_plate()
+        if current_plates[0].basepos > sce.objects['PlateKill'].worldPosition.y:
+            current_plates[0].endObject()
 
 upcoming_plates = name_plate_generator()
 def spawn_next_plate():
@@ -85,7 +89,9 @@ class NamePlate(bat.bats.BX_GameObject, bge.types.KX_GameObject):
     @property
     def basepos(self):
         people = self._people
-        return self.worldPosition.y - people.localPosition.y - (people.textheight * people.localScale.y)
+        height = people.textbottom * people.localScale.y
+        base_pos = people.worldPosition.y + height
+        return base_pos
 
 def music(c):
     bat.sound.Jukebox().play_files('credits', c.owner, 1,

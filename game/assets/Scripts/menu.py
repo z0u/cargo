@@ -154,7 +154,7 @@ class SessionManager(metaclass=bat.bats.Singleton):
 
         elif event.message == 'OpenWeb':
             if event.body == 'home':
-                webbrowser.open('http://cargo.lille.sturm.com.au', autoraise=True)
+                webbrowser.open('http://smidginsoftware.com/cargo', autoraise=True)
             elif event.body == 'gpl':
                 webbrowser.open('http://www.gnu.org/licenses/gpl.html', autoraise=True)
             elif event.body == 'cc':

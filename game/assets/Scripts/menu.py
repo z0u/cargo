@@ -26,25 +26,12 @@ import bat.event
 import bat.store
 import bat.impulse
 
+import Scripts.credits
 import Scripts.gui
 import Scripts.input
 
-CREDITS = [
-    ("Director/Producer", "Alex Fraser"),
-    ("Story", "Alex Fraser, Lev Lafayette, Lara Micocki, Jodie Fraser"),
-    ("Modelling", "Alex Fraser, Junki Wano, Blender Foundation"),
-    ("Animation", "Alex Fraser"),
-    ("Textures", "Alex Fraser, Junki Wano"),
-    ("Music", "Robert Leigh"),
-    ("Programming", "Alex Fraser, Mark Triggs, Campbell Barton, Ben Sturmfels, "
-            "Ashima Arts"),
-    ("Sound Effects", "Alex Fraser, Ben Sturmfels, Ben Finney, Leigh Raymond, freesound.org users: "
-            "3bagbrew, FreqMan, HerbertBoland, Percy Duke, klakmart, aUREa, "
-            "qubodup, thetruwu, nsp, kangaroovindaloo, ERH, Corsica_S, "
-            "batchku, satrebor, gherat, ZeSoundResearchInc., CGEffex, "
-            "UncleSigmund, dobroide"),
-    ("Testing", "Jodie Fraser, Lachlan Kanaley, Damien Elmes, Mark Triggs"),
-    ("Made With", "Blender, Bullet, The GIMP, Inkscape, Audacity, Eclipse, Git"),
+CREDITS = [(title, ', '.join(details)) for (title, details) in Scripts.credits.CREDITS]
+CREDITS += [
     ("Licence", "Cargo is free software: you can redistribute it and/or modify "
             "it under the terms of the GNU General Public License as published by "
             "the Free Software Foundation, either version 3 of the License, or "

@@ -46,10 +46,11 @@ IMAGES = [
     'epilogue_firefly',
     'epilogue_saucebar',
     'epilogue_firefly',
+    'logo_smidgin',
     ]
 
-TRANSLATION_STEP = 0.005
-# TRANSLATION_STEP = 0.05
+TRANSLATION_STEP = 0.003
+# TRANSLATION_STEP = 0.02
 
 def flatzip(*iterables):
     iters = [iter(iterable) for iterable in iterables]

@@ -38,9 +38,9 @@ ANNOTATIONS = [
 IMAGES = [
     'concept_snail',
     'concept_story',
+    'concept_lod',
     'concept_tree',
     'concept_worm',
-    'concept_lod',
     'concept_catapult',
     'epilogue_saucebar',
     'epilogue_firefly',
@@ -49,7 +49,7 @@ IMAGES = [
     'logo_smidgin',
     ]
 
-TRANSLATION_STEP = 0.003
+TRANSLATION_STEP = 0.005
 # TRANSLATION_STEP = 0.02
 
 def flatzip(*iterables):

@@ -12,22 +12,54 @@ import bat.sound
 
 
 CREDITS = [
-    ("Director/Producer", ["Alex Fraser"]),
-    ("Story", ["Alex Fraser", "Lev Lafayette", "Lara Micocki", "Jodie Fraser"]),
-    ("Modelling", ["Alex Fraser", "Junki Wano", "Blender Foundation"]),
-    ("Animation", ["Alex Fraser"]),
-    ("Textures", ["Alex Fraser", "Junki Wano"]),
+    ("A Game By", ["Alex Fraser"]),
+    ("Story", ["Lara Micocki", "Lev Lafayette", "Jodie Fraser"]),
+    ("Concept Art", ["Junki Wano"]),
+    ("Modelling", ["Junki Wano", "Blender Foundation"]),
+#     ("Animation", []),
+    ("Textures", ["Junki Wano"]),
     ("Music", ["Robert Leigh"]),
-    ("Programming", ["Alex Fraser", "Mark Triggs", "Campbell Barton", "Ben Sturmfels",
+    ("Programming", ["Mark Triggs", "Campbell Barton", "Ben Sturmfels",
             "Ashima Arts"]),
-    ("Sound Effects", ["Alex Fraser", "Ben Sturmfels", "Ben Finney", "Leigh Raymond"]),
+    ("Sound Effects", ["Ben Sturmfels", "Ben Finney", "Leigh Raymond"]),
     ("And freesound.org users",
             ["3bagbrew", "FreqMan", "HerbertBoland", "Percy Duke", "klakmart", "aUREa",
             "qubodup", "thetruwu", "nsp", "kangaroovindaloo", "ERH", "Corsica_S",
             "batchku", "satrebor", "gherat", "ZeSoundResearchInc.", "CGEffex",
             "UncleSigmund", "dobroide"]),
-    ("Testing", ["Jodie Fraser", "Lachlan Kanaley", "Damien Elmes", "Mark Triggs"]),
-    ("Made With", ["Blender", "Bullet", "The GIMP", "Inkscape", "Audacity", "Eclipse", "Git"])]
+    ("Testing", ["Jodie Fraser", "Lachlan Kanaley", "Damien Elmes", "Mark Triggs", "Caley Finn"]),
+    ("Made With", ["Blender", "Bullet", "The GIMP", "Inkscape", "Audacity", "Eclipse", "Git"]),
+    ]
+
+ANNOTATIONS = [
+    "With excellent contributions from...",
+    ]
+
+IMAGES = [
+    'concept_snail',
+    'concept_story',
+    'concept_tree',
+    'concept_worm',
+    'concept_snail',
+    'concept_story',
+    'epilogue_saucebar',
+    'epilogue_firefly',
+    'epilogue_saucebar',
+    'epilogue_firefly',
+    ]
+
+TRANSLATION_STEP = 0.005
+# TRANSLATION_STEP = 0.05
+
+def flatzip(*iterables):
+    iters = [iter(iterable) for iterable in iterables]
+    while len(iters) > 0:
+        print(iters)
+        for i in iters[:]:
+            try:
+                yield(next(i))
+            except StopIteration:
+                iters.remove(i)
 
 def name_plate_generator():
     sce = bge.logic.getCurrentScene()
@@ -37,20 +69,34 @@ def name_plate_generator():
         plate_ob.people = '\n'.join(names)
         yield plate_ob
 
+def annotation_generator():
+    sce = bge.logic.getCurrentScene()
+    for annotation in ANNOTATIONS:
+        plate_ob = bat.bats.add_and_mutate_object(sce, 'NamePlate')
+        plate_ob.title = annotation
+        plate_ob.people = ''
+        yield plate_ob
+
+def image_generator():
+    sce = bge.logic.getCurrentScene()
+    for image in IMAGES:
+        plate_ob = bat.bats.add_and_mutate_object(sce, image)
+        yield plate_ob
+
 current_plates = bat.containers.SafeList()
 def update(c):
     sce= bge.logic.getCurrentScene()
     for plate in current_plates:
-        plate.worldPosition.y += 0.01
+        plate.worldPosition.y += TRANSLATION_STEP
     if len(current_plates) <= 0:
         spawn_next_plate()
     else:
-        if current_plates[-1].basepos > 0:
+        if current_plates[-1].basepos > sce.objects['PlateMargin'].worldPosition.y:
             spawn_next_plate()
         if current_plates[0].basepos > sce.objects['PlateKill'].worldPosition.y:
             current_plates[0].endObject()
 
-upcoming_plates = name_plate_generator()
+upcoming_plates = flatzip(name_plate_generator(), image_generator(), annotation_generator())
 def spawn_next_plate():
     sce = bge.logic.getCurrentScene()
     spawn = sce.objects['PlateSpawn']
@@ -88,10 +134,25 @@ class NamePlate(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
     @property
     def basepos(self):
-        people = self._people
-        height = people.textbottom * people.localScale.y
-        base_pos = people.worldPosition.y + height
+        if self.people != '':
+            textob = self._people
+        else:
+            textob = self._title
+        height = textob.textbottom * textob.localScale.y
+        base_pos = textob.worldPosition.y + height
         return base_pos
+
+class ImagePlate(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+    def __init__(self, old_owner):
+        pass
+
+    @property
+    def basepos(self):
+        if 'height' in self:
+            height = self['height']
+        else:
+            height = 1
+        return self.worldPosition.y - height
 
 def music(c):
     bat.sound.Jukebox().play_files('credits', c.owner, 1,

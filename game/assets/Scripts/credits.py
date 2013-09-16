@@ -38,14 +38,14 @@ ANNOTATIONS = [
 IMAGES = [
     'epilogue_saucebar',
     'epilogue_firefly',
+    'epilogue_ant',
+    'epilogue_saucebar',
     'concept_snail',
     'concept_story',
     'concept_lod',
     'concept_tree',
     'concept_worm',
     'concept_catapult',
-    'epilogue_saucebar',
-    'epilogue_firefly',
     'logo_smidgin',
     ]
 

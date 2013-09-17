@@ -1374,7 +1374,7 @@ class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
             glyph = glyphString[i]
             totalWidth = totalWidth + glyph['Width']
             if totalWidth > lineWidth or glyph['char'] == 'newline':
-                return i
+                return i + 1
 
         # No break required: string is not long enough.
         return len(glyphString) + 1

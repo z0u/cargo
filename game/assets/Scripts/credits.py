@@ -1,13 +1,25 @@
-'''
-Created on 05/09/2013
-
-@author: alex
-'''
+#
+# Copyright 2013 Alex Fraser <alex@phatcore.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 
 import bge
 
 import bat.bats
 import bat.containers
+import bat.bmath
 import bat.sound
 
 
@@ -87,18 +99,23 @@ def flatzip(*iterables):
             except StopIteration:
                 iters.remove(i)
 
+countdown = 60
 current_plates = bat.containers.SafeList()
 def update(c):
-    sce= bge.logic.getCurrentScene()
+    global countdown
     for plate in current_plates:
-        plate.worldPosition.y += TRANSLATION_STEP
+        plate.update()
+
     if len(current_plates) <= 0:
         spawn_next_plate()
     else:
-        if current_plates[-1].basepos > sce.objects['PlateMargin'].worldPosition.y:
+        if current_plates[-1].can_spawn_next():
             spawn_next_plate()
-        if current_plates[0].basepos > sce.objects['PlateKill'].worldPosition.y:
-            current_plates[0].endObject()
+
+    if len(current_plates) <= 0:
+        countdown -= 1
+        if countdown <= 0:
+            bge.logic.startGame('//Menu.blend')
 
 plates = plate_generator(_CREDIT_ITEMS)
 def spawn_next_plate():
@@ -111,7 +128,23 @@ def spawn_next_plate():
         return
     current_plates.append(plate)
 
-class NamePlate(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+class Plate:
+    def __init__(self, old_owner):
+        pass
+
+    def update(self):
+        self.worldPosition.y += TRANSLATION_STEP
+        if self.basepos > self.scene.objects['PlateKill'].worldPosition.y:
+            current_plates[0].endObject()
+
+    def can_spawn_next(self):
+        return self.basepos > self.scene.objects['PlateMargin'].worldPosition.y
+
+    @property
+    def basepos(self):
+        return self.worldPosition.y - self.height
+
+class NamePlate(Plate, bat.bats.BX_GameObject, bge.types.KX_GameObject):
     def __init__(self, old_owner):
         self._title = bat.bats.mutate(self.children['Title'])
         self._people = bat.bats.mutate(self.children['People'])
@@ -137,26 +170,47 @@ class NamePlate(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         canvas['Content'] = value
 
     @property
-    def basepos(self):
+    def height(self):
         if self.people != '':
             textob = self._people
         else:
             textob = self._title
-        height = textob.textbottom * textob.localScale.y
-        base_pos = textob.worldPosition.y + height
-        return base_pos
+        return -(textob.localPosition.y + textob.textbottom * textob.localScale.y)
 
-class ImagePlate(bat.bats.BX_GameObject, bge.types.KX_GameObject):
-    def __init__(self, old_owner):
-        pass
+class ImagePlate(Plate, bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
     @property
-    def basepos(self):
+    def height(self):
         if 'height' in self:
-            height = self['height']
+            return self['height']
         else:
-            height = 1
-        return self.worldPosition.y - height
+            return 0
+
+class LogoPlate(ImagePlate):
+    SLOW_POINT = -0.3
+    FADE_POINT = -0.05
+    FADE_RATE = 0.005
+
+    def update(self):
+        # Move up at the same rate as other plates, but stop at the centre of
+        # the screen. Slow down when approaching the centre. When very close,
+        # fade to black.
+        centrepos = self.worldPosition.y - (self.height * 0.5)
+        step = bat.bmath.unlerp(0, LogoPlate.SLOW_POINT, centrepos)
+        step = bat.bmath.clamp(0, 1, step)
+        step *= TRANSLATION_STEP
+        self.worldPosition.y += step
+        if centrepos >= LogoPlate.FADE_POINT:
+            # Fade to black. The sound should stop automatically by now, but
+            # just in case, fade it out too.
+            bat.sound.Jukebox().stop_all(fade_rate=LogoPlate.FADE_RATE)
+            self.color.w -= LogoPlate.FADE_RATE
+            if self.color.w <= 0.0001:
+                self.endObject()
+
+    def can_spawn_next(self):
+        return False
+
 
 def music(c):
     bat.sound.Jukebox().play_files('credits', c.owner, 1,

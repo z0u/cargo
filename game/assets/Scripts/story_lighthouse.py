@@ -169,23 +169,27 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         s = s.create_successor()
         s.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 70))
 
-        sfirstmeeting = s.create_successor()
-        sfirstmeeting.add_condition(bat.story.CNot(bat.story.CondStore(
+        # FIRST MEETING: Deliver letter.
+
+        sfirstmeeting1 = bat.story.State("First meeting")
+        sfirstmeeting1.add_condition(bat.story.CNot(bat.story.CondStore(
                 '/game/level/lkMissionStarted', True, False)))
-        sfirstmeeting.add_event("ShowDialogue", ("Cargo! What's up?",
+        sfirstmeeting1.add_event("ShowDialogue", ("Cargo! What's up?",
                 ("\[envelope]!", "Just saying \"hi\".")))
 
         sdliver1_start, sdeliver1_end = self.sg_accept_delivery()
-        sdliver1_start.add_predecessor(sfirstmeeting)
+        sdliver1_start.add_predecessor(sfirstmeeting1)
         sdliver1_start.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
 
-        ssecondmeeting = s.create_successor()
-        ssecondmeeting.add_condition(bat.story.CondStore(
+        # SECOND MEETING: Be a nuisance.
+
+        ssecondmeeting1 = bat.story.State("Second meeting")
+        ssecondmeeting1.add_condition(bat.story.CondStore(
                 '/game/level/lkMissionStarted', True, False))
-        ssecondmeeting.add_event("ShowDialogue", ("Hi again! What's up?",
+        ssecondmeeting1.add_event("ShowDialogue", ("Hi again! What's up?",
                 ("What am I to do again?", "Just saying \"hi\".")))
 
-        sdeliver2 = ssecondmeeting.create_successor("delivery2")
+        sdeliver2 = ssecondmeeting1.create_successor("delivery2")
         sdeliver2.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
 
         smission_start, smission_end = self.sg_give_mission()
@@ -193,8 +197,8 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         smission_start.add_predecessor(sdeliver2)
 
         snothing = bat.story.State("nothing")
-        snothing.add_predecessor(sfirstmeeting)
-        snothing.add_predecessor(ssecondmeeting)
+        snothing.add_predecessor(sfirstmeeting1)
+        snothing.add_predecessor(ssecondmeeting1)
         snothing.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
         snothing.add_event("ShowDialogue", "OK - hi! But it's hard work operating the lighthouse without a button! Let's talk later.")
         snothing.add_action(bat.story.ActAction('LK_Goodbye', 1, 80, LighthouseKeeper.L_ANIM))
@@ -207,10 +211,30 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         snothing = snothing.create_successor()
         snothing.add_condition(bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 90))
 
+        # THIRD MEETING: Receive condolance.
+
+        sthirdmeeting1 = bat.story.State("Third meeting")
+        sthirdmeeting1.add_condition(bat.story.CondStore(
+                '/game/level/birdTookShell', True, False))
+        sthirdmeeting1.add_event("ShowDialogue", "What!? The Bird took your shell \[shell]?")
+
+        sthirdmeeting = sthirdmeeting1.create_successor()
+        sthirdmeeting.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+        sthirdmeeting.add_event("ShowDialogue", "It must have taken the lighthouse button too. Quick - get your shell back, and bring the button if you can!")
+
+        sthirdmeeting = sthirdmeeting.create_successor()
+        sthirdmeeting.add_condition(bat.story.CondEvent("DialogueDismissed", self))
+
+        # Add meetings in reverse order so later events take precedence.
+        s.add_successor(sthirdmeeting1)
+        s.add_successor(ssecondmeeting1)
+        s.add_successor(sfirstmeeting1)
+
         #
         # Return to game
         #
         s = bat.story.State("Return to game")
+        s.add_predecessor(sthirdmeeting)
         s.add_predecessor(smission_end)
         s.add_predecessor(snothing)
         s.add_action(Scripts.story.ActResumeInput())

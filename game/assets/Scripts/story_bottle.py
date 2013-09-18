@@ -582,9 +582,6 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "I think I saw the \[bottlecap] on that little island near your house.")
         s.add_action(bat.story.ActSound('//Sound/slug.mutter3.ogg'))
-        # This map goal is un-set by Scripts.story.GameLevel when the next shell is collected.
-        s.add_action(bat.story.ActStoreSet('/game/level/mapGoal', 'BottleCapSpawn'))
-        s.add_event("MapGoalChanged")
 
         scancel.add_predecessor(s)
         s = s.create_successor()
@@ -608,6 +605,9 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         s.add_condition(bat.story.CondActionGE(0, 605, targetDescendant='SlugArm_Min'))
         s.add_action(bat.story.ActStoreSet('/game/level/slugBottleCapConv1', True))
         s.add_action(bat.story.ActStoreSet('/game/storySummary', 'slugBottleCapConv1'))
+        # This map goal is un-set by Scripts.story.GameLevel when the next shell is collected.
+        s.add_action(bat.story.ActStoreSet('/game/level/mapGoal', 'BottleCapSpawn'))
+        s.add_event("MapGoalChanged")
 
         sconv_end = bat.story.State()
         sconv_end.add_predecessor(s)

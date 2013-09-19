@@ -660,12 +660,28 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
 
         s = (s.create_successor()
             (bat.story.CondEvent("DialogueDismissed", self))
-            # Don't equip shell - let the player pick it up.
-#             ("ForceEquipShell", "Shell")
+            (Scripts.story.ActSetCamera('B_base_cam_shellget'))
+            (Scripts.story.ActSetFocalPoint('Snail'))
         )
 
         s = (s.create_successor()
             (bat.story.CondWait(0.5))
+            ("ForceEquipShell", "Shell")
+        )
+
+        s = (s.create_successor()
+            (bat.story.CondWait(0.5))
+            (bat.story.CondEvent('ShowDialogue', "You got the Shell! Your beautiful, dependable house and mail van."))
+        )
+
+        s = (s.create_successor()
+            (bat.story.CondEvent("DialogueDismissed", self))
+            (Scripts.story.ActRemoveCamera('B_base_cam_shellget'))
+            (Scripts.story.ActRemoveFocalPoint('Snail'))
+        )
+
+        s = (s.create_successor()
+            (bat.story.CondWait(0.2))
             ("ShowDialogue", "Ah, I feel better already!")
             (bat.story.ActAction("B_Final", 1500, 1570))
         )
@@ -673,6 +689,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
         s = (s.create_successor("Return to game")
             (bat.story.CondActionGE(0, 1570))
             (bat.story.CondEvent("DialogueDismissed", self))
+            ("LoadLevel", ("//EndGame.blend", None, False, False))
         )
 
         s = (s.create_successor()

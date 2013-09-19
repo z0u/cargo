@@ -116,10 +116,10 @@ class SessionManager(metaclass=bat.bats.Singleton):
         elif event.message == 'startGame':
             # Show the loading screen and send another message to start the game
             # after the loading screen has shown.
-            cbEvent = bat.event.Event('LoadLevel')
+            cbEvent = bat.event.Event('MenuLoadLevel')
             bat.event.Event('ShowLoadingScreen', (True, cbEvent, True)).send()
 
-        elif event.message == 'LoadLevel':
+        elif event.message == 'MenuLoadLevel':
             # Load the level indicated in the save game. This is called after
             # the loading screen has been shown.
             level = bat.store.get('/game/levelFile', '//Outdoors.blend')

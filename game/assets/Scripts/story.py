@@ -301,10 +301,11 @@ class GameLevel(Level):
         bat.event.Event('TeleportSnail', spawn_point).send(1)
 
     def on_event(self, event):
-        if event.message == "LoadLevel":
+        if event.message == "_LoadLevel":
             # Listen for load events from portals.
-            level = bat.store.get('/game/levelFile')
-            bge.logic.startGame(level)
+            bge.logic.startGame(event.body)
+        elif event.message == "LoadLevel":
+            self.load_next_level(*event.body)
         elif event.message == "ShellFound":
             self.on_shell_found(event.body)
         elif event.message == "PickupReceived":
@@ -314,6 +315,21 @@ class GameLevel(Level):
         elif event.message == "PlayFanfare":
             sample = bat.sound.Sample('//Sound/Fanfare1.ogg')
             sample.play()
+
+    def load_next_level(self, level, spawnPoint, save=True, trivia=True):
+        GameLevel.log.info('Loading next level: %s, %s' % (level, spawnPoint))
+
+        if save:
+            bat.store.put('/game/levelFile', level)
+            bat.store.put('/game/level/spawnPoint', spawnPoint, level=level)
+            bat.store.save()
+
+        callback = bat.event.Event('_LoadLevel', level)
+
+        # Start showing the loading screen. When it has finished, the LoadLevel
+        # event defined above will be sent, and received by GameLevel.
+        bat.event.Event('ShowLoadingScreen', (True, callback, trivia)).send()
+        bat.sound.Jukebox().stop_all(fade_rate=0.05)
 
     def on_shell_found(self, shell):
         bat.event.Event('PlayFanfare').send(15)
@@ -367,20 +383,6 @@ class GameLevel(Level):
         bat.event.Event('TeleportSnail', next_sp.name).send()
 
 
-def load_level(caller, level, spawnPoint):
-    log.info('Loading next level: %s, %s' % (level, spawnPoint))
-
-    bat.store.put('/game/levelFile', level)
-    bat.store.put('/game/level/spawnPoint', spawnPoint, level=level)
-    bat.store.save()
-
-    callback = bat.event.Event('LoadLevel')
-
-    # Start showing the loading screen. When it has finished, the LoadLevel
-    # event defined above will be sent, and received by GameLevel.
-    bat.event.Event('ShowLoadingScreen', (True, callback, True)).send()
-    bat.sound.Jukebox().stop_all(fade_rate=0.05)
-
 def activate_portal(c):
     '''Loads the next level, based on the properties of the owner.
 
@@ -391,7 +393,8 @@ def activate_portal(c):
     if Scripts.director.Director().mainCharacter in c.sensors[0].hitObjectList:
         portal = c.owner
         log.info("Portal touched: %s", portal)
-        load_level(portal, portal['level'], portal['spawnPoint'])
+        bat.event.Event('LoadLevel', (portal['level'], portal['spawnPoint'])).send()
+
 
 def set_spawn_point(c):
     s = c.sensors[0]

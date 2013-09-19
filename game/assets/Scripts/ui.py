@@ -673,7 +673,9 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
         if visible and not self.currently_shown:
             # Show the frame immediately, but wait for the animation to finish
             # before showing the icon.
+            LoadingScreen.log.info("Showing loading screen.")
             def cb():
+                LoadingScreen.log.info("Loading screen displayed.")
                 if self.invalid or not self.currently_shown:
                     return
                 icon.visible = True
@@ -692,7 +694,9 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
         elif not visible and self.currently_shown:
             # Hide the icon immediately, but wait for the animation to finish
             # before hiding the frame.
+            LoadingScreen.log.info("Hiding loading screen.")
             def cb():
+                LoadingScreen.log.info("Loading screen hidden.")
                 if self.invalid or self.currently_shown:
                     return
                 blackout.visible = False

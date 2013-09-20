@@ -666,49 +666,66 @@ class LoadingScreen(bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
             self.show(visible, cb_event, show_loading_text)
 
     def show(self, visible, cbEvent, show_loading_text):
+
+        if visible == self.currently_shown:
+            # No animation is required; just send the event now.
+            if cbEvent is not None:
+                cbEvent.send(delay=2)
+        elif visible:
+            self._show(cbEvent, show_loading_text)
+        else:
+            self._hide(cbEvent)
+
+    def _show(self, cbEvent, show_loading_text):
+        LoadingScreen.log.info("Showing loading screen.")
+
         icon = self.children["LS_Icon"]
         blackout = self.children["LS_Blackout"]
         loading_text = self.children["LS_LoadingText"]
 
-        if visible and not self.currently_shown:
-            # Show the frame immediately, but wait for the animation to finish
-            # before showing the icon.
-            LoadingScreen.log.info("Showing loading screen.")
-            def cb():
-                LoadingScreen.log.info("Loading screen displayed.")
-                if self.invalid or not self.currently_shown:
-                    return
-                icon.visible = True
-                if show_loading_text:
-                    loading_text.visible = True
-                    self.canvas.set_text(self.get_trivia())
-                if cbEvent is not None:
-                    print("Sending delayed event", cbEvent)
-                    cbEvent.send(delay=2)
-                bat.event.Event("LoadingScreenShown").send(1)
-            blackout.visible = True
-            self.playAction('LS_Hide_Arm', 16, 1, layer=LoadingScreen.L_DISPLAY)
-            bat.anim.add_trigger_lt(self, LoadingScreen.L_DISPLAY, 2, cb)
-            self.currently_shown = True
+        # Show the frame immediately, but wait for the animation to finish
+        # before showing the icon.
+        def cb():
+            LoadingScreen.log.info("Loading screen displayed.")
+            if self.invalid or not self.currently_shown:
+                return
+            icon.visible = True
+            if show_loading_text:
+                loading_text.visible = True
+                self.canvas.set_text(self.get_trivia())
+            if cbEvent is not None:
+                print("Sending delayed event", cbEvent)
+                cbEvent.send(delay=2)
+            bat.event.Event("LoadingScreenShown").send(1)
 
-        elif not visible and self.currently_shown:
-            # Hide the icon immediately, but wait for the animation to finish
-            # before hiding the frame.
-            LoadingScreen.log.info("Hiding loading screen.")
-            def cb():
-                LoadingScreen.log.info("Loading screen hidden.")
-                if self.invalid or self.currently_shown:
-                    return
-                blackout.visible = False
-                if cbEvent is not None:
-                    cbEvent.send(delay=2)
-                bat.event.Event("LoadingScreenHidden").send(1)
-            icon.visible = False
-            loading_text.visible = False
-            self.canvas.set_text('')
-            self.playAction('LS_Hide_Arm', 1, 16, layer=LoadingScreen.L_DISPLAY)
-            bat.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)
-            self.currently_shown = False
+        blackout.visible = True
+        self.playAction('LS_Hide_Arm', 16, 1, layer=LoadingScreen.L_DISPLAY)
+        bat.anim.add_trigger_lt(self, LoadingScreen.L_DISPLAY, 2, cb)
+        self.currently_shown = True
+
+    def _hide(self, cbEvent):
+        LoadingScreen.log.info("Hiding loading screen.")
+
+        icon = self.children["LS_Icon"]
+        blackout = self.children["LS_Blackout"]
+        loading_text = self.children["LS_LoadingText"]
+
+        # Hide the icon immediately, but wait for the animation to finish
+        # before hiding the frame.
+        def cb():
+            LoadingScreen.log.info("Loading screen hidden.")
+            if self.invalid or self.currently_shown:
+                return
+            blackout.visible = False
+            if cbEvent is not None:
+                cbEvent.send(delay=2)
+            bat.event.Event("LoadingScreenHidden").send(1)
+        icon.visible = False
+        loading_text.visible = False
+        self.canvas.set_text('')
+        self.playAction('LS_Hide_Arm', 1, 16, layer=LoadingScreen.L_DISPLAY)
+        bat.anim.add_trigger_gte(self, LoadingScreen.L_DISPLAY, 15, cb)
+        self.currently_shown = False
 
     def get_trivia(self):
         i = bat.store.get('/game/trivia_index', None)

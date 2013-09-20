@@ -765,7 +765,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
     def create_rescue_states(self):
         # Just destroy the ant: already rescued!
         s = s_start = bat.story.State("Rescued")
-        s.add_condition(bat.story.CondStore('/game/level/AntRescued', True, False))
+        s.add_condition(Scripts.story.CondHasShell('Thimble'))
         s.add_action(bat.story.ActDestroy())
 
         s = s_end = s.create_successor()

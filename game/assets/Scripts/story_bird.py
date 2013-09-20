@@ -739,12 +739,20 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
         shell.worldLinearVelocity = vec * 32.0
 
 def spawn_nest(c):
+    # Make sure nest is at top of tree.
+    sce = bge.logic.getCurrentScene()
+    sce.objects['B_Nest'].playAction('B_Nest', 1, 1)
+    sce.objects['B_Egg'].playAction('B_Egg', 1, 1)
+    sce.objects['B_TorchButton'].playAction('B_TorchButton', 1, 1)
+    sce.objects['B_Nest_Shell'].playAction('B_Nest_Shell', 1, 1)
+
     required_shells = set()
     required_shells.update(Scripts.inventory.Shells().get_all_shells())
     required_shells.discard('Shell')
     if not required_shells.issubset(Scripts.inventory.Shells().get_shells()):
         # Player still needs to collect more shells.
         return
+
     bird = factory()
     bird.create_nest_state_graph()
     bat.bmath.copy_transform(c.owner, bird)

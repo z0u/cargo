@@ -587,6 +587,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
             (bat.story.ActAction("B_base_cam_above", 1000, 1150, ob="B_base_cam_above"))
             (bat.story.ActDestroy(ob="B_Nest_Shell"))
             (bat.story.ActCopyTransform('B_TreeBaseSpawn'))
+            (bat.story.ActAddObject('BlinkenlightsTree', ob='BlinkenlightsTreeSpawn'))
             (Scripts.story.ActSetCamera('B_base_cam_above'))
             (Scripts.story.ActRemoveCamera('B_nest_fall_cam'))
             ("TeleportSnail", "B_ground_snail_talk_pos")

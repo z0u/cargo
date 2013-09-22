@@ -21,6 +21,7 @@ import bat.bats
 import bat.containers
 import bat.bmath
 import bat.sound
+import bat.utils
 
 
 _CREDIT_ITEMS = [
@@ -216,3 +217,14 @@ def music(c):
     bat.sound.Jukebox().play_files('credits', c.owner, 1,
                 '//Sound/Music/11-TheEnd_full.ogg',
                 fade_in_rate=1, volume=0.6, loop=False)
+
+
+@bat.utils.all_sensors_positive
+def quitbutton():
+    sce = bge.logic.getCurrentScene()
+    if 'quitmessage' in sce.objects:
+        # Message has already been shown, so this is the second button press.
+        # Quit now.
+        bge.logic.startGame('//Menu.blend')
+    else:
+        sce.addObject('quitmessage', 'quitmessage', 60 * 5)

@@ -494,7 +494,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
             (bat.story.CondEvent("ShellDropped", self))
         )
 
-        s = (s.create_successor()
+        s = s_wobble = (s.create_successor('wobble_start')
 #             (bat.story.CondWait(0.5))
             (bat.story.ActAction("B_Final", 680, 735))
             (bat.story.ActAction("B_Nest", 680, 735, ob="B_Nest"))
@@ -507,7 +507,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
                 (snd_squark_large)
             )
         )
-        s = (s.create_successor()
+        s = (s.create_successor('wobble_loop')
                 (bat.story.CondActionGE(0, 734.5))
             (bat.story.ActAction("B_Final", 735, 771,
                 play_mode=bge.logic.KX_ACTION_MODE_LOOP))
@@ -519,14 +519,6 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
                 play_mode=bge.logic.KX_ACTION_MODE_LOOP))
             (bat.story.ActAction("B_TorchButton", 735, 771, ob="B_TorchButton",
                 play_mode=bge.logic.KX_ACTION_MODE_LOOP))
-#             (bat.story.State()
-#                 (bat.story.CondActionGE(0, 744, tap=True))
-#                 (snd_squark_small)
-#             )
-#             (bat.story.State()
-#                 (bat.story.CondActionGE(0, 762, tap=True))
-#                 (snd_squark_small)
-#             )
         )
 
         # Nest falls down.
@@ -544,6 +536,9 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
             (bat.story.ActDestroy(ob="B_Nest_funnel"))
             (bat.story.ActMusicStop())
         )
+        # Add wobble state as predecessor in case user dismisses dialogue before
+        # the loop state becomes active.
+        s.add_predecessor(s_wobble)
 
         # Nest has fallen; initialise next shot
         s = (s.create_successor()

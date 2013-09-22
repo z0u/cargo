@@ -357,6 +357,14 @@ class GameLevel(Level):
             if not bat.store.get('/game/hasUsedNectar', defaultValue=False):
                 bat.event.Event('ShowDialogue', 'Speed boost! These flowers drop nectar which makes you go fast.').send()
                 bat.store.put('/game/hasUsedNectar', True)
+        elif power_up_type == 'Clover':
+            if not bat.store.get('/game/hasUsedClover', defaultValue=False):
+                bat.event.Event('ShowDialogue', 'Delicious clover! You gained one hit point. Clover grows back after 5 minutes.').send()
+                bat.store.put('/game/hasUsedClover', True)
+        elif power_up_type == 'RoyalJelly':
+            if not bat.store.get('/game/hasUsedJelly', defaultValue=False):
+                bat.event.Event('ShowDialogue', 'Royal jelly! You feel stronger and faster.').send()
+                bat.store.put('/game/hasUsedJelly', True)
 
     def on_teleport_cheat(self):
         character = Scripts.director.Director().mainCharacter

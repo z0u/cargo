@@ -214,6 +214,10 @@ class ShellBase(bat.impulse.Handler, Scripts.director.Actor, bge.types.KX_GameOb
             # case it can be reclaimed by pressing a button.
             self.endObject()
 
+    def on_float(self, water):
+        if self.is_occupied:
+            self.snail.on_float(water)
+
     def on_drown(self):
         if self.snail:
             self.snail.damage(amount=1)
@@ -283,6 +287,9 @@ class Shell(ShellBase):
 
         self.direction_mapper.update(self, state.direction)
         force = self.direction_mapper.direction * state.direction.magnitude * self['Power']
+        if self.is_occupied:
+            force *= self.snail.speed_multiplier
+            self.snail.decay_speed()
         self.applyImpulse((0.0, 0.0, 0.0), force)
 
 class WheelCameraAlignment:
@@ -405,6 +412,12 @@ class Wheel(ShellBase):
         turnStrength = abs(self.currentTurnSpeed) / Wheel.TURN_SPEED
         targetRotSpeed = Wheel.ROT_SPEED * bat.bmath.safe_invert(
                 turnStrength, Wheel.TURN_INFLUENCE)
+        if self.is_occupied:
+            snail_speed = self.snail.speed_multiplier
+            if snail_speed <= 1:
+                # Only allow slowing down - wheel is fast enough already.
+                targetRotSpeed *= self.snail.speed_multiplier
+            self.snail.decay_speed()
         targetRotSpeed *= direction.y
 
         self.currentRotSpeed = bat.bmath.lerp(self.currentRotSpeed,
@@ -498,11 +511,13 @@ class BottleCap(ShellBase):
             self.jump()
             self.rem_state(BottleCap.S_JUMP)
 
+    JUMP_ANIM_LENGTH = 15
     def start_jump(self, force_vec):
         '''Plays the jump action. The actual impulse will be given at the right
         time in the animation.'''
         self.force_vec = force_vec
-        self.occupier.playAction('CapSnailJump', 1, 15, layer=BottleCap.L_JUMP)
+        self.occupier.playAction('CapSnailJump', 1, BottleCap.JUMP_ANIM_LENGTH,
+                layer=BottleCap.L_JUMP)
         self.add_state(BottleCap.S_JUMP)
 
     def jump(self):
@@ -511,6 +526,11 @@ class BottleCap(ShellBase):
         force_vec.z = self['Lift']
         force_vec.normalize()
         force_vec *= self['Power']
+
+        if self.is_occupied:
+            tics_per_frame = 60 / 24
+            force_vec *= self.snail.speed_multiplier
+            self.snail.decay_speed(BottleCap.JUMP_ANIM_LENGTH * tics_per_frame)
 
         #
         # Apply the force.
@@ -593,6 +613,9 @@ class Thimble(ShellBase):
             self.mesh.playAction('ThimbleWaddle', 9, 41)
 
         speed *= Thimble.NORMAL_SPEED
+        if self.is_occupied:
+            speed *= self.snail.speed_multiplier
+            self.snail.decay_speed()
 
         if state.source & bat.impulse.SRC_JOYSTICK_AXIS:
             # Use special joystick mapper for view-based movement.

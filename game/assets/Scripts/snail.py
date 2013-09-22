@@ -886,9 +886,9 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
     def speed_cheat(self):
         self.alter_speed(3.0, 10, Snail.DEFAULT_SPEED_TICS)
 
-    def decay_speed(self):
+    def decay_speed(self, ntics=1):
         '''Bring the speed of the snail one step closer to normal speed.'''
-        self.speed_tics -= 1
+        self.speed_tics -= ntics
         if self.speed_tics <= 0:
             # Reset
             self.speed_tics = 0
@@ -931,17 +931,22 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
     BEND_FACTOR = 0.03
     MAX_BEND_ANGLE = 0.7 # radians
 
-    def handle_movement(self, state):
-        '''Make the snail move.'''
-
-        user_speed = min(1.0, state.direction.magnitude)
-        speed = Snail.NORMAL_SPEED * self['SpeedMultiplier'] * user_speed
+    @property
+    def speed_multiplier(self):
+        speed = self['SpeedMultiplier']
         if 'SubmergedFactor' in self:
             # Don't go so fast when under water! Note this is separate to, and
             # may conflict with, the water's SpeedMultiplier setting. This is
             # intentional: the speed multiplier should apply when the snail is
             # in shallow water; this dampening happens when under water.
             speed *= 1.0 - Snail.WATER_DAMPING * self['SubmergedFactor']
+        return speed
+
+    def handle_movement(self, state):
+        '''Make the snail move.'''
+
+        user_speed = min(1.0, state.direction.magnitude)
+        speed = Snail.NORMAL_SPEED * self.speed_multiplier * user_speed
         self.decay_speed()
 
         if state.source & bat.impulse.SRC_JOYSTICK_AXIS:

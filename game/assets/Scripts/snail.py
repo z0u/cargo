@@ -20,7 +20,6 @@ from collections import namedtuple
 
 import bge
 import mathutils
-import mathutils.geometry
 
 import bat.anim
 import bat.bats
@@ -220,7 +219,7 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
         self.orient_segments(self.head_segments, mat_rot)
         mat_rot = mathutils.Matrix.Rotation(self.bend_angle_aft, 3, 'Z')
         self.orient_segments(self.tail_segments, mat_rot)
-        #self.armature.update()
+        self.armature.update()
 
     Segment = namedtuple('Segment', ['parent', 'pivot', 'segment', 'ray_l', 'ray_r',
         'fulcrum', 'channel'])

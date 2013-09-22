@@ -28,7 +28,7 @@ _CREDIT_ITEMS = [
     'epilogue_saucebar',
     'epilogue_firefly',
     'epilogue_ant',
-    'epilogue_saucebar',
+    'epilogue_worm',
 
     'None',
 
@@ -100,34 +100,57 @@ def flatzip(*iterables):
             except StopIteration:
                 iters.remove(i)
 
-countdown = 60
-current_plates = bat.containers.SafeList()
-def update(c):
-    global countdown
-    for plate in current_plates:
-        plate.update()
+class CreditsController(bat.impulse.Handler, bat.bats.BX_GameObject,
+        bge.types.KX_GameObject):
 
-    if len(current_plates) <= 0:
-        spawn_next_plate()
-    else:
-        if current_plates[-1].can_spawn_next():
-            spawn_next_plate()
+    _prefix = ""
 
-    if len(current_plates) <= 0:
-        countdown -= 1
-        if countdown <= 0:
+    def __init__(self, old_owner):
+        self.countdown = 60
+        self.current_plates = bat.containers.SafeList()
+        self.plates = plate_generator(_CREDIT_ITEMS)
+        bat.sound.Jukebox().play_files('credits', self, 1,
+                    '//Sound/Music/11-TheEnd_full.ogg',
+                    fade_in_rate=1, volume=0.6, loop=False)
+        bat.impulse.Input().add_handler(self)
+
+    @bat.bats.expose
+    def update(self):
+        for plate in self.current_plates:
+            plate.update()
+
+        if len(self.current_plates) <= 0:
+            self.spawn_next_plate()
+        else:
+            if self.current_plates[-1].can_spawn_next():
+                self.spawn_next_plate()
+
+        if len(self.current_plates) <= 0:
+            self.countdown -= 1
+            if self.countdown <= 0:
+                bge.logic.startGame('//Menu.blend')
+
+    def spawn_next_plate(self):
+        sce = bge.logic.getCurrentScene()
+        spawn = sce.objects['PlateSpawn']
+        try:
+            plate = next(self.plates)
+            plate.worldPosition = spawn.worldPosition
+        except StopIteration:
+            return
+        self.current_plates.append(plate)
+
+    def handle_input(self, state):
+        if state.name == 'Start' and state.activated:
+            self.quitbutton()
+
+    def quitbutton(self):
+        if 'quitmessage' in self.scene.objects:
+            # Message has already been shown, so this is the second button press.
+            # Quit now.
             bge.logic.startGame('//Menu.blend')
-
-plates = plate_generator(_CREDIT_ITEMS)
-def spawn_next_plate():
-    sce = bge.logic.getCurrentScene()
-    spawn = sce.objects['PlateSpawn']
-    try:
-        plate = next(plates)
-        plate.worldPosition = spawn.worldPosition
-    except StopIteration:
-        return
-    current_plates.append(plate)
+        else:
+            self.scene.addObject('quitmessage', 'quitmessage', 60 * 5)
 
 class Plate:
     def __init__(self, old_owner):
@@ -136,7 +159,7 @@ class Plate:
     def update(self):
         self.worldPosition.y += TRANSLATION_STEP
         if self.basepos > self.scene.objects['PlateKill'].worldPosition.y:
-            current_plates[0].endObject()
+            self.endObject()
 
     def can_spawn_next(self):
         return self.basepos > self.scene.objects['PlateMargin'].worldPosition.y
@@ -211,20 +234,3 @@ class LogoPlate(ImagePlate):
 
     def can_spawn_next(self):
         return False
-
-
-def music(c):
-    bat.sound.Jukebox().play_files('credits', c.owner, 1,
-                '//Sound/Music/11-TheEnd_full.ogg',
-                fade_in_rate=1, volume=0.6, loop=False)
-
-
-@bat.utils.all_sensors_positive
-def quitbutton():
-    sce = bge.logic.getCurrentScene()
-    if 'quitmessage' in sce.objects:
-        # Message has already been shown, so this is the second button press.
-        # Quit now.
-        bge.logic.startGame('//Menu.blend')
-    else:
-        sce.addObject('quitmessage', 'quitmessage', 60 * 5)

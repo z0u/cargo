@@ -60,11 +60,13 @@ class ActSuspendInput(bat.story.BaseAct):
     '''Prevent the player from moving around.'''
     def execute(self, c):
         bat.event.Event('GameModeChanged', 'Cutscene').send()
+        bat.sound.Jukebox().add_volume_tweak(c.owner, 0.3)
 
 class ActResumeInput(bat.story.BaseAct):
     '''Let the player move around.'''
     def execute(self, c):
         bat.event.Event('GameModeChanged', 'Playing').send()
+        bat.sound.Jukebox().remove_volume_tweak(c.owner)
 
 class ActShowMarker(bat.story.BaseAct):
     '''Show a marker on the screen that points to an object.'''

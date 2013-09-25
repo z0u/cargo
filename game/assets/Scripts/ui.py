@@ -133,7 +133,7 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         # Frame is visible immediately; button is shown later.
         self.armature.setVisible(True, True)
         bat.impulse.Input().add_handler(self, 'DIALOGUE')
-        bat.sound.Jukebox().add_volume_tweak(0.3, self)
+        bat.sound.Jukebox().add_volume_tweak(self, 0.3)
 
     def hide(self):
         self.canvas.set_text("")
@@ -388,7 +388,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         if other_scene is not None:
             other_scene.suspend()
 
-        bat.sound.Jukebox().add_volume_tweak(0.1, self)
+        bat.sound.Jukebox().add_volume_tweak(self, 0.1)
 
     def hide(self):
         self.set_selected_option(None)

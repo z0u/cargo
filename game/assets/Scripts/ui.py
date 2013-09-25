@@ -133,6 +133,7 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         # Frame is visible immediately; button is shown later.
         self.armature.setVisible(True, True)
         bat.impulse.Input().add_handler(self, 'DIALOGUE')
+        bat.sound.Jukebox().add_volume_tweak(0.3, self)
 
     def hide(self):
         self.canvas.set_text("")
@@ -151,6 +152,7 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
         self.set_state(DialogueBox.S_HIDE_UPDATE)
         bat.impulse.Input().remove_handler(self)
+        bat.sound.Jukebox().remove_volume_tweak(self)
 
     def show_options_later(self, delay):
         # Put this object into a state in which a sensor will fire every frame
@@ -386,6 +388,8 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         if other_scene is not None:
             other_scene.suspend()
 
+        bat.sound.Jukebox().add_volume_tweak(0.1, self)
+
     def hide(self):
         self.set_selected_option(None)
         self.canvas_title['Content'] = ""
@@ -412,6 +416,8 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         other_scene = self.get_game_scene()
         if other_scene is not None:
             other_scene.resume()
+
+        bat.sound.Jukebox().remove_volume_tweak(self)
 
     def reload_level(self):
         level = bat.store.get('/game/levelFile', '//Outdoors.blend')

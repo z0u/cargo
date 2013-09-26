@@ -288,7 +288,9 @@ class Shell(ShellBase):
         self.direction_mapper.update(self, state.direction)
         force = self.direction_mapper.direction * state.direction.magnitude * self['Power']
         if self.is_occupied:
-            force *= self.snail.speed_multiplier
+            snail_speed = self.snail.speed_multiplier
+            if snail_speed <= 1:
+                force *= snail_speed
             self.snail.decay_speed()
         self.applyImpulse((0.0, 0.0, 0.0), force)
 
@@ -416,7 +418,7 @@ class Wheel(ShellBase):
             snail_speed = self.snail.speed_multiplier
             if snail_speed <= 1:
                 # Only allow slowing down - wheel is fast enough already.
-                targetRotSpeed *= self.snail.speed_multiplier
+                targetRotSpeed *= snail_speed
             self.snail.decay_speed()
         targetRotSpeed *= direction.y
 
@@ -529,7 +531,9 @@ class BottleCap(ShellBase):
 
         if self.is_occupied:
             tics_per_frame = 60 / 24
-            force_vec *= self.snail.speed_multiplier
+            snail_speed = self.snail.speed_multiplier
+            if snail_speed <= 1:
+                force_vec *= snail_speed
             self.snail.decay_speed(BottleCap.JUMP_ANIM_LENGTH * tics_per_frame)
 
         #
@@ -614,7 +618,9 @@ class Thimble(ShellBase):
 
         speed *= Thimble.NORMAL_SPEED
         if self.is_occupied:
-            speed *= self.snail.speed_multiplier
+            snail_speed = self.snail.speed_multiplier
+            if snail_speed <= 1:
+                speed *= snail_speed
             self.snail.decay_speed()
 
         if state.source & bat.impulse.SRC_JOYSTICK_AXIS:

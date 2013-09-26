@@ -316,6 +316,7 @@ class GameLevel(Level):
             self.on_teleport_cheat()
         elif event.message == "PlayFanfare":
             sample = bat.sound.Sample('//Sound/Fanfare1.ogg')
+            sample.volume = 0.7
             sample.play()
 
     def load_next_level(self, level, spawnPoint, save=True, trivia=True):

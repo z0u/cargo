@@ -600,12 +600,14 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
         s = (s.create_successor()
             (bat.story.CondWait(1))
             ("ShowDialogue", "Oh my beautiful egg! What luck that it is not broken.")
+            (snd_alarm2)
             (bat.story.ActAction("B_Final", 1005, 1040))
         )
         s = (s.create_successor()
             (bat.story.CondEvent("DialogueDismissed", self))
             ("ShowDialogue", ("You know, I think I may have been a little greedy.",
                 ("Well, maybe a little.", "You were so greedy!")))
+            (snd_question)
             (bat.story.ActAction("B_Final", 1050, 1090))
         )
 
@@ -613,6 +615,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
         s = (s.create_successor()
             (bat.story.CondEvent("DialogueDismissed", self))
             ("ShowDialogue", "Oh you're right! I was greedy, and a fool.")
+            (snd_statement)
             (bat.story.ActAction("B_Final", 1100, 1150))
         )
         s = (s.create_successor()
@@ -651,6 +654,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
             (Scripts.story.ActRemoveCamera('B_base_cam_above'))
             ("ShowDialogue", "You can even take my shell. I can't bear to look "
                 "at it! Besides, my nest was becoming a bit cluttered.")
+            (snd_tweet1)
             (bat.story.ActAction("B_Final", 1400, 1450))
         )
 
@@ -679,6 +683,7 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
         s = (s.create_successor()
             (bat.story.CondWait(0.2))
             ("ShowDialogue", "Ah, I feel better already!")
+#             (snd_tweet2)
             (bat.story.ActAction("B_Final", 1500, 1570))
         )
 

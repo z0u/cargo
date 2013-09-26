@@ -57,14 +57,22 @@ class Honeypot(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 def music_outside(c):
     ob = c.owner
     if bat.utils.someSensorPositive(c):
-        print('starting')
         bat.sound.Jukebox().play_files(
-            'honeypot', ob, 2, '//Sound/Music/08-TheAnt_loop.ogg',
+            'ant_music', ob, 2, '//Sound/Music/08-TheAnt_loop.ogg',
             introfile='//Sound/Music/08-TheAnt_intro.ogg', fade_in_rate=1,
             volume=1.0)
     else:
-        print('stopping')
-        bat.sound.Jukebox().stop('honeypot')
+        bat.sound.Jukebox().stop('ant_music')
+
+def music_inside(c):
+    ob = c.owner
+    if bat.utils.someSensorPositive(c):
+        bat.sound.Jukebox().play_files(
+            'ant_music', ob, 2, '//Sound/Music/10-TheAntReturns_loop.ogg',
+            introfile='//Sound/Music/10-TheAntReturns_intro.ogg',
+            fade_in_rate=1, volume=0.7)
+    else:
+        bat.sound.Jukebox().stop('ant_music')
 
 class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
     L_IDLE = 0
@@ -72,10 +80,6 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
     def __init__(self, old_owner):
         bat.story.Chapter.__init__(self, old_owner)
-        self.music2_action = bat.story.ActMusicPlay(
-                '//Sound/Music/10-TheAntReturns_loop.ogg',
-                introfile='//Sound/Music/10-TheAntReturns_intro.ogg', volume=0.7,
-                fade_in_rate=1, name='ant_music')
         self.knock_sound_action = bat.story.ActSound('//Sound/Knock.ogg',
                 vol=0.5, pitchmin=0.7, pitchmax=0.76, emitter=self,
                 maxdist=60.0)
@@ -119,11 +123,19 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         sconv_start, sconv_end = self.create_conversation()
         sconv_start.add_predecessor(s)
 
+        # Create a super state to catch when the player leaves. Can't have one
+        # for canceling dialogue, because that would catch any dialogue
+        # elsewhere in the level.
+        self.super_state = bat.story.State('Super')
+        s_leave = self.super_state.create_successor('Leave')
+        s_leave.add_condition(bat.story.CondEvent('LeaveAnt', self))
+
         #
         # Loop back to start.
         #
         s = bat.story.State("Reset")
         s.add_predecessor(sconv_end)
+        s.add_predecessor(s_leave)
         s.add_action(Scripts.story.ActResumeInput())
         s.add_action(Scripts.story.ActRemoveCamera('AntCloseCam'))
         s.add_action(Scripts.story.ActRemoveCamera('AntCrackCam'))
@@ -211,7 +223,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_action(bat.story.ActActionStop(Ant.L_IDLE))
         s.add_action(bat.story.ActAction('HP_AntConverse', 95, 160, Ant.L_ANIM, blendin=2.0))
         s.add_event("ShowDialogue", "I've got to have it! But this wood is just too strong,")
-        s.add_action(bat.story.ActSound('//Sound/ant.mutter3.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/ant.mutter3.ogg'))
         sswitch_cam = s.create_sub_step("Switch camera")
         sswitch_cam.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 126, tap=True))
         sswitch_cam.add_action(Scripts.story.ActSetCamera('AntCrackCam'))
@@ -229,7 +241,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 140))
         s.add_event("ShowDialogue", "... and this crack is too small, even for me.")
-        s.add_action(bat.story.ActSound('//Sound/ant.mutter2.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/ant.mutter2.ogg'))
         s.add_action(bat.story.ActAction('HP_AntConverse', 240, 255, Ant.L_ANIM, blendin=2.0))
         s.add_action(Scripts.story.ActRemoveCamera('AntCrackCam'))
         s.add_action(Scripts.story.ActSetCamera('AntCrackCamIn'))
@@ -275,7 +287,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_action(bat.story.ActActionStop(Ant.L_IDLE))
         s.add_action(bat.story.ActAction('HP_AntConverse', 360, 407, Ant.L_ANIM, blendin=1.0))
         s.add_event("ShowDialogue", "But I won't give up!")
-        s.add_action(bat.story.ActSound('//Sound/ant.surprise.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/ant.surprise.ogg'))
         sgrab_pickR = s.create_sub_step("Grab pick - right hand")
         sgrab_pickR.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 370.5, tap=True))
         sgrab_pickR.add_action(bat.story.ActGeneric(self.pick_up))
@@ -356,7 +368,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_action(Scripts.story.ActSetCamera('AntSniffCam'))
         s.add_event("ShowDialogue", "And look, it's just as I suspected - sugary syrup!")
-        s.add_action(bat.story.ActSound('//Sound/ant.mutter1.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/ant.mutter1.ogg'))
         s.add_action(bat.story.ActAction('HP_AntEnter', 80, 100, Ant.L_ANIM,
                 blendin=3.0))
         ssniff = s.create_sub_step("Sniff")
@@ -421,7 +433,6 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         self.super_state = bat.story.State('Super')
         s_leave = self.super_state.create_successor('Leave')
         s_leave.add_condition(bat.story.CondEvent('LeaveAnt', self))
-        s_leave.add_action(bat.story.ActMusicStop(name='ant_music'))
 
         #
         # Loop back to start.
@@ -513,8 +524,6 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_action(Scripts.story.ActSuspendInput())
         s.add_event("StartLoading", self)
         s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 1, 1, ob='AntStrandedCamLS_Front'))
-        # Music stops when Cargo moves away; see event handler for 'LeaveAnt'.
-        s.add_action(self.music2_action)
 
         s = s.create_successor()
         s.add_condition(bat.story.CondWait(1))
@@ -526,6 +535,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s = s.create_successor()
         s.add_condition(bat.story.CondWait(1))
         s.add_event("ShowDialogue", "Cargo! Am I glad to see you!")
+        s.add_action(bat.story.ActSound('//Sound/ant.greeting.ogg'))
         s.add_action(bat.story.ActAction('Ant_Stranded', 1, 22, Ant.L_ANIM))
 
         s = s.create_successor()
@@ -536,6 +546,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "I was obsessed with the honey. I couldn't stop eating it.")
+        s.add_action(bat.story.ActSound('//Sound/ant.mutter2.ogg'))
         s.add_action(bat.story.ActAction('Ant_Stranded', 90, 120, Ant.L_ANIM))
         s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 90, 140, ob='AntStrandedCamLS_Front'))
         sub = s.create_sub_step()
@@ -551,6 +562,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_action(Scripts.story.ActSetFocalPoint('Thimble'))
         s.add_event("ShowDialogue", "I took this thimble to use as a bucket...")
+        s.add_action(bat.story.ActSound('//Sound/ant.mutter1.ogg'))
         s.add_action(bat.story.ActAction('Ant_Stranded', 200, 225, Ant.L_ANIM))
         s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS_FrontZoom'))
         s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 200, 250, ob='AntStrandedCamLS_Front'))
@@ -579,6 +591,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS'))
         s.add_event("ShowDialogue", "But I bet you could do it. Please, help me out!")
+        s.add_action(bat.story.ActSound('//Sound/ant.outrage.ogg'))
         s.add_action(bat.story.ActAction('Ant_Stranded', 260, 300, Ant.L_ANIM))
         sub = s.create_sub_step()
         sub.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 283, tap=True))
@@ -615,6 +628,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS_Front'))
         s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
         s.add_event("ShowDialogue", "Hey, nice work! I'll jump on. Thanks a million!")
+        s.add_action(bat.story.ActSound('//Sound/ant.graditude.ogg'))
         s.add_action(bat.story.ActAction('Ant_Stranded', 320, 340, Ant.L_ANIM))
         sub = s.create_sub_step()
         sub.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 325, tap=True))
@@ -676,6 +690,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_condition(bat.story.CondWait(1))
         s.add_action(bat.story.ActAction('Ant_Rescued', 1, 53, Ant.L_ANIM))
         s.add_event("ShowDialogue", "All right - we made it!")
+        s.add_action(bat.story.ActSound('//Sound/ant.mutter1.ogg'))
 
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
@@ -701,6 +716,7 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 370))
         s.add_action(bat.story.ActAction('Ant_Rescued', 398, 555, Ant.L_ANIM))
         s.add_event("ShowDialogue", "Well, I'm going to head outside. I'm looking forward to some fresh air after being stranded!")
+        s.add_action(bat.story.ActSound('//Sound/ant.mutter3.ogg'))
 
         s = s.create_successor()
         s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 540))

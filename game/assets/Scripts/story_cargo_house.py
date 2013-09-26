@@ -121,7 +121,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
         s = s.create_successor("Greet")
         s.add_condition(bat.story.CondActionGE(Worm.L_ANIM, 74.0))
         s.add_event("ShowDialogue", "Cargo?")
-        s.add_action(bat.story.ActSound('//Sound/WormQuestion1.ogg'))
+        s.add_action(bat.story.ActSound('//Sound/WormQuestion1.ogg', vol=1.5))
 
         #
         # Get out of the ground
@@ -184,7 +184,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
         s = s.create_successor("Chastise")
         s.add_condition(bat.story.CondEvent('ShellExited', self))
         s.add_event("ShowDialogue", "Sleeping in, eh? Don't worry, I won't tell anyone.")
-        s.add_action(bat.story.ActSound('//Sound/WormQuestion2.ogg'))
+        s.add_action(bat.story.ActSound('//Sound/WormQuestion2.ogg', vol=1.5))
 
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent('DialogueDismissed', self))
@@ -229,7 +229,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
         s.add_event("ShowDialogue",
                 ("Ta-da! Please deliver this express \[envelope] for me.",
                         ("Of course!", "I'm too sleepy...")))
-        s.add_action(bat.story.ActSound('//Sound/WormTaDa.ogg'))
+        s.add_action(bat.story.ActSound('//Sound/WormTaDa.ogg', vol=1.5))
 
         #
         # FORK - conversation splits.
@@ -239,12 +239,12 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
         # case the dialogue returns a value other than 1 or 0).
         syes.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
         syes.add_event("ShowDialogue", "Great!")
-        syes.add_action(bat.story.ActSound('//Sound/WormPleased.ogg'))
+        syes.add_action(bat.story.ActSound('//Sound/WormPleased.ogg', vol=1.5))
 
         sno = s.create_successor("No")
         sno.add_condition(bat.story.CondEventEq("DialogueDismissed", 1, self))
         sno.add_event("ShowDialogue", "Oh, come on! It's your job, after all.")
-        sno.add_action(bat.story.ActSound('//Sound/WormFrown.ogg'))
+        sno.add_action(bat.story.ActSound('//Sound/WormFrown.ogg', vol=1.5))
         # Lots of text, so wait for a second.
         sno = sno.create_successor()
         sno.add_condition(bat.story.CondWait(1))
@@ -301,7 +301,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "See you later!")
-        s.add_action(bat.story.ActSound('//Sound/WormBye.ogg'))
+        s.add_action(bat.story.ActSound('//Sound/WormBye.ogg', vol=1.5))
         s.add_action(bat.story.ActAction('BurstOut', 395, 420, Worm.L_ANIM))
         s.add_action(bat.story.ActAction('BurstOut_S', 395, 420, Worm.L_ANIM, 'WormBody'))
 

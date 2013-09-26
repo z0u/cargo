@@ -54,16 +54,24 @@ class Honeypot(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         bat.bmath.copy_transform(self.children["Ant1SpawnPoint"], ant1)
         ant1.setParent(self)
 
+def music_outside(c):
+    ob = c.owner
+    if bat.utils.someSensorPositive(c):
+        print('starting')
+        bat.sound.Jukebox().play_files(
+            'honeypot', ob, 2, '//Sound/Music/08-TheAnt_loop.ogg',
+            introfile='//Sound/Music/08-TheAnt_intro.ogg', fade_in_rate=1,
+            volume=1.0)
+    else:
+        print('stopping')
+        bat.sound.Jukebox().stop('honeypot')
+
 class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
     L_IDLE = 0
     L_ANIM = 1
 
     def __init__(self, old_owner):
         bat.story.Chapter.__init__(self, old_owner)
-        self.music1_action = bat.story.ActMusicPlay(
-                '//Sound/Music/08-TheAnt_loop.ogg',
-                introfile='//Sound/Music/08-TheAnt_intro.ogg', volume=0.7,
-                fade_in_rate=1, name='ant_music')
         self.music2_action = bat.story.ActMusicPlay(
                 '//Sound/Music/10-TheAntReturns_loop.ogg',
                 introfile='//Sound/Music/10-TheAntReturns_intro.ogg', volume=0.7,
@@ -111,20 +119,11 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         sconv_start, sconv_end = self.create_conversation()
         sconv_start.add_predecessor(s)
 
-        # Create a super state to catch when the player leaves. Can't have one
-        # for canceling dialogue, because that would catch any dialogue
-        # elsewhere in the level.
-        self.super_state = bat.story.State('Super')
-        s_leave = self.super_state.create_successor('Leave')
-        s_leave.add_condition(bat.story.CondEvent('LeaveAnt', self))
-        s_leave.add_action(bat.story.ActMusicStop(name='ant_music'))
-
         #
         # Loop back to start.
         #
         s = bat.story.State("Reset")
         s.add_predecessor(sconv_end)
-        s.add_predecessor(s_leave)
         s.add_action(Scripts.story.ActResumeInput())
         s.add_action(Scripts.story.ActRemoveCamera('AntCloseCam'))
         s.add_action(Scripts.story.ActRemoveCamera('AntCrackCam'))
@@ -143,7 +142,6 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_condition(bat.story.CondEvent("ApproachAnt", self))
         s.add_action(Scripts.story.ActSuspendInput())
         s.add_event("StartLoading", self)
-        s.add_action(self.music1_action)
 
         # Catch-many state for when the user cancels a dialogue. Should only be
         # allowed if the conversation has been played once already.
@@ -335,8 +333,6 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_action(Scripts.story.ActSetCamera('AntMidCam'))
         s.add_action(Scripts.story.ActSetFocalPoint('Ant'))
         s.add_action(Scripts.story.ActSuspendInput())
-        # No intro here - straight into main part of the song!
-        s.add_action(self.music1_action)
         s.add_action(bat.story.ActAction('HP_AntEnter', 1, 40,
                 Ant.L_ANIM, blendin=1.0))
         s.add_action(bat.story.ActDestroy(target_descendant='Ant_Pick'))
@@ -455,7 +451,6 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("ApproachWindow", self))
         s.add_action(Scripts.story.ActSuspendInput())
-#        s.add_action(self.music1_action)
         s.add_action(bat.story.ActAddObject('Thimble_ant'))
         s.add_event('ParkBuckets')
 

@@ -435,7 +435,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         sdeliver.add_condition(bat.story.CondActionGE(0, 70, targetDescendant='SlugArm_Min'))
         sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         sdeliver.add_event("ShowDialogue", "She must be busy to not come here to get it herself.")
-        sdeliver.add_action(bat.story.ActSound('//Sound/slug.mutter2.ogg'))
+#         sdeliver.add_action(bat.story.ActSound('//Sound/slug.mutter2.ogg'))
         self.anim_delivery.play(sdeliver, 80, 132)
         self.anim_delivery.loop(sdeliver, 150, 190, after=132, blendin=10)
 
@@ -449,14 +449,14 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         sdeliver = sdeliver.create_successor()
         sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         sdeliver.add_event("ShowDialogue", "There has been a thief here too. You must have noticed the missing lights on your way in?")
-        sdeliver.add_action(bat.story.ActSound('//Sound/slug.mutter3.ogg'))
+#         sdeliver.add_action(bat.story.ActSound('//Sound/slug.mutter3.ogg'))
         self.anim_delivery.play(sdeliver, 260, 280)
         self.anim_delivery.loop(sdeliver, 298, 338, after=280, blendin=10)
 
         sdeliver = sdeliver.create_successor()
         sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         sdeliver.add_event("ShowDialogue", "They disappeared just last night.")
-        sdeliver.add_action(bat.story.ActSound('//Sound/slug.mutter1.ogg'))
+#         sdeliver.add_action(bat.story.ActSound('//Sound/slug.mutter1.ogg'))
 
         sdeliver = sdeliver.create_successor()
         sdeliver.add_condition(bat.story.CondEvent("DialogueDismissed", self))
@@ -541,7 +541,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "It's no good charging up the tree: the bees won't allow it. They're very protective of their honey.")
-        s.add_action(bat.story.ActSound('//Sound/slug.mutter3.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/slug.mutter3.ogg'))
         self.anim_after_bird.play(s, 80, 115, 155)
 
         scancel.add_predecessor(s)
@@ -555,7 +555,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "I don't know how you'll get to the nest, but, hmm... shiny red things...")
-        s.add_action(bat.story.ActSound('//Sound/slug.mutter1.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/slug.mutter1.ogg'))
         self.anim_after_bird.play(s, 220, 264)
         self.anim_after_bird.loop(s, 294, 334, after=264)
 
@@ -573,7 +573,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "I used to use it as a door, but it washed away one day in heavy rain.")
-        s.add_action(bat.story.ActSound('//Sound/slug.mutter2.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/slug.mutter2.ogg'))
         self.anim_after_bird.play(s, 430, 468)
         self.anim_after_bird.loop(s, 470, 505, after=468)
 
@@ -581,19 +581,19 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "I think I saw the \[bottlecap] on that little island near your house.")
-        s.add_action(bat.story.ActSound('//Sound/slug.mutter3.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/slug.mutter3.ogg'))
 
         scancel.add_predecessor(s)
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "The water is deep, though, so you'll have to figure out how to get there dry.")
-        s.add_action(bat.story.ActSound('//Sound/slug.mutter1.ogg'))
+#         s.add_action(bat.story.ActSound('//Sound/slug.mutter1.ogg'))
 
         scancel.add_predecessor(s)
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_event("ShowDialogue", "Quick, go and get it!")
-        s.add_action(bat.story.ActSound('//Sound/slug.surprise.ogg'))
+        s.add_action(bat.story.ActSound('//Sound/slug.mutter1.ogg'))
         self.anim_after_bird.play(s, 520, 530, 586)
 
         scancel.add_predecessor(s)
@@ -652,7 +652,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         scap = s.create_successor("cap")
         scap.add_condition(bat.story.CondEventNe("DialogueDismissed", 1, self))
         scap.add_event("ShowDialogue", "You found my bottle cap! That's great news.")
-        scap.add_action(bat.story.ActSound('//Sound/slug.surprise.ogg'))
+#         scap.add_action(bat.story.ActSound('//Sound/slug.surprise.ogg'))
 
         scancel.add_predecessor(scap)
         scap = scap.create_successor()
@@ -665,7 +665,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         scap = scap.create_successor()
         scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         scap.add_event("ShowDialogue", "Only two more shiny red things to go, eh? Sadly I haven't seen anything else that is shiny and red.")
-        scap.add_action(bat.story.ActSound('//Sound/slug.question.ogg'))
+#         scap.add_action(bat.story.ActSound('//Sound/slug.question.ogg'))
         self.anim_bottle_cap.play(scap, 80, 96)
         self.anim_idle.recall(scap, 'loop', after=96)
 

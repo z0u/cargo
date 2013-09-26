@@ -176,7 +176,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
                 '/game/level/lkMissionStarted', True, False)))
             ("ShowDialogue", ("Cargo! What's up?",
                 ("\[envelope]!", "Just saying \"hi\".")))
-            (bat.story.ActSound('//Sound/ff.greeting2.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.greeting2.ogg', vol=3))
         )
 
         sdliver1_start, sdeliver1_end = self.sg_accept_delivery()
@@ -191,7 +191,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
             ("ShowDialogue", (
                 "Hi again! What's up?",
                 ("What am I to do again?", "Just saying \"hi\".")))
-            (bat.story.ActSound('//Sound/ff.greeting2.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.greeting2.ogg', vol=3))
         )
 
         sdeliver2 = (ssecondmeeting1.create_successor("delivery2")
@@ -205,7 +205,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         snothing = (bat.story.State("nothing")
             (bat.story.CondEventEq("DialogueDismissed", 1, self))
             ("ShowDialogue", "OK - hi! But it's hard work operating the lighthouse without a button! Let's talk later.")
-            (bat.story.ActSound('//Sound/ff.grumpy1.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.grumpy1.ogg', vol=3))
             (bat.story.ActAction('LK_Goodbye', 1, 80, LighthouseKeeper.L_ANIM))
         )
         snothing.add_predecessor(sfirstmeeting1)
@@ -225,7 +225,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         sthirdmeeting1 = (bat.story.State("Third meeting")
             (bat.story.CondStore('/game/level/birdTookShell', True, False))
             ("ShowDialogue", "What!? The Bird took your shell \[shell]?")
-            (bat.story.ActSound('//Sound/ff.surprise4.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.surprise4.ogg', vol=3))
         )
 
         sthirdmeeting = (sthirdmeeting1.create_successor()
@@ -279,7 +279,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         # Take letter
         s = (sdeliver_start.create_successor()
             ("ShowDialogue", "Ah, a \[envelope] for me? Thanks.")
-            (bat.story.ActSound('//Sound/ff.surprise1.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.surprise1.ogg', vol=3))
             (bat.story.State()
                 (bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 13, tap=True))
                 (bat.story.ActConstraintSet('Equip.R', 'Copy Transforms', 1.0))
@@ -311,7 +311,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         s = (s.create_successor()
             (bat.story.CondWait(1.5))
             ("ShowDialogue", "Oh no! It's a quote for a new button, and it's too expensive.")
-            (bat.story.ActSound('//Sound/ff.surprise4.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.surprise4.ogg', vol=3))
         )
 
         s = (s.create_successor()
@@ -334,7 +334,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         s = (s.create_successor()
             (bat.story.CondActionGE(LighthouseKeeper.L_ANIM, 118))
             ("ShowDialogue", "Phew, this is thirsty work.")
-            (bat.story.ActSound('//Sound/ff.mutter8.ogg', vol=1.5))
+            (bat.story.ActSound('//Sound/ff.mutter8.ogg', vol=2))
         )
 
         s = (s.create_successor()
@@ -364,14 +364,14 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         s = (smission_start.create_successor()
             ("ShowDialogue", ("Please go to the Sauce Bar and order me some "\
                 "black bean sauce.", ("Gross!", "No problem.")))
-            (bat.story.ActSound('//Sound/ff.consider2.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.consider2.ogg', vol=3))
             (Scripts.story.ActSetCamera('LK_Cam_SauceBar_zoom'))
         )
 
         sno = (s.create_successor("no")
             (bat.story.CondEventNe("DialogueDismissed", 1, self))
             ("ShowDialogue", "Hey, no one asked you to drink it! Off you go.")
-            (bat.story.ActSound('//Sound/ff.grumpy1.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.grumpy1.ogg', vol=3))
             (Scripts.story.ActRemoveCamera('LK_Cam_SauceBar_zoom'))
             (Scripts.story.ActRemoveCamera('LK_Cam_SauceBar'))
             (Scripts.story.ActRemoveFocalPoint('B_SauceBarSign'))
@@ -381,7 +381,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
         syes = (s.create_successor("yes")
             (bat.story.CondEventEq("DialogueDismissed", 1, self))
             ("ShowDialogue", "Thanks!")
-            (bat.story.ActSound('//Sound/ff.mutter6.ogg', vol=2))
+            (bat.story.ActSound('//Sound/ff.mutter6.ogg', vol=3))
             (Scripts.story.ActRemoveCamera('LK_Cam_SauceBar_zoom'))
             (Scripts.story.ActRemoveCamera('LK_Cam_SauceBar'))
             (Scripts.story.ActRemoveFocalPoint('B_SauceBarSign'))

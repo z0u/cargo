@@ -1270,7 +1270,6 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
             if 'btn' not in c:
                 continue
             name = c['btn']
-            print(c, name, all_bindings)
             self.buttons[name] = c
             bindings = self.gather_bindings(c, all_bindings)
             bindings.sort(reverse=True)
@@ -1288,7 +1287,6 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
         for k in all_bindings.keys():
             if k == name or k.startswith(name + '/'):
                 bindings.extend(all_bindings[k])
-        print(name, bindings)
         return bindings
 
     def can_handle_input(self, state):
@@ -1313,37 +1311,44 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
 
     def update_dpad1d(self, btn, state):
         for c in btn.children:
-            if 'btn' not in c:
-                continue
-            icon = c
-            if icon['btn'] == 'next':
-                value = bat.bmath.clamp(0, 1, state.direction)
-            else:
-                value = bat.bmath.clamp(0, 1, -state.direction)
-            scale = bat.bmath.lerp(
-                ControlsInfo.SCALE_OFF, ControlsInfo.SCALE_ON, value)
-            scale = bat.bmath.lerp(
-                icon.localScale[0], scale, ControlsInfo.SCALE_FAC)
-            icon.localScale = (scale,) * 3
+            if 'btn' in c:
+                icon = c
+                if icon['btn'] == 'next':
+                    value = bat.bmath.clamp(0, 1, state.direction)
+                else:
+                    value = bat.bmath.clamp(0, 1, -state.direction)
+                scale = bat.bmath.lerp(
+                    ControlsInfo.SCALE_OFF, ControlsInfo.SCALE_ON, value)
+                scale = bat.bmath.lerp(
+                    icon.localScale[0], scale, ControlsInfo.SCALE_FAC)
+                icon.localScale = (scale,) * 3
 
     def update_dpad2d(self, btn, state):
         for c in btn.children:
-            if 'btn' not in c:
-                continue
-            icon = c
-            if icon['btn'] == 'up':
-                value = bat.bmath.clamp(0, 1, state.direction[1])
-            elif icon['btn'] == 'down':
-                value = bat.bmath.clamp(0, 1, -state.direction[1])
-            elif icon['btn'] == 'right':
-                value = bat.bmath.clamp(0, 1, state.direction[0])
-            else:
-                value = bat.bmath.clamp(0, 1, -state.direction[0])
-            scale = bat.bmath.lerp(
-                ControlsInfo.SCALE_OFF, ControlsInfo.SCALE_ON, value)
-            scale = bat.bmath.lerp(
-                icon.localScale[0], scale, ControlsInfo.SCALE_FAC)
-            icon.localScale = (scale,) * 3
+            if 'btn' in c:
+                icon = c
+                if icon['btn'] == 'up':
+                    value = bat.bmath.clamp(0, 1, state.direction[1])
+                elif icon['btn'] == 'down':
+                    value = bat.bmath.clamp(0, 1, -state.direction[1])
+                elif icon['btn'] == 'right':
+                    value = bat.bmath.clamp(0, 1, state.direction[0])
+                else:
+                    value = bat.bmath.clamp(0, 1, -state.direction[0])
+                scale = bat.bmath.lerp(
+                    ControlsInfo.SCALE_OFF, ControlsInfo.SCALE_ON, value)
+                scale = bat.bmath.lerp(
+                    icon.localScale[0], scale, ControlsInfo.SCALE_FAC)
+                icon.localScale = (scale,) * 3
+
+            if 'axis' in c:
+                axis = c
+                pos = state.direction
+                pos.magnitude = min(pos.magnitude, 1.0)
+                pos *= axis['scale']
+                axis.worldPosition.xy = bat.bmath.lerp(
+                    axis.worldPosition.xy, btn.worldPosition.xy + pos,
+                    ControlsInfo.SCALE_FAC)
 
     def update_button(self, btn, state):
         icon = None

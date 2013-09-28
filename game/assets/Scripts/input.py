@@ -91,7 +91,6 @@ def create_controls():
     ip.add_controller(bat.impulse.Button("1", '1'))
     ip.add_controller(bat.impulse.Button("2", '2'))
     ip.add_controller(bat.impulse.Button("CameraReset", 'c'))
-    ip.add_controller(bat.impulse.Button("2", '2'))
     ip.add_controller(bat.impulse.Button("Start", 's'))
     # Cheats!
     ip.add_sequence("udlr11", bat.event.Event("GiveAllShells"))

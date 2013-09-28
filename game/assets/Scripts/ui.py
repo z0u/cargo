@@ -1255,6 +1255,114 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         icon.visible = False
 
 
+class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
+    SCALE_ON = 1.4
+    SCALE_OFF = 1.0
+    SCALE_FAC = 0.2
+
+    log = logging.getLogger(__name__ + '.ControlsInfo')
+
+    def __init__(self, old_owner):
+        self.buttons = {}
+        all_bindings = Scripts.input.get_bindings()
+        ip = bat.impulse.Input()
+        for c in self.children:
+            if 'btn' not in c:
+                continue
+            name = c['btn']
+            print(c, name, all_bindings)
+            self.buttons[name] = c
+            bindings = self.gather_bindings(c, all_bindings)
+            bindings.sort(reverse=True)
+            human_bindings = (
+                ip.sensor_def_to_human_string(*b) for b in bindings)
+            for c2 in c.children:
+                if 'role' in c2 and c2['role'] == 'label':
+                    c2['Content'] = ', '.join(human_bindings)
+
+        bat.impulse.Input().add_handler(self)
+
+    def gather_bindings(self, btn, all_bindings):
+        name = btn['btn']
+        bindings = []
+        for k in all_bindings.keys():
+            if k == name or k.startswith(name + '/'):
+                bindings.extend(all_bindings[k])
+        print(name, bindings)
+        return bindings
+
+    def can_handle_input(self, state):
+        return True
+
+    def handle_input(self, state):
+        try:
+            btn = self.buttons[state.name]
+        except KeyError:
+            ControlsInfo.log.warn("No visualisation for button %s", state.name)
+            return
+
+        if hasattr(state, 'next'):
+            # DPad1D
+            self.update_dpad1d(btn, state)
+        elif hasattr(state, 'up'):
+            # DPad2D
+            self.update_dpad2d(btn, state)
+        else:
+            # Button
+            self.update_button(btn, state)
+
+    def update_dpad1d(self, btn, state):
+        for c in btn.children:
+            if 'btn' not in c:
+                continue
+            icon = c
+            if icon['btn'] == 'next':
+                value = bat.bmath.clamp(0, 1, state.direction)
+            else:
+                value = bat.bmath.clamp(0, 1, -state.direction)
+            scale = bat.bmath.lerp(
+                ControlsInfo.SCALE_OFF, ControlsInfo.SCALE_ON, value)
+            scale = bat.bmath.lerp(
+                icon.localScale[0], scale, ControlsInfo.SCALE_FAC)
+            icon.localScale = (scale,) * 3
+
+    def update_dpad2d(self, btn, state):
+        for c in btn.children:
+            if 'btn' not in c:
+                continue
+            icon = c
+            if icon['btn'] == 'up':
+                value = bat.bmath.clamp(0, 1, state.direction[1])
+            elif icon['btn'] == 'down':
+                value = bat.bmath.clamp(0, 1, -state.direction[1])
+            elif icon['btn'] == 'right':
+                value = bat.bmath.clamp(0, 1, state.direction[0])
+            else:
+                value = bat.bmath.clamp(0, 1, -state.direction[0])
+            scale = bat.bmath.lerp(
+                ControlsInfo.SCALE_OFF, ControlsInfo.SCALE_ON, value)
+            scale = bat.bmath.lerp(
+                icon.localScale[0], scale, ControlsInfo.SCALE_FAC)
+            icon.localScale = (scale,) * 3
+
+    def update_button(self, btn, state):
+        icon = None
+        for c in btn.children:
+            if 'role' in c and c['role'] == 'icon':
+                icon = c
+                break
+        if icon is None:
+            ControlsInfo.log.warn("No icon for button %s", state.name)
+            return
+        if state.positive:
+            scale = ControlsInfo.SCALE_ON
+        else:
+            scale = ControlsInfo.SCALE_OFF
+        scale = bat.bmath.lerp(
+            icon.localScale[0], scale, ControlsInfo.SCALE_FAC)
+        icon.localScale = (scale,) * 3
+
+
 class Text(bat.bats.BX_GameObject, bge.types.KX_GameObject):
     '''
     A TextRenderer is used to render glyphs from a Font. The object nominated as

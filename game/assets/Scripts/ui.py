@@ -210,7 +210,7 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         return True
 
     def handle_input(self, state):
-        if state.name == 'Movement':
+        if state.name in {'Movement', 'CameraMovement'}:
             self.handle_movement(state)
         elif state.name == '1':
             self.handle_bt_1(state)
@@ -446,7 +446,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
     def handle_input(self, state):
         if state.name == 'Start':
             self.handle_bt_start(state)
-        elif state.name == 'Movement':
+        elif state.name in {'Movement', 'CameraMovement'}:
             self.handle_movement(state)
         elif state.name == '1':
             self.handle_bt_1(state)

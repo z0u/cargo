@@ -32,7 +32,6 @@ bat.sound.use_linear_clamped_falloff(dist_min=5, dist_max=50)
 Scripts.camera.AutoCamera()
 Scripts.director.Director()
 Scripts.lodtree.LODManager()
-Scripts.menu.SessionManager()
 Scripts.ui.HUDState()
 
 Scripts.input.create_controls()

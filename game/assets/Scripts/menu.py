@@ -76,7 +76,7 @@ STORY_SUMMARIES = {
             "I found a third shiny thing! It's a thimble \[thimble] that's impervious to sharp objects.",
     }
 
-class SessionManager(metaclass=bat.bats.Singleton):
+class SessionManager(bat.bats.BX_GameObject, bge.types.KX_GameObject):
     '''Responds to some high-level messages.'''
 
     MENU_KEY_BINDINGS = {
@@ -100,7 +100,7 @@ class SessionManager(metaclass=bat.bats.Singleton):
             ('keyboard', 'esckey')]
         }
 
-    def __init__(self):
+    def __init__(self, old_owner):
         bat.event.EventBus().add_listener(self)
         bat.event.Event('KeyBindingsChanged').send(1)
 

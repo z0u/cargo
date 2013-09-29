@@ -16,9 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import time
+import collections
 import logging
+import time
 import random
+import re
 
 import bge
 import mathutils
@@ -290,10 +292,11 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
     ARM_HIDE_FRAME = 1
     ARM_SHOW_FRAME = 8
 
-    NUM_OPTS = 3
+    NUM_OPTS = 4
     OPT_0_FRAME = 1
     OPT_1_FRAME = 3
     OPT_2_FRAME = 5
+    OPT_3_FRAME = 7
 
     # States
     S_INIT = 1
@@ -306,10 +309,12 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         self.canvas1 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.0'])
         self.canvas2 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.1'])
         self.canvas3 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.2'])
+        self.canvas4 = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas.3'])
         self.canvas_tip = bat.bats.mutate(self.childrenRecursive['QOpt_TextCanvas_tip'])
         self.canvas1['colour'] = '#9999ff'
-        self.canvas2['colour'] = '#ffbb99'
-        self.canvas3['colour'] = '#ff9999'
+        self.canvas2['colour'] = '#99ff99'
+        self.canvas3['colour'] = '#ffbb99'
+        self.canvas4['colour'] = '#ff9999'
         self.canvas_tip['colour'] = '#000'
         self.armature = self.childrenRecursive['QOpt_FrameArmature']
         self.frame = self.childrenRecursive['QOpt_Frame']
@@ -364,8 +369,9 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         else:
             self.canvas_title['Content'] = ""
             self.canvas1['Content'] = "Resume (cancel)"
-        self.canvas2['Content'] = "Quit to main menu"
-        self.canvas3['Content'] = "Quit game"
+        self.canvas2['Content'] = "Controls help"
+        self.canvas3['Content'] = "Quit to main menu"
+        self.canvas4['Content'] = "Quit game"
         self.canvas_tip['Content'] = "Tip: Press F11 to exit immediately."
         start = self.armature.getActionFrame()
         self.armature.playAction('DialogueBoxBoing', start,
@@ -396,6 +402,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         self.canvas1['Content'] = ""
         self.canvas2['Content'] = ""
         self.canvas3['Content'] = ""
+        self.canvas4['Content'] = ""
         self.canvas_tip['Content'] = ""
         start = self.armature.getActionFrame()
         self.armature.playAction('DialogueBoxBoing', start,
@@ -427,7 +434,9 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
     def set_selected_option(self, index):
         self.selected_option = index
         start = self.cursor.getActionFrame()
-        if index == 2:
+        if index == 3:
+            end = QuitOptions.OPT_3_FRAME
+        elif index == 2:
             end = QuitOptions.OPT_2_FRAME
         elif index == 1:
             end = QuitOptions.OPT_1_FRAME
@@ -472,14 +481,19 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
             return
 
         if state.activated:
-            if self.selected_option == 2:
+            if self.selected_option == 3:
                 QuitOptions.log.info('Quitting immediately.')
                 show_trivia = False
                 cb_event = bat.event.Event('QuitGameFromQuitScreen')
-            elif self.selected_option == 1:
+            elif self.selected_option == 2:
                 QuitOptions.log.info('Returning to main menu.')
                 show_trivia = False
                 cb_event = bat.event.Event('ReturnToMenuFromQuitScreen')
+            elif self.selected_option == 1:
+                QuitOptions.log.info('Showing controls help.')
+                show_trivia = False
+                self.scene.addObject('ControlsInfo', 'ControlsInfo')
+                cb_event = None
             else:
                 if self.game_over:
                     QuitOptions.log.info('Reloading current level.')
@@ -1263,6 +1277,16 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
     log = logging.getLogger(__name__ + '.ControlsInfo')
 
     def __init__(self, old_owner):
+        self.gather_bindings()
+        self.filter = self.childrenRecursive['CC_Filter']
+        self.filter.playAction(
+            'CC_FilterAction', QuitOptions.ARM_HIDE_FRAME,
+            QuitOptions.ARM_SHOW_FRAME)
+        self.filter.visible = True
+        bat.impulse.Input().add_handler(self, 'MENU')
+        bat.sound.Jukebox().add_volume_tweak(self, 0.1)
+
+    def gather_bindings(self):
         self.buttons = {}
         all_bindings = Scripts.input.get_bindings()
         ip = bat.impulse.Input()
@@ -1271,23 +1295,116 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
                 continue
             name = c['btn']
             self.buttons[name] = c
-            bindings = self.gather_bindings(c, all_bindings)
-            bindings.sort(reverse=True)
-            human_bindings = (
-                ip.sensor_def_to_human_string(*b) for b in bindings)
+            bindings = self.gather_button_bindings(c, all_bindings, ip)
             for c2 in c.children:
                 if 'role' in c2 and c2['role'] == 'label':
-                    c2['Content'] = ', '.join(human_bindings)
+                    c2['Content'] = bindings
 
-        bat.impulse.Input().add_handler(self)
-
-    def gather_bindings(self, btn, all_bindings):
+    def gather_button_bindings(self, btn, all_bindings, ip):
         name = btn['btn']
         bindings = []
         for k in all_bindings.keys():
             if k == name or k.startswith(name + '/'):
                 bindings.extend(all_bindings[k])
-        return bindings
+        return self.format_bindings(bindings)
+
+    def format_bindings(self, bindings):
+        # group
+        binding_groups = collections.defaultdict(list)
+        for b in bindings:
+            binding_groups[b[0]].append(b[1:])
+
+        def keyboard(bs):
+#             if len(bs) == 1:
+#                 yield 'Key'
+#             else:
+#                 yield 'Keys'
+            for b in bs:
+                if b[0] == 'retkey':
+                    yield 'return'
+                elif b[0] == 'esckey':
+                    yield 'escape'
+                else:
+                    yield re.match(r'(.*?)(arrow)?key', b[0]).group(1)
+
+        def mousebutton(bs):
+            yield 'Mouse'
+            for b in bs:
+                yield re.match(r'(.*)mouse', b[0]).group(1)
+
+        def mouselook(bs):
+            yield 'Mouse'
+            for b in bs:
+                yield str(b[0] + 1)
+
+        def joydpad(bs):
+            yield 'Joypad'
+            dgroups = collections.defaultdict(int)
+            for hatindex, flag in bs:
+                dgroups[hatindex + 1] |= flag
+            for hatindex, flag in dgroups.items():
+                if flag == 1 | 2 | 4 | 8:
+                    yield str(hatindex)
+                    continue
+                hflags = []
+                if flag & 1:
+                    hflags.append("up")
+                if flag & 4:
+                    hflags.append("down")
+                if flag & 2:
+                    hflags.append("right")
+                if flag & 8:
+                    hflags.append("left")
+                yield "%d(%s)" % (hatindex, ' '.join(hflags))
+
+        def joybutton(bs):
+            if len(bs) == 1:
+                yield 'Button'
+            else:
+                yield 'Buttons'
+            for b in bs:
+                yield str(b[0] + 1)
+
+        def joystick(bs):
+            if len(bs) == 1:
+                yield 'Joystick'
+            else:
+                yield 'Joystick'
+            for b in bs:
+                yield str(b[0] + 1)
+
+        sensor_types = {
+            'keyboard': (keyboard, 0),
+            'mousebutton': (mousebutton, 1),
+            'mouselook': (mouselook, 2),
+            'joydpad': (joydpad, 3),
+            'joybutton': (joybutton, 4),
+            'joystick': (joystick, 5),
+            }
+
+        def group_key(group):
+            return sensor_types[group[0]][1]
+
+        binding_groups = list(binding_groups.items())
+        binding_groups.sort(key=group_key)
+        human_bindings = []
+        for k, bs in binding_groups:
+            fn, _ = sensor_types[k]
+            bs.sort()
+            bs = fn(bs)
+            human_bindings.append(' '.join(bs))
+
+        return ', '.join(human_bindings)
+
+    def hide(self):
+        start = self.filter.getActionFrame()
+        self.filter.playAction(
+            'CC_FilterAction', start,
+            QuitOptions.ARM_HIDE_FRAME)
+        def cb():
+            self.endObject()
+        bat.anim.add_trigger_lt(self.filter, 0, 2, cb)
+        bat.sound.Jukebox().remove_volume_tweak(self)
 
     def can_handle_input(self, state):
         return True
@@ -1308,6 +1425,9 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
         else:
             # Button
             self.update_button(btn, state)
+
+        if state.name == 'Start' and state.triggered and not state.positive:
+            self.hide()
 
     def update_dpad1d(self, btn, state):
         for c in btn.children:

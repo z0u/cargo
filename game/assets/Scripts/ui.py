@@ -19,6 +19,7 @@
 import logging
 import time
 import random
+import re
 
 import bge
 import mathutils
@@ -140,7 +141,16 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
     def get_footnote_text(self, text):
         if "\\[btn" in text:
-            return "Press \\[btnstart] (escape) to see the controls configuration."
+            match = re.search(r'\\\[btn([^\]]+)]', text)
+            if match is None:
+                footnote = ""
+            else:
+                btn_name = match.group(1)
+                bindings = Scripts.input.gather_button_bindings(btn_name)
+                footnote = "Button \\[btn%s] is: %s." % (btn_name, bindings)
+            footnote += "\nPress \\[btnStart] (escape) to see the controls configuration."
+            return footnote
+        return ""
 
     def hide(self):
         self.canvas.set_text("")

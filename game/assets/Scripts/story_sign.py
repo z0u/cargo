@@ -102,7 +102,7 @@ class SignMainCargoNotes(Sign):
 
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-        s.add_event("ShowDialogue", "2/5: Press the camera button \[btncam] to reset the camera.")
+        s.add_event("ShowDialogue", "2/5: Press the camera button \[btnCameraReset] to reset the camera.")
 
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))

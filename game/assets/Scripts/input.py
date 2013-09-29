@@ -131,7 +131,9 @@ def add_bindings(bindings_map):
                 log.error('Failed to bind input for %s', path, exc_info=1)
 
 
-def gather_button_bindings(name, all_bindings):
+def gather_button_bindings(name, all_bindings=None):
+    if all_bindings is None:
+        all_bindings = get_bindings()
     bindings = []
     for k in all_bindings.keys():
         if k == name or k.startswith(name + '/'):

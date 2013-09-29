@@ -2,7 +2,9 @@
 # Copyright 2013 Alex Fraser <alex@phatcore.com>
 #
 
+import collections
 import logging
+import re
 
 import bat.store
 import bat.impulse
@@ -127,3 +129,100 @@ def add_bindings(bindings_map):
                 ip.bind(path, *sensor_def)
             except:
                 log.error('Failed to bind input for %s', path, exc_info=1)
+
+
+def gather_button_bindings(name, all_bindings):
+    bindings = []
+    for k in all_bindings.keys():
+        if k == name or k.startswith(name + '/'):
+            bindings.extend(all_bindings[k])
+    return format_bindings(bindings)
+
+
+def format_bindings(bindings):
+    # group
+    binding_groups = collections.defaultdict(list)
+    for b in bindings:
+        binding_groups[b[0]].append(b[1:])
+
+    def keyboard(bs):
+#             if len(bs) == 1:
+#                 yield 'Key'
+#             else:
+#                 yield 'Keys'
+        for b in bs:
+            if b[0] == 'retkey':
+                yield 'return'
+            elif b[0] == 'esckey':
+                yield 'escape'
+            else:
+                yield re.match(r'(.*?)(arrow)?key', b[0]).group(1)
+
+    def mousebutton(bs):
+        yield 'mouse'
+        for b in bs:
+            yield re.match(r'(.*)mouse', b[0]).group(1)
+
+    def mouselook(bs):
+        yield 'mouse'
+        for b in bs:
+            yield str(b[0] + 1)
+
+    def joydpad(bs):
+        yield 'joypad'
+        dgroups = collections.defaultdict(int)
+        for hatindex, flag in bs:
+            dgroups[hatindex + 1] |= flag
+        for hatindex, flag in dgroups.items():
+            if flag == 1 | 2 | 4 | 8:
+                yield str(hatindex)
+                continue
+            hflags = []
+            if flag & 1:
+                hflags.append("up")
+            if flag & 4:
+                hflags.append("down")
+            if flag & 2:
+                hflags.append("right")
+            if flag & 8:
+                hflags.append("left")
+            yield "%d(%s)" % (hatindex, ' '.join(hflags))
+
+    def joybutton(bs):
+        if len(bs) == 1:
+            yield 'button'
+        else:
+            yield 'buttons'
+        for b in bs:
+            yield str(b[0] + 1)
+
+    def joystick(bs):
+        if len(bs) == 1:
+            yield 'joystick'
+        else:
+            yield 'joystick'
+        for b in bs:
+            yield str(b[0] + 1)
+
+    sensor_types = {
+        'keyboard': (keyboard, 0),
+        'mousebutton': (mousebutton, 1),
+        'mouselook': (mouselook, 2),
+        'joydpad': (joydpad, 3),
+        'joybutton': (joybutton, 4),
+        'joystick': (joystick, 5),
+        }
+
+    def group_key(group):
+        return sensor_types[group[0]][1]
+
+    binding_groups = list(binding_groups.items())
+    binding_groups.sort(key=group_key)
+    human_bindings = []
+    for k, bs in binding_groups:
+        fn, _ = sensor_types[k]
+        bs.sort()
+        bs = fn(bs)
+        human_bindings.append(' '.join(bs))
+
+    return ', '.join(human_bindings)

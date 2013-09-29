@@ -16,11 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import collections
 import logging
 import time
 import random
-import re
 
 import bge
 import mathutils
@@ -280,6 +278,20 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
             self.set_state(DialogueBox.S_IDLE)
 
 
+def get_game_scene(hud_object):
+    '''
+    Return the scene that conatins the main character, or any scene other
+    than this scene, or None if this is the only scene.
+    '''
+    main_char = Scripts.director.Director().mainCharacter
+    if main_char is not None:
+        return main_char.scene
+
+    own_scene = hud_object.scene
+    for sce in bge.logic.getSceneList():
+        if sce is not own_scene:
+            return sce
+
 
 class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
     _prefix = 'QO_'
@@ -344,20 +356,6 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         elif evt.message == 'ReloadLevel':
             self.reload_level()
 
-    def get_game_scene(self):
-        '''
-        Return the scene that conatins the main character, or any scene other
-        than this scene, or None if this is the only scene.
-        '''
-        main_char = Scripts.director.Director().mainCharacter
-        if main_char is not None:
-            return main_char.scene
-
-        own_scene = self.scene
-        for sce in bge.logic.getSceneList():
-            if sce is not own_scene:
-                return sce
-
     def show(self, game_over):
         # Frame is visible immediately; button is shown later.
         self.set_selected_option(0)
@@ -390,7 +388,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         self.game_over = game_over
 
         # Pause game scene
-        other_scene = self.get_game_scene()
+        other_scene = get_game_scene(self)
         if other_scene is not None:
             other_scene.suspend()
 
@@ -420,7 +418,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         self.set_state(QuitOptions.S_HIDE_UPDATE)
 
         # Resume game scene
-        other_scene = self.get_game_scene()
+        other_scene = get_game_scene(self)
         if other_scene is not None:
             other_scene.resume()
 
@@ -480,7 +478,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         if not self.accepting_input:
             return
 
-        if state.activated:
+        if state.deactivated:
             if self.selected_option == 3:
                 QuitOptions.log.info('Quitting immediately.')
                 show_trivia = False
@@ -516,7 +514,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         if self.game_over:
             # Don't allow dismissal when dead.
             return
-        if state.activated:
+        if state.deactivated:
             self.hide()
 
     def handle_switch(self, state):
@@ -1286,123 +1284,38 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
         bat.impulse.Input().add_handler(self, 'MENU')
         bat.sound.Jukebox().add_volume_tweak(self, 0.1)
 
+        # Suspend other scene
+        other_scene = get_game_scene(self)
+        if other_scene is not None:
+            other_scene.suspend()
+
     def gather_bindings(self):
         self.buttons = {}
         all_bindings = Scripts.input.get_bindings()
-        ip = bat.impulse.Input()
         for c in self.children:
             if 'btn' not in c:
                 continue
             name = c['btn']
             self.buttons[name] = c
-            bindings = self.gather_button_bindings(c, all_bindings, ip)
+            bindings = Scripts.input.gather_button_bindings(
+                c['btn'], all_bindings)
             for c2 in c.children:
                 if 'role' in c2 and c2['role'] == 'label':
                     c2['Content'] = bindings
-
-    def gather_button_bindings(self, btn, all_bindings, ip):
-        name = btn['btn']
-        bindings = []
-        for k in all_bindings.keys():
-            if k == name or k.startswith(name + '/'):
-                bindings.extend(all_bindings[k])
-        return self.format_bindings(bindings)
-
-    def format_bindings(self, bindings):
-        # group
-        binding_groups = collections.defaultdict(list)
-        for b in bindings:
-            binding_groups[b[0]].append(b[1:])
-
-        def keyboard(bs):
-#             if len(bs) == 1:
-#                 yield 'Key'
-#             else:
-#                 yield 'Keys'
-            for b in bs:
-                if b[0] == 'retkey':
-                    yield 'return'
-                elif b[0] == 'esckey':
-                    yield 'escape'
-                else:
-                    yield re.match(r'(.*?)(arrow)?key', b[0]).group(1)
-
-        def mousebutton(bs):
-            yield 'Mouse'
-            for b in bs:
-                yield re.match(r'(.*)mouse', b[0]).group(1)
-
-        def mouselook(bs):
-            yield 'Mouse'
-            for b in bs:
-                yield str(b[0] + 1)
-
-        def joydpad(bs):
-            yield 'Joypad'
-            dgroups = collections.defaultdict(int)
-            for hatindex, flag in bs:
-                dgroups[hatindex + 1] |= flag
-            for hatindex, flag in dgroups.items():
-                if flag == 1 | 2 | 4 | 8:
-                    yield str(hatindex)
-                    continue
-                hflags = []
-                if flag & 1:
-                    hflags.append("up")
-                if flag & 4:
-                    hflags.append("down")
-                if flag & 2:
-                    hflags.append("right")
-                if flag & 8:
-                    hflags.append("left")
-                yield "%d(%s)" % (hatindex, ' '.join(hflags))
-
-        def joybutton(bs):
-            if len(bs) == 1:
-                yield 'Button'
-            else:
-                yield 'Buttons'
-            for b in bs:
-                yield str(b[0] + 1)
-
-        def joystick(bs):
-            if len(bs) == 1:
-                yield 'Joystick'
-            else:
-                yield 'Joystick'
-            for b in bs:
-                yield str(b[0] + 1)
-
-        sensor_types = {
-            'keyboard': (keyboard, 0),
-            'mousebutton': (mousebutton, 1),
-            'mouselook': (mouselook, 2),
-            'joydpad': (joydpad, 3),
-            'joybutton': (joybutton, 4),
-            'joystick': (joystick, 5),
-            }
-
-        def group_key(group):
-            return sensor_types[group[0]][1]
-
-        binding_groups = list(binding_groups.items())
-        binding_groups.sort(key=group_key)
-        human_bindings = []
-        for k, bs in binding_groups:
-            fn, _ = sensor_types[k]
-            bs.sort()
-            bs = fn(bs)
-            human_bindings.append(' '.join(bs))
-
-        return ', '.join(human_bindings)
 
     def hide(self):
         start = self.filter.getActionFrame()
         self.filter.playAction(
             'CC_FilterAction', start,
             QuitOptions.ARM_HIDE_FRAME)
+
         def cb():
+            # Resume game scene
+            other_scene = get_game_scene(self)
+            if other_scene is not None:
+                other_scene.resume()
             self.endObject()
+
         bat.anim.add_trigger_lt(self.filter, 0, 2, cb)
         bat.sound.Jukebox().remove_volume_tweak(self)
 

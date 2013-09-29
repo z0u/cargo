@@ -171,7 +171,7 @@ class MenuController(Scripts.gui.UiController):
         # TODO: for some reason setScreen seems to interfere with the menu. If
         # send delay is set to 2, it might not work... but 200 does! Weird.
         bat.event.Event('setScreen', 'LoadingScreen').send(0)
-        #bat.event.Event('setScreen', 'Controls_Actions').send(0)
+#         bat.event.Event('setScreen', 'Controls_Actions').send(0)
         bat.event.Event('GameModeChanged', 'Menu').send()
 
         # Menu music. Note that the fade rate is set higher than the default, so
@@ -535,7 +535,6 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 
     def redraw_bindings(self):
         ControlsConfPage.log.info('Redrawing')
-        ip = bat.impulse.Input()
         for label in self.children['CC_BindingsGrp'].children:
             label = bat.bats.mutate(label)
             canvas = bat.bats.mutate(label.children[0])
@@ -546,10 +545,7 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
                 ControlsConfPage.log.error('No binding %s', path)
                 canvas.set_text('??')
                 continue
-            human_bindings = map(
-                lambda x: ip.sensor_def_to_human_string(*x),
-                bindings)
-            canvas.set_text(', '.join(human_bindings))
+            canvas.set_text(Scripts.input.format_bindings(bindings))
 
 class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
     _prefix = 'VC_'

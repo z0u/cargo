@@ -57,7 +57,7 @@ def test_input(c):
 
     # The owner has another controller that handles input. So we just send a
     # message so that the user input can do something useful!
-    bat.event.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me.",
+    bat.event.Event('ShowDialogue', ("Ta-da! Please deliver this \[envelope] for me \[btn1].",
             ("Of course!", "I'm too sleepy..."))).send(5)
 
 class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
@@ -84,6 +84,7 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
     def __init__(self, old_owner):
         self.canvas = bat.bats.mutate(self.childrenRecursive['Dlg_TextCanvas'])
+        self.footnote = bat.bats.mutate(self.childrenRecursive['Dlg_Footnote'])
         self.armature = self.childrenRecursive['Dlg_FrameArmature']
         self.frame = self.childrenRecursive['Dlg_Frame']
 
@@ -124,6 +125,8 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         self.hide_options()
         self.show_options_later(delay)
 
+        self.footnote.set_text(self.get_footnote_text(text))
+
         start = self.armature.getActionFrame()
         self.armature.playAction('DialogueBoxBoing', start,
                 DialogueBox.ARM_SHOW_FRAME, layer=DialogueBox.L_DISPLAY)
@@ -135,10 +138,16 @@ class DialogueBox(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         bat.impulse.Input().add_handler(self, 'DIALOGUE')
         bat.sound.Jukebox().add_volume_tweak(self, 0.3)
 
+    def get_footnote_text(self, text):
+        if "\\[btn" in text:
+            return "Press \\[btnstart] (escape) to see the controls configuration."
+
     def hide(self):
         self.canvas.set_text("")
         self.options = None
         self.hide_options()
+
+        self.footnote.set_text("")
 
         start = self.armature.getActionFrame()
         self.armature.playAction('DialogueBoxBoing', start,

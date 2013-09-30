@@ -884,6 +884,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
     @bat.bats.expose
     def speed_cheat(self):
+        # Disabled
+        return
         self.alter_speed(3.0, 10, Snail.DEFAULT_SPEED_TICS)
 
     def decay_speed(self, ntics=1):

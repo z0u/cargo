@@ -464,9 +464,9 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
     EXPAND_FAC = 0.01
     ZALIGN_FAC = 0.025
 
-    HROT_STEP = math.radians(5)
+    HROT_STEP = math.radians(3)
     VROT_MAX = math.radians(45)
-    VROT_SPEED = 0.2
+    VROT_SPEED = 0.1
     VROT_RESET_RATE = 0.05
 
     def __init__(self, old_owner):

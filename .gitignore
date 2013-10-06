@@ -18,8 +18,7 @@ OutdoorsBase_grass.blend
 *.blend?
 
 # Game data
-*.bgeconf
+*.bgeconf*
 
 *~
-*.bgeconf_*
 build

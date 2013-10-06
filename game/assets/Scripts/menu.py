@@ -16,6 +16,7 @@
 #
 
 import logging
+import os
 import time
 import webbrowser
 
@@ -163,10 +164,14 @@ class SessionManager(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
 class MenuController(Scripts.gui.UiController):
 
+    log = logging.getLogger(__name__ + '.MenuController')
+
     def __init__(self, old_owner):
         Scripts.gui.UiController.__init__(self, old_owner)
 
         bat.event.EventBus().add_listener(self)
+
+        self.update_version_text()
 
         # TODO: for some reason setScreen seems to interfere with the menu. If
         # send delay is set to 2, it might not work... but 200 does! Weird.
@@ -217,6 +222,23 @@ class MenuController(Scripts.gui.UiController):
                     return ob
 
         return None
+
+    def update_version_text(self):
+        ob = self.scene.objects['VersionText']
+        currentdir = bge.logic.expandPath('//')
+        version = '???'
+        try:
+            with open(os.path.join(currentdir, '../VERSION.txt'), 'rU') as f:
+                version = f.read(128)
+        except IOError:
+            try:
+                with open(os.path.join(currentdir, '../../VERSION.txt'), 'rU') as f:
+                    version = f.read(128)
+            except IOError:
+                MenuController.log.warn('Could not read VERSION.txt')
+                version = '???'
+
+        ob['Content'] = 'v%s' % version
 
 ################
 # Widget classes

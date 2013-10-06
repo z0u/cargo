@@ -14,8 +14,7 @@ __pycache__
 *.blend?
 
 # Game data
-*.bgeconf
+*.bgeconf*
 
 *~
-*.bgeconf_*
 .git*

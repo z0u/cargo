@@ -3,7 +3,7 @@ SHELL=/bin/bash
 VERSION := $(shell cat VERSION.txt)
 GAME_NAME := cargo
 ASSETS := ../game/assets
-DOCS := ../readme.html ../readme_files
+DOCS := ../readme.html ../readme_files ../VERSION.txt
 
 # Compile any generated game files.
 compile:

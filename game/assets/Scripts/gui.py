@@ -268,7 +268,12 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
             self.sensitive = True
         self['Widget'] = True
         self.original_position = self.localPosition.copy()
+        self.should_be_visible = False
         self.is_visible = False
+        if 'can_display' in self:
+            self.can_display = self['can_display']
+        else:
+            self.can_display = True
         self.hide()
 
         bat.event.EventBus().add_listener(self)
@@ -328,6 +333,7 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
                 self.enter()
 
     def hide(self):
+        self.should_be_visible = False
         self.is_visible = False
         self.setVisible(False, False)
         self.rem_state(Widget.S_DOWN)
@@ -337,6 +343,9 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         self.updateTargetFrame()
 
     def show(self):
+        self.should_be_visible = True
+        if not self.can_display:
+            return
         self.is_visible = True
         self.setVisible(True, False)
         self.rem_state(Widget.S_HIDING)
@@ -388,6 +397,18 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         if oldv != sensitive:
             evt = bat.event.Event('sensitivityChanged', self.sensitive)
             bat.event.EventBus().notify(evt)
+
+    @property
+    def can_display(self):
+        return self._can_display
+
+    @can_display.setter
+    def can_display(self, value):
+        self._can_display = value
+        if self.should_be_visible and not self.is_visible:
+            self.show()
+        elif not self.should_be_visible and self.is_visible:
+            self.hide()
 
 
 class Button(Widget):

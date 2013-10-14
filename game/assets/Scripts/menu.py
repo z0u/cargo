@@ -17,6 +17,7 @@
 
 import logging
 import os
+import platform
 import time
 import webbrowser
 
@@ -587,8 +588,29 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         self.bfoliage = bat.bats.mutate(self.children['Btn_Foliage'])
         self.bdof = bat.bats.mutate(self.children['Btn_DoF'])
         #self.bfull = bat.bats.mutate(self.children['Btn_Fullscreen'])
+
+        self.resolution_buttons = [
+            bat.bats.mutate(btn) for btn in self.children if btn.name.startswith('Btn_VC')
+            ]
+
+        # Hide resolution buttons when on a platform that doesn't support mode
+        # switching. In particular: can't change resolution on Mac.
+        norestext = bat.bats.mutate(self.children['VC_NoResolutionText'])
+#         if True:
+        if platform.system in {'Darwin'} and bge.render.getFullScreen():
+            for btn in self.resolution_buttons:
+                btn.can_display = False
+            bat.bats.mutate(self.children['VC_ResolutionText']).can_display = False
+            norestext.children[0]['Content'] = (
+                "Can not change resolutions on this platform. If the game " +
+                "runs slowly, try changing the resolution in your operating " +
+                "system properties.")
+        else:
+            norestext.can_display = False
+
         self.update_res_labels()
         self.revert()
+
         # This sets the resolution for the rest of the game!
         self.apply_resolution()
 
@@ -688,14 +710,6 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         else:
             time_text = self.childrenRecursive['VC_Instructions_Timer']
             time_text.set_text('Aborting in %ds' % int(remaining_time))
-
-    @property
-    def resolution_buttons(self):
-        def _res_generator():
-            for child in self.children:
-                if child.name.startswith('Btn_VC'):
-                    yield child
-        return _res_generator()
 
     @property
     def res(self):

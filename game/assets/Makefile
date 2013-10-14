@@ -25,7 +25,7 @@ SCRIPT_CACHE=bxt/*.pyc\
 # converted automatically when being opened.
 updateversion:
 	@echo Updating files.
-	@for f in *.blend bat/*.blend; \
+	@for f in *.blend bat/*.blend ../*.blend; \
 	do \
 	    echo -n "$$f ... "; \
 	    blender -b "$$f" -P BScripts/update_version.py; \

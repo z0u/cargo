@@ -619,7 +619,7 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
             self.revert()
         elif evt.message == 'SaveVideo':
             if self.res_is_different(self.res):
-                bat.event.Event('pushScreen', 'VideoConfirm').send()
+                bat.event.Event('switchScreen', 'VideoConfirm').send()
                 self.begin_confirmation()
             else:
                 self.save()
@@ -627,8 +627,12 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         elif evt.message == 'VideoResolutionClick':
             self.res = evt.body
         elif evt.message == 'VideoConfirm':
-            self.end_confirmation(evt.body == 'yes')
-            bat.event.Event('popScreen').send(1)
+            if evt.body == 'yes':
+                self.end_confirmation(True)
+                bat.event.Event('popScreen').send()
+            else:
+                self.end_confirmation(False)
+                bat.event.Event('switchScreen', 'VideoOptions').send()
         elif evt.message == 'popScreen':
             if self.confirm_deadline is not None:
                 self.end_confirmation(False)
@@ -686,7 +690,6 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         self.confirm_deadline = None
         if confirmed:
             self.save()
-            bat.event.Event('popScreen').send()
         else:
             self.revert_resolution()
             self.apply_resolution()

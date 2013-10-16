@@ -594,10 +594,10 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
             ]
 
         # Hide resolution buttons when on a platform that doesn't support mode
-        # switching. In particular: can't change resolution on Mac.
+        # switching.
         norestext = bat.bats.mutate(self.children['VC_NoResolutionText'])
 #         if True:
-        if platform.system in {'Darwin'} and bge.render.getFullScreen():
+        if not self.can_change_resolution:
             for btn in self.resolution_buttons:
                 btn.can_display = False
             bat.bats.mutate(self.children['VC_ResolutionText']).can_display = False
@@ -613,6 +613,15 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
 
         # This sets the resolution for the rest of the game!
         self.apply_resolution()
+
+    @property
+    def can_change_resolution(self):
+        if not bge.render.getFullScreen():
+            return True
+        else:
+            # Can't change resolution on Mac when full-screen. See:
+            # https://projects.blender.org/tracker/?func=detail&atid=306&aid=36501&group_id=9
+            return platform.system not in {'Darwin'}
 
     def on_event(self, evt):
         if evt.message == 'RevertVideo':
@@ -661,10 +670,16 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         self.revert_resolution()
 
     def revert_resolution(self):
-        #self.bfull.checked = bat.store.get('/opt/fullscreen', True)
-        self.res = bat.store.get('/opt/resolution', '800x600')
+        if not self.can_change_resolution:
+            current_dims = bge.render.getWindowWidth(), bge.render.getWindowHeight()
+            self.res = "{}x{}".format(*current_dims)
+        else:
+            #self.bfull.checked = bat.store.get('/opt/fullscreen', True)
+            self.res = bat.store.get('/opt/resolution', '800x600')
 
     def apply_resolution(self):
+        if not self.can_change_resolution:
+            return
         width, height = self.res.split('x')
         width = int(width)
         height = int(height)

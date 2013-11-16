@@ -97,6 +97,7 @@ class Worm(bat.story.Chapter, bge.types.BL_ArmatureObject):
 
         s = self.rootState.create_successor("Init")
         s.add_action(Scripts.story.ActSuspendInput())
+        s.add_event("ShowControlsInfo")
 
         s = s.create_successor("Init")
         s.add_condition(bat.story.CondWait(1))

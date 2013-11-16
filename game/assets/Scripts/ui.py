@@ -51,6 +51,15 @@ class HUDState(metaclass=bat.bats.Singleton):
                 bat.event.Event("ShowLoadingScreen", (False, None)).send(.001)
 
 
+class HudController(bat.bats.BX_GameObject, bge.types.KX_GameObject):
+    def __init__(self, old_owner):
+        bat.event.EventBus().add_listener(self)
+
+    def on_event(self, evt):
+        if evt.message == "ShowControlsInfo":
+            self.scene.addObject('ControlsInfo', 'ControlsInfo')
+
+
 def test_input(c):
     if len(bge.logic.getSceneList()) > 1:
         c.owner.endObject()
@@ -509,7 +518,7 @@ class QuitOptions(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
             elif self.selected_option == 1:
                 QuitOptions.log.info('Showing controls help.')
                 show_trivia = False
-                self.scene.addObject('ControlsInfo', 'ControlsInfo')
+                bat.event.Event('ShowControlsInfo').send()
                 cb_event = None
             else:
                 if self.game_over:
@@ -1286,10 +1295,14 @@ class Inventory(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         icon.visible = False
 
 
+
+
 class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_GameObject):
     SCALE_ON = 1.4
     SCALE_OFF = 1.0
     SCALE_FAC = 0.2
+    HIDE_FRAME = 1
+    SHOW_FRAME = 9
 
     log = logging.getLogger(__name__ + '.ControlsInfo')
 
@@ -1297,8 +1310,8 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
         self.gather_bindings()
         self.filter = self.childrenRecursive['CC_Filter']
         self.filter.playAction(
-            'CC_FilterAction', QuitOptions.ARM_HIDE_FRAME,
-            QuitOptions.ARM_SHOW_FRAME)
+            'CC_FilterAction', ControlsInfo.HIDE_FRAME,
+            ControlsInfo.SHOW_FRAME)
         self.filter.visible = True
         bat.impulse.Input().add_handler(self, 'MENU')
         bat.sound.Jukebox().add_volume_tweak(self, 0.1)
@@ -1326,7 +1339,7 @@ class ControlsInfo(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Gam
         start = self.filter.getActionFrame()
         self.filter.playAction(
             'CC_FilterAction', start,
-            QuitOptions.ARM_HIDE_FRAME)
+            ControlsInfo.HIDE_FRAME)
 
         def cb():
             # Resume game scene

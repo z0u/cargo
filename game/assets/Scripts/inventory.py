@@ -22,6 +22,7 @@ class Shells(metaclass=bat.bats.Singleton):
 
     # Shell names are stored in '/game/shellInventory' as a set.
     SHELL_NAMES = ['Shell', 'BottleCap', 'Nut', 'Wheel', 'Thimble']
+    RED_THINGS = ['BottleCap', 'Wheel', 'Thimble']
     DEFAULT_SHELLS = ['Shell']
     DEFAULT_EQUIPPED = 'Shell'
 
@@ -70,6 +71,10 @@ class Shells(metaclass=bat.bats.Singleton):
 
     def get_all_shells(self):
         return Shells.SHELL_NAMES
+
+    def remaining_shells(self):
+        red_things = set(self.RED_THINGS)
+        return red_things.difference(self.get_shells())
 
     def get_next(self, offset):
         '''Get the next shell, relative to the equipped one. If no shell

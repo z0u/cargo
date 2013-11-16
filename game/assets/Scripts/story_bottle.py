@@ -27,6 +27,7 @@ import bat.impulse
 import bat.store
 
 import Scripts.director
+import Scripts.inventory
 import Scripts.story_bird
 
 import Scripts.story
@@ -664,16 +665,19 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         scancel.add_predecessor(scap)
         scap = scap.create_successor()
         scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-        scap.add_event("ShowDialogue", "Only two more shiny red things to go, eh? Sadly I haven't seen anything else that is shiny and red.")
-#         scap.add_action(bat.story.ActSound('//Sound/slug.question.ogg'))
+        remaining_shells = Scripts.inventory.Shells().remaining_shells()
+        if len(remaining_shells) == 0:
+            scap.add_event("ShowDialogue",
+                "Hey, you found all the red things! Quick, take them to the bird at the top of the tree.")
+        elif len(remaining_shells) == 1:
+            scap.add_event("ShowDialogue",
+                "Only one more shiny red thing to go, eh? Keep looking - you're almost there!")
+        else:
+            scap.add_event("ShowDialogue",
+                "Only a couple more shiny red things to go, eh? Sadly I haven't seen anything else that is shiny and red.")
+#             scap.add_action(bat.story.ActSound('//Sound/slug.question.ogg'))
         self.anim_bottle_cap.play(scap, 80, 96)
         self.anim_idle.recall(scap, 'loop', after=96)
-
-        scancel.add_predecessor(scap)
-        scap = scap.create_successor()
-        scap.add_condition(bat.story.CondEvent("DialogueDismissed", self))
-        scap.add_event("ShowDialogue", "You'll just have to keep looking.")
-        scap.add_action(bat.story.ActSound('//Sound/slug.mutter2.ogg'))
 
         scancel.add_predecessor(scap)
         scap = scap.create_successor()

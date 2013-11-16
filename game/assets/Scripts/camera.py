@@ -458,7 +458,7 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
 
     _prefix = 'Orb_'
 
-    UP_DIST = 8.0
+    UP_DIST = 10
     BACK_DIST = 25.0
     DIST_BIAS = 0.5
     EXPAND_FAC = 0.01
@@ -501,18 +501,6 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         # Find directions to project along
         fwdDir, upDir = self.alignment.get_axes(self, target)
 
-        # Adjust based on user camera movement input. Transform is:
-        # 1. Rotate around up-axis by horizontal movement.
-        # 2. Rotate around right-axis by vertical movement.
-        if abs(self.cam_shift.x) > 0.0001 or abs(self.cam_shift.y) > 0.0001:
-            rightDir = fwdDir.cross(upDir)
-            yrot = mathutils.Quaternion(upDir, self.cam_shift.x * OrbitCamera.HROT_STEP)
-            xrot = mathutils.Quaternion(rightDir, self.cam_shift.y * OrbitCamera.VROT_MAX)
-            transform = yrot * xrot
-
-            fwdDir = transform * fwdDir
-            upDir = transform * upDir
-
         if self.distUp is None:
             # The first time this is run (after creation), distUp and distBack
             # are not known - so calculate them. On subsequent frames, the
@@ -522,6 +510,23 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
             relFwdPos = relPos - relUpPos
             self.distUp = relUpPos.magnitude
             self.distBack = relFwdPos.magnitude
+
+        # Adjust based on user camera movement input. Transform is:
+        # 1. Rotate around up-axis by horizontal movement.
+        # 2. Rotate around right-axis by vertical movement.
+        # Reduce ability to look up and down in tight spaces - otherwise the
+        # camera goes nuts.
+        if abs(self.cam_shift.x) > 0.0001 or abs(self.cam_shift.y) > 0.0001:
+            up_shrink_fac = ((self.distUp - 5) / (OrbitCamera.UP_DIST - 5))
+            max_v_rot = OrbitCamera.VROT_MAX * bat.bmath.clamp(0, 1, up_shrink_fac)
+
+            rightDir = fwdDir.cross(upDir)
+            yrot = mathutils.Quaternion(upDir, self.cam_shift.x * OrbitCamera.HROT_STEP)
+            xrot = mathutils.Quaternion(rightDir, self.cam_shift.y * max_v_rot)
+            transform = yrot * xrot
+
+            fwdDir = transform * fwdDir
+            upDir = transform * upDir
 
         # Look for the ceiling above the target.
         upPos, self.distUp = self.cast_ray(target.worldPosition, upDir,
@@ -562,15 +567,13 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
             #
             targetDist = (hitPoint - origin).magnitude
 
-        targetDist = targetDist * OrbitCamera.DIST_BIAS
-
         if targetDist < lastDist:
             dist = targetDist
         else:
             dist = bat.bmath.lerp(lastDist, targetDist,
                     OrbitCamera.EXPAND_FAC)
 
-        pos = origin + (direction * dist)
+        pos = origin + (direction * dist * OrbitCamera.DIST_BIAS)
         return pos, dist
 
     def can_handle_input(self, state):

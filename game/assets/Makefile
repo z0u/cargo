@@ -1,3 +1,12 @@
+# Path to blender executable.
+# Override this if you want to use a version of Blender that is not on the
+# system path, e.g. a special build. You can override it by starting the build
+# like this:
+#
+#     make BLENDER=~/local/blender-2.69-6d8f76c-linux-glibc211-x86_64/blender
+#
+BLENDER := `which blender`
+
 all: updateversion foliage
 
 # Foliage is compiled: particle system object instances are made real, then
@@ -5,10 +14,10 @@ all: updateversion foliage
 foliage: OutdoorsBase_flowers.blend OutdoorsBase_grass.blend
 
 OutdoorsBase_grass.blend: OutdoorsBase.blend GrassBlade.blend BScripts/BlendKDTree.py
-	blender --factory-startup -b OutdoorsBase.blend -P BScripts/BlendKDTree.py -- Grass_LOD OutdoorsBase_grass.blend
+	$(BLENDER) --factory-startup -b OutdoorsBase.blend -P BScripts/BlendKDTree.py -- Grass_LOD OutdoorsBase_grass.blend
 
 OutdoorsBase_flowers.blend: OutdoorsBase.blend GrassBlade.blend BScripts/BlendKDTree.py
-	blender --factory-startup -b OutdoorsBase.blend -P BScripts/BlendKDTree.py -- Flowers_LOD OutdoorsBase_flowers.blend
+	$(BLENDER) --factory-startup -b OutdoorsBase.blend -P BScripts/BlendKDTree.py -- Flowers_LOD OutdoorsBase_flowers.blend
 
 SCRIPT_CACHE=bxt/*.pyc\
 	bxt/__pycache__\
@@ -24,15 +33,15 @@ SCRIPT_CACHE=bxt/*.pyc\
 # may crash when loading linked assets, because the linked files are not
 # converted automatically when being opened.
 updateversion:
-	@echo Updating files.
+	@echo Updating files using $(BLENDER)
 	@for f in *.blend bat/*.blend ../*.blend; \
 	do \
 	    echo -n "$$f ... "; \
-	    blender -b "$$f" -P BScripts/update_version.py; \
+	    $(BLENDER) -b "$$f" -P BScripts/update_version.py; \
 	    echo done; \
 	done
 	@echo Storing current version in BLENDER_VERSION.txt
-	@blender -v > BLENDER_VERSION.txt
+	@$(BLENDER) -v > BLENDER_VERSION.txt
 
 clean:
 	rm -rf $(SCRIPT_CACHE)

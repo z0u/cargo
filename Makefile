@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-VERSION := $(shell cat VERSION.txt)
+VERSION := $(shell git describe --tags)
 GAME_NAME := cargo
 ASSETS := ../game/assets
 DOCS := ../readme.html ../readme_files ../VERSION.txt
@@ -12,6 +12,7 @@ compile:
 # Package distribution files.
 package = \
 	@test -n "$(ARCHIVES)" || { echo "Error: no archive files. Download Blender archives and put them in the blender/ directory. See http://www.blender.org/download/get-blender/"; false; }; \
+	echo "$(VERSION)" > VERSION.txt; \
 	mkdir -p build; \
 	cd build; \
 	for archive in $(ARCHIVES); do \

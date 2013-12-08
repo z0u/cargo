@@ -239,7 +239,7 @@ class MenuController(Scripts.gui.UiController):
                 MenuController.log.warn('Could not read VERSION.txt')
                 version = '???'
 
-        ob['Content'] = 'v%s' % version
+        ob['Content'] = '%s' % version
 
 ################
 # Widget classes

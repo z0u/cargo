@@ -333,8 +333,8 @@ class Snail(bat.impulse.Handler, Scripts.director.VulnerableActor, bge.types.KX_
 
             vect = eyeRayOb.getAxisVect(bat.bmath.ZAXIS) * restLength
             through = eyeRayOb.worldPosition + vect
-            hitOb, hitPos, _ = bat.bmath.ray_cast_p2p(through, eyeRayOb,
-                    prop = 'Ground')
+            hitOb, hitPos, _ = eyeRayOb.rayCast(
+                through, None, 0.0, 'Ground', 1, 1, 0)
 
             targetLength = vect.magnitude
             if hitOb:

@@ -34,7 +34,7 @@ import Scripts.director
 import bat.store
 
 def hasLineOfSight(ob, other):
-    hitOb, _, _ = bat.bmath.ray_cast_p2p(other, ob, prop = 'Ray')
+    hitOb, _, _ = ob.rayCast(other, None, 0.0, 'Ray', 1, 1, 0)
     return (hitOb is None)
 
 class AutoCamera(metaclass=bat.bats.Singleton):
@@ -726,10 +726,8 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
             self.target = bat.bmath.ZAXIS.copy()
             self.target *= PathCamera.ZOFFSET
             self.target = bat.bmath.to_world(self.owner, self.target)
-            hitOb, hitPoint, _ = bat.bmath.ray_cast_p2p(
-                    self.target, # objto
-                    self.owner.worldPosition, # objfrom
-                    prop = 'Ray')
+            hitOb, hitPoint, _ = self.owner.rayCast(
+                self.target, None, 0.0, 'Ray', 1, 1, 0)
 
             if hitOb:
                 vec = hitPoint - self.owner.worldPosition
@@ -890,8 +888,8 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         ba.normalize()
         projectedPoint = a.owner.worldPosition + (ba * PathCamera.PREDICT_FWD)
 
-        hitOb, hitPoint, _ = bat.bmath.ray_cast_p2p(
-                projectedPoint, a.owner, prop = 'Ray')
+        hitOb, hitPoint, _ = self.rayCast(
+            projectedPoint, a.owner, 0.0, 'Ray', 1, 1, 0)
         if hitOb is not None:
             vect = hitPoint - a.owner.worldPosition
             vect.magnitude = vect.magnitude * 0.9
@@ -919,8 +917,8 @@ class PathCamera(bat.bats.BX_GameObject, bge.types.KX_GameObject):
             upAxis = rotAxis.cross(ba)
             pp2 = projectedPoint - (upAxis * PathCamera.PREDICT_FWD)
 
-            hitOb, hitPoint, _ = bat.bmath.ray_cast_p2p(
-                    pp2, projectedPoint, prop = 'Ray')
+            hitOb, hitPoint, _ = self.rayCast(
+                pp2, projectedPoint, 0.0, 'Ray', 1, 1, 0)
             if hitOb is not None:
                 vect = hitPoint - projectedPoint
                 vect.magnitude = vect.magnitude * 0.9
@@ -1101,7 +1099,7 @@ class CameraCollider(bat.bats.BX_GameObject, bge.types.KX_GameObject):
 
     def cast_for_water(self, pos, direction):
         through = pos + direction * CameraCollider.MAX_DIST
-        ob, _, normal = bat.bmath.ray_cast_p2p(through, pos, prop='VolumeCol')
+        ob, _, normal = self.rayCast(through, pos, 0.0, 'VolumeCol', 1, 1, 0)
         if ob is not None and normal.dot(direction) > 0.0:
             return ob
         else:

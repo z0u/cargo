@@ -30,18 +30,20 @@
 Cargo does not need to be installed; simply double click on the game file to play.
 
 <ul>
-  <li>GNU+Linux: Double-click on cargo/cargo</li>
-  <li>Windows: Double-click on cargo/cargo.exe</li>
-  <li>Mac OSX: Double-click on cargo.app</li>
+  <li>GNU/Linux: Double-click on <em>cargo</em></li>
+  <li>Windows: Double-click on <em>cargo</em> or <em>cargo.exe</em></li>
+  <li>Mac OSX: Double-click on <em>cargo.app</em></li>
 </ul>
+
+<p class="alert"><strong>Note:</strong> This is a <a href="https://en.wikipedia.org/wiki/Software_release_life_cycle#Beta" title="Wikipedia article on beta releases">beta release</a> for testing purposes. The Windows version should work well, but there are <a href="#known_issues">known issues</a> on Mac OS X and GNU/Linux.</p>
 
 </div> <!-- span6 -->
 <div class="span6">
 <h2>Playing the game</h2>
 
 <p>Cargo can crawl on almost any surface, including walls and ceilings. Use the
-arrow keys to move. To turn a corner, press the left or right arrow and forward
-or backward - as if you were driving a car*.</p>
+WSAD keys to move. To turn a corner, press A or D and W
+or S (left or right and up or down) - as if you were driving a car*.</p>
 
 <p>Cargo's shell is useful, too! Press Space to enter the shell. You can then roll
 along the ground by pressing the arrow keys. The shell won't stick to walls or
@@ -54,23 +56,29 @@ the ceiling, but it can float. Are there any other uses for it?</p>
 <div class="span6">
 <h3>Keyboard and mouse controls</h3>
 
+<p>These are the default controls. You can change them from the main menu.</p>
+
 <table>
 <thead>
 <tr><th></th><th>Key</th><th>Effect</th></tr>
 </thead>
 <tbody>
-<tr><td><img src="readme_files/btn-up.png"></td><td>W or Up-arrow</td><td>Move forward</td></tr>
-<tr><td><img src="readme_files/btn-down.png"></td><td>S or Down-arrow</td><td>Move backward</td></tr>
-<tr><td><img src="readme_files/btn-left.png"></td><td>A or Left-arrow</td><td>Turn left</td></tr>
-<tr><td><img src="readme_files/btn-right.png"></td><td>D or Right-arrow</td><td>Turn right</td></tr>
+<tr><td><img src="readme_files/btn-up.png"></td><td>W</td><td>Move forward</td></tr>
+<tr><td><img src="readme_files/btn-down.png"></td><td>S</td><td>Move backward</td></tr>
+<tr><td><img src="readme_files/btn-left.png"></td><td>A</td><td>Turn left</td></tr>
+<tr><td><img src="readme_files/btn-right.png"></td><td>D</td><td>Turn right</td></tr>
 <tr><td><img src="readme_files/btn-cam.png"></td><td>Move mouse</td><td>Move camera (look around)</td></tr>
-<tr><td><img src="readme_files/btn-1.png"></td><td>Space, Left-mouse or Enter/Return</td><td>Enter shell, accept dialogue option</td></tr>
-<tr><td><img src="readme_files/btn-2.png"></td><td>X, Right-mouse</td><td>Drop shell, cancel dialogue option</td></tr>
+<tr><td></td><td>Up-arrow</td><td>Move camera up (look down)</td></tr>
+<tr><td></td><td>Down-arrow</td><td>Move camera down (look up)</td></tr>
+<tr><td></td><td>Left-arrow</td><td>Move camera left (look right)</td></tr>
+<tr><td></td><td>Right-arrow</td><td>Move camera right (look left)</td></tr>
+<tr><td><img src="readme_files/btn-1.png"></td><td>Space, Left-mouse or Enter/Return</td><td>Enter shell, accept dialogue</td></tr>
+<tr><td><img src="readme_files/btn-2.png"></td><td>X, Right-mouse</td><td>Drop shell, cancel dialogue</td></tr>
 <tr><td><img src="readme_files/btn-cam.png"></td><td>C, Middle-mouse</td><td>Reset camera position</td></tr>
 <tr><td><img src="readme_files/btn-prev.png"></td><td>Q, Mouse-wheel-up</td><td>Previous shell, previous option</td></tr>
 <tr><td><img src="readme_files/btn-next.png"></td><td>E, Mouse-wheel-down</td><td>Next shell, next option</td></tr>
 <tr><td><img src="readme_files/btn-start.png"></td><td>Escape</td><td>Show quit options</td></tr>
-<tr><td></td><td>F10</td><td>Quit immediately</td></tr>
+<tr><td></td><td><strong>F11</strong></td><td>Quit immediately. <em>Press this if the game gets stuck!</em></td></tr>
 </tbody>
 </table>
 
@@ -78,7 +86,7 @@ the ceiling, but it can float. Are there any other uses for it?</p>
 <div class="span6">
 <h3>Joystick/joypad controls</h3>
 
-These default joystick bindings are set up for a Playstation 3 controller. If your controller is different, you may need to change them from the main menu.
+These default joystick bindings are set up for a Playstation 3 USB controller. If your controller is different, you may need to change them from the main menu.
 
 <table>
 <thead>
@@ -105,6 +113,17 @@ These default joystick bindings are set up for a Playstation 3 controller. If yo
 <p><em>Free software</em> doesn't mean "free of charge" - it means that this game respects your freedom. It does this by endorsing your rights to use the game in any way you like, study the source code, modify the game and <em>share it with your friends</em>. These are fundamental values of the <a href="http://www.gnu.org/philosophy/free-sw.html">free software</a> movement; a movement for the freedom of people who use software.</p>
 
 <p>Unlike many games, Cargo is also free of <abbr title="Digital Restrictions Management">DRM</abbr> and other technical restrictions.</p>
+
+</div><!-- end span6 -->
+
+<div class="span6">
+<h2><a id="known_issues"></a>Known Issues (bugs!)</h2>
+<p>This is a beta release (version 0.95). The game should work well on most computers, but there some issues:</p>
+
+<ul>
+<li>On <em>some</em> GNU/Linux systems, the first level will <a class="reference external" href="http://developer.blender.org/T36963">fail to start</a>.</li>
+<li>On Mac computers with "integrated" or Intel video cards, <a class="reference external" href="http://developer.blender.org/T37514">the frame rate of animations is low</a> (even if the overall frame rate is high). This happens even if a &quot;discrete&quot; graphics card (such as nVidia) is present too.</li>
+</ul>
 
 </div><!-- end span6 -->
 

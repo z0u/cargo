@@ -61,7 +61,7 @@ _CREDIT_ITEMS = [
             "UncleSigmund", "dobroide"]),
     'concept_tree',
 
-    ("Testing", ["Jodie Fraser", "Lachlan Kanaley", "Damien Elmes", "Mark Triggs", "Caley Finn"]),
+    ("Alpha Testing", ["Jodie Fraser", "Lachlan Kanaley", "Damien Elmes", "Mark Triggs", "Caley Finn"]),
     ("Made With", ["Blender", "Bullet", "The GIMP", "Inkscape", "Audacity", "Eclipse", "Git"]),
     'concept_catapult',
 

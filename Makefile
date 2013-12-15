@@ -5,7 +5,11 @@ GAME_NAME := cargo
 ASSETS := ../game/assets
 DOCS := ../readme.html ../readme_files ../VERSION.txt
 
+.PHONY: build
+build: build-osx build-win build-lin
+
 # Compile any generated game files.
+.PHONY: compile
 compile:
 	$(MAKE) -C game/assets
 
@@ -22,9 +26,6 @@ package = \
 			../$$archive $(MAINFILE) $(ASSETS) --docs $(DOCS) -p1; \
 		if [ $$? -ne 0 ]; then exit $$?; fi \
 	done
-
-.PHONY: build
-build: build-osx build-win build-lin
 
 .PHONY: build-osx
 build-osx: ARCHIVES := $(wildcard blender/*OSX*.zip)

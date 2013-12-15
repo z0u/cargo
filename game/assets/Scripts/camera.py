@@ -196,15 +196,15 @@ class AutoCamera(metaclass=bat.bats.Singleton):
             if focalPoint is None:
                 return
 
+        cam = self.camera
+
         if hasattr(focalPoint, 'get_focal_points'):
             # Pick the point that is closest to the camera.
             points = focalPoint.get_focal_points()
             if len(points) > 0:
-                key = bat.bmath.DistanceKey(self.camera)
+                key = bat.bmath.DistanceKey(cam)
                 points.sort(key=key)
                 focalPoint = points[0]
-
-        cam = bge.logic.getCurrentScene().active_camera
 
         # Convert to depth; assume very large zFar
         # http://www.sjbaker.org/steve/omniv/love_your_z_buffer.html

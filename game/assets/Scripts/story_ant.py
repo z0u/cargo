@@ -22,8 +22,9 @@ import bge
 
 import bat.bats
 import bat.bmath
-
+import bat.impulse
 import bat.story
+
 import Scripts.story
 
 log = logging.getLogger(__name__)
@@ -80,6 +81,21 @@ def oversee(c):
             sce.objects["Honeypot"].endObject()
 
 
+def approach_indoors(c):
+    mainc = Scripts.director.Director().mainCharacter
+    if mainc is None:
+        return
+    dist = (mainc.worldPosition - c.owner.worldPosition).magnitude
+    if dist < 19:
+        if not c.owner['active']:
+            bat.event.Event('ApproachAnt').send()
+            c.owner['active'] = True
+    elif dist > 25:
+        if c.owner['active']:
+            bat.event.Event('LeaveAnt').send()
+            c.owner['active'] = False
+
+
 def music_outside(c):
     ob = c.owner
     if bat.utils.someSensorPositive(c):
@@ -102,7 +118,7 @@ def music_inside(c):
         bat.sound.Jukebox().stop('ant_music')
 
 
-class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
+class Ant(bat.impulse.Handler, bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
     L_IDLE = 0
     L_ANIM = 1
 
@@ -131,6 +147,20 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
     def get_focal_points(self):
         return [self.children['Ant_Face'], self.children['Ant_Centre']]
+
+    def prevent_shell_actions(self):
+        # Add self as input handler to prevent shell actions.
+        bat.impulse.Input().add_handler(self, 'DIALOGUE')
+
+    def allow_shell_actions(self):
+        bat.impulse.Input().remove_handler(self)
+
+    def can_handle_input(self, state):
+        '''
+        Capture input to prevent certain actions.
+        '''
+        # Disallow enter, drop and switch shell actions.
+        return state.name in {'1', '2', 'Switch'}
 
     #########################
     # Outdoors
@@ -687,12 +717,14 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
         s.add_action(bat.story.ActStoreSet('/game/storySummary', 'gotThimble'))
         s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS_Front'))
         s.add_action(Scripts.story.ActResumeInput())
+        s.add_action(bat.story.ActGeneric(self.prevent_shell_actions))
 
         # Player is free to move around now. Here, we override the super state
         # transition which watches for the LeaveAnt event.
 
         s = s.create_successor('Carried ant over honey')
         s.add_condition(bat.story.CondEvent('ReachShore', self))
+        s.add_action(bat.story.ActGeneric(self.allow_shell_actions))
         s.add_action(Scripts.story.ActSuspendInput())
         s.add_event("StartLoading", self)
 

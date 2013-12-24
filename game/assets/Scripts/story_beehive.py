@@ -86,9 +86,14 @@ def create_ant(c):
     ant = Scripts.story_ant.factory()
     bat.bmath.copy_transform(spawn_point, ant)
 
+
 def approach_window(c):
     '''Triggers the animation of the ant grabbing the bucket.'''
-    if c.sensors[0].positive and c.sensors[0].triggered:
+    mainc = Scripts.director.Director().mainCharacter
+    if mainc is None:
+        return
+    dist = (mainc.worldPosition - c.owner.worldPosition).magnitude
+    if dist < 9.5:
         bat.event.Event('ApproachWindow').send()
 
 

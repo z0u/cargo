@@ -25,6 +25,7 @@ import bat.bmath
 import bat.impulse
 import bat.story
 
+import Scripts.director
 import Scripts.story
 
 log = logging.getLogger(__name__)
@@ -522,6 +523,7 @@ class Ant(bat.impulse.Handler, bat.story.Chapter, bat.bats.BX_GameObject, bge.ty
         s.add_action(Scripts.story.ActSuspendInput())
         s.add_action(bat.story.ActAddObject('Thimble_ant'))
         s.add_event('ParkBuckets')
+        s.add_event('ForceExitShell')
 
         s_fra = 855
         e_fra = 1020

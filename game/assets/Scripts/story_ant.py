@@ -54,6 +54,32 @@ class Honeypot(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         bat.bmath.copy_transform(self.children["Ant1SpawnPoint"], ant1)
         ant1.setParent(self)
 
+
+def oversee(c):
+    if bat.store.get('/game/level/treeDoorBroken', False):
+        # Ant has already entered tree.
+        c.owner.endObject()
+        return
+
+    sce = bge.logic.getCurrentScene()
+    if c.sensors['Once'].positive:
+        log.info("Loading ant")
+        prepare()
+
+    mainc = Scripts.director.Director().mainCharacter
+    if mainc is None:
+        return
+    dist = (mainc.worldPosition - c.owner.worldPosition).magnitude
+    if dist < 100:
+        if "Honeypot" not in sce.objects:
+            log.info("Creating honeypot")
+            sce.addObject("Honeypot", c.owner)
+    elif dist > 120:
+        if "Honeypot" in sce.objects:
+            log.info("Destroying honeypot")
+            sce.objects["Honeypot"].endObject()
+
+
 def music_outside(c):
     ob = c.owner
     if bat.utils.someSensorPositive(c):
@@ -64,6 +90,7 @@ def music_outside(c):
     else:
         bat.sound.Jukebox().stop('ant_music')
 
+
 def music_inside(c):
     ob = c.owner
     if bat.utils.someSensorPositive(c):
@@ -73,6 +100,7 @@ def music_inside(c):
             fade_in_rate=1, volume=0.7)
     else:
         bat.sound.Jukebox().stop('ant_music')
+
 
 class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject):
     L_IDLE = 0
@@ -783,26 +811,6 @@ class Ant(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObject
 
         return s_start, s_end
 
-
-def oversee(c):
-    if bat.store.get('/game/level/treeDoorBroken', False):
-        # Ant has already entered tree.
-        c.owner.endObject()
-        return
-
-    sce = bge.logic.getCurrentScene()
-    if c.sensors['Once'].positive:
-        log.info("Loading ant")
-        prepare()
-
-    if c.sensors['Near'].positive:
-        if "Honeypot" not in sce.objects:
-            log.info("Creating honeypot")
-            sce.addObject("Honeypot", c.owner)
-    else:
-        if "Honeypot" in sce.objects:
-            log.info("Destroying honeypot")
-            sce.objects["Honeypot"].endObject()
 
 def test_anim():
     sce = bge.logic.getCurrentScene()

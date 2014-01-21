@@ -397,7 +397,7 @@ class BarKeeper(bat.story.Chapter, bge.types.KX_GameObject):
         sstart.add_condition(bat.story.CondStore('/game/level/lkMissionStarted', True, False))
 
         s = sstart.create_successor()
-        s.add_event("ShowDialogue", ("Hi there, Mr Postman. What can I do for you?",
+        s.add_event("ShowDialogue", ("Hi there, postie. What can I do for you?",
                 ("\[envelope].", "1 tomato sauce, please.")))
         s.add_action(bat.story.ActSound('//Sound/slug.greeting.ogg'))
         self.anim_greet.recall(s, 'greet')

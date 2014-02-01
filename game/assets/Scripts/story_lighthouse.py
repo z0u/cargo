@@ -176,7 +176,7 @@ class LighthouseKeeper(bat.story.Chapter, bge.types.BL_ArmatureObject):
                 '/game/level/lkMissionStarted', True, False)))
             ("ShowDialogue", ("Cargo! What's up?",
                 ("\[envelope]!", "Just saying \"hi\".")))
-            (bat.story.ActSound('//Sound/ff.greeting2.ogg', vol=3))
+            (bat.story.ActSound('//Sound/ff.greeting2.ogg', vol=6))
         )
 
         sdliver1_start, sdeliver1_end = self.sg_accept_delivery()

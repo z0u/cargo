@@ -85,6 +85,9 @@ class ObjectPrinter:
 
 class CollectionPrinter:
 
+    def __init__(self, named_keys=True):
+        self.named_keys = named_keys
+
     def prettyprint(self, state, path, name, col):
         if col in state.printed:
             return
@@ -93,13 +96,12 @@ class CollectionPrinter:
         state.file.write("%s\n" % path)
         state.file.write('\t__len__: %d\n' % len(col))
         for i, item in enumerate(col):
-            if hasattr(item, 'name'):
+            if self.named_keys and hasattr(item, 'name'):
                 index = "'%s'" % item.name
             else:
                 index = "%d" % i
             childpath = "{p}[{i}]".format(p=path, i=index)
             #print(childpath)
-            cls = qualname(item)
             state.dispatcher.dispatch(state, childpath, index, item)
 
 
@@ -152,7 +154,10 @@ class PrintDispatcher:
             self.handlers['builtins.bool'] = ReprPrinter()
 
         # Collections
-        self.handlers['builtins.bpy_prop_collection'] = CollectionPrinter()
+        self.handlers['builtins.bpy_prop_array'] = CollectionPrinter(
+            named_keys=False)
+        self.handlers['builtins.bpy_prop_collection'] = CollectionPrinter(
+            named_keys=True)
 
         # Special handler for text
         self.handlers['bpy_types.Text'] = TextPrinter()

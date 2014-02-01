@@ -10,7 +10,11 @@ IGNORE = {
     'rna_type',
     'type_info',
     }
-
+IGNORE_UI = {
+    'window_managers',
+    'screens',
+    'brushes'
+    }
 
 def qualname(ob):
     return '%s.%s' % (ob.__class__.__module__, ob.__class__.__name__)
@@ -155,6 +159,17 @@ class PrintState:
         self.file = f
 
 
+def export(filepath, include_ui):
+    if not include_ui:
+        extra_ignore = IGNORE_UI
+    else:
+        extra_ignore = None
+    dispatcher = PrintDispatcher(extra_ignore)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        state = PrintState(dispatcher, f)
+        dispatcher.dispatch(state, 'bpy.data', 'data', bpy.data)
+
+
 class TextExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     """Export blend file data to plain text"""
     bl_idname = "export_scene.asc"
@@ -177,14 +192,7 @@ class TextExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
             )
 
     def execute(self, context):
-        if not self.include_ui:
-            extra_ignore = {'window_managers', 'screens', 'brushes'}
-        else:
-            extra_ignore = None
-        dispatcher = PrintDispatcher(extra_ignore)
-        with open(self.filepath, 'w', encoding='utf-8') as f:
-            state = PrintState(dispatcher, f)
-            dispatcher.dispatch(state, 'bpy.data', 'data', bpy.data)
+        export(self.filepath, self.include_ui)
         return {'FINISHED'}
 
 
@@ -203,5 +211,29 @@ def unregister():
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
 
-if __name__ == "__main__":
+def run_batch():
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(
+        description="Export .blend file to text.",
+        usage="blender -b <infile> -P <this script> -- [args] <outfile>")
+    parser.add_argument('--ui', help="Include UI and tool settings.", default=False)
+    parser.add_argument('filepath', help="The file to write to.")
+
+    try:
+        arg_sep = sys.argv.index('--')
+    except ValueError:
+        print("Error: missing arguments.")
+        parser.print_help()
+        sys.exit(1)
+
+    args = sys.argv[arg_sep:]
+    args = parser.parse_args(args=args)
+    export(args.filepath, args.ui)
+
+
+if bpy.app.background:
+    run_batch()
+elif __name__ == "__main__":
     register()

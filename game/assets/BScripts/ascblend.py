@@ -1,48 +1,102 @@
 import bpy
 
 HANDLERS = {}
+IGNORE = {
+    'bl_rna',
+    'particle_edit', # causes crash
+    'rna_type',
+    'screens',
+    'type_info',
+    'window_managers',
+    'worlds'}
 
-class Printer:
+printed = set()
 
-    IGNORE = {'screens', 'window_managers', 'worlds'}
+def qualname(ob):
+    return '%s.%s' % (ob.__class__.__module__, ob.__class__.__name__)
 
-    def prettyprint(self, path, ob):
-        for name, col in self.collections(ob):
-            for i, item in enumerate(col):
-                if hasattr(item, 'name'):
-                    index = "'%s'" % item.name
-                else:
-                    index = "%d" % i
-                childpath = "{p}.{col}[{i}]".format(p=path, col=name, i=index)
-                print(childpath)
-                #print(repr(item))
-                cls = self.qualname(item)
-                if cls in HANDLERS:
-                    HANDLERS[cls].prettyprint(childpath, item)
-                else:
-                    self.prettyprint(childpath, item)
+class ObjectPrinter:
 
-    def qualname(self, ob):
-        return '%s.%s' % (ob.__class__.__module__, ob.__class__.__name__)
+    def prettyprint(self, path, name, ob):
+        try:
+            if ob in printed:
+                print("%s (rpt)" % path)
+                return
+            printed.add(ob)
+        except TypeError:
+            return
+        else:
+            print(path)
 
-    def collections(self, ob):
-        for name in dir(ob):
-            if name.startswith('__'):
+        for attr in dir(ob):
+            if attr.startswith('__'):
                 continue
-            if name in self.IGNORE:
+            if attr in IGNORE:
                 continue
-            child = getattr(ob, name)
-            if child.__class__.__name__ == 'bpy_prop_collection':
-                yield name, child
+            child = getattr(ob, attr)
+            cls = qualname(child)
+            childpath = "{p}.{col}".format(p=path, col=attr)
+            if cls in HANDLERS:
+                HANDLERS[cls].prettyprint(childpath, attr, child)
+            else:
+                HANDLERS['_default'].prettyprint(childpath, attr, child)
 
 
-class TextPrinter(Printer):
+class CollectionPrinter:
 
-    def prettyprint(self, path, ob):
-        for line in ob.lines:
+    def prettyprint(self, path, name, col):
+        if col in printed:
+            return
+        printed.add(col)
+
+        print(path)
+        print('\tlength', len(col))
+        for i, item in enumerate(col):
+            if hasattr(item, 'name'):
+                index = "'%s'" % item.name
+            else:
+                index = "%d" % i
+            childpath = "{p}[{i}]".format(p=path, i=index)
+            #print(childpath)
+            cls = qualname(item)
+            if cls in HANDLERS:
+                HANDLERS[cls].prettyprint(childpath, index, item)
+            else:
+                HANDLERS['_default'].prettyprint(childpath, index, item)
+
+
+class TextPrinter:
+
+    def prettyprint(self, path, name, text):
+        if text in printed:
+            return
+        printed.add(text)
+
+        for line in text.lines:
             print('\t%s' % line.body)
 
+
+class NullPrinter:
+
+    def prettyprint(self, path, name, ob):
+        return
+
+
+class ReprPrinter:
+
+    def prettyprint(self, path, name, ob):
+        print('\t{name}: {value}'.format(name=name, value=repr(ob)))
+
+
+repr_printer = ReprPrinter()
+
+HANDLERS['builtins.builtin_function_or_method'] = NullPrinter()
+HANDLERS['builtins.str'] = repr_printer
+HANDLERS['builtins.int'] = repr_printer
+HANDLERS['builtins.float'] = repr_printer
+HANDLERS['_default'] = ObjectPrinter()
+HANDLERS['builtins.bpy_prop_collection'] = CollectionPrinter()
 HANDLERS['bpy_types.Text'] = TextPrinter()
 
-printer = Printer()
-printer.prettyprint('bpy.data', bpy.data)
+printer = ObjectPrinter()
+printer.prettyprint('bpy.data', 'data', bpy.data)

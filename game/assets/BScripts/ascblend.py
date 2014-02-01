@@ -34,6 +34,7 @@ class ObjectPrinter:
         'textures',
         'node_groups',
         'materials',
+        'vertices', 'edges', 'polygons', 'tessfaces', 'uv_layers', 'uv_textures'
         'curves', 'meshes', 'lamps', 'cameras', 'metaballs', 'lattices', 'speakers',
         'particles',
         'objects', 'worlds',
@@ -129,16 +130,31 @@ class PrintDispatcher:
 
     def __init__(self, extra_ignore=None):
         self.handlers = {}
+
+        # Generic objects
         ignore = IGNORE.copy()
         if extra_ignore is not None:
             ignore.update(extra_ignore)
         self.handlers['_default'] = ObjectPrinter(ignore)
-        self.handlers['builtins.builtin_function_or_method'] = NullPrinter()
-        self.handlers['builtins.str'] = \
+
+        # Functions
+        self.handlers['builtins.bpy_func'] = \
+            self.handlers['builtins.builtin_function_or_method'] = NullPrinter()
+
+        # Mathutils types and primitives
+        self.handlers['builtins.Vector'] = \
+            self.handlers['builtins.Euler'] = \
+            self.handlers['builtins.Quaternion'] = \
+            self.handlers['builtins.Matrix'] = \
+            self.handlers['builtins.str'] = \
             self.handlers['builtins.int'] = \
             self.handlers['builtins.float'] = \
             self.handlers['builtins.bool'] = ReprPrinter()
+
+        # Collections
         self.handlers['builtins.bpy_prop_collection'] = CollectionPrinter()
+
+        # Special handler for text
         self.handlers['bpy_types.Text'] = TextPrinter()
 
     def dispatch(self, state, path, name, ob):

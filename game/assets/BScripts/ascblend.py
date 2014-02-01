@@ -1,3 +1,5 @@
+import itertools
+
 import bpy
 import bpy_extras
 
@@ -23,6 +25,8 @@ def qualname(ob):
 
 
 class ObjectPrinter:
+
+    is_leaf = False
 
     # Sort order for object properties. Repeated object references are not
     # printed in detail, so try to make the first reference come from an
@@ -65,16 +69,24 @@ class ObjectPrinter:
 
         attrs = dir(ob)
         attrs.sort(key=ObjectPrinter.propkey)
+        leaves = []
+        branches = []
         for attr in attrs:
             if attr.startswith('__'):
                 continue
             if attr in self.ignore:
                 continue
             child = getattr(ob, attr)
-            cls = qualname(child)
+            if state.dispatcher.is_leaf(child):
+                leaves.append((attr, child))
+            else:
+                branches.append((attr, child))
+
+        sub_indent = indent + INDENT
+        for attr, child in itertools.chain(leaves, branches):
             childpath = "{p}.{col}".format(p=path, col=attr)
             state.dispatcher.dispatch(
-                state, indent + INDENT, childpath, attr, child)
+                state, sub_indent, childpath, attr, child)
 
     @staticmethod
     def propkey(name):
@@ -87,6 +99,8 @@ class ObjectPrinter:
 
 
 class CollectionPrinter:
+
+    is_leaf = False
 
     def __init__(self, named_keys=True):
         self.named_keys = named_keys
@@ -111,6 +125,8 @@ class CollectionPrinter:
 
 class TextPrinter:
 
+    is_leaf = False
+
     def prettyprint(self, state, indent, path, name, text):
         if text in state.printed:
             return
@@ -123,11 +139,15 @@ class TextPrinter:
 
 class NullPrinter:
 
+    is_leaf = True
+
     def prettyprint(self, state, indent, path, name, ob):
         return
 
 
 class ReprPrinter:
+
+    is_leaf = True
 
     def prettyprint(self, state, indent, path, name, ob):
         state.file.write('{indent}{name}: {value}\n'.format(
@@ -147,6 +167,7 @@ class PrintDispatcher:
 
         # Functions
         self.handlers['builtins.bpy_func'] = \
+        self.handlers['builtins.method'] = \
             self.handlers['builtins.builtin_function_or_method'] = NullPrinter()
 
         # Mathutils types and primitives
@@ -168,15 +189,22 @@ class PrintDispatcher:
         # Special handler for text
         self.handlers['bpy_types.Text'] = TextPrinter()
 
-    def dispatch(self, state, indent, path, name, ob):
+    def get_handler(self, ob):
         cls = qualname(ob)
-        if cls in self.handlers:
-            self.handlers[cls].prettyprint(state, indent, path, name, ob)
-        else:
-            self.handlers['_default'].prettyprint(state, indent, path, name, ob)
+        try:
+            return self.handlers[cls]
+        except KeyError:
+            return self.handlers['_default']
+
+    def dispatch(self, state, indent, path, name, ob):
+        self.get_handler(ob).prettyprint(state, indent, path, name, ob)
+
+    def is_leaf(self, ob):
+        return self.get_handler(ob).is_leaf
 
 
 class PrintState:
+
     def __init__(self, dispatcher, f):
         # Objects that have already been printed; when encountered again,
         # the reference but not the data will be printed again.

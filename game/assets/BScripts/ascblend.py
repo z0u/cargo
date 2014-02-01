@@ -1,4 +1,5 @@
 import itertools
+import time
 
 import bpy
 import bpy_extras
@@ -11,17 +12,56 @@ IGNORE = {
     'particle_edit',
     'rna_type',
     'type_info',
+    'uv_texture_clone',
+    'uv_layer_clone',
+    }
+IGNORE_IMAGE = {
+    'pixels',
+    }
+IGNORE_OBDATA = {
+    'vertices',
+    'edges',
+    'polygons',
+    'tessfaces',
+    'loops',
+    # TODO: Should only exclude the .data children of these attributes.
+    'uv_layers',
+    'uv_textures',
+    'uv_layer_stencil',
+    'uv_texture_stencil',
+    'vertex_colors',
+    }
+IGNORE_TEXTS = {
+    'lines',
+    }
+IGNORE_ANIM = {
+    'keyframe_points',
     }
 IGNORE_UI = {
     'window_managers',
     'screens',
-    'brushes'
+    'brushes',
     }
 
 INDENT = "  "
 
+
 def qualname(ob):
     return '%s.%s' % (ob.__class__.__module__, ob.__class__.__name__)
+
+
+class Progress:
+
+    INTERVAL = 1.0
+
+    def __init__(self):
+        self.last_update = 0
+
+    def message(self, msg):
+        t = time.time()
+        if self.last_update < time.time() - Progress.INTERVAL:
+            print(msg)
+            self.last_update = t
 
 
 class ObjectPrinter:
@@ -67,6 +107,8 @@ class ObjectPrinter:
         else:
             state.file.write("%s\n" % path)
 
+        state.progress.message(path)
+
         attrs = dir(ob)
         attrs.sort(key=ObjectPrinter.propkey)
         leaves = []
@@ -76,7 +118,11 @@ class ObjectPrinter:
                 continue
             if attr in self.ignore:
                 continue
-            child = getattr(ob, attr)
+            try:
+                child = getattr(ob, attr)
+            except AttributeError as e:
+                print("warning:", e)
+                continue
             if state.dispatcher.is_leaf(child):
                 leaves.append((attr, child))
             else:
@@ -109,6 +155,8 @@ class CollectionPrinter:
         if col in state.printed:
             return
         state.printed.add(col)
+
+        state.progress.message(path)
 
         state.file.write("%s\n" % path)
         #state.file.write('%s__len__: %d\n' % (indent + INDENT, len(col)))
@@ -212,14 +260,22 @@ class PrintState:
 
         self.dispatcher = dispatcher
         self.file = f
+        self.progress = Progress()
 
 
-def export(filepath, include_ui, ignore):
-    if not include_ui:
-        extra_ignore = IGNORE_UI
-    else:
-        extra_ignore = set()
+def export(filepath, include_ui, include_obdata, include_images, include_texts, include_anim, ignore):
+    extra_ignore = set()
     extra_ignore.update(ignore)
+    if not include_ui:
+        extra_ignore.update(IGNORE_UI)
+    if not include_obdata:
+        extra_ignore.update(IGNORE_OBDATA)
+    if not include_images:
+        extra_ignore.update(IGNORE_IMAGE)
+    if not include_texts:
+        extra_ignore.update(IGNORE_TEXTS)
+    if not include_anim:
+        extra_ignore.update(IGNORE_ANIM)
     dispatcher = PrintDispatcher(extra_ignore)
     with open(filepath, 'w', encoding='utf-8') as f:
         state = PrintState(dispatcher, f)
@@ -278,6 +334,18 @@ def run_batch():
         '--ui', default=False,
         help="Include UI and tool settings.")
     parser.add_argument(
+        '--obdata', default=False,
+        help="Include object data.")
+    parser.add_argument(
+        '--images', default=False,
+        help="Include pixel data.")
+    parser.add_argument(
+        '--texts', default=False,
+        help="Include text and script contents.")
+    parser.add_argument(
+        '--anim', default=False,
+        help="Include animation data (fcurves).")
+    parser.add_argument(
         '--exclude', default='',
         help="Additional property names to ignore (comma-separated).")
     parser.add_argument(
@@ -295,7 +363,7 @@ def run_batch():
     print(args)
     args = parser.parse_args(args=args)
     ignore = args.exclude.split(',')
-    export(args.filepath, args.ui, ignore)
+    export(args.filepath, args.ui, args.obdata, args.images, args.texts, args.anim, ignore)
 
 
 if bpy.app.background:

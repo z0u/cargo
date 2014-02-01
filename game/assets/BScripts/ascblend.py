@@ -1,15 +1,19 @@
 import bpy
 
+# Maps classes to printers.
 HANDLERS = {}
+
+# Ignore some properties; these cause crashes or deep recursion, or
+# are generally not useful.
 IGNORE = {
     'bl_rna',
-    'particle_edit', # causes crash
+    'particle_edit',
     'rna_type',
-    'screens',
     'type_info',
-    'window_managers',
-    'worlds'}
+    }
 
+# Objects that have already been printed; when encountered again,
+# the reference but not the data will be printed again.
 printed = set()
 
 
@@ -27,6 +31,27 @@ def dispatch(path, name, ob):
 
 class ObjectPrinter:
 
+    # Sort order for object properties. Repeated object references are not
+    # printed in detail, so try to make the first reference come from an
+    # immediate child of bpy.data. Basically this list should contain
+    # names of collections that don't refer to other collections.
+    ORDER = [
+        'libraries',
+        'texts',
+        'actions',
+        'images', 'fonts',
+        'textures',
+        'node_groups',
+        'materials',
+        'curves', 'meshes', 'lamps', 'cameras', 'metaballs', 'lattices',
+        'particles',
+        'objects', 'worlds',
+        'groups',
+        'scenes',
+        'screens',
+        'window_managers',
+        ]
+
     def prettyprint(self, path, name, ob):
         try:
             if ob is None:
@@ -41,7 +66,9 @@ class ObjectPrinter:
         else:
             print(path)
 
-        for attr in dir(ob):
+        attrs = dir(ob)
+        attrs.sort(key=ObjectPrinter.propkey)
+        for attr in attrs:
             if attr.startswith('__'):
                 continue
             if attr in IGNORE:
@@ -50,6 +77,15 @@ class ObjectPrinter:
             cls = qualname(child)
             childpath = "{p}.{col}".format(p=path, col=attr)
             dispatch(childpath, attr, child)
+
+    @staticmethod
+    def propkey(name):
+        try:
+            i = ObjectPrinter.ORDER.index(name)
+        except ValueError:
+            # If no match, place it after things that did match.
+            i = len(ObjectPrinter.ORDER)
+        return "_%3d%s" % (i, name)
 
 
 class CollectionPrinter:

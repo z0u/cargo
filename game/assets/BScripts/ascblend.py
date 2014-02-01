@@ -16,6 +16,8 @@ IGNORE_UI = {
     'brushes'
     }
 
+INDENT = "  "
+
 def qualname(ob):
     return '%s.%s' % (ob.__class__.__module__, ob.__class__.__name__)
 
@@ -47,7 +49,7 @@ class ObjectPrinter:
     def __init__(self, ignore):
         self.ignore = ignore
 
-    def prettyprint(self, state, path, name, ob):
+    def prettyprint(self, state, indent, path, name, ob):
         try:
             if ob is None:
                 state.file.write("%s (None)\n" % path)
@@ -71,7 +73,8 @@ class ObjectPrinter:
             child = getattr(ob, attr)
             cls = qualname(child)
             childpath = "{p}.{col}".format(p=path, col=attr)
-            state.dispatcher.dispatch(state, childpath, attr, child)
+            state.dispatcher.dispatch(
+                state, indent + INDENT, childpath, attr, child)
 
     @staticmethod
     def propkey(name):
@@ -88,13 +91,13 @@ class CollectionPrinter:
     def __init__(self, named_keys=True):
         self.named_keys = named_keys
 
-    def prettyprint(self, state, path, name, col):
+    def prettyprint(self, state, indent, path, name, col):
         if col in state.printed:
             return
         state.printed.add(col)
 
         state.file.write("%s\n" % path)
-        state.file.write('\t__len__: %d\n' % len(col))
+        #state.file.write('%s__len__: %d\n' % (indent + INDENT, len(col)))
         for i, item in enumerate(col):
             if self.named_keys and hasattr(item, 'name'):
                 index = "'%s'" % item.name
@@ -102,30 +105,33 @@ class CollectionPrinter:
                 index = "%d" % i
             childpath = "{p}[{i}]".format(p=path, i=index)
             #print(childpath)
-            state.dispatcher.dispatch(state, childpath, index, item)
+            state.dispatcher.dispatch(
+                state, indent + INDENT, childpath, index, item)
 
 
 class TextPrinter:
 
-    def prettyprint(self, state, path, name, text):
+    def prettyprint(self, state, indent, path, name, text):
         if text in state.printed:
             return
         state.printed.add(text)
 
         for line in text.lines:
-            state.file.write('\t%s\n' % line.body)
+            state.file.write('{indent}{line}\n'.format(
+                indent=indent, line=line.body))
 
 
 class NullPrinter:
 
-    def prettyprint(self, state, path, name, ob):
+    def prettyprint(self, state, indent, path, name, ob):
         return
 
 
 class ReprPrinter:
 
-    def prettyprint(self, state, path, name, ob):
-        state.file.write('\t{name}: {value}\n'.format(name=name, value=repr(ob)))
+    def prettyprint(self, state, indent, path, name, ob):
+        state.file.write('{indent}{name}: {value}\n'.format(
+            indent=indent, name=name, value=repr(ob)))
 
 
 class PrintDispatcher:
@@ -162,12 +168,12 @@ class PrintDispatcher:
         # Special handler for text
         self.handlers['bpy_types.Text'] = TextPrinter()
 
-    def dispatch(self, state, path, name, ob):
+    def dispatch(self, state, indent, path, name, ob):
         cls = qualname(ob)
         if cls in self.handlers:
-            self.handlers[cls].prettyprint(state, path, name, ob)
+            self.handlers[cls].prettyprint(state, indent, path, name, ob)
         else:
-            self.handlers['_default'].prettyprint(state, path, name, ob)
+            self.handlers['_default'].prettyprint(state, indent, path, name, ob)
 
 
 class PrintState:
@@ -189,7 +195,7 @@ def export(filepath, include_ui, ignore):
     dispatcher = PrintDispatcher(extra_ignore)
     with open(filepath, 'w', encoding='utf-8') as f:
         state = PrintState(dispatcher, f)
-        dispatcher.dispatch(state, 'bpy.data', 'data', bpy.data)
+        dispatcher.dispatch(state, '', 'bpy.data', 'data', bpy.data)
 
 
 class TextExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):

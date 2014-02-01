@@ -1,7 +1,6 @@
 import bpy
+import bpy_extras
 
-# Maps classes to printers.
-HANDLERS = {}
 
 # Ignore some properties; these cause crashes or deep recursion, or
 # are generally not useful.
@@ -12,21 +11,9 @@ IGNORE = {
     'type_info',
     }
 
-# Objects that have already been printed; when encountered again,
-# the reference but not the data will be printed again.
-printed = set()
-
 
 def qualname(ob):
     return '%s.%s' % (ob.__class__.__module__, ob.__class__.__name__)
-
-
-def dispatch(path, name, ob):
-    cls = qualname(ob)
-    if cls in HANDLERS:
-        HANDLERS[cls].prettyprint(path, name, ob)
-    else:
-        HANDLERS['_default'].prettyprint(path, name, ob)
 
 
 class ObjectPrinter:
@@ -39,11 +26,11 @@ class ObjectPrinter:
         'libraries',
         'texts',
         'actions',
-        'images', 'fonts',
+        'images', 'fonts', 'sounds',
         'textures',
         'node_groups',
         'materials',
-        'curves', 'meshes', 'lamps', 'cameras', 'metaballs', 'lattices',
+        'curves', 'meshes', 'lamps', 'cameras', 'metaballs', 'lattices', 'speakers',
         'particles',
         'objects', 'worlds',
         'groups',
@@ -52,31 +39,34 @@ class ObjectPrinter:
         'window_managers',
         ]
 
-    def prettyprint(self, path, name, ob):
+    def __init__(self, ignore):
+        self.ignore = ignore
+
+    def prettyprint(self, state, path, name, ob):
         try:
             if ob is None:
-                print("%s (None)" % path)
+                state.file.write("%s (None)\n" % path)
                 return
-            if ob in printed:
-                print("%s (rpt)" % path)
+            if ob in state.printed:
+                state.file.write("%s (rpt)\n" % path)
                 return
-            printed.add(ob)
+            state.printed.add(ob)
         except TypeError:
             return
         else:
-            print(path)
+            state.file.write("%s\n" % path)
 
         attrs = dir(ob)
         attrs.sort(key=ObjectPrinter.propkey)
         for attr in attrs:
             if attr.startswith('__'):
                 continue
-            if attr in IGNORE:
+            if attr in self.ignore:
                 continue
             child = getattr(ob, attr)
             cls = qualname(child)
             childpath = "{p}.{col}".format(p=path, col=attr)
-            dispatch(childpath, attr, child)
+            state.dispatcher.dispatch(state, childpath, attr, child)
 
     @staticmethod
     def propkey(name):
@@ -90,13 +80,13 @@ class ObjectPrinter:
 
 class CollectionPrinter:
 
-    def prettyprint(self, path, name, col):
-        if col in printed:
+    def prettyprint(self, state, path, name, col):
+        if col in state.printed:
             return
-        printed.add(col)
+        state.printed.add(col)
 
-        print(path)
-        print('\t__len__: %d' % len(col))
+        state.file.write("%s\n" % path)
+        state.file.write('\t__len__: %d\n' % len(col))
         for i, item in enumerate(col):
             if hasattr(item, 'name'):
                 index = "'%s'" % item.name
@@ -105,42 +95,113 @@ class CollectionPrinter:
             childpath = "{p}[{i}]".format(p=path, i=index)
             #print(childpath)
             cls = qualname(item)
-            dispatch(childpath, index, item)
+            state.dispatcher.dispatch(state, childpath, index, item)
 
 
 class TextPrinter:
 
-    def prettyprint(self, path, name, text):
-        if text in printed:
+    def prettyprint(self, state, path, name, text):
+        if text in state.printed:
             return
-        printed.add(text)
+        state.printed.add(text)
 
         for line in text.lines:
-            print('\t%s' % line.body)
+            state.file.write('\t%s\n' % line.body)
 
 
 class NullPrinter:
 
-    def prettyprint(self, path, name, ob):
+    def prettyprint(self, state, path, name, ob):
         return
 
 
 class ReprPrinter:
 
-    def prettyprint(self, path, name, ob):
-        print('\t{name}: {value}'.format(name=name, value=repr(ob)))
+    def prettyprint(self, state, path, name, ob):
+        state.file.write('\t{name}: {value}\n'.format(name=name, value=repr(ob)))
 
 
-repr_printer = ReprPrinter()
+class PrintDispatcher:
 
-HANDLERS['builtins.builtin_function_or_method'] = NullPrinter()
-HANDLERS['builtins.str'] = repr_printer
-HANDLERS['builtins.int'] = repr_printer
-HANDLERS['builtins.float'] = repr_printer
-HANDLERS['builtins.bool'] = repr_printer
-HANDLERS['_default'] = ObjectPrinter()
-HANDLERS['builtins.bpy_prop_collection'] = CollectionPrinter()
-HANDLERS['bpy_types.Text'] = TextPrinter()
+    def __init__(self, extra_ignore=None):
+        self.handlers = {}
+        ignore = IGNORE.copy()
+        if extra_ignore is not None:
+            ignore.union(extra_ignore)
+        self.handlers['_default'] = ObjectPrinter(ignore)
+        self.handlers['builtins.builtin_function_or_method'] = NullPrinter()
+        self.handlers['builtins.str'] = \
+            self.handlers['builtins.int'] = \
+            self.handlers['builtins.float'] = \
+            self.handlers['builtins.bool'] = ReprPrinter()
+        self.handlers['builtins.bpy_prop_collection'] = CollectionPrinter()
+        self.handlers['bpy_types.Text'] = TextPrinter()
 
-printer = ObjectPrinter()
-printer.prettyprint('bpy.data', 'data', bpy.data)
+    def dispatch(self, state, path, name, ob):
+        cls = qualname(ob)
+        if cls in self.handlers:
+            self.handlers[cls].prettyprint(state, path, name, ob)
+        else:
+            self.handlers['_default'].prettyprint(state, path, name, ob)
+
+
+class PrintState:
+    def __init__(self, dispatcher, f):
+        # Objects that have already been printed; when encountered again,
+        # the reference but not the data will be printed again.
+        self.printed = set()
+
+        self.dispatcher = dispatcher
+        self.file = f
+
+
+class TextExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
+    """Export blend file data to plain text"""
+    bl_idname = "export_scene.asc"
+    bl_label = "Text (.txt)"
+
+    # ExportHelper mixin class uses this
+    filename_ext = ".txt"
+
+    filter_glob = bpy.props.StringProperty(
+            default="*.txt",
+            options={'HIDDEN'},
+            )
+
+    # List of operator properties, the attributes will be assigned
+    # to the class instance from the operator settings before calling.
+    include_ui = bpy.props.BoolProperty(
+            name="User Interface",
+            description="Include UI configuration and tool settings (window_managers, screens, brushes)",
+            default=False,
+            )
+
+    def execute(self, context):
+        if not self.include_ui:
+            extra_ignore = {'window_managers', 'screens', 'brushes'}
+        else:
+            extra_ignore = None
+        dispatcher = PrintDispatcher(extra_ignore)
+        with open(self.filepath, 'w', encoding='utf-8') as f:
+            state = PrintState(dispatcher, f)
+            dispatcher.dispatch(state, 'bpy.data', 'data', bpy.data)
+        return {'FINISHED'}
+
+
+# Only needed if you want to add into a dynamic menu
+def menu_func_export(self, context):
+    self.layout.operator(TextExport.bl_idname)
+
+
+def register():
+    bpy.utils.register_class(TextExport)
+    bpy.types.INFO_MT_file_export.append(menu_func_export)
+
+
+def unregister():
+    bpy.utils.unregister_class(TextExport)
+    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+
+
+if __name__ == "__main__":
+    register()

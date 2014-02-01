@@ -131,7 +131,7 @@ class PrintDispatcher:
         self.handlers = {}
         ignore = IGNORE.copy()
         if extra_ignore is not None:
-            ignore.union(extra_ignore)
+            ignore.update(extra_ignore)
         self.handlers['_default'] = ObjectPrinter(ignore)
         self.handlers['builtins.builtin_function_or_method'] = NullPrinter()
         self.handlers['builtins.str'] = \
@@ -159,11 +159,12 @@ class PrintState:
         self.file = f
 
 
-def export(filepath, include_ui):
+def export(filepath, include_ui, ignore):
     if not include_ui:
         extra_ignore = IGNORE_UI
     else:
-        extra_ignore = None
+        extra_ignore = set()
+    extra_ignore.update(ignore)
     dispatcher = PrintDispatcher(extra_ignore)
     with open(filepath, 'w', encoding='utf-8') as f:
         state = PrintState(dispatcher, f)
@@ -218,8 +219,15 @@ def run_batch():
     parser = argparse.ArgumentParser(
         description="Export .blend file to text.",
         usage="blender -b <infile> -P <this script> -- [args] <outfile>")
-    parser.add_argument('--ui', help="Include UI and tool settings.", default=False)
-    parser.add_argument('filepath', help="The file to write to.")
+    parser.add_argument(
+        '--ui', default=False,
+        help="Include UI and tool settings.")
+    parser.add_argument(
+        '--exclude', default='',
+        help="Additional property names to ignore (comma-separated).")
+    parser.add_argument(
+        'filepath',
+        help="The file to write to.")
 
     try:
         arg_sep = sys.argv.index('--')
@@ -228,9 +236,11 @@ def run_batch():
         parser.print_help()
         sys.exit(1)
 
-    args = sys.argv[arg_sep:]
+    args = sys.argv[arg_sep + 1:]
+    print(args)
     args = parser.parse_args(args=args)
-    export(args.filepath, args.ui)
+    ignore = args.exclude.split(',')
+    export(args.filepath, args.ui, ignore)
 
 
 if bpy.app.background:

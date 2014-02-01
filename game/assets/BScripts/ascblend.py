@@ -12,13 +12,26 @@ IGNORE = {
 
 printed = set()
 
+
 def qualname(ob):
     return '%s.%s' % (ob.__class__.__module__, ob.__class__.__name__)
+
+
+def dispatch(path, name, ob):
+    cls = qualname(ob)
+    if cls in HANDLERS:
+        HANDLERS[cls].prettyprint(path, name, ob)
+    else:
+        HANDLERS['_default'].prettyprint(path, name, ob)
+
 
 class ObjectPrinter:
 
     def prettyprint(self, path, name, ob):
         try:
+            if ob is None:
+                print("%s (None)" % path)
+                return
             if ob in printed:
                 print("%s (rpt)" % path)
                 return
@@ -36,10 +49,7 @@ class ObjectPrinter:
             child = getattr(ob, attr)
             cls = qualname(child)
             childpath = "{p}.{col}".format(p=path, col=attr)
-            if cls in HANDLERS:
-                HANDLERS[cls].prettyprint(childpath, attr, child)
-            else:
-                HANDLERS['_default'].prettyprint(childpath, attr, child)
+            dispatch(childpath, attr, child)
 
 
 class CollectionPrinter:
@@ -50,7 +60,7 @@ class CollectionPrinter:
         printed.add(col)
 
         print(path)
-        print('\tlength', len(col))
+        print('\t__len__: %d' % len(col))
         for i, item in enumerate(col):
             if hasattr(item, 'name'):
                 index = "'%s'" % item.name
@@ -59,10 +69,7 @@ class CollectionPrinter:
             childpath = "{p}[{i}]".format(p=path, i=index)
             #print(childpath)
             cls = qualname(item)
-            if cls in HANDLERS:
-                HANDLERS[cls].prettyprint(childpath, index, item)
-            else:
-                HANDLERS['_default'].prettyprint(childpath, index, item)
+            dispatch(childpath, index, item)
 
 
 class TextPrinter:
@@ -94,6 +101,7 @@ HANDLERS['builtins.builtin_function_or_method'] = NullPrinter()
 HANDLERS['builtins.str'] = repr_printer
 HANDLERS['builtins.int'] = repr_printer
 HANDLERS['builtins.float'] = repr_printer
+HANDLERS['builtins.bool'] = repr_printer
 HANDLERS['_default'] = ObjectPrinter()
 HANDLERS['builtins.bpy_prop_collection'] = CollectionPrinter()
 HANDLERS['bpy_types.Text'] = TextPrinter()

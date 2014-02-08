@@ -55,7 +55,7 @@ class AutoCamera(metaclass=bat.bats.Singleton):
     # Blur settings vary based on camera type.
     MAX_BLUR = {
             'FIRST': 0,
-            'THIRD_SHOULDER': 0.02,
+            'THIRD_SHOULDER': 0.05,
             'THIRD_STATIC': 0.1
             }
 

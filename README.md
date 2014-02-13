@@ -22,10 +22,10 @@ You can play Cargo without building a distributable. The steps are similar to th
 
 1. Download Blender for your current platform.
 1. Extract the Blender archive.
-1. Run `make compile`:
+1. Run `make foliage`:
 
 ```bash
-make BLENDER=`pwd`/blender/blender-2.69-fdcdd5e-linux-glibc211-x86_64/blender compile
+make BLENDER=`pwd`/blender/blender-2.69-fdcdd5e-linux-glibc211-x86_64/blender foliage
 ```
 
 This will generate .blend files required to display the grass and flowers in the game. Then you can play the game by loading `game/cargo.blend` in Blender and choosing *Game > Start Game Engine* from the menu at the top. Most of the files in `game/assets` can be loaded that way, too - although the saved game data is not shared between files.

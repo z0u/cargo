@@ -13,32 +13,48 @@ VERSION := $(shell git describe --tags)
 GAME_NAME := cargo
 ASSETS := ../build/assets
 DOCS := ../readme.html ../readme_files \
-	../build/VERSION.txt ../build/BLENDER_VERSION.txt
-BLEND_FILES := $(addprefix build/, $(shell cd game; find . -name \*.blend))
+	VERSION.txt BLENDER_VERSION.txt
+BLEND_FILES := \
+	build/assets/OutdoorsBase_flowers.blend \
+	build/assets/OutdoorsBase_grass.blend \
+	$(addprefix build/, $(shell cd game; find . -name \*.blend))
 
 
 .PHONY: dist
-dist: compile build dist-osx dist-win dist-lin
-
-
-compile:
-	$(MAKE) -C game/assets foliage
+dist: dist-osx dist-win dist-lin
 
 
 # Copy relevant files over to build directory. Note that .blend files are done
 # individually using Blender.
 .PHONY: build
-build: RSYNC_EXCLUDE := \
+build: copy-files $(BLEND_FILES)
+	echo "$(VERSION)" > VERSION.txt
+	$(BLENDER) -v > BLENDER_VERSION.txt
+
+.PHONY: copy-files
+copy-files: RSYNC_EXCLUDE := \
 	--exclude-from=.gitignore \
 	--exclude \*.blend \
 	--exclude .git\* \
 	--exclude BScripts \
 	--exclude pyextra
-build: $(BLEND_FILES)
+copy-files:
 	mkdir -p build
 	rsync $(RSYNC_EXCLUDE) -av game/ build/
-	echo "$(VERSION)" > build/VERSION.txt
-	$(BLENDER) -v > build/BLENDER_VERSION.txt
+
+
+# Foliage is compiled: particle system object instances are made real, then
+# organised as a KD-tree. See BScripts/BlendKDTree.py
+foliage: game/assets/OutdoorsBase_flowers.blend game/assets/OutdoorsBase_grass.blend
+
+game/assets/OutdoorsBase_%.blend: game/assets/OutdoorsBase.blend game/assets/GrassBlade.blend game/assets/BScripts/BlendKDTree.py
+	group=$(notdir $*); \
+	group=$${group^}; \
+	echo compiling $${group}; \
+	$(BLENDER) --factory-startup -b \
+		game/assets/OutdoorsBase.blend \
+		-P game/assets/BScripts/BlendKDTree.py -- \
+		$${group}_LOD $@
 
 
 # Updates the files to the current Blender version. If this is not done, Blender
@@ -62,26 +78,27 @@ package = \
 		if [ $$? -ne 0 ]; then exit $$?; fi \
 	done
 
+
 .PHONY: dist-osx
 dist-osx: ARCHIVES := $(wildcard blender/*OSX*.zip)
 dist-osx: MAINFILE := ../build/cargo_w.blend
-dist-osx:
+dist-osx: build
 	$(call package)
 
 .PHONY: dist-win
 dist-win: ARCHIVES := $(wildcard blender/*win*.zip)
 dist-win: MAINFILE := ../build/cargo.blend
-dist-win:
+dist-win: build
 	$(call package)
 
 .PHONY: dist-lin
 dist-lin: ARCHIVES := $(wildcard blender/*linux*.tar.bz2)
 dist-lin: MAINFILE := ../build/cargo.blend
-dist-lin:
+dist-lin: build
 	$(call package)
 
 
 .PHONY : clean
 clean:
-	rm -rf build dist build/VERSION.txt build/BLENDER_VERSION.txt
+	rm -rf build dist VERSION.txt BLENDER_VERSION.txt
 	$(MAKE) -C game/assets clean

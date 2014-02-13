@@ -13,7 +13,7 @@ VERSION := $(shell git describe --tags)
 GAME_NAME := cargo
 ASSETS := ../build/assets
 DOCS := ../readme.html ../readme_files \
-	VERSION.txt BLENDER_VERSION.txt
+	../VERSION.txt ../BLENDER_VERSION.txt
 BLEND_FILES := \
 	build/assets/OutdoorsBase_flowers.blend \
 	build/assets/OutdoorsBase_grass.blend \
@@ -52,9 +52,9 @@ game/assets/OutdoorsBase_%.blend: game/assets/OutdoorsBase.blend game/assets/Gra
 	group=$${group^}; \
 	echo compiling $${group}; \
 	$(BLENDER) --factory-startup -b \
-		game/assets/OutdoorsBase.blend \
-		-P game/assets/BScripts/BlendKDTree.py -- \
-		$${group}_LOD $@
+		${CURDIR}/game/assets/OutdoorsBase.blend \
+		-P ${CURDIR}/game/assets/BScripts/BlendKDTree.py -- \
+		$${group}_LOD ${CURDIR}/$@
 
 
 # Updates the files to the current Blender version. If this is not done, Blender

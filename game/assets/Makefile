@@ -16,13 +16,15 @@ foliage: OutdoorsBase_flowers.blend OutdoorsBase_grass.blend
 
 OutdoorsBase_grass.blend: OutdoorsBase.blend GrassBlade.blend BScripts/BlendKDTree.py
 	$(BLENDER) --factory-startup -b \
-		OutdoorsBase.blend -P BScripts/BlendKDTree.py -- \
-		Grass_LOD OutdoorsBase_grass.blend
+		${CURDIR}/OutdoorsBase.blend \
+		-P ${CURDIR}/BScripts/BlendKDTree.py -- \
+		Grass_LOD ${CURDIR}/OutdoorsBase_grass.blend
 
 OutdoorsBase_flowers.blend: OutdoorsBase.blend GrassBlade.blend BScripts/BlendKDTree.py
 	$(BLENDER) --factory-startup -b \
-		OutdoorsBase.blend -P BScripts/BlendKDTree.py -- \
-		Flowers_LOD OutdoorsBase_flowers.blend
+		${CURDIR}/OutdoorsBase.blend \
+		-P ${CURDIR}/BScripts/BlendKDTree.py -- \
+		Flowers_LOD ${CURDIR}/OutdoorsBase_flowers.blend
 
 
 clean: SCRIPT_CACHE=bxt/*.pyc \

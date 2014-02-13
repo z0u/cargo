@@ -18,11 +18,11 @@ BLEND_FILES := $(addprefix build/, $(shell cd game; find . -name \*.blend))
 
 
 .PHONY: dist
-dist: dist-osx dist-win dist-lin build compile
+dist: compile build dist-osx dist-win dist-lin
 
 
 compile:
-	$(MAKE) -C game/assets
+	$(MAKE) -C game/assets foliage
 
 
 # Copy relevant files over to build directory. Note that .blend files are done

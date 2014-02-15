@@ -2,7 +2,9 @@
 
 This is S. Cargo, the epic snail adventure game! This game is written in Python, and runs in the Blender Game Engine.
 
-<img src="game/assets/Textures/LoadingShell.png" align="center" alt="Illustration of Cargo's shell">
+<p align="center">
+<img src="game/assets/Textures/LoadingShell.png" alt="Illustration of Cargo's shell">
+</p>
 
 ## Building for Distribution
 

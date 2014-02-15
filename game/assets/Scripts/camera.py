@@ -483,10 +483,8 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         self.cam_shift = mathutils.Vector((0, 0))
         # Force first-person camera style mouse look, even though this is a
         # behind-the-shoulder style camera.
-        if bat.store.get('/opt/cam_fps_style_look', True):
-            self.invertx = self.inverty = True
-        else:
-            self.invertx = self.inverty = False
+        self.invertx = bat.store.get('/opt/cam_invert_x', False)
+        self.inverty = bat.store.get('/opt/cam_invert_y', True)
         bat.impulse.Input().add_handler(self)
 
         AutoCamera().add_goal(self)

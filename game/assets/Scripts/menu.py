@@ -300,15 +300,16 @@ class Checkbox(Scripts.gui.Button):
         self.checked = False
         Scripts.gui.Button.__init__(self, old_owner)
         if 'dataBinding' in self:
-            self.checked = bat.store.get(self['dataBinding'], self['dataDefault'])
+            checked = bat.store.get(self['dataBinding'], self['dataDefault'])
+            self.checked = checked
 
         # Create a clickable box around the text.
-        canvas = self.children['CheckBoxCanvas']
+        canvas = self.childrenRecursive['CheckBoxCanvas']
         canvas = bat.bats.mutate(canvas)
         canvas['Content'] = self['label']
         canvas['colour'] = self['colour']
         canvas.render()
-        hitbox = self.children['Checkbox_hitbox']
+        hitbox = self.childrenRecursive['Checkbox_hitbox']
         hitbox.localScale.x = canvas.textwidth * canvas.localScale.x
         hitbox.localScale.y = canvas.textheight * canvas.localScale.y
 
@@ -332,17 +333,17 @@ class Checkbox(Scripts.gui.Button):
 
     def updateCheckFace(self):
         if self.visible:
-            self.children['CheckOff'].setVisible(not self.checked, True)
-            self.children['CheckOn'].setVisible(self.checked, True)
+            self.childrenRecursive['CheckOff'].setVisible(not self.checked, True)
+            self.childrenRecursive['CheckOn'].setVisible(self.checked, True)
         else:
-            self.children['CheckOff'].setVisible(False, True)
-            self.children['CheckOn'].setVisible(False, True)
+            self.childrenRecursive['CheckOff'].setVisible(False, True)
+            self.childrenRecursive['CheckOn'].setVisible(False, True)
 
     def updateTargetFrame(self):
-        start, end = self.get_anim_range()
-        Scripts.gui.Button.updateTargetFrame(self)
-        self.children['CheckOff'].playAction("Button_OnlyColour", start, end)
-        self.children['CheckOn'].playAction("Button_OnlyColour", start, end)
+        start, end = self.get_anim_range(self.children['CB_animref'])
+        Scripts.gui.Button.updateTargetFrame(self, self.children['CB_animref'])
+        self.childrenRecursive['CheckOff'].playAction("Button_OnlyColour", start, end)
+        self.childrenRecursive['CheckOn'].playAction("Button_OnlyColour", start, end)
 
 class ConfirmationPage(Scripts.gui.Widget):
     def __init__(self, old_owner):
@@ -434,10 +435,13 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         Scripts.gui.Widget.__init__(self, old_owner)
         self.setSensitive(False)
         self.bindings_map = Scripts.input.get_bindings()
+        self.binvertcamx = bat.bats.mutate(self.children['Btn_InvertCamX'])
+        self.binvertcamy = bat.bats.mutate(self.children['Btn_InvertCamY'])
         self.redraw_bindings()
         self.active_binding = None
 
     def show(self):
+        self.redraw_bindings()
         Scripts.gui.Widget.show(self)
         self.children['CC_Note'].setVisible(True, True)
 
@@ -546,6 +550,8 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
     def save_bindings(self):
         ControlsConfPage.log.info('Saving bindings')
         Scripts.input.set_bindings(self.bindings_map)
+        bat.store.put('/opt/cam_invert_x', self.binvertcamx.checked)
+        bat.store.put('/opt/cam_invert_y', self.binvertcamy.checked)
         bat.event.Event('KeyBindingsChanged').send(1)
         bat.event.Event('popScreen').send(1)
 
@@ -569,6 +575,8 @@ class ControlsConfPage(bat.impulse.Handler, Scripts.gui.Widget):
                 canvas.set_text('??')
                 continue
             canvas.set_text(Scripts.input.format_bindings(bindings))
+        self.binvertcamx.checked = bat.store.get('/opt/cam_invert_x', False)
+        self.binvertcamy.checked = bat.store.get('/opt/cam_invert_y', True)
 
 class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
     _prefix = 'VC_'

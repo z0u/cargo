@@ -353,7 +353,9 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         self.updateTargetFrame()
         self.updateVisibility(True)
 
-    def get_anim_range(self):
+    def get_anim_range(self, target_ob=None):
+        if target_ob is None:
+            target_ob = self
         targetFrame = Widget.IDLE_FRAME
         if not self.is_visible:
             targetFrame = Widget.HIDDEN_FRAME
@@ -365,13 +367,15 @@ class Widget(bat.bats.BX_GameObject, bge.types.KX_GameObject):
         else:
             targetFrame = Widget.IDLE_FRAME
 
-        cfra = max(self.getActionFrame(), 1.0)
+        cfra = max(target_ob.getActionFrame(), 1.0)
         return cfra, targetFrame
 
-    def updateTargetFrame(self):
+    def updateTargetFrame(self, target_ob=None):
+        if target_ob is None:
+            target_ob = self
         # Progress animation from current frame to target frame.
-        start, end = self.get_anim_range()
-        self.playAction("Widget", start, end)
+        start, end = self.get_anim_range(target_ob)
+        target_ob.playAction("Widget", start, end)
 
     @bat.bats.expose
     def update(self):

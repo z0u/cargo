@@ -481,6 +481,12 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         self.alignment = None
 
         self.cam_shift = mathutils.Vector((0, 0))
+        # Force first-person camera style mouse look, even though this is a
+        # behind-the-shoulder style camera.
+        if bat.store.get('/opt/cam_fps_style_look', True):
+            self.invertx = self.inverty = True
+        else:
+            self.invertx = self.inverty = False
         bat.impulse.Input().add_handler(self)
 
         AutoCamera().add_goal(self)
@@ -589,8 +595,21 @@ class OrbitCamera(bat.impulse.Handler, bat.bats.BX_GameObject, bge.types.KX_Game
         if self.reset:
             # Don't allow shifting when position is being reset.
             return
-        self.cam_shift.x = state.direction.x
-        yoffset = self.cam_shift.y + (state.direction.y * OrbitCamera.VROT_SPEED)
+
+        x = state.direction.x
+        if self.invertx:
+            x = -x
+
+        y = state.direction.y
+        if self.inverty:
+            y = -y
+
+        # X is applied and thrown away, so the starting state is always zero.
+        # Y is remembered between frames, so the offset needs to be accumulated.
+        xoffset = x
+        yoffset = self.cam_shift.y + (y * OrbitCamera.VROT_SPEED)
+
+        self.cam_shift.x = xoffset
         self.cam_shift.y = bat.bmath.clamp(-1, 1, yoffset)
 
     def handle_reset(self, state):

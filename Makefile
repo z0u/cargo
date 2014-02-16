@@ -109,3 +109,4 @@ clean:
 distclean:
 	rm -rf $(FOLIAGE)
 	$(MAKE) -C game/assets distclean
+

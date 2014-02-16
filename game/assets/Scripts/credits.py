@@ -53,7 +53,7 @@ _CREDIT_ITEMS = [
             "Ashima Arts"]),
     'concept_lod',
 
-    ("Sound Effects", ["Ben Sturmfels", "Ben Finney", "Leigh Raymond"]),
+    ("Sound Effects", ["Ben Sturmfels", "Ben Finney", "Leigh Raymond", "Jodie Fraser"]),
     ("And freesound.org users",
             ["3bagbrew", "FreqMan", "HerbertBoland", "Percy Duke", "klakmart", "aUREa",
             "qubodup", "thetruwu", "nsp", "kangaroovindaloo", "ERH", "Corsica_S",

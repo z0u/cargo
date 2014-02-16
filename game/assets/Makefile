@@ -11,7 +11,6 @@ clean: SCRIPT_CACHE=bxt/*.pyc \
 clean:
 	rm -rf $(SCRIPT_CACHE)
 	rm -f *.blend?
-	rm -f OutdoorsBase_flowers.blend OutdoorsBase_grass.blend
 
 distclean: clean
 	rm -f *.bgeconf

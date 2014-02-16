@@ -18,7 +18,9 @@ BLEND_FILES := \
 	build/assets/OutdoorsBase_flowers.blend \
 	build/assets/OutdoorsBase_grass.blend \
 	$(addprefix build/, $(shell cd game; find . -name \*.blend))
-
+FOLIAGE := \
+	game/assets/OutdoorsBase_flowers.blend \
+	game/assets/OutdoorsBase_grass.blend
 
 .PHONY: dist
 dist: dist-osx dist-win dist-lin
@@ -45,7 +47,7 @@ copy-files:
 
 # Foliage is compiled: particle system object instances are made real, then
 # organised as a KD-tree. See BScripts/BlendKDTree.py
-foliage: game/assets/OutdoorsBase_flowers.blend game/assets/OutdoorsBase_grass.blend
+foliage: $(FOLIAGE)
 
 game/assets/OutdoorsBase_%.blend: game/assets/OutdoorsBase.blend game/assets/GrassBlade.blend game/assets/BScripts/BlendKDTree.py
 	group=$(notdir $*); \
@@ -98,7 +100,12 @@ dist-lin: build
 	$(call package)
 
 
-.PHONY : clean
+.PHONY: clean
 clean:
 	rm -rf build dist VERSION.txt BLENDER_VERSION.txt
 	$(MAKE) -C game/assets clean
+
+.PHONY: clean
+distclean:
+	rm -rf $(FOLIAGE)
+	$(MAKE) -C game/assets distclean

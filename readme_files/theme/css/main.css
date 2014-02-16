@@ -151,3 +151,8 @@ header {
     min-height: 100%;
     margin-bottom: 0;
 }
+
+.controls img {
+    max-width: none;
+    min-height: 1em;
+}

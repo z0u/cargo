@@ -9,7 +9,7 @@ SHELL=/bin/bash
 #
 BLENDER := `which blender`
 
-VERSION := $(shell git describe --tags)
+VERSION := $(shell git describe --tags | sed -r s/^v-//)
 GAME_NAME := cargo
 ASSETS := ../build/assets
 DOCS := ../readme.html ../readme_files \

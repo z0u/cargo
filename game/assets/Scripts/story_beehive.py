@@ -449,3 +449,19 @@ class DefenceRoom(bat.bats.BX_GameObject, bge.types.KX_GameObject):
             door = door_base.children[0]
             door.playAction('DefenceDoor', 40, 62)
         self.is_open = False
+
+
+def button_sense(c):
+    # Can't use plain near sensor here, in case player leaves shell while
+    # on button (very likely).
+    mainc = Scripts.director.Director().mainCharacter
+    if mainc is None:
+        return
+    o = c.owner
+    dist = (mainc.worldPosition - o.worldPosition).magnitude
+    if (not o['positive']) and dist < 3.5:
+        bat.event.Event('HitButton').send()
+        o['positive'] = True
+    elif o['positive'] and dist > 4.0:
+        bat.event.Event('LeftButton').send()
+        o['positive'] = False

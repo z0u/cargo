@@ -779,7 +779,7 @@ class Ant(bat.impulse.Handler, bat.story.Chapter, bat.bats.BX_GameObject, bge.ty
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 370))
-        s.add_action(bat.story.ActAction('Ant_Rescued', 398, 555, Ant.L_ANIM))
+        s.add_action(bat.story.ActAction('Ant_Rescued', 398, 523, Ant.L_ANIM))
         s.add_event("ShowDialogue", "Well, I'm going to head outside. I'm looking forward to some fresh air after being stranded!")
         s.add_action(bat.story.ActSound('//Sound/ant.mutter3.ogg'))
         s.add_action(bat.story.ActAction(
@@ -787,7 +787,7 @@ class Ant(bat.impulse.Handler, bat.story.Chapter, bat.bats.BX_GameObject, bge.ty
             ob='AntStrandedCam_RescueFront'))
 
         s = s.create_successor()
-        s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 540))
+        s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 520))
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_action(bat.story.ActAction('Ant_Rescued', 593, 660, Ant.L_ANIM))
         s.add_action(bat.story.ActStoreSet('/game/level/AntRescued', True))

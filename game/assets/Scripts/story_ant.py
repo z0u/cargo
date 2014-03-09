@@ -635,18 +635,18 @@ class Ant(bat.impulse.Handler, bat.story.Chapter, bat.bats.BX_GameObject, bge.ty
         sub = s.create_sub_step()
         sub.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 219, tap=True))
         sub.add_action(self.step_sound_action)
-    
+
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_action(Scripts.story.ActSetCamera('AntStrandedCamLS'))
         s.add_event("ShowDialogue", "... I feel like such a fool.")
-    
+
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_action(Scripts.story.ActRemoveFocalPoint('Thimble'))
         s.add_event("ShowDialogue", "I can't walk through the honey: it's too sticky.")
         s.add_action(bat.story.ActAction('AntStrandedCamLS_FrontAction', 90, 90, ob='AntStrandedCamLS_FrontZoom'))
-    
+
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
         s.add_action(Scripts.story.ActRemoveCamera('AntStrandedCamLS'))
@@ -772,6 +772,9 @@ class Ant(bat.impulse.Handler, bat.story.Chapter, bat.bats.BX_GameObject, bge.ty
         s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 285))
         s.add_action(bat.story.ActAction('Ant_Rescued', 313, 373, Ant.L_ANIM))
         s.add_event("ShowDialogue", "There must be another entrance to the hive further up the tree.")
+        s.add_action(bat.story.ActAction(
+            'AntStrandedCam_RescueFrontAction', 313, 373,
+            ob='AntStrandedCam_RescueFront'))
 
         s = s.create_successor()
         s.add_condition(bat.story.CondEvent("DialogueDismissed", self))
@@ -779,6 +782,9 @@ class Ant(bat.impulse.Handler, bat.story.Chapter, bat.bats.BX_GameObject, bge.ty
         s.add_action(bat.story.ActAction('Ant_Rescued', 398, 555, Ant.L_ANIM))
         s.add_event("ShowDialogue", "Well, I'm going to head outside. I'm looking forward to some fresh air after being stranded!")
         s.add_action(bat.story.ActSound('//Sound/ant.mutter3.ogg'))
+        s.add_action(bat.story.ActAction(
+            'AntStrandedCam_RescueFrontAction', 398, 555,
+            ob='AntStrandedCam_RescueFront'))
 
         s = s.create_successor()
         s.add_condition(bat.story.CondActionGE(Ant.L_ANIM, 540))

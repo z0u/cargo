@@ -691,18 +691,10 @@ class Bird(bat.story.Chapter, bat.bats.BX_GameObject, bge.types.BL_ArmatureObjec
             (bat.story.CondActionGE(0, 1570))
             (bat.story.CondEvent("DialogueDismissed", self))
             ("LoadLevel", ("//EndGame.blend", None, False, False))
-        )
-
-        s = (s.create_successor()
-            (Scripts.story.ActResumeInput())
-            (Scripts.story.ActRemoveCamera('B_base_cam'))
-            (Scripts.story.ActRemoveCamera('B_base_cam2'))
-            (Scripts.story.ActRemoveCamera('B_base_cam_above'))
-            (Scripts.story.ActRemoveCamera('B_nest_cam'))
-            (Scripts.story.ActRemoveCamera('B_nest_fall_cam'))
-            (Scripts.story.ActRemoveFocalPoint('Bi_Face'))
             (bat.story.ActMusicStop())
         )
+
+        # No need to reset camera etc - the game is finished!
 
     def pick_up(self, ob, left=True):
         attach_point = self.children["Bi_FootHook.L"]

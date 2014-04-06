@@ -22,6 +22,7 @@ import time
 import webbrowser
 
 import bge
+import bgl
 
 import bat.bats
 import bat.event
@@ -77,6 +78,13 @@ STORY_SUMMARIES = {
     'gotThimble':
             "I found a third shiny thing! It's a thimble \[thimble] that's impervious to sharp objects.",
     }
+
+# Some systems are buggy with the depth of field filter. Systems matching an
+# item in this blacklist will have DoF disabled by default.
+DOF_BLACKLIST = [
+    ('windows', 'intel'),
+    #('linux', 'ati'),
+    ]
 
 class SessionManager(bat.bats.BX_GameObject, bge.types.KX_GameObject):
     '''Responds to some high-level messages.'''
@@ -631,6 +639,13 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
             # https://projects.blender.org/tracker/?func=detail&atid=306&aid=36501&group_id=9
             return platform.system not in {'Darwin'}
 
+    @property
+    def dof_recommended(self):
+        '''Depth of field filter causes issues on some platforms.'''
+        vendor = bgl.glGetString(bgl.GL_VENDOR).lower()
+        pform = platform.system().lower()
+        return not any((v in vendor and p in pform) for (p, v) in DOF_BLACKLIST)
+
     def on_event(self, evt):
         if evt.message == 'RevertVideo':
             self.revert()
@@ -653,6 +668,9 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
         elif evt.message == 'popScreen':
             if self.confirm_deadline is not None:
                 self.end_confirmation(False)
+        elif evt.message == 'dofChanged':
+            if self.bdof.checked and not self.dof_recommended:
+                bat.event.Event('confirmation', 'Warning: this setting may be buggy on your computer.::::').send()
         else:
             Scripts.gui.Widget.on_event(self, evt)
 
@@ -674,7 +692,8 @@ class VideoConfPage(bat.impulse.Handler, Scripts.gui.Widget):
     def revert(self):
         VideoConfPage.log.info('Reverting video settings')
         self.bfoliage.checked = bat.store.get('/opt/foliage', True)
-        self.bdof.checked = bat.store.get('/opt/depthOfField', True)
+        self.bdof.checked = bat.store.get(
+            '/opt/depthOfField', self.dof_recommended)
         self.revert_resolution()
 
     def revert_resolution(self):
